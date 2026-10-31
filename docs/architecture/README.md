@@ -53,7 +53,7 @@ English equivalents use the same filenames under `reference/en/`. The language l
 
 ## Repository architecture documents
 
-- [I0 overview](I0_OVERVIEW.md): concise description of the current I0 reference boundary.
+- [I0 overview](I0_OVERVIEW.md): historical description of I0, not the active I1 boundary.
 - [Bootstrap runtime boundary](BOOTSTRAP_RUNTIME.md): executable bootstrap architecture and its deliberately non-cognitive boundary.
 - [Individual template](INDIVIDUAL_TEMPLATE.md): structure for future generation manifests.
 

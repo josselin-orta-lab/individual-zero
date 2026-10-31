@@ -21,6 +21,10 @@ This is a **navigation index**, not a second architectural specification. It sho
 
 **Registry** says *which generation is active*. **Engine contract + real code** say *what is installed and executable*. **ADRs** say *what is allowed*. **CI on an exact SHA** says *what software was checked*. **Experimental evidence** says *what was measured*, and only a reviewed scientific gate can say *what was established*. An older issue, PR, historical status ledger, theoretical proposal or test fixture never overrides these.
 
+## Lightweight documentation checks
+
+Use `python tools/check_repo_navigation.py --scope current` for current guides. `--scope all` inspects historical Markdown as well and reports its broken references as warnings, without rewriting archived research. Add `--strict-historical` when an exhaustive failure report is explicitly required. This check never instantiates an individual or proves cognition.
+
 ## Working boundaries
 
 - I0 is immutable research history. I1 has its own cognition, runtime, Lab, tests and existing born identities. I2 has independent, non-living synthetic prototypes only. No historical runtime imports, carried-over life state or compatibility modes for successor engines.

@@ -24,7 +24,7 @@ The change modifies action selection and may alter the individual's trajectory.
 
 ## Placement
 
-- cognitive policy implementation: `src/i0/` or experiment prototype as appropriate;
+- cognitive policy: reviewed active-generation source (currently `src/i1/`) or a non-living isolated experiment; I0 stays frozen and I2 is not activated by implication;
 - evidence: `experiments/`;
 - reusable scenario: `benchmarks/` if broadly useful;
 - software verification: `tests/`.

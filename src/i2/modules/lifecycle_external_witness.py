@@ -120,16 +120,16 @@ class WitnessRefusal(ValueError):
 
 
 def compare_audit(*, report: dict[str, object], witness: IndependentWitness) -> WitnessAudit:
-    """Compare an already verified v3 report to the independent latest anchor.
+    """Compare an already verified v5 report to the independent latest anchor.
 
     This pure function is useful for protocol tests; callers MUST use
     verify_fixture() to ensure the report came from a cold local audit.
     Returns no run/dispatch/admit capability even on an exact match.
     """
     if type(report) is not dict:
-        raise ValueError("a v3 audit dict is required")
+        raise ValueError("a v5 audit dict is required")
     if report.get("schema") != LIFECYCLE_SCHEMA:
-        raise ValueError("only v3 synthetic lifecycles can be witnessed")
+        raise ValueError("only v5 synthetic lifecycles can be witnessed")
     life = _ref(report.get("life_ref"), "audit life")
     genesis = _ref(report.get("genesis_ref"), "audit genesis")
     if (report.get("motor_authority") != "NONE" or
@@ -201,5 +201,15 @@ def verify_fixture(*, fixture: object, witness: IndependentWitness) -> WitnessAu
     from .cognitive_cycle_fixture import CognitiveCycleFixture, SCHEMA as CURRENT
     if (CURRENT != LIFECYCLE_SCHEMA or type(fixture) is not CognitiveCycleFixture
             or fixture.schema != LIFECYCLE_SCHEMA):
-        raise ValueError("exact I2 synthetic v3 fixture required")
-    return compare_audit(report=fixture.audit(), witness=witness)
+        raise ValueError("exact I2 synthetic v5 fixture required")
+    # The witness port is a separate read with no shared transaction.
+    # Catch an intervening *local* commit while the external provider reads;
+    # this is not a lock and cannot close a later race or attest physics.
+    before = fixture.audit()
+    inspection = compare_audit(report=before, witness=witness)
+    after = fixture.audit()
+    if after != before:
+        raise WitnessRefusal(
+            "UNKNOWN", "local synthetic journal changed during external inspection"
+        )
+    return inspection

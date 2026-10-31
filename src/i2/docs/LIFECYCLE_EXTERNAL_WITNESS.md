@@ -1,4 +1,4 @@
-# I2 : audit externe du journal v4 (proposition G2 uniquement)
+# I2 : audit externe du journal v5 (proposition G2 uniquement)
 
 **31 octobre 2026. Protocole de temoin v2, lecture seule, aucune naissance, aucune permission motrice et aucune preuve M11.**
 
@@ -18,7 +18,7 @@ Le module **ne cree aucun service de garde**. Il exige un port `IndependentWitne
 1. `read_verified_latest(life_ref, genesis_ref)` doit selectionner **et verifier dans une operation indivisible** la derniere revision monotone pour cette identite, et retourner un `LatestWitness` structurellement valide. Le port est une exigence contractuelle, sans implementation de service independant.
 2. Le fournisseur doit verifier la signature, la confiance/revocation du signataire, la fraicheur, l'absence d'equivocation et le lien exact entre preuve et champs **sur la meme revision**. Toute indisponibilite ou erreur est classee `UNKNOWN`, sans recours au hash local. L'ancien couple `read_latest`/`verify_latest` est refuse afin d'eviter une course entre deux operations. Les tests injectent un double in-memory sans valeur de securite.
 3. Le controle n'accepte ni un temoin plus recent que le journal local (ancienne copie), ni un journal plus recent que le temoin (publication non encore attestee), ni deux tetes divergentes au meme nombre d'evenements. La fermeture terminale doit coincider exactement.
-4. `verify_fixture(fixture, witness)` exige le vrai banc `CognitiveCycleFixture` sur le contrat v4, effectue l'audit local **avant** de consulter le temoin, et produit uniquement une `WitnessAudit` en lecture seule. La comparaison pure `compare_audit(report, witness)` est exposée pour les tests de contrat ; un dictionnaire fourni arbitrairement ne prouve pas son origine.
+4. `verify_fixture(fixture, witness)` exige le vrai banc `CognitiveCycleFixture` sur le contrat v5, effectue l'audit local **avant** de consulter le temoin, et produit uniquement une `WitnessAudit` en lecture seule. La comparaison pure `compare_audit(report, witness)` est exposée pour les tests de contrat ; un dictionnaire fourni arbitrairement ne prouve pas son origine.
 5. La sortie porte toujours `motor_authority=NONE`, `resumption_authorized=False` et `m11_authenticated=False`, y compris lorsque le temoin concorde sur un etat ouvert. Le statut `MATCHED_OPEN_INSPECTION` **n'autorise aucune reprise**.
 
 ## Scenarios adversariaux

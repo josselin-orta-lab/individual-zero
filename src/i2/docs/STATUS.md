@@ -16,8 +16,10 @@
 
 - [Unified synthetic v5 cycle](COGNITIVE_CONTROL_UNIFIED.md): one local SQLite journal/transaction owner for intent, test UC, Competition/Action Control opinions, terminal seal and H2 feedback.
 - [Delayed credit](DELAYED_CREDIT_STUDY.md) and [test plan](TEST_PLAN.md): artificial input ports and negative controls, **not** established live learning or causal attribution.
-- [External witness](LIFECYCLE_EXTERNAL_WITNESS.md) and [file witness](OPERATOR_FILE_WITNESS.md): can detect some stale/replayed states but **cannot** prove external authenticity, global anti-rollback or authorization to resume a life.
+- [External witness](LIFECYCLE_EXTERNAL_WITNESS.md) and [file witness](OPERATOR_FILE_WITNESS.md): synthetic verification now rejects non-canonical JSONL and a locally moving SQLite head during inspection, but **cannot** prove independent authenticity, global anti-rollback or authorization to resume a life.
 - [I2 contract](../engine.json) has **no entrypoints** and I2 remains absent from the active registry. No test fixture gains motor, physiological, recovery or scientific authority.
+
+Latest G1-only proposal: [publication, anchoring and crash-boundary review](../../../docs/architecture/proposals/i2-publication-boundaries-g1-review-2026-10-31.md). This is a requested independent review, not a runtime implementation or promotion.
 
 ## Next authorized work
 

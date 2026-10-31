@@ -58,7 +58,7 @@ Do not build a complete subsystem if a narrow prototype can already falsify the 
 
 Build only what the EXP needs.
 
-Experimental code does not automatically become reference I0 code.
+Experimental code does not automatically become active-generation reference code. I0 is frozen; I1 is active and I2 research remains non-living until reviewed.
 
 It can remain local to the experiment until evidence supports integration.
 
@@ -103,7 +103,7 @@ The tested approach is not supported under the tested conditions.
 
 ### Integrate
 
-The evidence supports updating the current I0 reference.
+The evidence may justify a reviewed change to the currently active generation, with generation-owned tests and scientific gates.
 
 ### Candidate I(n+1)
 
@@ -156,9 +156,9 @@ Experiment
   |
   +--> positive ------> integrate
                          |
-                         +--> local change: I0
+                         +--> reviewed local change: active I(n)
                          |
-                         +--> structural rupture: candidate I1
+                         +--> structural rupture: candidate I(n+1)
 ```
 
 See [experiments/README.md](../../experiments/README.md) for the experiment record format.

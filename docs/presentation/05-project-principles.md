@@ -24,13 +24,13 @@ Reuse or adapt when doing so preserves the scientific question and keeps the sys
 
 Reference behavior lives in `src/`.
 
-Evidence about that behavior lives in `experiments/`.
+Scientific evidence may live under `experiments/`, `docs/research/` and generation-owned studies, with provenance and verdicts indexed separately from software tests.
 
 This prevents old experimental copies from becoming accidental forks of the reference architecture.
 
 ## 5. Keep infrastructure neutral
 
-The Lab should help run and observe many possible architectures.
+Each generation owns its own Lab and physical world boundary. Read-only tools can compare generations, but cannot share living state or obsolete runtime authority.
 
 If infrastructure begins deciding how cognition works, the boundary is probably wrong.
 
