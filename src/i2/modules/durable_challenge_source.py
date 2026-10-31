@@ -104,11 +104,23 @@ class DurableChallengeSource:
 
         # Separate stable lock inode serializes cooperating readers/writers.
         # Both lock and log live in this non-shared mutable operator domain.
+        # Bootstrap only if both custody files are genuinely new. If a
+        # previously initialized log or lock disappears, refuse rather than
+        # silently creating an empty ledger and admitting an old challenge.
+        # Deleting/rolling back BOTH files is still outside local detection.
+        fresh_lock = False
         try:
-            lock_fd = os.open(
-                self.directory / ".challenge.lock",
-                os.O_CREAT | os.O_RDWR | _FLAGS, 0o600,
-            )
+            try:
+                lock_fd = os.open(
+                    self.directory / ".challenge.lock",
+                    os.O_CREAT | os.O_EXCL | os.O_RDWR | _FLAGS, 0o600,
+                )
+                fresh_lock = True
+            except FileExistsError:
+                lock_fd = os.open(
+                    self.directory / ".challenge.lock",
+                    os.O_RDWR | _FLAGS,
+                )
         except OSError as exc:
             raise ChallengeCustodyError("challenge lock unavailable") from exc
         try:
@@ -116,9 +128,13 @@ class DurableChallengeSource:
             fcntl.flock(lock_fd, fcntl.LOCK_EX)
             self._check_directory()
             try:
+                # New lock must pair with a new log. Existing locks MUST
+                # reopen an existing nonempty log, never recreate one.
+                open_flags = os.O_RDWR | os.O_APPEND | _FLAGS
+                if fresh_lock:
+                    open_flags |= os.O_CREAT | os.O_EXCL
                 log_fd = os.open(
-                    self.directory / "challenges.log",
-                    os.O_CREAT | os.O_RDWR | os.O_APPEND | _FLAGS, 0o600,
+                    self.directory / "challenges.log", open_flags, 0o600,
                 )
             except OSError as exc:
                 raise ChallengeCustodyError("challenge log unavailable") from exc
@@ -129,6 +145,8 @@ class DurableChallengeSource:
                     data = stream.read(_MAX_RECORDS * _LINE_SIZE + 1)
                 if len(data) > _MAX_RECORDS * _LINE_SIZE:
                     raise ChallengeCustodyError("challenge log capacity exhausted")
+                if not fresh_lock and not data:
+                    raise ChallengeCustodyError("empty existing challenge log")
                 seen = self._inspect_log(data)
                 if len(seen) >= _MAX_RECORDS:
                     raise ChallengeCustodyError("challenge log capacity exhausted")
