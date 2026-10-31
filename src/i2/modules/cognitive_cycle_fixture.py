@@ -907,7 +907,7 @@ class CognitiveCycleFixture:
                     update=feedback_update)
                 if feedback_update.new_memory.last_observed_step > claim.capture.step:
                     raise ValueError("H2 learns from future relative to cognitive capture")
-                payload = _h2_transition_map(prior, feedback_update)
+                payload = json.loads(_json(_h2_transition_map(prior, feedback_update)))
                 _h2_replay_transition(payload, old, claim.capture.step)
                 conn.execute("UPDATE feedback SET snapshot_json=? WHERE id=1",
                              (_json(payload["next"]),))
