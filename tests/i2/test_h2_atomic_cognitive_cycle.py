@@ -92,6 +92,20 @@ class AtomicH2Tests(unittest.TestCase):
         self.assertEqual(f.audit()["remaining_synthetic_uc"],20)
         self.assertEqual(f.audit()["committed"],0)
 
+    def test_empty_scorecard_is_read_only_and_nonmotor(self):
+        f=self.make()
+        before=f.audit()
+        first=f.feedback_scorecard()
+        second=CognitiveCycleFixture.reopen(path=self.path,**self.ports).feedback_scorecard()
+        self.assertEqual(first,second)
+        self.assertEqual(first["samples"],0)
+        self.assertIsNone(first["adaptive_mae"])
+        self.assertIsNone(first["historical_mae"])
+        self.assertIsNone(first["persistence_mae"])
+        self.assertEqual(first["motor_authority"],"NONE")
+        self.assertFalse(first["m11_authenticated"])
+        self.assertEqual(f.audit(),before)
+
     def test_v4_fixture_is_not_silently_migrated(self):
         f=self.make()
         with sqlite3.connect(self.path) as conn:

@@ -59,3 +59,7 @@ La mémoire H2 conserve une **fenêtre glissante de 16 observations**, un compte
 ## Intégrité hors échantillon au COMMIT v5
 
 Avant d'accepter un score H2 dans le journal cognitif, le validateur recalcule la prédiction uniquement à partir des différences **antérieures** conservées dans la fenêtre de mémoire, ou de la prévision de base si la fenêtre est vide. Il refuse la substitution d'une prédiction choisie après observation de la conséquence, même si l'erreur rapportée est cohérente avec cette substitution. Il refuse également tout recouvrement entre épisodes d'entraînement et épisodes déclarés hors échantillon. Cela renforce la cohérence du banc G2, sans authentifier les sources ou établir un gain comportemental réel.
+
+## Comparaison auditée du journal H2 (G2)
+
+`CognitiveCycleFixture.feedback_scorecard()` relit le journal v5 après vérification intégrale, et calcule les erreurs absolues moyennes exactes du retour H2, de la prévision historique figée et du dernier résultat observé (référence persistance, avec repli initial vers la prévision historique). Les trois prédictions sont établies uniquement depuis les états antérieurs ou reçus committés, sans utiliser l'issue courante avant son score. La méthode ne crée aucun stockage ni aucune autorité motrice, et expose aussi les résultats défavorables. Les scénarios restent choisis pour la validation logicielle ; ni échantillonnage indépendant ni protocole confirmatoire préenregistré ne sont établis.
