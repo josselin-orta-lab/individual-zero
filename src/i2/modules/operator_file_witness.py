@@ -107,9 +107,15 @@ class OperatorFileWitness:
             raise WitnessStoreError("torn operator witness log")
         latest: dict[str, LatestWitness] = {}
         previous: str | None = None
-        for line in data.splitlines():
+        # Preserve exact bytes, including CRLF. splitlines() erases line
+        # endings and json.loads() silently accepts duplicate JSON keys.
+        # The recorded representation must be unique, not merely a parsed
+        # object that produces the same HMAC under re-serialization.
+        for line in data.split(b"\\n")[:-1]:
             try:
                 row = json.loads(line)
+                if _canonical(row) != line:
+                    raise ValueError("noncanonical operator witness bytes")
                 if (type(row) is not dict or set(row) != _ROW_FIELDS or
                         row["schema"] != STORE_SCHEMA or
                         row["key_id"] != self.key_id or
