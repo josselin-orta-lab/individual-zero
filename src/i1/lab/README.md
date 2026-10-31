@@ -1,81 +1,22 @@
-# Lab
+# I1 Lab: environment, execution and observation
 
-The Lab is **neutral research infrastructure**.
+This directory is **owned by generation I1**, not shared with I0 or I2. The active natural-I1 engine composes its own Lab and runtime; see [I1's engine contract](../engine.json), [runtime map](../docs/STAGES_AND_INTERFACES.md) and [agent instructions](../AGENTS.md).
 
-It runs, observes, measures, and reproduces executions without deciding how I0 should think.
+## What belongs here
 
-## Responsibilities
+I1-specific world and body interfaces, Stage runtime substrate, physical observations, UC accounting, technical journals, reproducible fixtures and read-only research instrumentation. These are **not** permission to feed operator-only or hidden-world information into a born individual. A mechanism under lab/ can participate in an active I1 runtime; do not assume that all files are inert merely because the directory is called Lab.
 
-Typical Lab responsibilities include:
+## Locate the actual execution
 
-- starting and stopping an execution;
-- simulation or environment orchestration;
-- logging and structured event capture;
-- telemetry;
-- metrics collection;
-- seed management;
-- run identifiers;
-- artifact collection;
-- configuration loading;
-- reproduction tooling;
-- timing and performance instrumentation.
+- Active birth and natural runtime: source under [../runtime/](../runtime/) and the entrypoints declared in [../engine.json](../engine.json).
+- Physical boundaries and Stage ownership: [STAGES_AND_INTERFACES.md](../docs/STAGES_AND_INTERFACES.md).
+- Observability and reproducibility: [OBSERVABILITY.md](../docs/OBSERVABILITY.md) and [WORLD_PRESETS.md](../docs/WORLD_PRESETS.md).
+- Tests: [tests/i1](../../../tests/i1/README.md) and the registered validation suites.
 
-## What does not belong here
+## Historical bootstrap files
 
-The Lab should not contain I0-specific:
+Some copied files, including cli.py and early neutral execution examples, still describe the **I0 bootstrap** and may import I0 in those noncanonical paths. The command individual-zero is the historical I0 demonstration, **not** I1's active natural birth. Do not use those examples as I1 runtime instructions or silently activate them. Their future code-level disposition requires a separate inspected change with tests.
 
-- memory policy;
-- affect or motivation;
-- action-selection logic;
-- self-model logic;
-- learning rules;
-- cognitive arbitration;
-- domain-specific decision policy.
+For current placement guidance see [repository placement](../../../examples/repository-placement.md). For the historical CLI see [running the I0 bootstrap](../../../docs/presentation/06-running-the-bootstrap.md).
 
-If moving a piece of code from I0 into the Lab would silently change cognition, it probably does not belong in the Lab.
-
-## Placement test
-
-Ask:
-
-> **Would this code still be useful if we replaced I0 with I1 or a competing architecture?**
-
-If yes, it is a good Lab candidate.
-
-## Example
-
-A logger that records which memory item was recalled belongs in the Lab.
-
-The rule that decides **which** memory item should be recalled belongs in I0.
-
-A timing tool that measures action-selection latency belongs in the Lab.
-
-The action-selection mechanism belongs in I0.
-
-## Scientific impact
-
-Improving Lab observability does not normally require an EXP when behavior is unchanged.
-
-If instrumentation changes timing, state, available information, or another property that can alter the studied behavior, treat the impact explicitly and create an EXP when necessary.
-
-See [the placement examples](../../examples/repository-placement.md).
-
-## Current bootstrap implementation
-
-The first executable Lab includes:
-
-- `runtime.py`: neutral execution loop and run summary;
-- `events.py`: structured event record;
-- `sinks.py`: in-memory and JSONL event sinks;
-- `scenarios.py`: scenario contract plus a deterministic technical smoke scenario;
-- `cli.py`: command-line bootstrap runner.
-
-The smoke scenario is not a scientific benchmark. It exists only to prove that the execution and observation path works.
-
-Run it with:
-
-```bash
-individual-zero --cycles 3 --seed 0
-```
-
-See [Running the bootstrap](../../docs/presentation/06-running-the-bootstrap.md).
+**Rule:** I1 owns its actual WorldBody, cognition, UC, state and authenticated M11 contract. No shared active src/lab, no obsolete-engine fallback, no borrowed living state. Software tests alone do not demonstrate autonomous learning.

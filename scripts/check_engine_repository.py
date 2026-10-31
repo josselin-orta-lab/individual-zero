@@ -15,6 +15,19 @@ def git(*args):
     return subprocess.check_output(["git", *args], cwd=ROOT, text=True).strip()
 
 
+def unexpected_workflows(paths, *, active_ci: str) -> list[str]:
+    """Allow explicitly reviewed active-generation checks, not archived I0 jobs.
+
+    I2 has an inert proposal-only test workflow; it does not activate I2.
+    """
+    allowed = {
+        active_ci, "i0-archive-manual.yml", "engine-structural.yml",
+        "i1-preset-worlds.yml", "i2-proposal-safety.yml",
+    }
+    return sorted(path.name for path in paths
+                  if not path.name.startswith("i1-") and path.name not in allowed)
+
+
 def check():
     errors = []
     registry = json.loads((ROOT / "config/engine-registry.json").read_text())
@@ -79,10 +92,9 @@ def check():
         if not (ROOT / active[key]).exists():
             errors.append("I1 missing " + key + ": " + active[key])
     old = sorted((ROOT / ".github/workflows").glob("*.yml"))
-    allowed = set([Path(active["ci"]).name, "i0-archive-manual.yml", "engine-structural.yml", "i1-preset-worlds.yml"])
     if Path(active["ci"]).name not in {p.name for p in old}:
         errors.append("missing active I1 workflow")
-    unexpected = [x.name for x in old if not x.name.startswith("i1-") and x.name not in allowed]
+    unexpected = unexpected_workflows(old, active_ci=Path(active["ci"]).name)
     if unexpected:
         errors.append("unarchived historical workflows: " + ", ".join(unexpected))
     result = {"status": "FAIL" if errors else "PASS", "active_generation": registry["active_generation"],

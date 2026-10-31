@@ -13,6 +13,10 @@ If you are discovering the project, begin with `presentation/`:
 
 These files are intentionally short and should remain understandable without reading the entire technical specification.
 
+## Agent route and generation ownership
+
+For task-oriented agents start at [agent navigation](engineering/AGENT_NAVIGATION.md); [I1's handbook](../src/i1/docs/README.md) documents the active engine, and [I2's handbook](../src/i2/docs/README.md) documents non-living proposal fixtures. Their own `docs/STATUS.md` files hold short current summaries; `STATUS_HISTORY.md` preserves earlier updates. Global documentation does not override generation-owned source or contracts.
+
 ## Documentation areas
 
 ### `presentation/`
@@ -55,11 +59,11 @@ An ADR records a shared decision after the evidence exists. It does not replace 
 
 ## Evidence location
 
-The documentation directory explains the project. Scientific evidence belongs in `../experiments/`.
+The documentation directory explains the project. Scientific evidence may be recorded in generation-owned studies and under `research/` as well as formal `../experiments/` records. Locate it via the active [evidence matrix](../src/i1/docs/EVIDENCE_MATRIX.md) and original provenance, not by assuming an empty `experiments/` index means no studies.
 
 Reusable comparison protocols belong in `../benchmarks/`.
 
-The live map of questions and experiments belongs in `../RESEARCH_MAP.md`.
+The [research map](../RESEARCH_MAP.md) defines research axes and planning templates; it is **not** a live census. For current questions and work, consult [GitHub issues](https://github.com/josselin-orta-lab/individual-zero/issues), the active generation's evidence matrix, and the original dated study records.
 
 ## Licensing
 

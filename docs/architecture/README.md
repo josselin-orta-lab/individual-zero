@@ -28,7 +28,7 @@ Those belong in `../../experiments/`, `../../src/`, or research discussion respe
 
 I0, I1, I2, and later names represent **architectural generations**, not ordinary software versions.
 
-Software can evolve inside I0 while the fundamental architecture remains compatible.
+I0 is frozen; **I1 is the active generation** and I2 is a separate unregistered proposal. Software may evolve inside an active generation without forcing a successor, but no generation may depend on an obsolete runtime.
 
 A new generation should be considered only when all three conditions are supported:
 
@@ -45,23 +45,23 @@ For the current French documentation:
 0. [MVP v1.3.1 migration target](reference/fr/mvp-specification-v1.3.1.md) **retains the full causal journal**, independently audits its complete export and makes Oracle/Bench optional observers.
 1. [Normative MVP v1.2.1](reference/fr/mvp-specification-v1.2.1.md) is the historical Stage 10/11 development baseline; [v1.3.0](reference/fr/mvp-specification-v1.3.0.md) is a superseded proposal.
 2. [Conceptual architecture v2](reference/fr/architecture-v2.md) is the broader conceptual and scientific architecture.
-3. Repository-specific notes such as the I0 overview and bootstrap runtime document the current codebase and must remain consistent with the normative MVP specification.
+3. I0 overview and bootstrap documents describe **historical I0 scope**. For active I1 use its [generation handbook](../../src/i1/docs/README.md), [engine contract](../../src/i1/engine.json) and executable code; for I2 use its [proposal handbook](../../src/i2/docs/README.md). Historical MVP specifications do not automatically govern later generations.
 
-When a conceptual statement and an implementation rule differ, implementation work follows the normative MVP specification for the scope of the MVP.
+When concepts, generation contracts and code disagree, determine their generation and version before acting. Historical MVP specifications govern their documented historical scope only, never silently override current I1 or activate I2.
 
 English equivalents use the same filenames under `reference/en/`. The language lives in the directory, while the basename and document version remain stable across translations.
 
 ## Repository architecture documents
 
-- [I0 overview](I0_OVERVIEW.md): concise description of the current I0 reference boundary.
+- [I0 overview](I0_OVERVIEW.md): historical description of I0, not the active I1 boundary.
 - [Bootstrap runtime boundary](BOOTSTRAP_RUNTIME.md): executable bootstrap architecture and its deliberately non-cognitive boundary.
 - [Individual template](INDIVIDUAL_TEMPLATE.md): structure for future generation manifests.
 
 ## Example
 
-Replacing one memory implementation behind a stable interface may remain inside I0 if the architecture does not change.
+Replacing a memory implementation behind a stable interface may remain inside active I1 if the architecture does not change and scientific impacts are handled. I0 remains frozen.
 
-Changing the role of memory in the global cycle, the contract shared with action selection, and the timing assumptions across several modules may become a candidate I1 if experiments justify it.
+Changing the role of memory in the global cycle, the contract shared with action selection, and the timing assumptions across several modules may become a candidate I2 if evidence and explicit architectural review justify it; this does not make I2 executable.
 
 ## Decision trail
 

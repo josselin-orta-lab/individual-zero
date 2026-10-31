@@ -18,6 +18,16 @@ class EngineToolingTests(unittest.TestCase):
         self.assertEqual(report["active_generation"], "I1")
         self.assertEqual(report["archived"], {"workflows": 127, "tests": 297})
 
+    def test_proposal_ci_not_misclassified_as_archived_i0(self):
+        from scripts.check_engine_repository import unexpected_workflows
+
+        active = "i1-current-ci.yml"
+        workflows = [Path(".github/workflows/" + name) for name in
+                     ("i1-current-ci.yml", "i2-proposal-safety.yml",
+                      "engine-structural.yml", "stage9-historical.yml")]
+        self.assertEqual(unexpected_workflows(workflows, active_ci=active),
+                         ["stage9-historical.yml"])
+
     def test_original_engine_sources_are_present(self):
         self.assertFalse((ROOT / "src/lab").exists())
         self.assertTrue((ROOT / "archive/i0/lab/__init__.py").is_file())

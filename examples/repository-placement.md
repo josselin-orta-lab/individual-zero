@@ -1,57 +1,27 @@
-# Repository placement examples
+# Repository placement examples (generation-aware)
 
-These examples are fictional and exist only to explain placement.
+These are **fictional** examples, not evidence or current implementation claims. First inspect `config/engine-registry.json` and the intended generation's `engine.json`. [Agent navigation](../docs/engineering/AGENT_NAVIGATION.md) explains the authority hierarchy.
 
-## Example 1: add a cycle timer
+## 1. Measure an active I1 cycle
 
-Goal: measure how long each I0 cycle takes.
+Place generation-specific read-only instrumentation under `src/i1/lab/` or its owning runtime as appropriate; tests under `tests/i1/`. Do not introduce a shared active `src/lab/`. An EXP is needed only if the measurement is part of a scientific claim or expected to alter studied behavior.
 
-Placement:
+## 2. Change how I1 recalls memories
 
-- timing instrumentation: `src/lab/`;
-- test for timer output format: `tests/`;
-- EXP only if timing instrumentation itself can alter studied behavior.
+Inspect `src/i1/docs/MEMORY_AND_LEARNING.md` and the specific source owner. Change the minimal I1 module, add targeted `tests/i1/` regressions and preregister a scientific comparison when a behavioral claim is made. The historical I0 source is frozen.
 
-Reason: timing is observation infrastructure, not cognition.
+## 3. Study a possible successor mechanism
 
-## Example 2: change memory recall priority
+Keep non-living research code in `src/i2/` and tests in `tests/i2/`, with a clear hypothesis, negative cases and no I1 runtime import. A passing synthetic fixture does not authorize a born I2 or M11 recovery.
 
-Goal: change which memory item I0 prefers to recall.
+## 4. Integrate an external memory package
 
-Placement:
+Put API translation in `src/adapters/`, but keep cognitive policy and first-person memory ownership inside the target generation. Document license, trust boundary, provenance and an EXP if behavior or interpretation changes.
 
-- mechanism: `src/i0/`;
-- scientific comparison: `experiments/EXP-####/`;
-- reusable recall benchmark, if shared: `benchmarks/`.
+## 5. Fix a logging defect
 
-Reason: the change directly affects cognitive behavior.
+Edit the specific generation-owned logging component or external observer and add a local regression. Do not change cognition, identity or M11 custody merely to simplify a log.
 
-## Example 3: integrate an external memory package
+## 6. Change a generation-wide interface
 
-Goal: use an external package that exposes vector retrieval.
-
-Placement:
-
-- I0 memory role/interface: `src/i0/interfaces/`;
-- API translation: `src/adapters/<package>/`;
-- integration tests: `tests/`;
-- EXP if the package can alter reference recall behavior.
-
-## Example 4: correct a malformed log line
-
-Placement:
-
-- fix: `src/lab/`;
-- regression test: `tests/`;
-- no EXP unless the malformed logging also changed execution behavior.
-
-## Example 5: redefine a shared cognitive interface
-
-Start with an EXP if the interface change can alter behavior or interpretation.
-
-If evidence supports a shared structural change:
-
-- implementation: `src/i0/`;
-- evidence: `experiments/`;
-- shared decision: `docs/decisions/ADR-####-...`;
-- architecture docs updated after the decision.
+Record the question and evidence, review an ADR when applicable, then change only the authorized generation's contracts and tests. New generations are autonomous by [ADR-0001](../docs/decisions/ADR-0001-strict-generation-autonomy.md); never retain obsolete runtime fallback modes.

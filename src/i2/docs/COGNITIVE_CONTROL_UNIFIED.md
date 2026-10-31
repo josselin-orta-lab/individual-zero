@@ -22,7 +22,7 @@ L'audit froid rejoue la chaîne, le compte UC, l'intention, les possibilités re
 | Contrôles de cohérence, de fraîcheur déclarée et veto synthétiques | Pas de témoin indépendant garantissant provenance, fraîcheur et absence de rollback global |
 | Terminal absorbant local et vérification de copies | Pas de mort physiologique ni d'autorité de naissance |
 | Avis Competition lié à une capture, sans autorité motrice | Pas de commande admise ni d'effet WorldBody |
-| Études H2 séparées pouvant influencer les valeurs de test | **La mémoire H2 n'est pas encore publiée atomiquement dans ce journal** |
+| Études H2 séparées pouvant influencer les valeurs de test | La mémoire H2 est publiée dans le même COMMIT **synthétique v5**, sans M11 ni preuve physique |
 
 Les sources de preuve sont des doubles injectés. Un SHA-256 local n'est pas une signature M11. Une copie intégralement réécrite peut rester cohérente en interne. Rejouer le fichier à chaque transaction coûte O(N), acceptable seulement pour ce banc. Le résultat conserve toujours `motor_authority=NONE`.
 

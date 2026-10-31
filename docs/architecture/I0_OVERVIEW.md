@@ -1,5 +1,7 @@
 # I0 overview
 
+> **Historical I0 document.** This describes the original bootstrap/reference research stage, not the present active I1 engine. Current navigation: [engine generations](ENGINE_GENERATIONS.md) and [I1 handbook](../../src/i1/docs/README.md).
+
 ## Status
 
 I0 is the first integrated reference architecture planned for Individual Zero.

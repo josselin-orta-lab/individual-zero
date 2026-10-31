@@ -1,82 +1,41 @@
-# Individual Zero: instructions for development agents
+# Instructions for development agents
 
-These instructions govern work on this repository, not the cognitive rules
-of a living individual. Before acting, read:
-1. `config/engine-registry.json` and the active `src/iN/engine.json`.
-2. `src/iN/docs/README.md`, `src/iN/docs/STATUS.md` and the engine's own theoretical handbook.
-3. `docs/engineering/START_HERE.md` and relevant ADRs.
-4. The real GitHub branch HEAD, open PR dependencies and latest CI; never
-   assume status from a previous conversation or a dated report.
+This file governs **repository work**, never the mind, values or behavior of a born individual. Read only the context relevant to the task; do not reconstruct the project from hundreds of historical pull requests.
 
-## Isolation and source of truth
+## Start in this order
 
-- I0 is a frozen reference: `src/i0/` and `archive/i0/lab/` may NOT be
-  rewritten as part of an I1 campaign. The original archive is SHA-pinned.
-- Every generation owns its Lab. I1 uses `src/i1/lab/`, runtime
-  `src/i1/runtime/` and cognitive modules `src/i1/modules/`.
-  Never recreate a shared production `src/lab/`. Restore it in an
-  isolated test checkout only for legacy I0 compatibility.
-- I1 is active. I2 is not registered or activated. Never create a living
-  generation from a skeleton alone or carry over individual memory, safety
-  labels, weights, or historical experimental results as normative truth.
-- `engine.json` specifies declared interfaces and obligations; the runtime
-  and real evidence establish actual behavior. The global registry indexes
-  registered generations. Update both together and run the structural guard.
-- I1 currently builds the isolated import namespace `i1lab` using
-  `scripts/build_i1_fork.py`. Do not rename persistence modules or rewrite
-  born identities without explicit compatibility, M11 cold-recovery, and
-  generated-artifact parity evidence.
+1. Read [the agent navigation map](docs/engineering/AGENT_NAVIGATION.md) and `config/engine-registry.json` to establish the **active generation**.
+2. Read the chosen generation's `engine.json`, its `AGENTS.md` (if present), and its own `docs/README.md` and `docs/STATUS.md`.
+3. Read [ADR-0001](docs/decisions/ADR-0001-strict-generation-autonomy.md) and only the contracts, tests and evidence relevant to the affected boundary.
+4. Inspect **live** GitHub main/branch HEAD, open issues, dependent PRs and the checks for the **exact** commit. Dated reports are snapshots, not live branch state.
 
-## Invariants that must never be bypassed
+## Authority and evidence, never interchangeable
 
-- The individual learns only from its own observable experience, bodily
-  needs, temperament and lived history. No oracle, hidden hazards, unearned
-  prebirth knowledge or forced action choices.
-- Death is irreversible. No restoration of a living individual's previous
-  cognitive or physical state, no resurrection and no postmortem stepping.
-- M11 must refuse uncertain or noncanonical generations, unregistered
-  owners, contradictory publications and unfinished durable intent.
-- Account for UC expenditure honestly. Do not disable cognition, protection
-  layers, owners, learning or testing to obtain green CI.
-- H1/H2 and older experimental cohorts are not scientific oracles for the
-  current natural I1. Old evidence is historical, never acceptance criteria
-  for emergent I1 behavior.
+| Question | Primary authority |
+| --- | --- |
+| Which engine is active? | `config/engine-registry.json` |
+| What can run? | Generation-owned `engine.json` **plus executable source** |
+| What is architecturally allowed? | Accepted ADRs and generation contracts |
+| What has been software-tested? | Tests and CI on a specific commit SHA |
+| What has been observed or scientifically established? | Current generation's evidence index, preregistration, traces, controls and explicit scientific verdict |
 
-## Workflow for each implementation
+If documentation conflicts with executable source, identify the discrepancy rather than inventing behavior. Historical studies cannot certify the current engine.
 
-1. Verify scope: engine, files, contract, baseline SHA and PR dependencies.
-2. Open one focused PR or commit series. State expected causal and durability
-   impacts, including what must stay unchanged.
-3. Add tests for the changed invariants (normal, negative and failure cases),
-   and update `docs/engines/iN/STATUS.md` with outstanding risks.
-4. For I1 run:
-   `python scripts/check_engine_repository.py --json`
-   `python scripts/check_engine_contracts.py --json`
-   `python -m unittest discover -s tests/i1 -p 'test_*.py' -v`
-   `python scripts/test_i1_ci.py --mode smoke --seed 246`
-   `python scripts/test_i1_ci.py --mode full --seed 247`
-   and the M11 / generated-output regression tests on GitHub.
-5. Check Python 3.11 AND 3.12 Actions for the exact new commit, preserve
-   provenance and report blockers. Do not claim a merge or success on an
-   untested SHA. Integrate stacked PRs strictly in dependency order.
-6. Separate software, behavioral and scientific results. Green tests prove
-   their tested properties only, not consciousness or scientific GO.
+## Non-negotiable boundaries
 
-## Future engines
+- **I0** (`src/i0/`, `archive/i0/`) is frozen: do not rewrite its bytes during another generation's work.
+- **I1** is active and owns `src/i1/lab/`, `runtime/`, `modules/`, born identity and authenticated M11 persistence. The existing generated `i1lab` namespace belongs to I1 and must not be renamed casually.
+- **I2** is a **proposal with synthetic test fixtures**, not a registered, executable or born individual. Never give its test opinions motor or recovery authority.
+- [ADR-0001](docs/decisions/ADR-0001-strict-generation-autonomy.md): generations own their own cognition, Lab/WorldBody, UC, state, M11 and contracts. Parent lineage is historical; no inherited live memory, old-runtime fallback, resurrection, or silent schema migration.
+- First-person observations only, no hidden-world oracle, no forced actions, no free UC, no bypass of Action Control. Death is irreversible; uncertain or terminal M11 state cannot be restored.
+- A green test or plausible survival is **not** a scientific GO.
 
-Use `python tools/new_engine.py --generation I2 --parent I1 --output <dir>`
-for a no-write preview. Explicit `--apply` only creates a *proposal* scaffold;
-it does NOT register, activate, import or instantiate I2. Each generation needs
-an independent Lab, source, contracts, tests, CI and new scientific evidence.
+## Change workflow and handoff
 
-## Read-only promotion assessment
+1. Record generation, task/issue, baseline SHA, intended files, dependency chain, invariants, expected behavioral impact and limits **before** editing.
+2. Use a focused change. Distinguish documentation/technical fixes from behavioral changes requiring scientific justification. Keep proposals inert until promotion is explicitly authorized.
+3. Verify the narrowest relevant static checks or software tests locally first. For I1 runtime changes, use the suites declared in `src/i1/engine.json` plus M11, generated-output parity and Python 3.11/3.12 CI **when affected**. For I2 fixtures use `src/i2/docs/TEST_PLAN.md`.
+4. Avoid expensive repeated Actions runs for intermediate documentation commits; request heavy scientific / full CI only when required by the actual scope and promotion gates. Never skip mandatory checks to get a green badge.
+5. Handoff: exact commit SHA; files changed; checks PASS / FAIL / NOT_RUN and reason; actual observed behavior; scientific gate; open issues and next independent step.
 
-For future I2+ proposals run `python tools/assess_engine_proposal.py --generation I2 --json`. It does not register or activate an engine. Review `docs/engineering/ENGINE_PROMOTION.md`; an assessment containing all structural checks is still NOT a scientific GO or authorization to instantiate a life.
-
-## Generation-owned knowledge
-
-I1's canonical theory, mechanism map, evidence statuses, development playbook and observer instructions live under `src/i1/docs/`, next to the motor. Future generations follow `src/iN/docs/`. The cross-generation `docs/engineering/` directory holds shared tooling procedures only. Do not elevate a proposed scientific mechanism into I1 policy without new first-person evidence and explicit tests.
-
-## Binding rule for all future generation development (ADR-0001)
-
-Read [ADR-0001](docs/decisions/ADR-0001-strict-generation-autonomy.md) before modifying an engine. Every new generation is **fully autonomous**: its own runtime, Lab/WorldBody, cognition, UC Scheduler, safety, M11, durable identities, tests and contracts. The `parent` field is historical lineage only. **Never import, execute, delegate to, or fall back to an obsolete engine or maintain old runtime modes/schemas.** No shared mutable owners, inherited memory, silent migration or resurrection. Archived generations may be read for research or controlled cross-generation comparison, never used as a runtime dependency. General infrastructure helpers are permitted only when they own no active cognition, state, physics, UC or M11. Preserve the currently active I1 and its existing born identities. In every future PR verify these boundaries and add targeted negative tests; do not treat a software pass as scientific GO.
+For documentation-only work use `python tools/check_repo_navigation.py --scope entrypoints` when available. It is a structural check, **not** a test of cognition.
