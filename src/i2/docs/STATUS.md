@@ -4,7 +4,7 @@
 
 - **G0 I1 PARTIAL** : reference source au SHA `1e19f02db14b64a35f8bb014d69cc061f311002c` ; branche d'archive non protegee et archives M11 historiques non auditees publiquement par un tiers.
 - **G1 REVIEW_REQUIRED** : revue architecturale/scientifique et contrats de coordination des proprietaires d'etat toujours ouverts (#662).
-- **G2 prototypes isoles** : continuite des intentions, provenance/UC via ports synthetiques, reconstruction des candidats, Competition, revue Action Control, banc SQLite cognitif unifie v1/v2 et origine/terminal synthetiques v3. Nouvelle `lifecycle_external_witness.py` : audit en lecture seule confrontant une tete locale v3 au **dernier** etat revendique par un port independant. Detecte les anciennes copies et bifurcations seulement si la fraicheur et l'authenticite du port sont garanties. Voir [LIFECYCLE_EXTERNAL_WITNESS.md](LIFECYCLE_EXTERNAL_WITNESS.md).
+- **G2 prototypes isoles** : continuite des intentions, provenance/UC via ports synthetiques, reconstruction des candidats, Competition, revue Action Control, banc SQLite cognitif unifie v4 uniquement (modes v1/v2/v3 supprimes). Nouvelle `lifecycle_external_witness.py` : audit en lecture seule confrontant une tete locale v3 au **dernier** etat revendique par un port independant. Detecte les anciennes copies et bifurcations seulement si la fraicheur et l'authenticite du port sont garanties. Voir [LIFECYCLE_EXTERNAL_WITNESS.md](LIFECYCLE_EXTERNAL_WITNESS.md).
 - **G3 NOT_ESTABLISHED** : pas de vraie source M11 signee, autorite de naissance/mort physiologique, Scheduler UC ou WorldBody raccorde. Le temoin de tests est en memoire, **non independant et non signe** ; aucune preuve de non-resurrection globale ni de COMMIT distribue. Aucun controle moteur vivant.
 - **G4-G6 NOT_STARTED** : aucun protocole I2 confirmatoire final, vie, cohorte, promotion ou preuve de gain adaptatif.
 
@@ -39,3 +39,5 @@ I1 reste seul actif dans `config/engine-registry.json`, I2 n'a aucun point d'ent
 - **G2 contrat de transition H2 (31/10)** : `feedback_transition_contract.py` valide le couple ancien/nouveau snapshot H2 et sa chaine avant un futur COMMIT unique. Les tests ciblent CAS perime, rejeu, changement d'identite et tetes falsifiees. Aucun branchement SQLite de cette memoire n'est encore realise : G3 `NOT_ESTABLISHED`.
 
 - **G2 garde de score H2 (31/10)** : le contrat de transition rejette maintenant les scores hors échantillon contrefaits, incohérents, dupliqués ou déclarant des privilèges M11/moteur. Cette PR ne modifie pas le schéma SQLite : l'insertion atomique de H2 avec les UC et les événements reste non établie, et exige une évolution de schéma/rejeu étudiée séparément.
+
+- **Refonte sans modes anciens (31/10)** : un seul contrat cognitif/contrôle/terminal synthétique v4, origine et ports obligatoires. Relecture des bases v1/v2/v3 interdite, pas de migration. La mémoire H2 n'est pas encore dans ce COMMIT ; G3 `NOT_ESTABLISHED`.
