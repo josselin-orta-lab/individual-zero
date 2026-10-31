@@ -10,7 +10,7 @@ Source : `src/i2/modules/cognitive_cycle_fixture.py`. Vérifications : `tests/i2
 
 ## Problème scientifique et technique
 
-Les bancs antérieurs `intention_atomic_fixture.py` et `competition_transaction_fixture.py` vérifient chacun une transaction **différente**. Leur combinaison naïve ne serait pas atomique : après paiement de l'intention mais avant publication Competition, une interruption laisserait deux propriétaires de faits contradictoires. Le présent banc **ne crée pas un troisième détenteur de la vérité d'une vie** : il démontre seulement une transaction unique, dans une base SQLite jetable, qui regroupe leurs calculs **synthétiques**.
+Les anciens bancs SQLite autonomes d'intention, Competition et Action Control ont été **supprimés**. Le seul banc transactionnel courant est `cognitive_cycle_fixture.py` v4 ; les fonctions nécessaires de sérialisation et de rejeu lui appartiennent. Il regroupe leurs calculs **synthétiques** dans une unique transaction locale, sans être le propriétaire d'une vie physique réelle.
 
 ## Contrat effectivement testé
 
