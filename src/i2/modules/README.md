@@ -1,7 +1,8 @@
-# I2 : modules (candidats, non exécutables)
+# I2 : modules expérimentaux isolés, sans naissance ni autorité motrice
 
-- `intention_continuity.py` : propriétaire pur d'intention sémantique, sans option ni commande.
-- `intention_ingress.py` : contrat à deux ports (observation et débit UC externes), sans preuve actuelle d'atomicité inter-ledgers.
-- `intention_atomic_fixture.py` : **banc SQLite local** : une seule transaction regroupe un budget de test, l'intention et le journal ; des injections vérifient rollback, COMMIT et rejeu. Il n'est pas le Scheduler, M11, ni une vie I2.
+- `intention_continuity.py` : propriétaire d'une intention sémantique ; conserve/suspend/invalide sans action.
+- `intention_ingress.py` : admission par deux ports externes d'observation et de débit UC, non authentifiés par I2.
+- `intention_atomic_fixture.py` : banc SQLite local qui regroupe débit **synthétique**, intention et journal dans un COMMIT ; ni Scheduler réel ni M11.
+- `option_reconstruction.py` : fonction pure de candidats sémantiques **uniquement visibles dans la capture courante**. L'intention apporte au plus une référence de contexte ; aucun score, ordre de commande, accumulateur ou veto n'est transmis. Tous les candidats doivent être réévalués ultérieurement.
 
-Ces modules ne constituent ni un moteur I2, ni Action Control, ni une preuve scientifique. Voir `../docs/INTENTION_ATOMIC_FIXTURE.md`, `../docs/INTENTION_INGRESS.md` et `../docs/INTENTION_CONTINUITY.md`.
+Ces modules ne sont ni un moteur I2 vivant, ni une implémentation de Competition/Action Control, ni une preuve d'apprentissage. Documentation : `../docs/OPTION_RECONSTRUCTION.md`, `../docs/INTENTION_ATOMIC_FIXTURE.md`, `../docs/INTENTION_INGRESS.md` et `../docs/INTENTION_CONTINUITY.md`.
