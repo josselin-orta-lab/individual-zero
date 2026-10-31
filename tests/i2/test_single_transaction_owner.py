@@ -29,7 +29,7 @@ class SoleOwnerTests(unittest.TestCase):
                 imported.update(alias.name.split(".")[-1] for alias in node.names)
         self.assertFalse(obsolete & imported)
         self.assertEqual(current.SCHEMA,
-                         "i2-unified-cognitive-lifecycle-fixture-v4")
+                         "i2-unified-cognitive-lifecycle-feedback-fixture-v5")
 
     def test_no_second_sqlite_owner_in_i2_modules(self):
         package = ROOT / "src" / "i2" / "modules"
