@@ -43,3 +43,5 @@ I1 reste seul actif dans `config/engine-registry.json`, I2 n'a aucun point d'ent
 - **Refonte sans modes anciens (31/10)** : un seul contrat cognitif/contrôle/terminal synthétique v4, origine et ports obligatoires. Relecture des bases v1/v2/v3 interdite, pas de migration. La mémoire H2 n'est pas encore dans ce COMMIT ; G3 `NOT_ESTABLISHED`.
 
 - **Nettoyage du noyau I2 (31/10)** : les trois transactions SQLite autonomes historiques (intention, Competition et garde Action Control) et leurs suites dédiées ont été supprimées. Le cycle v4 contient désormais lui-même les fonctions de sérialisation et de rejeu requises ; plus aucun import d'un ancien banc transactionnel. Les mécanismes purs, H2 et les témoins expérimentaux restent disponibles. G3 toujours `NOT_ESTABLISHED`.
+
+- **Consolidation documentaire G2 (31/10)** : documents du mode cognitif v1 et modèle CI inerte retirés ; contrat v4 et plan de tests alignés sur la CI existante. Nouveau test structurel interdisant un second import SQLite dans les modules I2. Les travaux H2 et témoins sont conservés ; G3 reste `NOT_ESTABLISHED`.

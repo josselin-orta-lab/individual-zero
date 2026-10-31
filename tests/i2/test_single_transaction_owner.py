@@ -31,6 +31,30 @@ class SoleOwnerTests(unittest.TestCase):
         self.assertEqual(current.SCHEMA,
                          "i2-unified-cognitive-lifecycle-fixture-v4")
 
+    def test_no_second_sqlite_owner_in_i2_modules(self):
+        package = ROOT / "src" / "i2" / "modules"
+        for path in package.glob("*.py"):
+            if path.name == "cognitive_cycle_fixture.py":
+                continue
+            with self.subTest(module=path.name):
+                parsed = ast.parse(path.read_text())
+                imported = set()
+                for node in ast.walk(parsed):
+                    if isinstance(node, ast.Import):
+                        imported.update(alias.name.split(".")[0] for alias in node.names)
+                    if isinstance(node, ast.ImportFrom) and node.module:
+                        imported.add(node.module.split(".")[0])
+                self.assertNotIn("sqlite3", imported)
+                self.assertNotIn("apsw", imported)
+                self.assertNotIn("pysqlite3", imported)
+
+    def test_retired_docs_and_unused_workflow_are_absent(self):
+        docs = ROOT / "src" / "i2" / "docs"
+        self.assertFalse((docs / "COGNITIVE_CYCLE_FIXTURE.md").exists())
+        self.assertFalse((docs / "CI_WORKFLOW_TEMPLATE.yml").exists())
+        current_docs = (docs / "COGNITIVE_CONTROL_UNIFIED.md").read_text()
+        self.assertIn(current.SCHEMA, current_docs)
+
     def test_v4_still_owns_necessary_serialization_and_replay(self):
         for name in (
             "_claim_map", "_parse_claim", "_request", "_frame_map",

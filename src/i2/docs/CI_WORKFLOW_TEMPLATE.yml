@@ -1,8 +1,0 @@
-# Exemple inerte, NE PAS installer dans .github/workflows
-name: I2 structure proposal (not installed)
-on:
-  pull_request:
-    paths:
-      - 'src/i2/**'
-      - 'tests/i2/**'
-# Aucune CI I2 executee ou autorisee par ce document.
