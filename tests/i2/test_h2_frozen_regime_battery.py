@@ -47,7 +47,8 @@ ACK_LOST = ("abrupt_reversal", 14)
 
 
 class FrozenH2Battery(unittest.TestCase):
-    def run_regime(self, label, outcomes):
+    def run_regime(self, label, outcomes, *, return_shadow=False,
+                   fault_index=None, lost_ack_index=None):
         with tempfile.TemporaryDirectory() as folder:
             old = empty_feedback_memory(opportunity(START_STEP))
             life = old.life_ref
@@ -89,7 +90,8 @@ class FrozenH2Battery(unittest.TestCase):
                     f"source:battery:{label}:{step}", (evidence,),
                 )
 
-                if (label, i) == PRECOMMIT_FAULT:
+                if ((label, i) == PRECOMMIT_FAULT or
+                        (fault_index is not None and i == fault_index)):
                     before = owner.audit()
                     with self.assertRaises(FaultInjected):
                         owner.observe(
@@ -105,7 +107,8 @@ class FrozenH2Battery(unittest.TestCase):
                         ttl_steps=12, feedback_previous=old,
                         feedback_update=update,
                     )
-                elif (label, i) == ACK_LOST:
+                elif ((label, i) == ACK_LOST or
+                      (lost_ack_index is not None and i == lost_ack_index)):
                     with self.assertRaises(CommitAcknowledgmentLost):
                         owner.observe(
                             claim=capture, feedback_previous=old,
@@ -200,7 +203,7 @@ class FrozenH2Battery(unittest.TestCase):
                 sum((row["adaptive_error"] for row in report["rows"]), Fraction(0))
                 / SAMPLES_PER_TRIAL,
             )
-            return report
+            return (report, shadow) if return_shadow else report
 
     def test_all_frozen_regimes_are_reported_including_losses(self):
         self.assertEqual(TRIALS, 5)
