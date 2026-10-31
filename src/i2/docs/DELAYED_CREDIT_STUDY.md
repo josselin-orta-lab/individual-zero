@@ -55,3 +55,7 @@ La mémoire H2 conserve une **fenêtre glissante de 16 observations**, un compte
 ## Contrat de transition H2 vers un COMMIT unique (G2)
 
 `feedback_transition_contract.py` valide purement une transition de memoire depuis le digest exact de l'etat precedent : identite et but inchanges, progression de version d'une unite, avancee du pas physique, journal chaîné et references des nouveaux resultats. Refus du rejeu, de l'ancien digest, du score altere et d'un droit moteur. Il s'agit **uniquement d'un validateur**, sans colonne, table, commit, reprise ni source M11 : l'owner transactionnel unique n'est PAS encore branche a ce contrat. Une mise a jour de memoire par un port synthetique ne demontre pas son origine physique.
+
+## Intégrité hors échantillon au COMMIT v5
+
+Avant d'accepter un score H2 dans le journal cognitif, le validateur recalcule la prédiction uniquement à partir des différences **antérieures** conservées dans la fenêtre de mémoire, ou de la prévision de base si la fenêtre est vide. Il refuse la substitution d'une prédiction choisie après observation de la conséquence, même si l'erreur rapportée est cohérente avec cette substitution. Il refuse également tout recouvrement entre épisodes d'entraînement et épisodes déclarés hors échantillon. Cela renforce la cohérence du banc G2, sans authentifier les sources ou établir un gain comportemental réel.
