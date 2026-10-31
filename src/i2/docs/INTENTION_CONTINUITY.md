@@ -22,7 +22,7 @@ La suite comprend les gardes du squelette non enregistré et 17 tests du propri�
 
 - G0 : protection contre suppression/réécriture de la branche archive I1 et conservation indépendante auditable restent à attester.
 - G1 : revue architecturale et scientifique substantielle encore nécessaire.
-- G2 : aucune boucle cognitive I2, ni Lab fonctionnel, ni propriétaire moteur, ni expérience première personne réelle.
+- G2 : une boucle cognitive SQLite synthétique v4 est testée, mais aucun Lab fonctionnel, propriétaire moteur ni expérience première personne réelle n'existe.
 - G3 : pas de comptabilité UC authentifiée, d'Action Control, de corps, de mort, de M11 ni de reprise froide pour I2.
 - G4-G6 : pas de préenregistrement comparatif final, de nouvelles vies, de preuve d'amélioration ni de promotion.
 
