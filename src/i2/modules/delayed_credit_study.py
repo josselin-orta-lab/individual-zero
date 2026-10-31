@@ -661,3 +661,113 @@ def learn_from_feedback(*, memory: OutcomeFeedbackMemory,
         absolute_error=abs(predicted - actual),
         direction_agreement=sign(predicted) == sign(actual),
     )
+
+
+class PaidFeedbackValuationPort:
+    """G2-only bridge from a past-only H2 forecast to *paid* Competition values.
+
+    Competition's existing ledger MUST call this after a full batch debit.
+    This port does not own UC, store memory, authenticate M11 or admit action.
+    Its source and baseline are test-injected, not physiological authorities.
+    """
+
+    def __init__(self, *, claim: object, forecast: ProspectiveCreditForecast,
+                 memory: OutcomeFeedbackMemory, source: FeedbackSource,
+                 baseline: object) -> None:
+        from .intention_ingress import ObservationClaim
+        if type(claim) is not ObservationClaim:
+            raise ValueError("exact current subjective claim required")
+        claim.validate()
+        if type(forecast) is not ProspectiveCreditForecast:
+            raise ValueError("exact H2 forecast required")
+        if type(memory) is not OutcomeFeedbackMemory:
+            raise ValueError("exact H2 feedback memory required")
+        if not callable(getattr(source, "verify_issued_forecast", None)) or not callable(
+                getattr(source, "verify_forecast_capture", None)):
+            raise ValueError("first-person forecast verification port required")
+        if not callable(getattr(baseline, "evaluate_batch", None)):
+            raise ValueError("independent full-frame baseline evaluator required")
+        self.claim = claim
+        self.forecast = forecast
+        self.memory = memory
+        self.source = source
+        self.baseline = baseline
+
+    def evaluate_batch(self, *, frame: object,
+                       receipts: tuple[object, ...]) -> tuple[object, ...]:
+        """Fail closed after the *existing* full-frame UC charge, never before."""
+        from hashlib import sha256
+        import json
+        from .competition_preview import (
+            CompetitionReceipt, MAX_VALUE_MAGNITUDE, SubjectiveValuation, _frame,
+        )
+        frame = _frame(frame)
+        claim = self.claim
+        op = self.forecast.opportunity
+        if (type(op) is not ForecastOpportunity or
+                frame.life_ref != claim.life_ref or
+                frame.life_ref != op.life_ref or
+                frame.capture_ref != claim.capture.ref or
+                frame.capture_ref != op.capture_ref or
+                frame.physical_step != claim.capture.step or
+                frame.physical_step != op.physical_step or
+                frame.claim_digest != claim.digest() or
+                claim.capture.goal_ref != op.goal_ref):
+            raise ValueError("H2 forecast not bound to paid current capture")
+        if (type(receipts) is not tuple or len(receipts) != len(frame.candidates) or
+                any(type(r) is not CompetitionReceipt for r in receipts)):
+            raise ValueError("full paid Competition receipts required")
+        names = tuple(candidate.semantic_ref for candidate in frame.candidates)
+        if (op.preparatory_action_ref not in names or
+                op.alternative_action_ref not in names):
+            raise ValueError("H2 options must both be currently perceivable")
+        if self.source.verify_forecast_capture(opportunity=op) is not True:
+            raise ValueError("current first-person opportunity not attested")
+        # No cognitive feedback lookup is performed until Competition has
+        # debited every visible candidate, including unaffected alternatives.
+        readout = read_feedback(memory=self.memory, forecast=self.forecast,
+                                source=self.source)
+        diff = readout.predicted_outcome_difference
+        if diff.denominator != 1:
+            # The motor preview accepts only integer values; choosing a
+            # rounding or quantization rule here would silently add policy.
+            raise ValueError("fractional H2 value lacks calibrated conversion")
+        difference = diff.numerator
+        if abs(difference) > MAX_VALUE_MAGNITUDE:
+            raise ValueError("H2 predicted contrast out of bounds")
+        baseline = self.baseline.evaluate_batch(frame=frame, receipts=receipts)
+        if type(baseline) is not tuple or len(baseline) != len(frame.candidates):
+            raise ValueError("complete baseline valuations required")
+        valuations: list[SubjectiveValuation] = []
+        for candidate, receipt, prior in zip(frame.candidates, receipts, baseline):
+            receipt.validate()
+            if (receipt.life_ref != frame.life_ref or
+                    receipt.frame_ref != frame.frame_ref or
+                    receipt.claim_digest != frame.claim_digest or
+                    receipt.candidate_ref != candidate.candidate_ref):
+                raise ValueError("foreign or incomplete paid candidate receipt")
+            if type(prior) is not SubjectiveValuation:
+                raise ValueError("baseline valuation must be exact")
+            prior.validate()
+            if (prior.candidate_ref != candidate.candidate_ref or
+                    prior.receipt_ref != receipt.ref):
+                raise ValueError("baseline valuation not bound to paid candidate")
+            adjustment = (max(0, difference) if
+                          candidate.semantic_ref == op.preparatory_action_ref else
+                          max(0, -difference) if
+                          candidate.semantic_ref == op.alternative_action_ref else 0)
+            updated = prior.value + adjustment
+            if abs(updated) > MAX_VALUE_MAGNITUDE:
+                raise ValueError("feedback cannot overflow bounded valuations")
+            # Correlation only, NOT an M11 signature or independent evidence.
+            bound = json.dumps(
+                [frame.claim_digest, candidate.candidate_ref, receipt.ref,
+                 prior.evidence_ref, readout.memory_version, difference,
+                 self.forecast.training_episode_refs],
+                sort_keys=True, separators=(",", ":"), ensure_ascii=True,
+            ).encode("ascii")
+            evidence = "feedback:synthetic:" + sha256(bound).hexdigest()
+            valuations.append(SubjectiveValuation(
+                candidate.candidate_ref, receipt.ref, evidence, updated,
+            ))
+        return tuple(valuations)
