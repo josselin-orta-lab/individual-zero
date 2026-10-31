@@ -79,6 +79,41 @@ class FeedbackTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             learn_from_feedback(memory=memory,readout=readout,
                                 prepared=a,control=b,source=NoIssue())
+    def test_same_mean_different_histories_have_different_receipts(self):
+        from fractions import Fraction
+        from i2.modules.delayed_credit_study import OutcomeFeedbackMemory
+        op=opportunity(30)
+        a=replace(empty_feedback_memory(op),last_observed_step=20,
+                  observed_differences=(2,4),
+                  used_issue_captures=("capture:11","capture:15"),
+                  used_episode_refs=("episode:a","episode:b","episode:c","episode:d"))
+        b=replace(a,observed_differences=(1,5))
+        first=read_feedback(memory=a,forecast=forecast(30),source=Source())
+        second=read_feedback(memory=b,forecast=forecast(30),source=Source())
+        self.assertEqual(first.predicted_outcome_difference,Fraction(3))
+        self.assertEqual(first.predicted_outcome_difference,second.predicted_outcome_difference)
+        self.assertNotEqual(first.memory_digest,second.memory_digest)
+        self.assertEqual(len(first.memory_digest),71)
+        # A receipt from another equally sized/equally averaged memory
+        # must not authorize learning against this snapshot.
+        p,c=heldout(32,6,3)
+        with self.assertRaisesRegex(ValueError,"changed or reused"):
+            learn_from_feedback(memory=b,readout=first,
+                                prepared=p,control=c,source=Source())
+
+    def test_identical_values_but_different_provenance_are_not_interchangeable(self):
+        op=opportunity(30)
+        a=replace(empty_feedback_memory(op),last_observed_step=20,
+                  observed_differences=(3,),
+                  used_issue_captures=("capture:11",),
+                  used_episode_refs=("episode:a","episode:b"))
+        b=replace(a,used_episode_refs=("episode:c","episode:d"))
+        f=forecast(30)
+        ra=read_feedback(memory=a,forecast=f,source=Source())
+        rb=read_feedback(memory=b,forecast=f,source=Source())
+        self.assertEqual(ra.predicted_outcome_difference,rb.predicted_outcome_difference)
+        self.assertNotEqual(ra.memory_digest,rb.memory_digest)
+
     def test_replay_and_foreign_context_refused(self):
         memory=empty_feedback_memory(opportunity(10))
         first=read_feedback(memory=memory,forecast=forecast(10),source=Source())
