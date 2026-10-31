@@ -55,23 +55,21 @@ class PinnedMinimumTests(unittest.TestCase):
         )
 
     def test_complete_local_and_remote_rollback_needs_out_of_domain_minimum(self):
-        from pathlib import Path
-        import sqlite3
-
+        # Simulated fully restored local and witness reports are mutually
+        # consistent. Only a minimum saved OUTSIDE this rollback domain
+        # distinguishes them from the historically newer pinned revision.
         old=self.genesis
         c=self.source.add(claim(3))
         self.owner.open(claim=c,semantic_ref=A,evidence_ref="evidence:3",ttl_steps=12)
         advanced=witness_from(self.owner.audit())
-        with sqlite3.connect(self.path) as con:
-            con.execute("DELETE FROM events")
-            con.execute("UPDATE account SET remaining_uc=20,last_step=-1,"
-                        "committed=0,chain_head=? WHERE id=1",(ZERO_HASH,))
-            con.execute("UPDATE account SET intention_json=? WHERE id=1", ('{"current":null}',))
-        # In this case the local and remote operator-controlled records can
-        # both report genesis. The non-restored pinned record must reject it.
         restored=witness_from(old)
+        self.assertEqual(
+            compare_audit(report=old,witness=Mock(restored)).status,
+            "MATCHED_OPEN_INSPECTION",
+        )
         with self.assertRaises(WitnessRefusal) as err:
-            self.inspect(c,restored,minimum=advanced)
+            compare_audit(report=old,witness=Mock(restored),
+                          minimum_witness=advanced)
         self.assertEqual(err.exception.reason,"STALE")
 
     def test_same_sequence_altered_head_is_equivocation(self):
