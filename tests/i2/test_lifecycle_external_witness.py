@@ -46,13 +46,11 @@ class FakeWitness:
         self.valid = valid
         self.calls = []
 
-    def read_latest(self, *, life_ref, genesis_ref):
-        self.calls.append(("read", life_ref, genesis_ref))
+    def read_verified_latest(self, *, life_ref, genesis_ref):
+        self.calls.append(("read_verified_latest", life_ref, genesis_ref))
+        if self.valid is not True:
+            raise ValueError("unverified synthetic latest record")
         return self.latest_record
-
-    def verify_latest(self, *, record):
-        self.calls.append(("verify", record.proof_ref))
-        return self.valid
 
 
 class WitnessProtocolTests(unittest.TestCase):
@@ -80,6 +78,23 @@ class WitnessProtocolTests(unittest.TestCase):
                 compare_audit(report=report(), witness=witness)
             self.assertEqual(failure.exception.reason, "UNKNOWN")
 
+    def test_legacy_split_read_verify_protocol_is_refused(self):
+        class LegacyWitness:
+            def read_latest(self, *, life_ref, genesis_ref):
+                raise AssertionError("legacy read must not be called")
+            def verify_latest(self, *, record):
+                raise AssertionError("legacy proof must not be called")
+        with self.assertRaisesRegex(ValueError, "atomic verified-latest"):
+            compare_audit(report=report(), witness=LegacyWitness())
+
+    def test_provider_failure_and_invalid_record_fail_closed(self):
+        class BrokenWitness:
+            def read_verified_latest(self, *, life_ref, genesis_ref):
+                raise TimeoutError("remote latest-head unavailable")
+        with self.assertRaises(WitnessRefusal) as failure:
+            compare_audit(report=report(), witness=BrokenWitness())
+        self.assertEqual(failure.exception.reason, "UNKNOWN")
+
     def test_matching_open_inspection_remains_nonmotor(self):
         witness = FakeWitness()
         result = compare_audit(report=report(), witness=witness)
@@ -90,8 +105,7 @@ class WitnessProtocolTests(unittest.TestCase):
         self.assertIs(result.m11_authenticated, False)
         self.assertFalse({"execute", "admit", "permission", "command"} &
                          {f.name for f in fields(WitnessAudit)})
-        self.assertEqual(witness.calls, [("read", LIFE, GENESIS),
-                                         ("verify", "proof:synthetic-only")])
+        self.assertEqual(witness.calls, [("read_verified_latest", LIFE, GENESIS)])
 
     def test_matching_terminal_is_inspection_not_rebirth(self):
         r = report(terminal=True)
@@ -165,7 +179,7 @@ class WitnessProtocolTests(unittest.TestCase):
         witness = FakeWitness(valid=False)
         with self.assertRaises(ValueError):
             compare_audit(report=report(), witness=witness)
-        self.assertEqual(len(witness.calls), 2)
+        self.assertEqual(len(witness.calls), 1)
 
     def test_invalid_record_type_fails_even_if_ports_return_true(self):
         for item in (None, {}, "proof", (record(),)):
@@ -244,8 +258,8 @@ class WitnessProtocolTests(unittest.TestCase):
         w=FakeWitness()
         def broken(*,life_ref,genesis_ref):
             raise RuntimeError("unavailable independent store")
-        w.read_latest=broken
-        with self.assertRaisesRegex(RuntimeError,"unavailable independent store"):
+        w.read_verified_latest=broken
+        with self.assertRaisesRegex(WitnessRefusal, "unavailable or invalid"):
             compare_audit(report=report(), witness=w)
         self.assertEqual(w.calls,[])
 
