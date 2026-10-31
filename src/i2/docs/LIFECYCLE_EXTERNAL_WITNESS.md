@@ -77,3 +77,7 @@ L'adaptateur réserve désormais chaque nonce hexadécimal de 256 bits dans un r
 ## G2 : refus de réinitialisation partielle du registre
 
 Un journal absent associé à un verrou existant, ou l'inverse, échoue désormais en lecture. Une fois initialisé, un journal vide est également refusé. Seul un répertoire vierge sans aucun des deux fichiers est initialisable. Les tests démontrent toutefois qu'une restauration ou suppression **simultanée** des deux fichiers permet de réutiliser un nonce ; il faut une borne externe réellement indépendante pour détecter ce scénario. Protection limitée aux processus coopératifs d'un même répertoire, aucun M11 ni droit de reprise.
+
+## G2 : contrôle d'identité des fichiers de garde
+
+Le registre local vérifie l'identité (device/inode) du répertoire, du verrou après acquisition et du journal pendant la réservation. Il refuse une substitution détectée au lieu de valider un verrou détaché. Cela ne protège pas contre les remplacements antérieurs à l'ouverture, les attaquants capables de manipuler les fichiers avec le même UID, le rollback intégral ou un faux stockage durable. Aucun changement d'autorité M11 ni de reprise.
