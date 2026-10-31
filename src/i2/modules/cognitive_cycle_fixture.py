@@ -812,6 +812,68 @@ class CognitiveCycleFixture:
         finally:
             conn.close()
 
+    def feedback_scorecard(self) -> dict[str, object]:
+        """Audit committed H2 forecasts against two past-only comparators.
+
+        Predictions are read ONLY from fully verified canonical v5 events.
+        The historical matched-outcome prediction is recorded in each H2
+        score; persistence predicts the last already observed difference,
+        falling back to the historical forecast for the first observation.
+        No model selection, future-data access, new memory owner or motor
+        authority occurs. These are noncausal synthetic research metrics.
+        """
+        from fractions import Fraction
+
+        conn = self._connect(readonly=True)
+        try:
+            conn.execute("BEGIN")
+            self._verify(conn)
+            rows = []
+            previous_outcome = None
+            for (body,) in conn.execute(
+                "SELECT event_json FROM events ORDER BY seq"
+            ):
+                record = json.loads(body)
+                transition = record.get("feedback_transition")
+                if transition is None:
+                    continue
+                score = transition["score"]
+                actual = score["observed_outcome_difference"]
+                historical = score["predicted_outcome_difference"]
+                numerator, denominator = transition["predicted"]
+                adaptive = Fraction(numerator, denominator)
+                persistence = (historical if previous_outcome is None
+                               else previous_outcome)
+                rows.append({
+                    "issue_capture_ref": score["issue_capture_ref"],
+                    "observed": actual,
+                    "adaptive_prediction": adaptive,
+                    "historical_prediction": historical,
+                    "persistence_prediction": persistence,
+                    "adaptive_error": abs(adaptive - actual),
+                    "historical_error": abs(historical - actual),
+                    "persistence_error": abs(persistence - actual),
+                })
+                previous_outcome = actual
+
+            def mean_error(name: str) -> Fraction | None:
+                return (sum((row[name] for row in rows), Fraction(0, 1)) /
+                        len(rows) if rows else None)
+
+            return {
+                "samples": len(rows),
+                "rows": tuple(rows),
+                "adaptive_mae": mean_error("adaptive_error"),
+                "historical_mae": mean_error("historical_error"),
+                "persistence_mae": mean_error("persistence_error"),
+                "interpretation": "AUDITED_SYNTHETIC_COMPARISON_NOT_CAUSAL_PROOF",
+                "motor_authority": "NONE",
+                "m11_authenticated": False,
+                "scheduler_uc_authenticated": False,
+            }
+        finally:
+            conn.close()
+
     def _process(self, *, claim: ObservationClaim, request: dict,
                  _fault_at: str | None = None, feedback_update: object | None = None,
                  feedback_previous: object | None = None) -> CycleReceipt:
