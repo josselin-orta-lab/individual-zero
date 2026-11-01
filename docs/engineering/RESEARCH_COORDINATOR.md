@@ -71,6 +71,8 @@ For research decisions, `python tools/research_coordinator.py audit` stays **str
 
 A developer must reconcile source changes against their exact SHAs before updating the corresponding pin; the lack of a failing CI job never constitutes evidence approval.
 
+A concrete [1 November 2026 reconciliation record](../research/audits/RESEARCH_SOURCE_RECONCILIATION_2026-11-01.md) documents why the I2 G2 status page was shortened, which historical snapshot was preserved and why its G1/G3 scientific gates remain unchanged. The research-program audit now also rejects inconsistent exact source SHA pins shared with the dossier register, even under `--structure-only`.
+
 ## Agent decision cycle
 
 1. Re-read HEAD, registry, engine contracts, current statuses, evidence matrix and this program. Flag contradictions.

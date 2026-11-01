@@ -150,6 +150,29 @@ def audit(root: Path = ROOT) -> dict:
                     errors.append("unrecognized agent route in " + item["id"])
         except (OSError, ValueError, TypeError, KeyError):
             errors.append("cannot validate agent routes")
+    # Both curated manifests cite some of the same source files. Any split
+    # in their recorded exact byte identities is an invalid research context,
+    # even in structural-only CI. It must never be silently auto-repinned.
+    dossier_path = root / "config/research-dossiers.json"
+    if dossier_path.is_file():
+        try:
+            dossier = read_json(root, "config/research-dossiers.json")
+            pin_by_path = {}
+            for source in sources:
+                path, pin = source["path"], source["blob_sha"]
+                if path in pin_by_path and pin_by_path[path] != pin:
+                    errors.append("inconsistent program source pins: " + path)
+                pin_by_path[path] = pin
+            dossier_pin_by_path = {}
+            for source in dossier.get("sources", []):
+                path, pin = source["path"], source["blob_sha"]
+                if path in dossier_pin_by_path and dossier_pin_by_path[path] != pin:
+                    errors.append("inconsistent dossier source pins: " + path)
+                dossier_pin_by_path[path] = pin
+                if path in pin_by_path and pin_by_path[path] != pin:
+                    errors.append("research program and dossier source pins diverge: " + path)
+        except (OSError, KeyError, TypeError, ValueError) as exc:
+            errors.append("cannot compare curated source pins: " + str(exc))
     return {"status": "FAIL" if errors else "PASS", "errors": sorted(set(errors)),
             "sources": len(sources), "questions": len(questions),
             "gates": len(gates), "interventions": len(tasks), "findings": len(findings),
