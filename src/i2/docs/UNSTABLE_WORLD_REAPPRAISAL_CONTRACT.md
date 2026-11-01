@@ -102,25 +102,35 @@ unchanged and no tuned revisit bonus was added.
 
 Focused regression: `PYTHONPATH=src python -m unittest discover -s tests/i2 -p 'test_local_survival_reflex.py' -v`.
 
-## Paid Action Control survival constraint (increment after #829)
+## Correction: survival reflex is last-resort exploration, not a food ban
 
-The isolated world now supplies the exact current owner-derived
-`LocalEnergySurvivalReflex` to its **existing paid Action Control safety
-port**, never directly to Competition valuation. For a candidate EAT with
-energy reserve <= 4, the safety source emits a positive veto referenced to
-the exact observed energy evidence; the already-paid control returns
-`VETOED`, and no internal eating admission/effect is created. No substitute
-action is picked, no hidden reward predicted, and metabolism continues.
+**Owner clarification, 1 November 2026:** PR #830 incorrectly construed low
+energy as a reason to prohibit eating. The intended reflex has the opposite
+purpose: when no other viable survival plan is available, it must force
+reconsideration of an available berry even if earlier subjective experience
+suggests toxicity. This does **not** predict that the food is safe.
 
-The same owner replay recomputes the required veto from *predecision*
-committed energy and rejects a missing/misbound veto. This is a deliberately
-conservative, mechanistic restriction: it may prevent a beneficial recovery
-meal under critical scarcity. That adverse possibility is a required
-scientific falsifier, not something to tune away. PREEMPT/CONSTRAIN on
-other actions remains informational in this limited increment. This is not
-an authenticated M11 witness, a real physiological reflex, or full
-reappraisal/need integration. The historical blind restoration and
-seven-case batteries remain unchanged.
+The isolated research world's only immediately energy-restoring affordance is
+EAT (COLLECT prepares and costs energy; DRINK provides no energy). Under
+observed energy <= 4, if EAT is available and all currently offered semantics
+are understood by the bounded prototype, the local reflex supplies a
+**categorical last-resort priority**. It is passed into the ordinary paid
+Competition batch, above the existing learned negative score, with its
+separate evidence marker. Normal fresh Action Control may still veto and
+UC exhaustion prevents the choice. This is not an external actuator, M11
+authentication, free reward or generic plan-understanding engine.
 
-Focused software regression:
-`PYTHONPATH=src python -m unittest discover -s tests/i2 -p 'test_paid_reflex_veto.py' -v`.
+Matched favorable and adverse *hidden* food worlds must both attempt the
+same risky action when critically depleted. One may recover; the other may
+die. These contrasting physical results only become first-person evidence
+after the action and at a later capture if the individual remains alive.
+The priority is a researcher-specified survival heuristic, not established
+natural adaptation or proof of general survival advantage. The old #831
+"protective veto causes death" test describes a mistaken interpretation,
+not an accepted reflex requirement.
+
+The stable earlier seven-case and blind-restoration source-locked scenarios
+must retain their previous numerical evidence as historical results, not be
+silently reinterpreted as results of the new reflex-capable runtime. Any
+change to their software test expectations must be reported as a new
+behavioral policy version, never historical source equivalence.
