@@ -1,6 +1,6 @@
 # Engine generations: working map
 
-This document describes structural ownership and historical migration boundaries. **Verify the registry and real HEAD** for live statuses; older PR numbers below are provenance, not current merge-state claims. It is an engineering map, **not** a declaration of scientific GO.
+For a task-oriented architecture map and intervention matrix, begin with the [Architecture Atlas](ATLAS.md). This document describes structural ownership and historical migration boundaries. **Verify the registry and real HEAD** for live statuses; older PR numbers below are provenance, not current merge-state claims. It is an engineering map, **not** a declaration of scientific GO.
 
 | Component | Authority | Location | Change policy |
 | --- | --- | --- | --- |

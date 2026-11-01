@@ -12,6 +12,27 @@ SPEC.loader.exec_module(module)
 
 
 class NavigationSanity(unittest.TestCase):
+    def test_architecture_portal_is_required_and_not_archived(self):
+        self.assertIn("docs/architecture/ATLAS.md", module.ENTRYPOINTS)
+        self.assertIn("docs/architecture/proposals/README.md", module.ENTRYPOINTS)
+        self.assertFalse(module.is_historical("docs/architecture/proposals/README.md"))
+        self.assertTrue(module.is_historical(
+            "docs/architecture/proposals/i1-isolated-fork-2026-10-16.md"))
+
+    def test_proposals_index_detects_missing_records(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            folder = root / "docs/architecture/proposals"
+            folder.mkdir(parents=True)
+            index = folder / "README.md"
+            item = folder / "proposal-example.md"
+            index.write_text("# Index\n")
+            item.write_text("# Historical proposal\n")
+            self.assertEqual(module.unindexed_architecture_proposals(root),
+                             ["proposal-example.md"])
+            index.write_text("[example](proposal-example.md)\n")
+            self.assertEqual(module.unindexed_architecture_proposals(root), [])
+
     def test_live_entrypoints(self):
         outcome = module.inspect(ROOT)
         self.assertEqual(outcome["status"], "PASS", outcome["errors"])

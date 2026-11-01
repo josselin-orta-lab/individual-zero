@@ -15,7 +15,7 @@ These files are intentionally short and should remain understandable without rea
 
 ## Agent route and generation ownership
 
-For task-oriented agents start at [agent navigation](engineering/AGENT_NAVIGATION.md); [I1's handbook](../src/i1/docs/README.md) documents the active engine, and [I2's handbook](../src/i2/docs/README.md) documents non-living proposal fixtures. Their own `docs/STATUS.md` files hold short current summaries; `STATUS_HISTORY.md` preserves earlier updates. Global documentation does not override generation-owned source or contracts.
+For task-oriented agents start at [agent navigation](engineering/AGENT_NAVIGATION.md), then use the [Architecture Atlas](architecture/ATLAS.md) to trace generation ownership, real I1 causal flow and proposal boundaries; [I1's handbook](../src/i1/docs/README.md) documents the active engine, and [I2's handbook](../src/i2/docs/README.md) documents non-living proposal fixtures. Their own `docs/STATUS.md` files hold short current summaries; `STATUS_HISTORY.md` preserves earlier updates. Global documentation does not override generation-owned source or contracts.
 
 ## Documentation areas
 
@@ -63,7 +63,7 @@ The documentation directory explains the project. Scientific evidence may be rec
 
 Reusable comparison protocols belong in `../benchmarks/`.
 
-The [research map](../RESEARCH_MAP.md) defines research axes and planning templates; it is **not** a live census. For current questions and work, consult [GitHub issues](https://github.com/josselin-orta-lab/individual-zero/issues), the active generation's evidence matrix, and the original dated study records.
+The [research map](../RESEARCH_MAP.md) defines cross-cutting axes and points to the [global research coordinator](engineering/RESEARCH_COORDINATOR.md), [incremental corpus index](engineering/RESEARCH_CORPUS.md) and [source-pinned dossiers](engineering/RESEARCH_DOSSIERS.md). They support agent navigation and evidence-gap review; they are **not** a live census or an independent scientific verdict. Always inspect the [original dated studies](research/README.md), [active I1 evidence matrix](../src/i1/docs/EVIDENCE_MATRIX.md) and [current GitHub issues](https://github.com/josselin-orta-lab/individual-zero/issues).
 
 ## Licensing
 

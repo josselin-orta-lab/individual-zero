@@ -17,6 +17,8 @@ ENTRYPOINTS = (
     "docs/README.md", "docs/engineering/AGENT_NAVIGATION.md",
     "docs/engineering/START_HERE.md", "docs/architecture/README.md",
     "docs/architecture/ENGINE_GENERATIONS.md",
+    "docs/architecture/ATLAS.md",
+    "docs/architecture/proposals/README.md",
     "docs/presentation/01-project-overview.md",
     "docs/presentation/02-repository-tour.md",
     "docs/presentation/04-contributor-first-hour.md",
@@ -51,6 +53,9 @@ STALE = ("Experimental code may remain experimental until results justify integr
 
 
 def is_historical(path: str) -> bool:
+    # The proposals/ index is a current route; its dated proposals are archival.
+    if path == "docs/architecture/proposals/README.md":
+        return False
     if path.startswith(("archive/", "src/i0/", "docs/operations/",
                         "docs/architecture/proposals/")):
         return True
@@ -85,6 +90,24 @@ def source_paths(root: Path, scope: str) -> tuple[str, ...]:
                      for p in (root / dirname).rglob("*.md")
                      if not is_historical(p.relative_to(root).as_posix()))
     return tuple(sorted(found))
+
+
+
+def unindexed_architecture_proposals(root: Path) -> list[str]:
+    """Prevent the current proposal index from silently missing new records."""
+    folder = root / "docs/architecture/proposals"
+    index = folder / "README.md"
+    if not index.is_file():
+        return []
+    linked = set()
+    for match in LINK.finditer(index.read_text(encoding="utf-8")):
+        href = unquote(match.group(1).split("#", 1)[0].split("?", 1)[0])
+        if href.startswith(("https://", "http://", "/")):
+            continue
+        linked.add((folder / href).resolve())
+    return sorted(path.name for path in folder.glob("*.md")
+                  if path.name != "README.md" and path.resolve() not in linked)
+
 
 
 def inspect(root: Path = ROOT, scope: str = "entrypoints", strict_historical: bool = False) -> dict:
@@ -148,6 +171,8 @@ def inspect(root: Path = ROOT, scope: str = "entrypoints", strict_historical: bo
             errors.append(f"{generation}: missing preserved historical status")
         if current.is_file() and len(current.read_text(encoding="utf-8").splitlines()) > 100:
             errors.append(f"{generation}: current STATUS.md should be a short routing surface")
+    for filename in unindexed_architecture_proposals(root):
+        errors.append(f"docs/architecture/proposals/README.md: unindexed proposal {filename}")
     return {"status": "PASS" if not errors else "FAIL",
             "scope": scope, "checks": checked, "errors": sorted(set(errors)),
             "warnings": sorted(set(warnings)),
