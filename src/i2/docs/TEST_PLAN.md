@@ -11,6 +11,7 @@
 5. Veto, fraîcheur et scellage terminal synthétiques sont vérifiés en replay.
 6. Le journal SQLite v5 demeure **l'unique transaction cognitive** ; anciennes tables et propriétaires concurrents interdits.
 7. H2 conserve les tests défavorables, neutres, de rejouage et de non-causalité.
+8. Les sources de tests `tests/i2` ne doivent pas contenir de liens symboliques ni importer directement ou dynamiquement un ancien moteur (I0/I1) ou une autre génération. Contrôle AST statique uniquement : les dépendances transitives et chargeurs personnalisés exigent toujours une revue séparée.
 
 Commande locale : `python -m unittest discover -s tests/i2 -p 'test_*.py' -v`.
 
