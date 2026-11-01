@@ -42,3 +42,15 @@ python tools/research_dossiers.py gaps
 ```
 
 The inventory is an address book, not a scientific conclusion. Historical records must not be bulk moved: preserve source paths until each original link, experiment manifest, SHA and CI reference is audited.
+
+## Stable location index for the historical root
+
+The 419 root-level Markdown records remain at their original paths. Use the read-only, Git-blob-preserving catalog to filter by filename-based family and topic:
+
+```bash
+python tools/research_location_index.py --family stage-12 --match result --limit 20
+python tools/research_location_index.py --family stage-11 --limit 15
+python tools/research_location_index.py --family i1 --limit 20 --json
+```
+
+The catalog classifies **names**, not verified generation ownership, protocol validity or conclusions. Do not move a report merely because its filename contains a stage or a result keyword.
