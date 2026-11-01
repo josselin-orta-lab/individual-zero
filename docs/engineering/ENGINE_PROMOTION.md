@@ -20,6 +20,15 @@ results.
    manually approved registration and activation proposal be considered.
    No tool in this campaign registers, activates or imports a future engine.
 
+Proposal and repository boundary scripts (`tools/assess_engine_proposal.py`,
+`scripts/check_engine_repository.py`, `tests/test_engine_repository.py`)
+route to the **lightweight** `i2-proposal-safety.yml` on a PR. The light
+workflow runs its inert I2 tests plus the static registry/archive guard; these
+files alone must not launch the living I1 SMOKE + FULL matrix. Changes under
+`src/i1/**`, active I1 tests, I1 behavioral tools, engine contracts or the
+I1 workflow itself retain the full I1 CI. Workflow edits are reviewed and
+tested by exact path assertions, and this routing change is not a G1 or G3 GO.
+
 The static `no_parent_runtime_imports` check retains its historical output name but now rejects imports of **any other generation** (including I0 and future generations), selected direct/dynamic imports and symlinked source trees. A dynamic target that cannot be checked statically fails closed. This cannot prove absence of custom loaders, `exec`, third-party transitive dependencies or shared mutable services; independent review remains mandatory.
 
 The report's `STRUCTURE_PRESENT_REVIEW_REQUIRED` status means only that

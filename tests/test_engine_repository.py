@@ -37,23 +37,47 @@ class EngineToolingTests(unittest.TestCase):
         self.assertEqual(unexpected_workflows(paths, active_ci="i1-current-ci.yml"),
                          ["stage9-historical.yml"])
 
-    def test_documentation_does_not_trigger_heavy_i1_ci(self):
-        workflow = (ROOT / ".github/workflows/i1-current-ci.yml").read_text()
-        triggers = workflow.split("  workflow_dispatch:", 1)[0]
+    def test_static_engine_policy_routes_to_light_ci_not_living_i1(self):
+        heavy = (ROOT / ".github/workflows/i1-current-ci.yml").read_text()
+        light = (ROOT / ".github/workflows/i2-proposal-safety.yml").read_text()
+        heavy_paths = heavy.split("  workflow_dispatch:", 1)[0]
+        light_paths = light.split("\npermissions:", 1)[0]
+        for owned in ("tools/assess_engine_proposal.py",
+                      "tests/test_engine_repository.py"):
+            # No positive path in I1's expensive PR trigger.
+            self.assertNotIn("      - '" + owned + "'", heavy_paths)
+            # Same static source changes must activate I2 proposal tests.
+            self.assertIn("      - '" + owned + "'", light_paths)
+        self.assertIn("      - 'scripts/**'", heavy_paths)
+        self.assertIn("      - '!scripts/check_engine_repository.py'", heavy_paths)
+        self.assertGreater(
+            heavy_paths.index("      - '!scripts/check_engine_repository.py'"),
+            heavy_paths.index("      - 'scripts/**'"),
+        )
+        self.assertIn("      - 'scripts/check_engine_repository.py'", light_paths)
+        self.assertIn("python scripts/check_engine_repository.py --json", light)
+        self.assertIn(
+            "python -m unittest discover -s tests -p test_engine_repository.py -v",
+            light,
+        )
+        # Changes to real I1 source/engine contracts must still run full I1.
         for required in (
             "      - 'src/i1/**'",
-            "      - 'tests/test_engine_repository.py'",
-            "      - '!src/i1/**/*.md'",
-            "      - '!src/i1/docs/**'",
-            "      - '!src/i1/AGENTS.md'",
+            "      - 'tests/i1/**'",
+            "      - 'tools/run_engine_checks.py'",
+            "      - 'config/engine-registry.json'",
+            "      - '.github/workflows/i1-current-ci.yml'",
+            "      - '.github/workflows/engine-structural.yml'",
         ):
-            self.assertIn(required, triggers)
-        self.assertNotIn("      - 'AGENTS.md'", triggers)
-        self.assertNotIn("      - 'docs/engineering/SCRIPT_INVENTORY.md'", triggers)
-        self.assertNotIn("      - 'docs/engines/i1/**'", triggers)
-        positive_end = triggers.index("      - '.github/workflows/engine-structural.yml'")
-        for negative in ("!src/i1/**/*.md", "!src/i1/docs/**", "!src/i1/AGENTS.md"):
-            self.assertGreater(triggers.index(negative), positive_end)
+            self.assertIn(required, heavy_paths)
+        for negative in (
+            "!src/i1/**/*.md", "!src/i1/docs/**", "!src/i1/AGENTS.md"
+        ):
+            self.assertGreater(
+                heavy_paths.index(negative),
+                heavy_paths.index("      - '.github/workflows/engine-structural.yml'"),
+            )
+
 
     def test_original_engine_sources_are_present(self):
         self.assertFalse((ROOT / "src/lab").exists())
