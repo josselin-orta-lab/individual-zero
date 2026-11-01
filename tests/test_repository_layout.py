@@ -39,6 +39,21 @@ class RepositoryLayoutTests(unittest.TestCase):
             self.assertEqual(snapshot["embedded_tool_tests"], 1)
             self.assertEqual(snapshot["scientific_verdict"], "NOT_EVALUATED")
 
+    def test_deprecated_embedded_research_test_location_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for path in module.ENTRYPOINTS:
+                dest = root / path
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                dest.write_text("# Fixture\\n", encoding="utf-8")
+            self.assertEqual(module.check(root)["status"], "PASS")
+            obsolete = root / "tools/research/tests/test_backslide.py"
+            obsolete.parent.mkdir(parents=True)
+            obsolete.write_text("# Fixture\\n", encoding="utf-8")
+            self.assertEqual(module.check(root)["status"], "FAIL")
+            obsolete.unlink()
+            self.assertEqual(module.check(root)["status"], "PASS")
+
     def test_new_root_generation_test_is_rejected_without_renaming_legacy(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

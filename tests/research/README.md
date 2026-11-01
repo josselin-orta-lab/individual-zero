@@ -5,7 +5,7 @@ These are **software contract tests**, not scientific evidence or authorization 
 - `a1p/`: offline A1-P historical replay gate (pure software, no original downloads).
 - `a1c/`: targeted A1-C mechanism isolation, reward shadow, TD replay, wait gate and statistical criterion contracts (six tests).
 - [`a2r/`](a2r/README.md): A2-R launch/one-shot custody guards, pure archive/pair-witness contracts and a narrowly scoped reward-birth contract.
-- Other experiment-specific fixtures under `tools/research/tests/` remain in place pending direct workflow and dependency review.
+- All previously embedded research test files now live under `tests/research/`; source analyzers remain under `tools/research/`. The static repository-layout check rejects regressions into the deprecated tool test folders.
 
 Run focused checks, from the repository root, only with the corresponding source dependencies installed:
 

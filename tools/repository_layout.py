@@ -22,7 +22,8 @@ LEGACY_ROOT_GENERATION_TESTS = frozenset({
 })
 ENTRYPOINTS = (
     "archive/README.md", "tests/README.md", "docs/README.md",
-    "docs/research/README.md", "docs/engineering/AGENT_NAVIGATION.md",
+    "docs/research/README.md", "docs/research/studies/README.md",
+    "docs/engineering/AGENT_NAVIGATION.md",
 )
 
 
@@ -126,6 +127,10 @@ def audit(root: Path = ROOT) -> dict:
 def check(root: Path = ROOT) -> dict:
     errors = [f"missing navigation entrypoint: {path}" for path in ENTRYPOINTS
               if not (root / path).is_file()]
+    for deprecated in ("tools/research/tests", "tools/a1c_tests", "tools/a2r_tests"):
+        folder = root / deprecated
+        if folder.is_dir() and any(folder.rglob("test_*.py")):
+            errors.append(f"tests returned to deprecated location: {deprecated}; use tests/research/")
     for p in (root / "tests").glob("test_i[0-9]*.py"):
         if p.name not in LEGACY_ROOT_GENERATION_TESTS:
             errors.append(f"new generation test at root: {p.relative_to(root)} (use tests/iN/)")
