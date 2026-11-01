@@ -20,6 +20,8 @@ results.
    manually approved registration and activation proposal be considered.
    No tool in this campaign registers, activates or imports a future engine.
 
+The static `no_parent_runtime_imports` check retains its historical output name but now rejects imports of **any other generation** (including I0 and future generations), selected direct/dynamic imports and symlinked source trees. A dynamic target that cannot be checked statically fails closed. This cannot prove absence of custom loaders, `exec`, third-party transitive dependencies or shared mutable services; independent review remains mandatory.
+
 The report's `STRUCTURE_PRESENT_REVIEW_REQUIRED` status means only that
 static source structure exists. It is not a merge gate, authorization to
 execute, scientific GO, or a guarantee of runtime correctness.

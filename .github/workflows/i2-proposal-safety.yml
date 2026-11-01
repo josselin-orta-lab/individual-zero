@@ -11,6 +11,7 @@ on:
       - '!src/i2/README.md'
       - '!src/i2/AGENTS.md'
       - 'tests/i2/**'
+      - 'tools/assess_engine_proposal.py'
       - '.github/workflows/i2-proposal-safety.yml'
 
 permissions:

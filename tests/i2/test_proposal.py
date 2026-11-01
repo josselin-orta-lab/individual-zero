@@ -1,7 +1,12 @@
 """Static-only I2 proposal checks; never instantiate a living engine."""
 import json
 from pathlib import Path
+import sys
+import tempfile
 import unittest
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from tools.assess_engine_proposal import _source_imports_other_generation, inspect_proposal
 ROOT=Path(__file__).resolve().parents[2]
 class TestI2Proposal(unittest.TestCase):
     def test_not_registered_or_executable(self):
@@ -15,3 +20,73 @@ class TestI2Proposal(unittest.TestCase):
         self.assertNotIn("I2",r["generations"])
         self.assertEqual(r["active_generation"],"I1")
         self.assertEqual(c["scientific"]["gate"],"not_established")
+
+
+    def test_inert_i2_still_blocked_and_no_foreign_code(self):
+        report = inspect_proposal("I2", root=ROOT)
+        self.assertEqual(report["status"], "BLOCKED")
+        self.assertEqual(set(report["blocked_by"]),
+                         {"lab_implementation_present", "runtime_implementation_present"})
+        self.assertTrue(report["checks"]["no_parent_runtime_imports"])
+        self.assertEqual(report["activation"], "FORBIDDEN")
+
+    def test_foreign_direct_dynamic_and_unverifiable_imports_refused(self):
+        forbidden = {
+            "parent": "import i1lab.i1_natural_runtime",
+            "grandparent": "from i0.lab import world",
+            "future": "from i3.modules import cognition",
+            "qualified": "from src.i1.runtime import birth",
+            "archive": "import archive.i0.lab",
+            "from_root": "from src import i0",
+            "from_relative": "from .. import i1lab",
+            "dynamic": "import importlib as loader\nloader.import_module('i1lab.runtime')",
+            "alias": "from importlib import import_module as load\nload('i0.lab')",
+            "builtin": "__import__('src.i1.modules')",
+            "package": "import importlib\nimportlib.import_module('.lab', package='i1')",
+            "unknown": "import importlib\nimportlib.import_module(module_name)",
+        }
+        allowed = {
+            "stdlib": "import hashlib\nfrom pathlib import Path",
+            "own": "from i2.modules import cognition",
+            "own_lab": "import i2lab.runtime",
+            "dynamic_stdlib": "import importlib\nimportlib.import_module('json')",
+            "quoted": "note = 'import i1lab.runtime'",
+        }
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "source.py"
+            for label, code in forbidden.items():
+                with self.subTest(forbidden=label):
+                    path.write_text(code + "\n")
+                    self.assertTrue(_source_imports_other_generation(path, "I2"))
+            for label, code in allowed.items():
+                with self.subTest(allowed=label):
+                    path.write_text(code + "\n")
+                    self.assertFalse(_source_imports_other_generation(path, "I2"))
+
+    def test_symlinked_previous_lab_is_not_an_independent_owner(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            registry = root / "config" / "engine-registry.json"
+            registry.parent.mkdir(parents=True)
+            registry.write_text(json.dumps({
+                "active_generation": "I1", "generations": {"I1": {}},
+            }))
+            older = root / "src" / "i1" / "lab"
+            older.mkdir(parents=True)
+            (older / "__init__.py").write_text("")
+            engine = root / "src" / "i2"
+            engine.mkdir(parents=True)
+            (engine / "engine.json").write_text(
+                (ROOT / "src/i2/engine.json").read_text())
+            for folder in ("modules", "runtime", "config"):
+                path = engine / folder
+                path.mkdir()
+                (path / "__init__.py").write_text("")
+            (engine / "lab").symlink_to(older, target_is_directory=True)
+            (engine / "docs").mkdir()
+            (root / "tests" / "i2").mkdir(parents=True)
+            report = inspect_proposal("I2", root=root)
+            self.assertFalse(report["checks"]["isolated_lab_layout"])
+            self.assertFalse(report["checks"]["no_parent_runtime_imports"])
+            self.assertEqual(report["registration"], "FORBIDDEN")
+
