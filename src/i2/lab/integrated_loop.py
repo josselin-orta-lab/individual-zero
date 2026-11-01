@@ -14,6 +14,7 @@ from pathlib import Path
 import sqlite3
 import tempfile
 
+from i2.lab.need_aversion_policy import (ARMS, EAT as STUDY_EAT, NeedAversionValuation, PersonalFoodOutcome, need_aversion_scores, NUTRIENT_GAIN, AVERSION_SIGNALS)
 from i2.modules.action_control_boundary import SafetyFinding
 from i2.modules.chosen_outcome_study import (
     ChosenOutcomeValuationStudy, ObservedChosenResult,
@@ -150,7 +151,14 @@ class IntegratedLab:
     def create(cls, path: Path, *, life_ref: str, genesis_ref: str,
                learning: bool, deltas: tuple[int, ...],
                initial_uc: int = 60, initial_energy: int = 24,
-               resources: int = 12, revisit: bool = False) -> IntegratedLab:
+               resources: int = 12, revisit: bool = False,
+               study_arm: str | None = None, sensory_signal: int = 0) -> IntegratedLab:
+        if (study_arm is not None and (study_arm not in ARMS or revisit or not learning or
+                sensory_signal not in AVERSION_SIGNALS or deltas != (8,) * MAX_CAPTURES or
+                initial_energy not in (17, 60) or initial_uc != 60 or resources != 12)):
+            raise LabRefusal('outside owner-authorized v1-r1 study parameters')
+        if (study_arm is None and sensory_signal != 0):
+            raise LabRefusal('sensory signal requires the authorized study')
         if (type(learning) is not bool or type(revisit) is not bool or
                 (revisit and not learning) or type(deltas) is not tuple or
                 not 1 <= len(deltas) <= MAX_CAPTURES or
@@ -176,7 +184,8 @@ class IntegratedLab:
                     life_ref TEXT NOT NULL, genesis_ref TEXT NOT NULL,
                     learning INTEGER NOT NULL, deltas_json TEXT NOT NULL,
                     initial_energy INTEGER NOT NULL, initial_resources INTEGER NOT NULL,
-                    revisit INTEGER NOT NULL CHECK(revisit IN (0,1)));
+                    revisit INTEGER NOT NULL CHECK(revisit IN (0,1)),
+                    study_arm TEXT, sensory_signal INTEGER NOT NULL DEFAULT 0);
                 CREATE TABLE g1_lab_state (
                     id INTEGER PRIMARY KEY CHECK(id=1),
                     revision INTEGER NOT NULL, energy INTEGER NOT NULL,
@@ -189,13 +198,15 @@ class IntegratedLab:
                     control_status TEXT, observed_step INTEGER NOT NULL,
                     net INTEGER NOT NULL, before_energy INTEGER NOT NULL,
                     metabolic_debit INTEGER NOT NULL, food_energy_impulse INTEGER NOT NULL,
+                    nutrition_gain INTEGER NOT NULL DEFAULT 0,
+                    aversive_signal INTEGER NOT NULL DEFAULT 0,
                     energy INTEGER NOT NULL, inventory INTEGER NOT NULL,
                     resources INTEGER NOT NULL, terminal INTEGER NOT NULL,
                     uc_remaining INTEGER NOT NULL, cognition_head TEXT NOT NULL UNIQUE);
             """)
-            db.execute("INSERT INTO g1_lab_meta VALUES(1,?,?,?,?,?,?,?)", (
+            db.execute("INSERT INTO g1_lab_meta VALUES(1,?,?,?,?,?,?,?,?,?)", (
                 life_ref, genesis_ref, int(learning), _json(deltas),
-                initial_energy, resources, int(revisit)))
+                initial_energy, resources, int(revisit), study_arm, sensory_signal))
             db.execute("INSERT INTO g1_lab_state VALUES(1,0,?,0,?,0)",
                        (initial_energy, resources))
         lab.audit()
@@ -219,24 +230,24 @@ class IntegratedLab:
     def _read(self) -> tuple[dict, tuple, tuple[dict, ...]]:
         with self._connect() as db:
             meta = db.execute("SELECT life_ref,genesis_ref,learning,deltas_json,"
-                              "initial_energy,initial_resources,revisit FROM g1_lab_meta WHERE id=1").fetchone()
+                              "initial_energy,initial_resources,revisit,study_arm,sensory_signal FROM g1_lab_meta WHERE id=1").fetchone()
             state = db.execute("SELECT revision,energy,inventory,resources,terminal "
                                "FROM g1_lab_state WHERE id=1").fetchone()
             rows = db.execute("SELECT seq,capture_ref,capture_step,offered_json,action_ref,"
                               "control_status,observed_step,net,before_energy,"
-                              "metabolic_debit,food_energy_impulse,energy,inventory,"
+                              "metabolic_debit,food_energy_impulse,nutrition_gain,aversive_signal,energy,inventory,"
                               "resources,terminal,uc_remaining,cognition_head "
                               "FROM g1_lab_steps ORDER BY seq").fetchall()
             if meta is None or meta[:2] != (self.life_ref, self.genesis_ref) or state is None:
                 raise LabRefusal("foreign or incomplete lab owner")
             raw = ("seq", "capture_ref", "capture_step", "offered_json", "action_ref",
                    "control_status", "observed_step", "net", "before_energy",
-                   "metabolic_debit", "food_energy_impulse",
+                   "metabolic_debit", "food_energy_impulse", "nutrition_gain", "aversive_signal",
                    "energy", "inventory", "resources", "terminal", "uc_remaining",
                    "cognition_head")
             return ({"learning": bool(meta[2]), "deltas": tuple(json.loads(meta[3])),
                      "initial_energy": meta[4], "initial_resources": meta[5],
-                    "revisit": bool(meta[6])},
+                    "revisit": bool(meta[6]), "study_arm": meta[7], "sensory_signal": meta[8]},
                     state, tuple(dict(zip(raw, row)) for row in rows))
 
     def _fixture(self, valuation: object) -> CognitiveCycleFixture:
@@ -266,6 +277,7 @@ class IntegratedLab:
         uc_remaining = capacity
         seen_terminal = False
         past: list[ObservedChosenResult] = []
+        food_past: list[PersonalFoodOutcome] = []
         for index, (record, saved) in enumerate(zip(records, cognitive_events)):
             seq = index + 1
             if seen_terminal or record["seq"] != seq or saved[0] != seq:
@@ -317,7 +329,9 @@ class IntegratedLab:
                 raise LabRefusal("lab action differs from paid cognitive advice")
             if frame is not None:
                 previous = tuple(past) if meta["learning"] else ()
-                scores = observed_chosen_scores(
+                scores = need_aversion_scores(
+                    claim=claim, results=tuple(food_past), previous_energy=energy,
+                    arm=meta['study_arm']) if meta['study_arm'] is not None else observed_chosen_scores(
                     claim=claim, results=previous,
                     source=_StoredResultSource(tuple(past)), priors=PRIORS,
                     revisit_after=2 if meta["revisit"] else None,
@@ -349,11 +363,15 @@ class IntegratedLab:
             elif chosen == DRINK:
                 metabolic_debit = 2
             energy = min(100, max(0, energy - metabolic_debit + food_energy_impulse))
+            nutrition_gain = NUTRIENT_GAIN if meta['study_arm'] is not None and chosen == EAT else 0
+            aversive_signal = meta['sensory_signal'] if nutrition_gain else 0
             seen_terminal = energy == 0
             uc_remaining -= (event["intake_uc"] +
                              event["competition_uc"] + event["control_uc"])
             if (record["metabolic_debit"] != metabolic_debit or
                     record["food_energy_impulse"] != food_energy_impulse or
+                    record["nutrition_gain"] != nutrition_gain or
+                    record["aversive_signal"] != aversive_signal or
                     record["net"] != energy - before or
                     record["energy"] != energy or
                     record["inventory"] != inventory or
@@ -362,6 +380,10 @@ class IntegratedLab:
                     record["uc_remaining"] != uc_remaining):
                 raise LabRefusal("lab effect or paid UC history cannot replay")
             if chosen is not None:
+                if meta['study_arm'] is not None:
+                    food_past.append(PersonalFoodOutcome(
+                        self.life_ref, capture_ref, chosen, capture_step + 1,
+                        f'evidence:lab:result:{seq}', nutrition_gain, aversive_signal))
                 past.append(ObservedChosenResult(
                     self.life_ref, capture_ref, chosen, capture_step + 1,
                     f"evidence:lab:result:{seq}", record["net"],
@@ -414,7 +436,7 @@ class IntegratedLab:
         # No other executor, database, process or motor authority is involved.
         if not conn.in_transaction:
             raise LabRefusal("lab effect requires cognitive transaction")
-        meta = conn.execute("SELECT deltas_json FROM g1_lab_meta WHERE id=1").fetchone()
+        meta = conn.execute("SELECT deltas_json,study_arm,sensory_signal FROM g1_lab_meta WHERE id=1").fetchone()
         state = conn.execute("SELECT revision,energy,inventory,resources,terminal "
                              "FROM g1_lab_state WHERE id=1").fetchone()
         if meta is None or state is None or state[0] + 1 != seq or state[4]:
@@ -457,19 +479,21 @@ class IntegratedLab:
                 raise LabRefusal("eat without inventory")
             inventory -= 1
             metabolic_debit = 2
-            food_energy_impulse = deltas[seq-1]
+            food_energy_impulse = NUTRIENT_GAIN if meta[1] is not None else deltas[seq-1]
         elif chosen == DRINK:
             metabolic_debit = 2
         energy_next = min(100, max(0, energy - metabolic_debit + food_energy_impulse))
+        nutrition_gain = NUTRIENT_GAIN if meta[1] is not None and chosen == EAT else 0
+        aversive_signal = meta[2] if nutrition_gain else 0
         net = energy_next - energy
         terminal = int(energy_next == 0)
         conn.execute("UPDATE g1_lab_state SET revision=?,energy=?,inventory=?,"
                      "resources=?,terminal=? WHERE id=1",
                      (seq, energy_next, inventory, resources, terminal))
-        conn.execute("INSERT INTO g1_lab_steps VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (
+        conn.execute("INSERT INTO g1_lab_steps VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (
             seq, claim.capture.ref, claim.capture.step, _json(expected), chosen, status,
             claim.capture.step+1, net, energy, metabolic_debit, food_energy_impulse,
-            energy_next, inventory, resources,
+            nutrition_gain, aversive_signal, energy_next, inventory, resources,
             terminal, remaining_uc, event_head))
 
     def step(self, *, veto: bool = False, fault: str | None = None) -> LabStep:
@@ -499,7 +523,14 @@ class IntegratedLab:
             self.life_ref, row["capture_ref"], row["action_ref"],
             row["observed_step"], f"evidence:lab:result:{row['seq']}", row["net"])
             for row in rows if row["action_ref"] is not None)
-        valuation = ChosenOutcomeValuationStudy(
+        food_history = tuple(PersonalFoodOutcome(
+            self.life_ref, row['capture_ref'], row['action_ref'],
+            row['observed_step'], f"evidence:lab:result:{row['seq']}",
+            row['nutrition_gain'], row['aversive_signal'])
+            for row in rows if row['action_ref'] is not None)
+        valuation = NeedAversionValuation(
+            claim=claim, results=food_history, previous_energy=state[1],
+            arm=meta['study_arm']) if meta['study_arm'] is not None else ChosenOutcomeValuationStudy(
             claim=claim, results=history if meta["learning"] else (),
             source=_StoredResultSource(history), priors=PRIORS,
             revisit_after=2 if meta["revisit"] else None,
