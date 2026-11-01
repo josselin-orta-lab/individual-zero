@@ -3,12 +3,40 @@ import json
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 class EngineToolingTests(unittest.TestCase):
+
+    def test_i0_archive_manifest_is_closed_over_tracked_paths(self):
+        from scripts.check_engine_repository import archive_inventory_errors
+
+        entries = [
+            {"archived": "archive/i0/tests/test_old.py"},
+            {"archived": "archive/i0/workflows/old.yml"},
+        ]
+        tracked = [entry["archived"] for entry in entries]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "archive/i0/tests").mkdir(parents=True)
+            (root / "archive/i0/workflows").mkdir()
+            self.assertEqual(archive_inventory_errors(root, entries, tracked), [])
+            extra = archive_inventory_errors(
+                root, entries, tracked + ["archive/i0/tests/stray.py"])
+            self.assertIn("unmanifested tracked I0 archive file: archive/i0/tests/stray.py", extra)
+            missing = archive_inventory_errors(root, entries, tracked[:1])
+            self.assertIn("manifested I0 archive file not tracked: archive/i0/workflows/old.yml", missing)
+            link = root / "archive/i0/tests/test_old.py"
+            link.symlink_to("elsewhere.py")
+            linked = archive_inventory_errors(root, entries, tracked)
+            self.assertIn("frozen I0 archive file is symlink: archive/i0/tests/test_old.py", linked)
+            unsafe = archive_inventory_errors(
+                root, entries + [{"archived": "archive/i0/tests/../../escape.py"}], tracked)
+            self.assertTrue(any("unsafe I0 archive manifest destination" in x for x in unsafe))
+
     def test_registry_and_original_archive_are_consistent(self):
         proc = subprocess.run([sys.executable, "scripts/check_engine_repository.py", "--json"],
                               cwd=ROOT, capture_output=True, text=True)
