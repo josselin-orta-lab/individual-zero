@@ -10,12 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SKIP_DIRS = {".git", ".venv", "venv", "__pycache__", ".pytest_cache", ".mypy_cache", "reports"}
 # These root-level I1 tests predate generation-owned test directories. A new
 # I1/I2 test belongs under tests/i1/ or tests/i2/, not alongside infra tests.
-LEGACY_ROOT_GENERATION_TESTS = frozenset({
-
-    "test_i1_first_physical_step.py",
-
-    "test_i1_m11_cold_recovery.py",
-})
+LEGACY_ROOT_GENERATION_TESTS = frozenset()
 HISTORICAL_RESEARCH_MANIFEST = "docs/research/studies/HISTORICAL_ROOT_FILES.md"
 
 

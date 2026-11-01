@@ -33,11 +33,11 @@ jobs:
         run: |
           python -m unittest discover -s tests -p 'test_i1_source_snapshot.py' -v
           python -m unittest discover -s tests -p 'test_i1_generated_isolation.py' -v
-          python -m unittest discover -s tests -p 'test_i1_first_physical_step.py' -v
+          python -m unittest discover -s tests/i1 -p 'test_i1_first_physical_step.py' -v
           python -m unittest discover -s tests/research/i1-historical -p 'test_i1_active_birth.py' -v
           python -m unittest discover -s tests/research/i1-historical -p 'test_i1_model_m11_contract.py' -v
           python -m unittest discover -s tests -p 'test_i1_natural_m11_cold_recovery.py' -v
-          python -m unittest discover -s tests -p 'test_i1_m11_cold_recovery.py' -v
+          python -m unittest discover -s tests/i1 -p 'test_i1_m11_cold_recovery.py' -v
           python -m unittest discover -s tests/research/i1-historical -p 'test_i1_decision_witness.py' -v
       - name: Verify historical I0 planning
         run: python -m unittest discover -s tests -p 'test_stage6_planning.py' -q
