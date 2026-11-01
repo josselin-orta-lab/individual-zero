@@ -21,6 +21,7 @@ import tempfile
 from uuid import uuid4
 
 from i2.modules.local_survival_reflex import LocalEnergySurvivalReflex
+from i2.modules.survival_plan_viability import PlanAssessment, assess_last_resort
 from i2.modules.action_control_boundary import SafetyFinding
 from i2.modules.chosen_outcome_study import (
     ChosenOutcomeValuationStudy, ObservedChosenResult, observed_chosen_scores,
@@ -151,6 +152,39 @@ class _UnusedValuation:
         raise PrototypeRefusal("valuation is unavailable during journal inspection")
 
 
+class _ToyPlanSource:
+    """Only energy-local facts: COLLECT and DRINK never restore energy now.
+
+    A new, unrecognized affordance is never labeled not viable. This is
+    fixed toy body semantics, not a learned multi-step planner or oracle.
+    """
+    def __init__(self, claim: ObservationClaim, reflex: LocalEnergySurvivalReflex):
+        self.claim, self.reflex = claim, reflex
+
+    def verify(self, *, life_ref: str, claim: ObservationClaim, digest: str) -> bool:
+        return (claim == self.claim and life_ref == claim.life_ref
+                and digest == claim.digest())
+
+    def verify_plan(self, *, claim: ObservationClaim, plan: PlanAssessment) -> bool:
+        return (claim == self.claim and plan.evidence_ref == self.reflex.evidence_ref
+                and plan.state == ("NOT_VIABLE" if plan.semantic_ref in
+                    (COLLECT, DRINK) else "UNKNOWN"))
+
+    def priority(self) -> str | None:
+        if EAT not in self.claim.capture.accessible_semantics:
+            return None
+        plans = tuple(PlanAssessment(
+            ref, "NOT_VIABLE" if ref in (COLLECT, DRINK) else "UNKNOWN",
+            self.reflex.evidence_ref)
+            for ref in self.claim.capture.accessible_semantics if ref != EAT)
+        decision = assess_last_resort(
+            claim=self.claim, reflex=self.reflex.snapshot(),
+            reflex_source=self.reflex, observation_source=self,
+            plan_source=self, food_semantic_ref=EAT, plans=plans)
+        return (EAT if decision.status == "LAST_RESORT_RISK_RECONSIDERATION"
+                else None)
+
+
 class _LastResortValuation(ChosenOutcomeValuationStudy):
     """A categorical last-resort priority in the *paid* existing batch.
 
@@ -167,7 +201,7 @@ class _LastResortValuation(ChosenOutcomeValuationStudy):
 
     def evaluate_batch(self, *, frame: object, receipts: tuple) -> tuple:
         values = super().evaluate_batch(frame=frame, receipts=receipts)
-        priority = self.reflex.last_resort_food_priority()
+        priority = _ToyPlanSource(self.claim, self.reflex).priority()
         if priority is None:
             return values
         by_semantic = {
@@ -488,8 +522,8 @@ class IsolatedI2:
                 mapped = {c["candidate_ref"]: c["semantic_ref"]
                           for c in frame["candidates"]}
                 values = event["advice"]["values"]
-                priority = (LocalEnergySurvivalReflex(
-                    claim, energy).last_resort_food_priority()
+                priority = (_ToyPlanSource(
+                    claim, LocalEnergySurvivalReflex(claim, energy)).priority()
                     if meta["last_resort_exploration"] else None)
                 priority_applied = False
                 if priority in mapped.values():
