@@ -6,6 +6,8 @@ Formal EXP records may live in `../../experiments/EXP-####/`, while substantial 
 
 For a stable, searchable inventory of the large historic root, see [the study routing index](studies/README.md) and `python tools/research_location_index.py --family stage-12 --limit 20`. This tool preserves original paths and identifies Git blob hashes; its classifications are filename hints only.
 
+The [frozen root filename baseline](studies/HISTORICAL_ROOT_FILES.md) is checked by the lightweight repository-layout CI guard. New Markdown reports must be created inside an explicitly named study directory, never directly at this root. This is an organizational invariant, not a scientific approval.
+
 ## New research record placement
 
 New studies should follow the [English study directory conventions](studies/README.md) in `docs/research/studies/<study-id>/` with an index linking its protocol, observations, results, limitations and independent review. Existing source-pinned records must stay at their original paths until their provenance and references have been audited. New audit reports belong under `docs/research/audits/`, while active generation mechanism documentation belongs with `src/iN/docs/`. Do not treat directory placement as scientific approval.
