@@ -16,9 +16,7 @@ results.
    mortal termination, authenticated M11 recovery, fault injection and
    experimental validity. The assessor does **not** run tests or attest
    scientific readiness.
-5. **Only after an explicit architecture and science review** can a separate,
-   manually approved registration and activation proposal be considered.
-   No tool in this campaign registers, activates or imports a future engine.
+5. **ADR-0008 removes mandatory external architecture/science reviewers** as a condition for building or testing the isolated prototype. Registering a successor as the active generation remains a distinct owner release decision after demonstrated capabilities and documented risks; a green check does not authorize promotion.
 
 Proposal and repository boundary scripts (`tools/assess_engine_proposal.py`,
 `scripts/check_engine_repository.py`, `tests/test_engine_repository.py`)
@@ -31,12 +29,12 @@ tested by exact path assertions, and this routing change is not a G1 or G3 GO.
 
 Generation names are canonical: `I2` through `I9`, then `I10`, `I11`, and later positive decimal identifiers without leading zeros. Preview generation and proposal assessment accept these labels but never register, activate or birth a generation. `I0`, `I1`, `I02`, lowercase names and suffixed labels are refused.
 
-The static `no_parent_runtime_imports` check retains its historical output name but now rejects imports of **any other generation** (including I0 and future generations), selected direct/dynamic imports and symlinked source trees. A dynamic target that cannot be checked statically fails closed. This cannot prove absence of custom loaders, `exec`, third-party transitive dependencies or shared mutable services; independent review remains mandatory.
+The static `no_parent_runtime_imports` check retains its historical output name but now rejects imports of **any other generation** (including I0 and future generations), selected direct/dynamic imports and symlinked source trees. A dynamic target that cannot be checked statically fails closed. This cannot prove absence of custom loaders, `exec`, third-party transitive dependencies or shared mutable services; technical inspection remains necessary.
 
 The report's `STRUCTURE_PRESENT_REVIEW_REQUIRED` status means only that
 static source structure exists. It is not a merge gate, authorization to
 execute, scientific GO, or a guarantee of runtime correctness.
 
-## Mandatory independence review
+## Independent generation ownership (not mandatory third-party reviewers)
 
 Before architecture review, registration or promotion, apply [ADR-0001](../decisions/ADR-0001-strict-generation-autonomy.md). Treat the manifest's `parent` as history, not runtime inheritance. Require an independently owned engine, Lab/WorldBody, Scheduler UC, M11, safety, persistence, tests and cold recovery. Refuse old-mode fallback, direct or indirect imports of obsolete-generation runtime, shared mutable owner, imported identity/memory and silent migrations. Retain previous engines exclusively as isolated research comparators and archives. Respect the existing active I1 and its authentic born state; a structural assessment alone never authorizes birth or scientific GO.

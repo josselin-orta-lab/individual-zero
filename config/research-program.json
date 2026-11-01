@@ -37,7 +37,7 @@
       "path": "src/i2/docs/STATUS.md",
       "marker": "PROPOSAL_ONLY / NOT_REGISTERED / NOT_EXECUTABLE / NOT_BORN",
       "authority": "status",
-      "blob_sha": "1db211caadbbd7a5ea164f64c29bdece17d1f965"
+      "blob_sha": "1848fb5bbcfb4a17d35832a03ca80080c4dd73b8"
     },
     {
       "id": "g0",
@@ -49,30 +49,30 @@
     {
       "id": "g1",
       "path": "src/i2/docs/STATUS.md",
-      "marker": "Architectural and scientific review still required",
+      "marker": "EXTERNAL_REVIEW_GATE_RETIRED",
       "authority": "status",
-      "blob_sha": "1db211caadbbd7a5ea164f64c29bdece17d1f965"
+      "blob_sha": "1848fb5bbcfb4a17d35832a03ca80080c4dd73b8"
     },
     {
       "id": "g2",
       "path": "src/i2/docs/STATUS.md",
       "marker": "Independent **synthetic** research fixtures",
       "authority": "status",
-      "blob_sha": "1db211caadbbd7a5ea164f64c29bdece17d1f965"
+      "blob_sha": "1848fb5bbcfb4a17d35832a03ca80080c4dd73b8"
     },
     {
       "id": "g3",
       "path": "src/i2/docs/STATUS.md",
       "marker": "no independently authenticated living M11",
       "authority": "status",
-      "blob_sha": "1db211caadbbd7a5ea164f64c29bdece17d1f965"
+      "blob_sha": "1848fb5bbcfb4a17d35832a03ca80080c4dd73b8"
     },
     {
       "id": "g4",
       "path": "src/i2/docs/STATUS.md",
       "marker": "no I2 confirmatory study",
       "authority": "status",
-      "blob_sha": "1db211caadbbd7a5ea164f64c29bdece17d1f965"
+      "blob_sha": "1848fb5bbcfb4a17d35832a03ca80080c4dd73b8"
     },
     {
       "id": "h1",
@@ -184,8 +184,8 @@
     {
       "id": "I2-G1",
       "generation": "I2",
-      "label": "Independent review of hypotheses, ownership, crash boundaries",
-      "reported_assessment": "REVIEW_REQUIRED",
+      "label": "Internal I2 architectural invariants; external peer approval not mandatory",
+      "reported_assessment": "EXTERNAL_REVIEW_RETIRED_INTERNAL_CONTRACT_UNTESTED",
       "source_checks": [
         "g1",
         "h1",
@@ -214,9 +214,7 @@
         "g3",
         "i2-proposal"
       ],
-      "prerequisites": [
-        "I2-G1"
-      ]
+      "prerequisites": []
     },
     {
       "id": "I2-G4",
@@ -229,7 +227,6 @@
       ],
       "prerequisites": [
         "I2-G0",
-        "I2-G1",
         "I2-G3"
       ]
     },
@@ -244,7 +241,6 @@
       ],
       "prerequisites": [
         "I2-G0",
-        "I2-G1",
         "I2-G3",
         "I2-G4"
       ]
@@ -274,16 +270,16 @@
       ],
       "issue": 662,
       "agent_route": "i2-proposal",
-      "title": "Independently review I2 contracts before more implementation",
-      "action": "Review H1–H3, UC, expiry, motor veto, publication ownership, M11 crash and negative controls; record an external review.",
+      "title": "Historical G1 external-review request retired by ADR-0008",
+      "action": "Historical external G1 approval is not required for I2 prototyping. Route implementation to #664, retain technical C0-C11 falsifiers.",
       "expected_knowledge": "Identify contradictions and missing guarantees blocking G3.",
       "disconfirming_result": "Unresolved crash, rollback or privileged motor state invalidates readiness.",
       "deliverables": [
         "Signed G1 decision",
         "Counterexample matrix"
       ],
-      "priority_class": "blocking",
-      "information_gain": 3,
+      "priority_class": "historical",
+      "information_gain": 1,
       "effort": 2,
       "risk": 1,
       "requires_gates": []
@@ -366,8 +362,8 @@
       ],
       "issue": 664,
       "agent_route": "i2-proposal",
-      "title": "Design G3 independent I2 only after G1 approval",
-      "action": "Specify genuinely independent WorldBody, true UC, action admission, M11 and irreversible death without I1 imports.",
+      "title": "Implement isolated I2 integrated WorldBody and first-person learning prototype",
+      "action": "Implement one bounded I2-owned internal physical state, paid cognition, normal motor admission, later subjective consequence and no-learning ablation. Do not assert M11, external actuation or scientific GO without evidence.",
       "expected_knowledge": "Make software gates and failure cases independently testable.",
       "disconfirming_result": "Synthetic G2 cannot substitute for a living independent runtime.",
       "deliverables": [
@@ -378,9 +374,7 @@
       "information_gain": 3,
       "effort": 3,
       "risk": 3,
-      "requires_gates": [
-        "I2-G1"
-      ]
+      "requires_gates": []
     },
     {
       "id": "I2-G4-PREREG",
@@ -405,7 +399,6 @@
       "risk": 3,
       "requires_gates": [
         "I2-G0",
-        "I2-G1",
         "I2-G3"
       ]
     },
@@ -434,7 +427,6 @@
       "risk": 3,
       "requires_gates": [
         "I2-G0",
-        "I2-G1",
         "I2-G3",
         "I2-G4"
       ]

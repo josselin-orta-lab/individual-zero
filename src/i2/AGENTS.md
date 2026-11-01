@@ -12,7 +12,7 @@ For synthetic changes, use `python -m unittest discover -s tests/i2 -p 'test_*.p
 
 ## Current research-direction decision
 
-[ADR-0002](../../docs/decisions/ADR-0002-scientific-prototype-first.md) requires **science-first, minimum integrated** offline I2 prototypes. Initial H2 slice: controlled experience -> claimed subjective evidence -> past-only credit -> paid Competition advice -> separately labelled offline shadow outcome, with no-H2 ablation and negative cases. Do not create another living state owner or confuse software tests with a valid H1/H2/H3 study. Signal **DRIFT DETECTED** if the next change adds complexity without helping a falsifiable end-to-end question. G1/G3 remain blocked.
+[ADR-0002](../../docs/decisions/ADR-0002-scientific-prototype-first.md) requires **science-first, minimum integrated** offline I2 prototypes. Initial H2 slice: controlled experience -> claimed subjective evidence -> past-only credit -> paid Competition advice -> separately labelled offline shadow outcome, with no-H2 ablation and negative cases. Do not create another living state owner or confuse software tests with a valid H1/H2/H3 study. Signal **DRIFT DETECTED** if the next change adds complexity without helping a falsifiable end-to-end question. G1 external peer-review gating has been withdrawn by ADR-0008; G3 scientific capabilities remain NOT_ESTABLISHED.
 
 ## Current stop rule and next milestone (owner-approved)
 
@@ -21,7 +21,7 @@ and [ADR-0004](../../docs/decisions/ADR-0004-evidence-driven-development-and-g2-
 **After merged PR #786, do not start another open-ended G2 observational,
 revisit, constant-tuning or synthetic guard campaign.** Only fix a
 reproducible scientific-validity defect, remove a specifically documented
-critical-path blocker or act on independent G1 review feedback. Do not
+critical-path blocker or address a verified scientific-validity defect. Do not
 add a separate cognition/WorldBody/UC/M11 owner.
 
 **ADR-0005 exception:** one disposable G1-LAB integrated, non-living research cycle is explicitly authorized. Use paid v5 cognition and one internal body effect in the SAME local SQLite transaction with a no-learning comparator. No motor admission, M11, birth, engine registration or living G3 authority. No open-ended G2 tuning.
@@ -44,11 +44,9 @@ with the explicitly researcher-designed valuation equation. This is
 generalize or elevate this experiment under that approval. The original
 prospective design and exact parameter-lock candidate retain their historical
 pre-approval wording to preserve provenance; use the report and #662 comment
-for the later execution status. No social-observation experiment, living I2
-WorldBody, motor authority, M11 witness, birth or G3 implementation is
-authorized. G1-LIVE remains REVIEW_REQUIRED by two independent reviewers.
+for the later execution status. No repeat of the completed v1-r1 experiment is authorized. ADR-0008 now permits **new, separately scoped isolated G3 prototype engineering**; it does not promote the toy G1-LAB results into living scientific evidence, certify M11, or activate the engine.
 
-**Current allowed work:** prepare, request and reconcile independent
+ prepare, request and reconcile independent
 architecture and scientific reviews of the [minimal G1 loop
 brief](../../docs/architecture/proposals/i2-g1-minimal-living-loop-review-brief-2026-11-01.md)
 under #662, plus independent G0 custody under #661. The chosen candidate
@@ -62,3 +60,21 @@ physical, paid, born I2 causal loop for #664, with natural collect/eat
 decisions, real WorldBody consequence, later first-person learning and a
 no-learning comparator. Do not activate from G2 tests, grant motor authority,
 claim M11, or run mortal cohorts before the proper gates.
+**Current owner decision: [ADR-0008](../../docs/decisions/ADR-0008-remove-obsolete-i2-external-g1-review-gate.md).**
+The old external G1 two-reviewer prerequisite is **RETIRED**. Do not ask the
+owner to nominate/certify reviewers before I2 development, and do not route
+the next intervention to closed procedural issue #662. G0 provenance #661
+proceeds in parallel. **Start #664 autonomously:** one I2-owned, bounded
+research-only WorldBody -> first-person capture -> paid Competition ->
+fresh safety/admission -> internal action -> later subjective outcome ->
+updated decision, compared with a no-learning individual.
+
+An internal research prototype may implement and exercise fresh local birth,
+internal motor admission and modeled terminal behavior. Keep its contracts,
+tests and synthetic vs physical claims explicit. Do **not** register I2
+as active, actuate external devices, assert real independently witnessed M11,
+resurrect a terminal identity, or claim H1/H2/H3 efficacy without evidence.
+Missing true M11 external trust remains a technical limitation to report,
+**not** an external human review queue. Reuse existing I2-owned code only;
+no I1 import or new duplicate state owner. Preserve the historical one-shot
+v1-r1 results without retuning.

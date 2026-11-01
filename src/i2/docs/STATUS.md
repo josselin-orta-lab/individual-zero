@@ -8,7 +8,7 @@ I1 remains the active generation. I2 has no declared birth/runtime entrypoints o
 | Gate | Maintained interpretation |
 | --- | --- |
 | G0 / I1 baseline | Reference source pinned; independent M11/archive custody, the preserved negative results and independent reproducibility audit remain to be established |
-| G1 | Architectural and scientific review still required; proposed intent, authority, COMMIT, crash and witness contracts are not accepted living architecture |
+| G1 | **EXTERNAL_REVIEW_GATE_RETIRED** by ADR-0008: internal architectural contract/checklist now; actual crash, witness and motor invariants remain unproved until tested |
 | G2 | Independent **synthetic** research fixtures and a local SQLite v5 cognition/H2 cycle with targeted non-living tests |
 | G3 | **NOT_ESTABLISHED**: no independently authenticated living M11, UC Scheduler, physical WorldBody, birth, irreversible living death or motor authority |
 | G4–G6 | **NOT_STARTED**: no I2 confirmatory study, living comparative cohort or scientific promotion |
@@ -22,9 +22,9 @@ I1 remains the active generation. I2 has no declared birth/runtime entrypoints o
 
 **All G2 findings are non-living and local to the tested fixture.** They grant no motor admission, real-world consequence, birth, retry, recovery, M11 authentication or permission to promote I2.
 
-## Next reviewed work
+## Next integrated prototype work (ADR-0008)
 
-Investigate [G1 continuity and learning contract](../../../docs/architecture/proposals/i2-continuity-and-learning-contract-2026-10-31.md), [G1 crash/publication boundaries](../../../docs/architecture/proposals/i2-publication-boundaries-g1-review-2026-10-31.md), and [the I1-to-I2 transition gates](../../../docs/architecture/proposals/i2-transition-and-scientific-gates-2026-10-31.md). Independently review issue #662 (G1) and issue #661 (I1 G0 provenance) before proposing living G3 work. See [engine promotion rules](../../../docs/engineering/ENGINE_PROMOTION.md). **Do not instantiate an I2 individual.**
+Investigate [G1 continuity and learning contract](../../../docs/architecture/proposals/i2-continuity-and-learning-contract-2026-10-31.md), [G1 crash/publication boundaries](../../../docs/architecture/proposals/i2-publication-boundaries-g1-review-2026-10-31.md), and [the I1-to-I2 transition gates](../../../docs/architecture/proposals/i2-transition-and-scientific-gates-2026-10-31.md). The owner retired mandatory two-reviewer G1 signoff in [ADR-0008](../../../docs/decisions/ADR-0008-remove-obsolete-i2-external-g1-review-gate.md). Develop the bounded isolated WorldBody/UC/first-person/admitted-action loop in #664 now; preserve #661 G0 custody in parallel. Local experimental births may be implemented and tested, but I2 stays unregistered and scientific G3/M11 remains NOT_ESTABLISHED until verified; no external actuators or automatic engine promotion. See [engine promotion rules](../../../docs/engineering/ENGINE_PROMOTION.md).
 
 ## History and provenance
 

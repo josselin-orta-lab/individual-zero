@@ -24,6 +24,7 @@ ALLOWED_KINDS = {
     "preregistered_unexecuted": "NOT_EXECUTED",
     "historical_inconclusive": "INCONCLUSIVE",
     "architecture_review_pending": "REVIEW_REQUIRED",
+    "architecture_review_retired": "RETIRED_PROCEDURAL_GATE",
     "archive_custody_pending": "PARTIAL",
 }
 ALLOWED_ROLES = {
@@ -346,7 +347,7 @@ def validate(root: Path = ROOT, *, strict_sources: bool = True) -> dict:
             errors.append(name + ": original dated result not linked")
         if kind == "preregistered_unexecuted" and "reported_result" in roles:
             errors.append(name + ": unexecuted protocol cannot have claimed results")
-        if kind == "architecture_review_pending" and not {"architecture_proposal", "review_proposal"} <= set(roles):
+        if kind in ("architecture_review_pending", "architecture_review_retired") and not {"architecture_proposal", "review_proposal"} <= set(roles):
             errors.append(name + ": missing independent review inputs")
         if kind == "archive_custody_pending":
             required_roles = {"g0_transition", "artifact_inventory", "custody_review",
@@ -400,7 +401,7 @@ def dossier_view(dossier: dict, source_by_id: dict, audit: dict) -> dict:
         primary_status = "PRIMARY_ORIGINAL_RESULT_NOT_LINKED"
     elif dossier["kind"] == "preregistered_unexecuted":
         primary_status = "NO_RESULTS_EXPECTED_NOT_EXECUTED"
-    elif dossier["kind"] == "architecture_review_pending":
+    elif dossier["kind"] in ("architecture_review_pending", "architecture_review_retired"):
         primary_status = "REVIEW_PROPOSALS_ONLY"
     elif dossier["kind"] == "archive_custody_pending":
         primary_status = "PROVIDER_METADATA_ONLY_INDEPENDENT_CUSTODY_NOT_ATTESTED"

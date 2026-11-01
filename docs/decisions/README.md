@@ -69,3 +69,5 @@ A filled illustrative example is available in [../../examples/adr-example.md](..
 - [ADR-0006: evidence-grounded aversion reappraisal](ADR-0006-evidence-grounded-aversion-reappraisal.md) (1 November 2026). A hidden payoff change is not learnable from an unchanged chosen-outcome history; stale +9 remains an artificial comparator.
 
 - [ADR-0007: separate physiological need, nutrition and aversion](ADR-0007-need-nutrition-aversion-scientific-design.md) (1 November 2026). Owner accepts the scientific model and four-arm research design in principle, NOT an executed or parameter-frozen study; G1-LIVE/M11 unchanged.
+
+- [ADR-0008: retire obsolete mandatory external G1 review for I2 prototyping](ADR-0008-remove-obsolete-i2-external-g1-review-gate.md) (1 November 2026). Supersedes earlier two-reviewer and G0-before-coding holds; authorizes autonomous isolated I2 implementation #664, with real technical/scientific safeguards and no automatic active-engine promotion.

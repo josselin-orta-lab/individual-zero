@@ -34,7 +34,7 @@ python tools/research_coordinator.py trace --id gate:I2-G3
 python tools/research_coordinator.py catalog --limit 30
 ```
 
-Graph entities include research questions, reported findings (including negative/null results), gate dependencies, intervention candidates, source quotations, source documents and linked issues. The edge `reported_in` means **document attribution**, not proof. `qualifies_question` communicates a result or limitation, **not causal inference**. Gate edges remain blocked pending explicit independent review.
+Graph entities include research questions, reported findings (including negative/null results), gate dependencies, intervention candidates, source quotations, source documents and linked issues. The edge `reported_in` means **document attribution**, not proof. `qualifies_question` communicates a result or limitation, **not causal inference**. ADR-0008 retires the mandatory external G1 review; technical and scientific evidence is still required before asserting any capability.
 
 The catalog inspects Markdown names across `docs/research/`, `src/i1/docs/`, `src/i2/docs/`, `docs/architecture/proposals/` and `experiments/`. It reports the number of documents directly cited in the curated program and returns **unreviewed candidates** with filename-derived hints. A historical report not directly cited is **not** necessarily missing from all research; it simply has not been linked into this small index. A file called `results.md` is not verified evidence.
 
@@ -79,26 +79,23 @@ The [initial dated G0 metadata audit](../research/audits/I1_G0_PROVIDER_ARTIFACT
 
 Use `python tools/research_dossiers.py show --id I1-G0-CUSTODY` and `python tools/research_dossiers.py g0-provider-inventory` to identify the immediate preservation dependency before proposing living G3 work. Metadata validation does not authorize a study, change the scientific verdict, or prove the artifacts are still available after the dated observation.
 
-## Current owner-approved intervention priority (ADR-0004, 1 November 2026)
+## Current owner-approved intervention priority (ADR-0008, 1 November 2026)
 
-**Stop open-ended G2 work after PR #786.** H2 observed-action and unforced
-collect/eat pilots exposed necessary limits but do not demonstrate a living
-I2 or generalizable adaptation. Further constant tuning, parallel
-synthetic witnesses/owners or more G2-only tests are not the critical path.
-Exception: a reproducible science-validity defect, a proven immediate
-dependency, or independent G1 reviewer feedback.
+The owner retired the obsolete mandatory two-reviewer G1 signoff. It is
+**not** a prerequisite for isolated I2 research implementation or testing.
+Start #664: the smallest I2-owned WorldBody -> first-person capture ->
+paid Competition -> normal admission -> committed internal action ->
+later personally experienced result -> revised decision, with an independent
+no-learning control. G0 preservation #661 continues in parallel and
+remains PARTIAL, but does not block sandbox source development.
+The old #662 reviewer process is historical; do not recommend it as the
+next coding action or assert it was approved. Consult [ADR-0008](../decisions/ADR-0008-remove-obsolete-i2-external-g1-review-gate.md).
 
-The next I2 development action is an **independent, exact-SHA G1
-architecture/science review** (#662), supported by the [one-page
-implementation handoff](../architecture/proposals/i2-g1-minimal-living-loop-review-brief-2026-11-01.md),
-plus independent G0 evidence custody (#661). The recommender already
-prioritizes these blocking tasks; **do not change its scoring to manufacture
-progress**. After the gates, implement one minimal independent
-WorldBody -> subjective capture -> paid cognition -> admitted act ->
-next-capture learning loop (#664), not individual subcomponent campaigns.
-A missing independent reviewer or external witness is a **blocking
-dependency to report**; no agent can self-certify an independent verdict.
-See [ADR-0004](../decisions/ADR-0004-evidence-driven-development-and-g2-stop-rule.md).
+Avoid open-ended G2 tuning, duplicate owners or manufactured reviewers.
+Keep the source-pinned negative results, real UC charges, crash/terminal
+falsifiers, and clearly report when independently attested M11 or
+scientific learning are **NOT_ESTABLISHED**. No automatic registry
+activation, external actuator or confirmatory study launch is authorized.
 
 ## Agent decision cycle
 
@@ -106,11 +103,11 @@ See [ADR-0004](../decisions/ADR-0004-evidence-driven-development-and-g2-stop-rul
 2. Inspect live GitHub issues, relevant open PRs on the exact SHA, original traces and negative findings. This tool does not fetch authenticated GitHub state.
 3. Identify the **critical research dependency**. Distinguish code existence, tested software, observed behavior and independently established science.
 4. Propose the smallest falsifiable intervention that closes a consequential gap, including competing explanations and a potential negative result.
-5. Obtain review/protocol approval where required; never launch a study just to fill missing rows.
+5. Apply actual protocol/engineering checks for the selected experiment; no external human reviewer is required to code the isolated I2 prototype. Never run a study merely to fill missing rows.
 6. Only then call `python tools/agent_context.py route --route <agent-route>` for scoped ownership and tests.
 7. Produce an [agent handoff](AGENT_HANDOFF.md): exact SHA, evidence, test results and next independent research question.
 
-In the dated 31 October 2026 source reports, I1 A1-C has a targeted **NO_GO**, L3 is **NOT_ESTABLISHED**, A2-R is **NOT_EXECUTED**, and I2 G2 is synthetic/non-living. Independent G1 review (#662) and G0 archive/custody verification (#661) deserve examination **before** G3 living architecture or G5 comparisons. These are recorded assessments, not verified live issue states.
+In the dated 31 October 2026 source reports, I1 A1-C has a targeted **NO_GO**, L3 is **NOT_ESTABLISHED**, A2-R is **NOT_EXECUTED**, and I2 G2 is synthetic/non-living. Per ADR-0008 the G1 external review request #662 is retired; #664 isolated development may proceed now, while G0 archive/custody #661 remains important to future I1/I2 comparisons. These are recorded assessments, not verified live issue states.
 
 ## Optional issue-state snapshot
 

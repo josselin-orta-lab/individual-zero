@@ -14,7 +14,7 @@ The seed now covers five distinct cases, including a distinct G0 custody risk:
 | `I1-A1C-TARGETED` | `NO_GO` | Original A1-C preregistration, a later post-hoc diagnostic, a dated I1 status summary | Original primary outcome record, independent M11 archive custody and replication |
 | `I1-A2R-REWARD` | `NOT_EXECUTED` | Frozen prospective protocol and I1 status summary | No 96-life cohort exists; **do not invent a result or run it to fill the dossier** |
 | `I1-A235B-COMPETITION` | `INCONCLUSIVE` | Original prospective preregistration and reported results | The intended natural contested-opportunity condition was not met; **software CI PASS is not scientific confirmation** |
-| `I2-G1-INDEPENDENT-REVIEW` | `REVIEW_REQUIRED` | Proposal contracts and G1 review requests, plus dated I2 status | Independent architectural/scientific decision, living M11 safeguards, birth and motor authority are not established |
+| `I2-G1-INDEPENDENT-REVIEW` | `RETIRED_PROCEDURAL_GATE` | Historical proposal and reviewer request, superseded by ADR-0008 | Actual M11, integrated birth, UC, body and motor correctness remain NOT_ESTABLISHED; prototype #664 may proceed |
 
 These are **dated, source-reported assessments**, not new independent verdicts made by this tool. I1 remains the active generation. I2 remains an unregistered, non-living proposal. The seed is deliberately small; many historic research records have not yet been curated.
 
