@@ -93,7 +93,7 @@ class RepositoryLayoutTests(unittest.TestCase):
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 dest.write_text("# Fixture\n", encoding="utf-8")
             tests = root / "tests"
-            (tests / "test_i1_active_birth.py").write_text("# Existing\n")
+            (tests / "test_i1_m11_cold_recovery.py").write_text("# Existing\n")
             self._seed_research_baseline(root)
             self.assertEqual(module.check(root)["status"], "PASS")
             (tests / "test_i2_unscoped.py").write_text("# New\n")

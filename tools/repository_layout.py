@@ -11,14 +11,10 @@ SKIP_DIRS = {".git", ".venv", "venv", "__pycache__", ".pytest_cache", ".mypy_cac
 # These root-level I1 tests predate generation-owned test directories. A new
 # I1/I2 test belongs under tests/i1/ or tests/i2/, not alongside infra tests.
 LEGACY_ROOT_GENERATION_TESTS = frozenset({
-"test_i1_a235_m11_cold_recall.py",
-"test_i1_a235_physical_witness.py",
-"test_i1_a236_combined_m11_cold.py",
-"test_i1_a237_d2_no_geography.py",
-"test_i1_active_birth.py",
-    "test_i1_decision_witness.py", "test_i1_first_physical_step.py",
-    "test_i1_issue136_d1_learning.py", "test_i1_issue136_water_readiness.py",
-    "test_i1_m11_cold_recovery.py", "test_i1_model_m11_contract.py",
+    "test_i1_decision_witness.py",
+    "test_i1_first_physical_step.py",
+    "test_i1_issue136_d1_learning.py",
+    "test_i1_m11_cold_recovery.py",
 })
 HISTORICAL_RESEARCH_MANIFEST = "docs/research/studies/HISTORICAL_ROOT_FILES.md"
 
