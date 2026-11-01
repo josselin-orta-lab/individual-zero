@@ -63,7 +63,7 @@ jobs:
           python -m unittest discover -s tests -p test_research_coordinator.py -v
           python -m unittest discover -s tests -p test_research_knowledge.py -v
           python -m unittest discover -s tests -p test_research_corpus.py -v
-          python tools/research_dossiers.py audit --structure-only > /tmp/iz-dossier-audit.json
+          python tools/research_dossiers.py audit --structure-only > /tmp/iz-dossier-audit.json || { cat /tmp/iz-dossier-audit.json; exit 1; }
           python tools/research_dossiers.py g0-provider-inventory > /tmp/iz-g0-provider.json
           python -m unittest discover -s tests -p test_research_dossiers.py -v
           python tools/research_dossiers.py show --id I1-A1C-TARGETED > /tmp/iz-a1c-dossier.json || test "$?" -eq 2
