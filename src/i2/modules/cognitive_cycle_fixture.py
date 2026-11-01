@@ -1069,7 +1069,8 @@ class CognitiveCycleFixture:
 
     def _process(self, *, claim: ObservationClaim, request: dict,
                  _fault_at: str | None = None, feedback_update: object | None = None,
-                 feedback_previous: object | None = None) -> CycleReceipt:
+                 feedback_previous: object | None = None,
+                 _g1_lab_hook: object | None = None) -> CycleReceipt:
         if _fault_at is not None and _fault_at not in _FAULTS:
             raise ValueError("invalid test fault point")
         if (feedback_update is None) != (feedback_previous is None):
@@ -1216,6 +1217,12 @@ class CognitiveCycleFixture:
                           body, head, next_hash))
             conn.execute("UPDATE account SET last_step=?, committed=?, owner_json=?, chain_head=? WHERE id=1",
                          (claim.capture.step, seq, _json(owner.export_state()), next_hash))
+            if _g1_lab_hook is not None:
+                if not callable(_g1_lab_hook):
+                    raise ValueError("invalid non-living lab hook")
+                _g1_lab_hook(conn=conn,seq=seq,claim=claim,frame=frame_map,
+                             control_review=control_review,remaining_uc=balance,
+                             event_head=next_hash)
             if _fault_at == "before_commit":
                 raise FaultInjected("test failure immediately before commit")
             conn.execute("COMMIT")
@@ -1306,18 +1313,22 @@ class CognitiveCycleFixture:
     def open(self, *, claim: ObservationClaim, semantic_ref: str,
              evidence_ref: str, ttl_steps: int,
              _fault_at: str | None = None, feedback_update: object | None = None,
-             feedback_previous: object | None = None) -> CycleReceipt:
+             feedback_previous: object | None = None,
+             _g1_lab_hook: object | None = None) -> CycleReceipt:
         return self._process(claim=claim,
                              request=_request("open", semantic_ref, evidence_ref, ttl_steps),
                              _fault_at=_fault_at, feedback_update=feedback_update,
-                             feedback_previous=feedback_previous)
+                             feedback_previous=feedback_previous,
+                             _g1_lab_hook=_g1_lab_hook)
 
     def observe(self, *, claim: ObservationClaim,
                 _fault_at: str | None = None, feedback_update: object | None = None,
-                feedback_previous: object | None = None) -> CycleReceipt:
+                feedback_previous: object | None = None,
+             _g1_lab_hook: object | None = None) -> CycleReceipt:
         return self._process(claim=claim, request=_request("observe"),
                              _fault_at=_fault_at, feedback_update=feedback_update,
-                             feedback_previous=feedback_previous)
+                             feedback_previous=feedback_previous,
+                             _g1_lab_hook=_g1_lab_hook)
 
     def _inspect_uncertain_local(
         self, *, previous_count: int, previous_head: str,
