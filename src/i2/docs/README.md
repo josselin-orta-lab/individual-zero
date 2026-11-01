@@ -19,6 +19,7 @@
 - [Research contract / falsification](../../../docs/architecture/proposals/i2-continuity-and-learning-contract-2026-10-31.md).
 - [Transition gates and I1 evidence limits](../../../docs/architecture/proposals/i2-transition-and-scientific-gates-2026-10-31.md).
 - [Proposed G1 publication/crash review](../../../docs/architecture/proposals/i2-publication-boundaries-g1-review-2026-10-31.md), not yet an approved living-system contract.
+- [Minimal living-loop G1 review brief](../../../docs/architecture/proposals/i2-g1-minimal-living-loop-review-brief-2026-11-01.md): concise independent-review handoff and minimal post-G1 integrated target under ADR-0004, **not approval**.
 - [Current-source G1 review delta and counterexample matrix](../../../docs/architecture/proposals/i2-g1-current-review-delta-2026-11-01.md): corrects dated G1 ownership diagrams to unified v5 and requests independent R1-R8 decisions. **Review packet only, not gate approval.**
 - [Independent-generation requirement](../../../docs/decisions/ADR-0001-strict-generation-autonomy.md).
 
