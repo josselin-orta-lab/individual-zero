@@ -34,7 +34,7 @@ STABLE = (8, 8, 8, 8, 8, 8)
 REVERSAL = (8, -8, -8, -8, -8, -8)
 ADVERSE = (-8, -8, -8, -8, -8, -8)
 RECOVERY = (8, -8, -8, 8, 8, 8)
-PRIORS = {A: 3, B: 0, C: 2}
+PRIORS = {A: 3, B: -20, C: 2}
 
 
 class RecordedSource:
