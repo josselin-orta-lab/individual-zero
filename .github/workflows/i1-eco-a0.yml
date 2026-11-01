@@ -1,12 +1,8 @@
 name: I1 ECO-v1 A0 six-world measurement pilot
 on:
+  # Historical six-world physical pilot: operator dispatch only.
+  # A source or workflow maintenance commit must never birth a new cohort.
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/i1-eco-a0.yml'
-      - 'tools/run_i1_eco_a0.py'
-      - 'tools/aggregate_i1_eco_a0.py'
 permissions:
   contents: read
 jobs:

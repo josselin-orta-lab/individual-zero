@@ -120,6 +120,13 @@ class NavigationSanity(unittest.TestCase):
             self.assertNotIn("'" + glob + "'", heavy)
         self.assertIn("check_repo_navigation.py --scope current", light)
 
+    def test_historical_a0_birth_pilot_requires_operator_dispatch(self):
+        workflow = (ROOT / ".github/workflows/i1-eco-a0.yml").read_text(encoding="utf-8")
+        events = workflow.partition("on:")[2].partition("permissions:")[0]
+        self.assertIn("  workflow_dispatch:", events)
+        self.assertNotIn("  push:", events)
+        self.assertNotIn("  pull_request:", events)
+
     def test_docs_only_i2_updates_use_lightweight_navigation_ci(self):
         heavy = (ROOT / ".github/workflows/i2-proposal-safety.yml").read_text(encoding="utf-8")
         light = (ROOT / ".github/workflows/agent-context-static.yml").read_text(encoding="utf-8")
