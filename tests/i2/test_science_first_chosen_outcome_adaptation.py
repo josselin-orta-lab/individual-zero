@@ -99,7 +99,8 @@ def run(regimes, *, explore=False):
             ).audit() == fixture.audit()
             # Exploration is the ONE externally controlled trial on cycle 3.
             # It is not chosen, admitted or dispatched by I2 itself.
-            chosen = B if explore and index == 3 else recommendation
+            chosen = ((B if recommendation == A else A)
+                      if explore and index == 3 else recommendation)
             world._completion_delta = hidden_delta
             first = world.intervene(step=step + 1, semantic=chosen)
             completion = world.intervene(step=step + 2, semantic=C)
@@ -151,18 +152,18 @@ class ChosenOutcomeAdaptationTests(unittest.TestCase):
         reversal, reversal_no = reports["reversal"]
         self.assertEqual([r["advice"] for r in reversal], [A, A, B, B, B, B])
         self.assertEqual([r["advice"] for r in reversal_no], [A, A, B, B, B, B])
-        self.assertEqual(sum(r["observed_net"] for r in reversal), -12)
+        self.assertEqual(sum(r["observed_net"] for r in reversal), -20)
         self.assertEqual(sum(r["observed_net"] for r in reversal_no), -12)
 
         adverse, adverse_no = reports["adverse"]
         self.assertEqual([r["advice"] for r in adverse], [A, B, B, B, B, B])
-        self.assertEqual(sum(r["observed_net"] for r in adverse), -20)
+        self.assertEqual(sum(r["observed_net"] for r in adverse), -28)
         self.assertEqual(sum(r["observed_net"] for r in adverse_no), -20)
 
         recovery, recovery_no = reports["recovery"]
-        self.assertEqual([r["advice"] for r in recovery], [A, A, B, B, B, B])
+        self.assertEqual([r["advice"] for r in recovery], [A, A, B, B, A, A])
         self.assertEqual([r["advice"] for r in recovery_no], [A, A, B, B, B, B])
-        self.assertEqual(sum(r["observed_net"] for r in recovery), -12)
+        self.assertEqual(sum(r["observed_net"] for r in recovery), 12)
         self.assertEqual(sum(r["observed_net"] for r in recovery_no), -12)
 
         print("I2_CHOSEN_OBSERVATIONAL_G2 "+json.dumps({
