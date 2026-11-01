@@ -20,6 +20,7 @@ import sqlite3
 import tempfile
 from uuid import uuid4
 
+from i2.modules.local_survival_reflex import LocalEnergySurvivalReflex
 from i2.modules.action_control_boundary import SafetyFinding
 from i2.modules.chosen_outcome_study import (
     ChosenOutcomeValuationStudy, ObservedChosenResult, observed_chosen_scores,
@@ -501,7 +502,23 @@ class IsolatedI2:
                 raise PrototypeRefusal("advice without paid frame")
             spent = (event["intake_uc"] + event["competition_uc"] +
                      event["control_uc"])
+            # Diagnostic from the same already audited predecision energy.
+            # It cannot select/veto an action or alter an existing score.
+            claim = self._claim(
+                seq - 1, row["before_energy"], inventory, resources,
+                tuple(rows[:seq - 1]),
+                physical_ticks=sum(1 for revision in tick_revisions if revision < seq),
+            )
+            reflex = LocalEnergySurvivalReflex(claim, row["before_energy"])
+            if event["claim_digest"] != claim.digest():
+                raise PrototypeRefusal("reflex capture diverges from committed event")
             output.append({
+                "survival_reflex": {
+                    "state": reflex.state,
+                    "evidence_ref": reflex.evidence_ref,
+                    "claim_digest": reflex.snapshot().claim_digest,
+                    "authority": "LOCAL_NON_MOTOR_ONLY",
+                },
                 "seq": seq,
                 "physical_ticks_before": sum(
                     1 for revision in tick_revisions if revision < seq),
