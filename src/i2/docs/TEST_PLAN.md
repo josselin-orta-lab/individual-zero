@@ -113,3 +113,65 @@ first-person WorldBody consequences, G3, H2 natural learning or H3
 integration. The next real scientific milestone remains an unforced
 sequence in an independently reviewed living loop after G1/G3. Avoid
 another optimization of fixed bonuses before that review.
+
+## One-action-per-capture unforced G2 falsifier (2026-11-01)
+
+`tests/i2/test_science_first_unforced_action_chain.py` is the shortest
+existing-component check of the missing self-completion link exposed by PR #784.
+The synthetic cognitive fixture proposes *one* action on each capture, and
+the **separate research controller follows exactly that advice** in the
+already-existing `TinyControlledWorld`. It never scripts a second `eat`
+action, substitutes a recommendation or supplies the unchosen outcome.
+A minimal test-world affordance filter exposes `eat` only when an earlier
+`collect` has left a berry in inventory. Cognition receives the current
+**offered action names only**, not inventory counts, hidden regime, future
+consumption result or the research controller's instrumentation.
+
+An outcome affects the observational readout only **after** its action
+has been applied and at a *later* capture. The one cognitive SQLite v5 owner
+spends synthetic intake, Competition and Action Control UC on every capture.
+Compare independently initialized, equally funded **60-UC** research arms:
+fixed prior values (no-learning ablation), chosen-only recency valuation,
+and optional stale-action revisit. The starting budgets are equal; **actual
+UC spending can differ** when advice changes inventory, available candidates
+or a tie withholds review. Record actual UC rather than claiming that costs
+were identical. Eight deterministic captures, stable, adverse, reversal,
+recovery and neutral regimes. The priors A=3 (collect), B=4 (eat),
+C=1 (drink), fixed recency offset +5 and stale bonus +9 are
+**researcher-authored**; previous +5 scoring was adjusted after seeing
+CI failures in PR #784. This is an *exploratory regression probe*, not
+a preregistered confirmatory efficacy test.
+
+Expected action traces (A=collect, B=eat, _=no advice), total outcome and
+charged synthetic UC (all values remain to be verified by exact-SHA CI):
+
+| Regime | Fixed | Chosen-observational | Stale revisit |
+| --- | --- | --- | --- |
+| Stable | ABABABAB / +16 / 36 | ABABABAB / +16 / 36 | ABABABAB / +16 / 36 |
+| Adverse | ABABABAB / -48 / 36 | ABAAAAAA / -24 / 38 | ABAABAAB / -40 / 38 |
+| Reversal | ABABABAB / -32 / 36 | ABABAAAA / -16 / 37 | ABABAABA / -24 / 37 |
+| Recovery | ABABABAB / -16 / 36 | ABAAAAAA / -24 / 38 | ABAABBAB / 0 / 37 |
+| Neutral | ABABABAB / -16 / 36 | ABA_____ / -6 / 33 | ABA_____ / -6 / 33 |
+
+**Interpretation:** the stable action sequence also occurs in the fixed-prior
+ablation, so its apparent success is NOT evidence of learning. Chosen-only
+past consequences can suppress a newly harmful eat option, but in a later
+recovery can fail to try it again. A fixed revisit heuristic can rediscover
+it in recovery but pays extra adverse losses. The neutral condition can
+produce ambiguous paid advice and leave berries unconsumed. A withheld
+adverse eating outcome causes an extra harmful eating decision: the
+consequence existed in the test world but is intentionally absent from
+the synthetic evidentiary readout. These are behavioral G2 limitations,
+not an individually learned physiological need or a demonstration of H2
+delayed credit. The action offer itself includes the experimenter's
+rule `eat iff inventory>0`.
+
+**No G3 claim:** the test-world controller actually invokes `intervene`;
+the cognitive fixture still has `motor_authority=NONE` and no real
+Scheduler, body owner, M11 identity/attestation, birth, mortality or
+autonomous multi-goal learning. No real individual acts. A green CI
+only says the exploratory test produced the expected software behavior.
+The next project action after this bounded falsification is **independent
+G1 review** of #662 and #664, then a living G3 implementation when
+authorized. Do not respond to this study by inventing another G2 owner
+or tuning the post-hoc score to optimize its five regimes.
