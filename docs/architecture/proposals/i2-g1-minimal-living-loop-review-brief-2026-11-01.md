@@ -128,3 +128,39 @@ protocol (#663); **no such study is approved or run here**.
 **One-sentence deliverable to the owner:** a precise signed/attributed
 G1 verdict and the smallest unresolved proof, or a documented REVISE_G1
 with the exact reason. More G2 fixture PRs do not resolve it.
+
+## Concrete bounded G1 falsifier: visibility after private COMMIT (R1, R4, R6)
+
+The new non-living `tests/i2/test_g1_publication_visibility.py` provides
+one **specific reviewer-blocking counterexample**, not another G2
+learning study: a current local snapshot is **not** automatically the
+latest publicly attested WorldBody. In the C5 interval between a private
+local COMMIT of `S_(t+1)` and the external CAS, a naive `latest_local`
+read leaks `S_(t+1)` and its consequence into the observation for `S_t`.
+Conversely, if the owner overwrites `S_t` and retains only `S_(t+1)`,
+a correct witness-pinned reader cannot reconstruct `S_t` at all.
+
+**G1 reviewer decision needed:** explicitly choose how the **same**
+canonical owner durably retains and retrieves the entire previously
+attested body revision while a newer private revision is pending; define
+whether this is an append-only versioned record, a bound immutable
+snapshot, or another single-owner mechanism, and what happens when
+the trusted witness head points at a revision that local storage
+cannot supply. Neither caching an untrusted current row nor inventing a
+second mutable body owner is an acceptable answer.
+
+The bounded model also tests C7 matching read after hypothetical CAS,
+C8 lost acknowledgment with a permanent halt, C9 old-writer fencing
+and C10 terminal rollback. In the C10 **negative control**, an operator
+restoring BOTH locally owned data and a locally forged witness can make
+the dead revision appear alive. The model's `verified_latest=True`
+parameter and mock fencing epoch are **ASSUMPTIONS**, not an actual
+independent trust service or signer; the tests cannot validate
+independent M11, global non-equivocation or true motor/physical effects.
+Twelve bounded crash/cut cases are exercised; this is **not** an
+exhaustive proof of distributed correctness.
+
+**Gate:** review the falsifiers and state-retention decision in #662
+before implementation #664. Tests passing, adding this note, or
+sharing the model **never** changes `G1=REVIEW_REQUIRED` or
+`G3=NOT_ESTABLISHED`. No I2 registration or birth is permitted.
