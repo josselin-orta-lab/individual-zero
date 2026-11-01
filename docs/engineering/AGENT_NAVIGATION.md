@@ -19,7 +19,7 @@ This is a **navigation index**, not a second architectural specification. It sho
 | Inspect archived I0 | `docs/architecture/ENGINE_GENERATIONS.md` | `config/archives/i0-20261017.json` without modifying history |
 | Contribute or file an issue | `CONTRIBUTING.md` | issue/PR templates and code owner policy |
 | Run engineering scripts | `docs/engineering/START_HERE.md` | `src/iN/engine.json` and `docs/engineering/SCRIPT_INVENTORY.md` |
-| Find tests by generation and tooling | `tests/README.md` | `python tools/repository_layout.py inventory --kind tests --match <topic>` |
+| Find tests by generation and tooling | `tests/TEST_LAYOUT.md` | `python tools/repository_layout.py inventory --kind tests --match <topic>` |
 | Find frozen or historical archives | `archive/README.md` | I0 custody manifest and `python tools/repository_layout.py inventory --kind archives` |
 | Find research reports and audits | `docs/research/README.md` | original evidence and `python tools/repository_layout.py inventory --kind docs --match <study>` |
 

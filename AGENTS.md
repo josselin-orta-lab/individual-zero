@@ -11,7 +11,7 @@ This file governs **repository work**, never the mind, values or behavior of a b
 3. Read [ADR-0001](docs/decisions/ADR-0001-strict-generation-autonomy.md) and only the contracts, tests and evidence relevant to the affected boundary.
 4. Inspect **live** GitHub main/branch HEAD, open issues, dependent PRs and the checks for the **exact** commit. Dated reports are snapshots, not live branch state.
 
-For location-oriented lookup use [test placement](tests/README.md), [archive custody](archive/README.md), [research records](docs/research/README.md), and `python tools/repository_layout.py inventory --kind tests --match <topic>`. These navigation tools never move or promote source-pinned evidence.
+For location-oriented lookup use [test placement](tests/TEST_LAYOUT.md), [archive custody](archive/README.md), [research records](docs/research/README.md), and `python tools/repository_layout.py inventory --kind tests --match <topic>`. These navigation tools never move or promote source-pinned evidence.
 
 ## Authority and evidence, never interchangeable
 

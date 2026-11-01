@@ -42,7 +42,7 @@ on:
       - 'tools/research_link_audit.py'
       - 'tests/test_research_link_audit.py'
       - 'docs/research/studies/README.md'
-      - 'tests/README.md'
+      - 'tests/TEST_LAYOUT.md'
       - 'archive/README.md'
       - 'docs/README.md'
       - 'docs/research/README.md'
@@ -171,6 +171,7 @@ jobs:
           print("SOURCE_PINNED_RESEARCH_NAVIGATION_PASS")
           PY
           python -m unittest discover -s tests -p test_agent_context.py -v
+          python scripts/check_engine_repository.py --json
           python -m unittest discover -s tests -p test_repo_navigation.py -v
           python tools/check_repo_navigation.py --scope entrypoints
           python tools/check_repo_navigation.py --scope current
