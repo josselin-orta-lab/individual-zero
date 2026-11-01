@@ -29,6 +29,8 @@ files alone must not launch the living I1 SMOKE + FULL matrix. Changes under
 I1 workflow itself retain the full I1 CI. Workflow edits are reviewed and
 tested by exact path assertions, and this routing change is not a G1 or G3 GO.
 
+Generation names are canonical: `I2` through `I9`, then `I10`, `I11`, and later positive decimal identifiers without leading zeros. Preview generation and proposal assessment accept these labels but never register, activate or birth a generation. `I0`, `I1`, `I02`, lowercase names and suffixed labels are refused.
+
 The static `no_parent_runtime_imports` check retains its historical output name but now rejects imports of **any other generation** (including I0 and future generations), selected direct/dynamic imports and symlinked source trees. A dynamic target that cannot be checked statically fails closed. This cannot prove absence of custom loaders, `exec`, third-party transitive dependencies or shared mutable services; independent review remains mandatory.
 
 The report's `STRUCTURE_PRESENT_REVIEW_REQUIRED` status means only that

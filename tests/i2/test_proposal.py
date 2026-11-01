@@ -7,6 +7,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from tools.assess_engine_proposal import _source_imports_other_generation, inspect_proposal
+from tools.new_engine import plan as preview_generation
 ROOT=Path(__file__).resolve().parents[2]
 class TestI2Proposal(unittest.TestCase):
     def test_not_registered_or_executable(self):
@@ -79,6 +80,31 @@ class TestI2Proposal(unittest.TestCase):
                         _source_imports_other_generation(path, "I2"),
                         "direct or unverifiable dynamic import from a foreign generation",
                     )
+
+    def test_future_generation_range_includes_i10_through_i19(self):
+        # Structural tool validation only: never writes or registers an engine.
+        with tempfile.TemporaryDirectory() as scratch:
+            for generation in ("I2", "I9", "I10", "I11", "I19", "I20", "I100"):
+                with self.subTest(valid=generation):
+                    output = Path(scratch) / generation.lower()
+                    files = preview_generation(generation, "I1", output, root=ROOT)
+                    self.assertEqual(
+                        json.loads(files["engine.json"])["generation"], generation
+                    )
+                    self.assertFalse(output.exists())
+                    audit = inspect_proposal(generation, root=ROOT)
+                    self.assertEqual(audit["generation"], generation)
+                    self.assertEqual(audit["status"], "BLOCKED")
+                    self.assertEqual(audit["activation"], "FORBIDDEN")
+            for generation in ("I0", "I1", "I01", "I02", "I010",
+                               "I10beta", "i10", "I-10"):
+                with self.subTest(invalid=generation):
+                    with self.assertRaises(ValueError):
+                        preview_generation(
+                            generation, "I1", Path(scratch) / generation, root=ROOT
+                        )
+                    with self.assertRaises(ValueError):
+                        inspect_proposal(generation, root=ROOT)
 
     def test_symlinked_previous_lab_is_not_an_independent_owner(self):
         with tempfile.TemporaryDirectory() as temporary:
