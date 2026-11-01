@@ -277,3 +277,21 @@ energy=5 and no intervening ticks, the ordinary paid COLLECT and EAT
 actions remain possible. This is an execution falsifier for a fixed
 toy-world deadline, not yet a runtime planner, a food oracle, a
 multi-strategy comparison or proof of autonomous survival.
+
+
+## Audited deadline visibility at actual paid decisions
+
+The prototype's read-only `decision_evidence()` now reports a prospective
+COLLECT-then-EAT feasibility assessment from each verified predecision
+WorldBody capture. The physical delay used is the existing
+`WORLD_COGNITIVE_PERIOD=2` ticks, not a fitted survival threshold. The
+readout labels a delayed rescue infeasible when metabolism would exhaust
+energy before the second action, even when the hidden food happens to be
+nutritious. No hidden food impulse enters the assessment, and this
+diagnostic does not enter subjective valuations, change motor choice, or
+spend extra UC. It is **not yet a plan-selection policy**.
+
+The next behavioral experiment must explicitly test whether using this
+deadline assessment in paid action selection improves survival against
+the observational and reflex-only controls, without falsely promising
+that food with unknown payoff is safe.
