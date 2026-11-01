@@ -12,6 +12,9 @@ on:
       - '!src/i2/AGENTS.md'
       - 'tests/i2/**'
       - 'tools/assess_engine_proposal.py'
+      # Structural policy changes must be validated without an I1 birth.
+      - 'scripts/check_engine_repository.py'
+      - 'tests/test_engine_repository.py'
       - '.github/workflows/i2-proposal-safety.yml'
 
 permissions:
@@ -44,6 +47,10 @@ jobs:
         run: |
           python -m unittest discover -s tests/i2 -p 'test_*.py' -v
           python -m compileall -q src/i2 tests/i2
+      - name: Registered generation boundaries (static only, no I1 runtime)
+        run: |
+          python scripts/check_engine_repository.py --json
+          python -m unittest discover -s tests -p test_engine_repository.py -v
       - name: Independent proposal assessment (expected BLOCKED)
         run: |
           python tools/assess_engine_proposal.py --generation I2 --json > i2-assessment.json

@@ -5,7 +5,6 @@ on:
     paths:
       - 'src/i1/**'
       - 'tools/new_engine.py'
-      - 'tools/assess_engine_proposal.py'
       - 'tools/run_engine_checks.py'
       - 'tools/campaign_report.py'
       - 'tools/check_tool_inventory.py'
@@ -15,7 +14,6 @@ on:
       - 'config/tool-inventory.json'
       - 'scripts/**'
       - 'tests/i1/**'
-      - 'tests/test_engine_repository.py'
       - 'config/engine-registry.json'
       - 'tests/test_i1_m11_adversarial.py'
       - '.github/workflows/i1-current-ci.yml'
@@ -25,6 +23,10 @@ on:
       - '!src/i1/**/*.md'
       - '!src/i1/docs/**'
       - '!src/i1/AGENTS.md'
+      # This is a static generation/registry guard, not living I1 science.
+      # Its own lightweight I2 proposal CI runs the test and repository check.
+      # Keep this exclusion AFTER the broad scripts/** positive match.
+      - '!scripts/check_engine_repository.py'
   workflow_dispatch:
     inputs:
       mode:
