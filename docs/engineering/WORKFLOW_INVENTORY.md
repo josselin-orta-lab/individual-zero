@@ -17,8 +17,8 @@ This is a **routing and review guide**, not an authorization to run old experime
 
 | Workflow | Observed trigger at 1 November 2026 | Conservative handling |
 | --- | --- | --- |
-| [I1 isolated fork](../../.github/workflows/i1-isolation.yml) | `workflow_dispatch` | Historical manual source-isolation validation; requires dependency and frozen-Lab review before invoking. |
-| [I0 archive](../../.github/workflows/i0-archive-manual.yml) | `workflow_dispatch` | Historical test recreation, not a current I1 acceptance gate. |
+| [I1 isolated fork](../../.github/workflows/i1-isolation.yml) | `workflow_dispatch` | I1-owned isolation and historical experimental-regression checks; no embedded I0 planning suite or frozen Lab restoration. |
+| [I0 archive](../../.github/workflows/i0-archive-manual.yml) | `workflow_dispatch` | Historical I0 tests only, with original Lab and test paths reconstructed **inside a disposable CI checkout**; never a current I1 acceptance gate. |
 | [I1 A2.38 confirmatory](../../.github/workflows/i1-a238-confirmatory.yml) | `workflow_dispatch` | Prior large cohort; preserve protocol and artifacts; do not rerun for repository maintenance. |
 | [I1 A2.31 pairs](../../.github/workflows/i1-a231-science.yml) | `workflow_dispatch` | Historical prospective cohort; not ordinary code CI. |
 | [I1 A0 six-world pilot](../../.github/workflows/i1-eco-a0.yml) | `workflow_dispatch` only, after the 1 November 2026 maintenance correction | Preserves operator-invoked six-world evidence, but never runs a birth as a side effect of changing the tool or workflow. |
