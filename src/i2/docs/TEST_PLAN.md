@@ -42,3 +42,31 @@ The separate test-world shadow computes consequences of **proposed advice** with
 `src/i2/modules/chosen_outcome_study.py` is a **pure, non-persistent** G2 readout from previously recorded, single chosen-arm results. It supplies the already-paid v5 Competition through `ChosenOutcomeValuationStudy` without fabricating an unchosen counterfactual. Its score is deliberately simple and fixed: **last observed net consequence +4**, otherwise explicit prior scores A=3/B=2/C=0. No hidden regime or next consequence enters the current capture. This is NOT the accepted H2 owner, an independently verified subjective record, or a motor policy.
 
 `tests/i2/test_science_first_chosen_outcome_adaptation.py` reports six captures under stable (+8), reversal (+8 then -8), adverse (-8) and recovery (+8/-8/+8) regimes. It compares zero intervention with exactly one research-controller exploration (cycle index 3); the controller follows suggestions otherwise, but I2 never actuates the world. Each arm spends 5 synthetic UC per capture, performs cold SQLite audit and preserves all losses. The intended falsifier is that chosen-only consequences may cause a recommendation change, but a greedy recency readout may fail to rediscover a previously abandoned option, even when the world recovers. A six-cycle test is **not** a preregistered confirmatory science trial or reliable evidence of natural learning. This is an explicit ADR-0002 probe of whether the chosen-only H2 blockage can be escaped with the smallest observational rule; subsequent work should be selected from its failures rather than adding guard layers.
+
+## Experience-only stale-option revisit, no forced exploration (G2 diagnostic)
+
+`tests/i2/test_science_first_chosen_outcome_adaptation.py` now also tests a
+**study-only** bounded reconsideration of a *previously sampled* action, without
+the research controller forcing an exploratory choice. The existing
+`ChosenOutcomeValuationStudy` optionally adds a fixed +9 score if at least
+two **other already-observed chosen results** followed its last observation.
+The scores still enter the same paid v5 Competition. Untried options get no
+imagined outcome or free novelty bonus. This heuristic is authored by the
+experimenter; it is not a learned intrinsic exploration drive.
+
+The controller follows the nonmotor advice in all six captures, then returns
+only the outcome of that action for the next capture. Compare to the no-revisit
+ablation with identical synthetic UC (5 per capture), stable/reversal/adverse/
+recovery regimes and cold reopens. Expected net outcome totals for revisit
+versus no-revisit, respectively: stable **36/36**, reversal **-20/-12**,
+adverse **-28/-20**, recovery **4/-12**. These include worse outcomes in
+two regimes. Invalid/future/replayed chosen evidence is rejected.
+
+This is a developmental G2 test of an *advice-to-consequence-to-later-advice*
+chain, NOT motor autonomy: physical interventions remain research-controller
+calls, subjective sources are test doubles, the revisit bonus is a fixed
+prior assumption, H2 has no living memory, and there is no birth or M11.
+No G1/G3/G4-G6 permission or scientific claim follows. Per
+[ADR-0003](../../../docs/decisions/ADR-0003-integrated-living-i2-milestone.md),
+the next substantive gate is independent G1 review for a minimal living loop,
+not continued accumulation of synthetic protection layers.

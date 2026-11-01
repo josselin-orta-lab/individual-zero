@@ -59,3 +59,5 @@ A filled illustrative example is available in [../../examples/adr-example.md](..
 - [ADR-0001: strict autonomy of architectural generations](ADR-0001-strict-generation-autonomy.md) (31 October 2026). Mandatory for all future engine work; older generations are research references, not runtime dependencies.
 
 - [ADR-0002: scientific prototype first and drift escalation](ADR-0002-scientific-prototype-first.md) (1 November 2026). Prioritize falsifiable end-to-end behavior and flag research-direction drift; does not authorize a living I2.
+
+- [ADR-0003: integrated living I2 demonstration as the next milestone](ADR-0003-integrated-living-i2-milestone.md) (1 November 2026). Reaffirm the scientific goal and narrow the route through independent G1 review; no living authorization.
