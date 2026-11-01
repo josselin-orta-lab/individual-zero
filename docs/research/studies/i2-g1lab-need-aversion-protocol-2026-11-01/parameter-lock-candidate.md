@@ -1,6 +1,7 @@
-# G1-LAB need / nutrition / aversion: numerical lock CANDIDATE v1
+# G1-LAB need / nutrition / aversion: numerical lock CANDIDATE v1-r1
 
-**Status: PROPOSED_PARAMETER_LOCK / NOT_OWNER_APPROVED / NOT_EXECUTION_AUTHORIZED / NOT_RUN.**
+**Status: PRE-APPROVAL SCIENTIFIC QA REVISION / NOT_OWNER_APPROVED / NOT_EXECUTION_AUTHORIZED / NOT_RUN.**
+**Revision of original PR #810 candidate, before parameter approval and BEFORE any new experiment.** The original candidate's capture-3 primary endpoint was invalid because EAT is unavailable with an empty inventory after the first consumption. This revision corrects *only the comparison time and causal interpretation*, not the numerical parameters or policy. Original: main `0199df976421ee96f395091f965eed5e00ae7ed1`, blob `f9aa7910e57d5b262f3ea7862f5458c81a60370a`. Its prior approval request is superseded. **Owner approval of this revised exact SHA remains mandatory.**
 **Proposed on 2026-11-01, before any new outcome/behavioral execution.**
 **Parent scientific design:** [prospective design](README.md), accepted
 *in principle* under [ADR-0007](../../../decisions/ADR-0007-need-nutrition-aversion-scientific-design.md).
@@ -118,12 +119,26 @@ sensory signal, capture sequence, and single-owner event head.
 | H4 | 60 | 4 | +8 |
 
 For each cell, run the four ablations as **independently initialized,
-same-law** lab instances. The **primary mechanistic endpoint** is the
-first *post-exposure* paid Competition decision, ideally **capture 3**,
-after the baseline affords an unforced COLLECT and then an unforced EAT.
-**If an arm has not actually experienced EAT**, do NOT force it, do NOT
-impute the missing sensor or nutrient information, and classify its
-post-exposure endpoint `NOT_IDENTIFIABLE_NO_EXPOSURE`.
+same-law** lab instances. **The primary behavioral endpoint is the
+paid action decision at capture 4, conditioned on the same genuinely
+observed C,E,C history at captures 1,2,3 and EAT being offered again.**
+The post-exposure capture 3 is NOT behaviorally discriminating for
+nutrient/aversion-based EAT choice: the preceding EAT consumes the only
+berry, inventory becomes zero and the only offered options are COLLECT
+and DRINK. These have no new nutrition or aversion observations, so the
+candidate rule still gives COLLECT=3 and DRINK=1. Only after this
+unforced COLLECT replenishes the inventory can EAT be considered at
+capture 4. This is a **pre-execution static affordance proof**, NOT a
+newly executed outcome or a guarantee that the protocol will reach
+this history.
+
+**If any arm deviates from the required C,E,C prehistory, cannot afford
+the charged decision, dies, is vetoed, or lacks EAT at capture 4:**
+report `NOT_IDENTIFIABLE_UNMATCHED_PREHISTORY` (or
+`NOT_IDENTIFIABLE_NO_EXPOSURE` when no EAT has been personally
+experienced). **Do NOT shift the endpoint to a later favorable capture,
+restart the arm, or force a missing action.** The same rule applies to
+all 16 proposed independently initialized instances.
 
 Before claiming a need effect, verify that the full and need-off arms
 had equal personal action/outcome histories, energy, offers and evidence
@@ -133,6 +148,47 @@ subsequent differences is **not identifiable** without a separate,
 pre-authorized paired-replay design. Do not cherry-pick a later capture
 or silently adjust the comparison window. **Identical chosen actions
 despite different computed scores are NOT evidence of changed behavior.**
+
+### Purely algebraic pre-execution check (NOT a simulation)
+
+Under the hypothesized unforced `C,E,C` history (whose actual
+realization is still untested), energy after captures 1, 2 and 3 is
+`E0-2, E0+4, E0+2`. Thus energy **before capture 4** is 19 in
+low-energy cells and 62 in high-energy cells; the personally experienced
+EAT supplies nutrition 8 and either sensory signal 0 or 4. Prior
+COLLECT=3 and DRINK=1 remain unchanged. The proposed formula then
+algebraically entails these **EAT valuations**, not observational
+outcomes:
+
+| Cell | Full EAT | Need-off EAT | Aversion-off EAT | Fixed EAT | Full decision if EAT offered |
+| --- | ---: | ---: | ---: | ---: | --- |
+| L0 | 10 | 4 | 10 | 4 | EAT (10 > COLLECT 3) |
+| L4 | 6 | 0 | 10 | 4 | EAT (6 > 3); need-off selects COLLECT |
+| H0 | 7 | 4 | 7 | 4 | EAT (7 > 3) |
+| H4 | 3 | 0 | 7 | 4 | **ABSTAIN** (EAT 3 ties COLLECT 3); need-off selects COLLECT and aversion-off EAT |
+
+These consequences are **predictions derived from a researcher-written
+equation**. They are published before any run, not selected from data.
+The high-energy/aversive tie means an observed full-arm abstention
+would not establish a generalized aversion mechanism. The need
+comparison is full versus need-off **within the same energy cell**;
+the aversion comparison is full versus aversion-off **within the same
+sensory cell**. Scores differing without actions differing do NOT
+establish behavioral effects.
+
+**Scientific limitation:** in this deterministic setup, positive
+differentiation at capture 4 may be largely guaranteed by the
+researcher-assigned formula. A software PASS can demonstrate delayed
+information provenance, faithful paid competition and controlled
+ablation behavior, **not spontaneous biological hunger or acquired
+adaptive competence**. If only the scores differ or the matched
+capture never occurs, report the null or unidentifiable case.
+
+**Memory semantics:** `last observed aversive_signal` in the proposed
+valuation rule is NOT permission to erase earlier aversive events from
+the durable first-person outcome ledger. Keep the complete history
+even if a later safe observation changes the value used by the rule.
+This is especially important to the already accepted ADR-0006.
 
 Source-pin the exact baseline and all changes before the future run.
 Save capture-level first-person evidence, chosen/refused actions, modeled
@@ -177,7 +233,7 @@ independently authenticated life.
 This proposed numeric table is **not yet an approved freeze**.
 A project-owner comment/ADR must expressly:
 
-1. **ACCEPT_LOCK_V1**, **REVISE_LOCK_V1**, or **REJECT_LOCK_V1**;
+1. **ACCEPT_LOCK_V1_R1**, **REVISE_LOCK_V1_R1**, or **REJECT_LOCK_V1_R1** (the original PR #810 candidate's capture-3 endpoint is withdrawn);
 2. pin the exact SHA of this candidate and approve/reject *all* constants,
    arithmetic, scenarios, bounds, ablations and stop conditions;
 3. separately **AUTHORIZE_ONE_NONLIVING_G1LAB_RUN** or keep the execution
