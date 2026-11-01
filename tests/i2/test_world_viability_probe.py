@@ -1,6 +1,10 @@
 """Narrow exploratory battery checks, not independent scientific repeats."""
 import unittest
+from pathlib import Path
+import sys
 
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "src"))
 from i2.runtime.world_viability_probe import LOCKED_CASES, run_locked_battery
 
 
