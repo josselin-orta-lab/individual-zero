@@ -2,6 +2,8 @@
 from dataclasses import fields
 from dataclasses import replace
 from pathlib import Path
+import sqlite3
+from unittest.mock import patch
 import sys
 import tempfile
 import unittest
@@ -124,6 +126,25 @@ class TestUncertainWitness(unittest.TestCase):
         with self.assertRaises(WitnessRefusal) as exc:
             self.inspection(c, self.witness(record=other))
         self.assertEqual(exc.exception.reason, "FORK")
+
+    def test_sqlite_failure_between_local_audits_is_unknown_without_provider(self):
+        c = self.source.add(claim(3))
+        witness = self.witness()
+        with patch.object(CognitiveCycleFixture, "inspect_uncertain_cognition",
+                          side_effect=sqlite3.DatabaseError("read interrupted")):
+            with self.assertRaises(WitnessRefusal) as exc:
+                self.inspection(c, witness)
+        self.assertEqual(exc.exception.reason, "UNKNOWN")
+        self.assertEqual(witness.calls, 0)
+
+    def test_invalid_claim_is_still_invalid_input_not_external_unknown(self):
+        witness = self.witness()
+        with self.assertRaises(ValueError):
+            inspect_uncertain_cognition_with_witness(
+                fixture=self.fixture, witness=witness,
+                previous_count=0, previous_head=ZERO_HASH, claim=None,
+            )
+        self.assertEqual(witness.calls, 0)
 
     def test_witness_failure_is_unknown_not_local_fallback(self):
         c = self.source.add(claim(3))
