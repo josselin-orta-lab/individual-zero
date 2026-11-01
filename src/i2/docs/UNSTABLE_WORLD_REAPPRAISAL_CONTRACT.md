@@ -295,3 +295,23 @@ The next behavioral experiment must explicitly test whether using this
 deadline assessment in paid action selection improves survival against
 the observational and reflex-only controls, without falsely promising
 that food with unknown payoff is safe.
+
+
+## Opt-in paid deadline policy, source-specific negative control
+
+A new **fresh-genesis only** `deadline_aware=True` experiment suppresses
+positive COLLECT valuation when its known action cost plus the fixed two
+metabolic ticks make a later EAT attempt physically impossible. It still
+pays for every Competition candidate and normal Action Control, and the
+single WorldBody owner replay recomputes the suppressed score/evidence.
+This policy is **mutually exclusive** with the older optional last-resort
+priority until composition can be separately falsified.
+
+The matched toy-world first decision at energy=4 changes from COLLECT to
+DRINK, with identical paid UC and identical immediate energy loss. DRINK
+does not restore energy. This is **not a survival improvement**: it proves
+only that the decision policy can avoid one futile *plan*, while a viable
+replacement survival strategy is still absent. At energy=10 the normal
+COLLECT action remains. The historic trials leave the new switch off.
+An extra experimental policy is not permission to reactivate I2, declare
+M11 authentication, predict hidden food, or claim learned planning.
