@@ -153,8 +153,11 @@ def _h2_replay_transition(payload: object, stored: object, step: int,
     proof = verify_feedback_transition(
         stored=before, expected_previous_digest=payload["previous_digest"],
         update=update)
-    if after.last_observed_step > step or after.life_ref != score_dict["life_ref"]:
-        raise ValueError("future or foreign H2 experience")
+    # The current physical transition is private until published and
+    # perceived at a later capture. Its result cannot count as experience
+    # during the same cognitive step, even in a synthetic G2 journal.
+    if after.last_observed_step >= step or after.life_ref != score_dict["life_ref"]:
+        raise ValueError("unobserved current/future or foreign H2 experience")
     return after
 
 
@@ -1198,8 +1201,8 @@ class CognitiveCycleFixture:
                 verify_feedback_transition(
                     stored=prior, expected_previous_digest=_feedback_memory_digest(prior),
                     update=feedback_update)
-                if feedback_update.new_memory.last_observed_step > claim.capture.step:
-                    raise ValueError("H2 learns from future relative to cognitive capture")
+                if feedback_update.new_memory.last_observed_step >= claim.capture.step:
+                    raise ValueError("H2 requires an observation before the current capture")
                 payload = json.loads(_json(_h2_transition_map(prior, feedback_update)))
                 _h2_replay_transition(payload, old, claim.capture.step,
                                       life_ref=self.life_ref)
@@ -1443,6 +1446,8 @@ class CognitiveCycleFixture:
                 expected_previous_digest=_feedback_memory_digest(feedback_previous),
                 update=feedback_update,
             )
+            if feedback_update.new_memory.last_observed_step >= claim.capture.step:
+                raise ValueError("uncertain H2 needs past observed feedback")
             # Use the very same canonical event projection as the writer;
             # compare bytes-equivalent JSON, not objects with tuple/list drift.
             expected_feedback = json.loads(_json(
