@@ -111,9 +111,11 @@ def inspect_uncertain_cognition_with_witness(
     previous_count: int, previous_head: str, claim: ObservationClaim,
     method: str, semantic_ref: str | None = None,
     evidence_ref: str | None = None, ttl_steps: int | None = None,
+    feedback_previous: object | None = None,
+    feedback_update: object | None = None,
     minimum_witness: LatestWitness | None = None,
 ) -> UncertainWitnessInspection:
-    """Correlate a declared capture and exact request, never dispatch or retry."""
+    """Correlate capture, request and H2 payload, never dispatch or retry."""
     if type(fixture) is not CognitiveCycleFixture:
         raise ValueError("exact inert v5 fixture required")
     if minimum_witness is not None:
@@ -129,6 +131,7 @@ def inspect_uncertain_cognition_with_witness(
             previous_count=previous_count, previous_head=previous_head, claim=claim,
             method=method, semantic_ref=semantic_ref,
             evidence_ref=evidence_ref, ttl_steps=ttl_steps,
+            feedback_previous=feedback_previous, feedback_update=feedback_update,
             minimum_sequence=(None if minimum_witness is None else minimum_witness.committed),
         ),
     )
