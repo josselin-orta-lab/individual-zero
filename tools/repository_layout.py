@@ -15,7 +15,7 @@ LEGACY_ROOT_GENERATION_TESTS = frozenset({
 "test_i1_a235_physical_witness.py",
 "test_i1_a236_combined_m11_cold.py",
 "test_i1_a237_d2_no_geography.py",
-    "test_i1_a238_factorial_smoke.py", "test_i1_active_birth.py",
+"test_i1_active_birth.py",
     "test_i1_decision_witness.py", "test_i1_first_physical_step.py",
     "test_i1_issue136_d1_learning.py", "test_i1_issue136_water_readiness.py",
     "test_i1_m11_cold_recovery.py", "test_i1_model_m11_contract.py",

@@ -31,5 +31,5 @@ jobs:
           python -m unittest discover -s tests/research/i1-historical -p 'test_i1_a235_m11_recall_contract.py' -v
           python -m unittest discover -s tests/research/i1-historical -p 'test_i1_a235_m11_cold_recall.py' -v
           python -m unittest discover -s tests -p 'test_i1_generated_isolation.py' -v
-          python -m unittest discover -s tests -p 'test_i1_active_birth.py' -v
+          python -m unittest discover -s tests/research/i1-historical -p 'test_i1_active_birth.py' -v
           python -m unittest discover -s tests -p 'test_i1_m11_cold_recovery.py' -v
