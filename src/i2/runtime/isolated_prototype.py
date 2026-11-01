@@ -947,7 +947,7 @@ def demo(scenario: str, *, steps: int = 6) -> dict:
         raise PrototypeRefusal("unknown or unbounded demo")
     if scenario in ("reversal", "restoration"):
         raise PrototypeRefusal(
-            "hidden world change requires physical ticks: use --world / world_demo")
+            "hidden world change requires physical world ticks: use --world / world_demo")
     with tempfile.TemporaryDirectory(prefix="i2-isolated-prototype-") as root:
         arms = {}
         for learning, label in ((True, "observed_chosen"), (False, "fixed")):
