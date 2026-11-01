@@ -50,6 +50,7 @@ def bucket(kind: str, path: str) -> str | None:
             ("archive/i0/tests/", "i0-frozen"),
             ("tests/i1/", "i1"), ("tests/i2/", "i2"),
             ("tests/infra/", "infrastructure"),
+            ("tests/research/a1p/", "a1p-tooling"),
             ("tests/research/a1c/", "a1c-tooling"),
             ("tests/research/a2r/", "a2r-tooling"),
             ("tests/", "root-legacy-and-infrastructure"),

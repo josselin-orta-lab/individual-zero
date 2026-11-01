@@ -4,14 +4,14 @@ on:
     paths:
       - 'tools/research/i1_a2r_postflight.py'
       - 'tools/research/i1_a2r_geo_intrinsic_join.py'
-      - 'tools/research/tests/test_i1_a2r_geo_intrinsic_join.py'
-      - 'tools/research/tests/test_i1_a2r_postflight.py'
+      - 'tests/research/a2r/test_i1_a2r_geo_intrinsic_join.py'
+      - 'tests/research/a2r/test_i1_a2r_postflight.py'
       - 'tools/research/i1_a2r_control_cold.py'
       - 'tools/research/i1_a2r_candidate_provenance.py'
       - 'tools/research/i1_a2r_q_coexposure.py'
-      - 'tools/research/tests/test_i1_a2r_q_coexposure.py'
-      - 'tools/research/tests/test_i1_a2r_candidate_provenance.py'
-      - 'tools/research/tests/test_i1_a2r_control_cold.py'
+      - 'tests/research/a2r/test_i1_a2r_q_coexposure.py'
+      - 'tests/research/a2r/test_i1_a2r_candidate_provenance.py'
+      - 'tests/research/a2r/test_i1_a2r_control_cold.py'
       - '.github/workflows/i1-a2r-postflight-pure.yml'
 permissions:
   contents: read
@@ -29,8 +29,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - run: PYTHONPATH=tools:tools/research python -m unittest discover -s tools/research/tests -p test_i1_a2r_postflight.py -v
-      - run: PYTHONPATH=tools:tools/research python -m unittest discover -s tools/research/tests -p test_i1_a2r_geo_intrinsic_join.py -v
-      - run: PYTHONPATH=tools:tools/research python -m unittest discover -s tools/research/tests -p test_i1_a2r_control_cold.py -v
-      - run: PYTHONPATH=tools:tools/research python -m unittest discover -s tools/research/tests -p test_i1_a2r_candidate_provenance.py -v
-      - run: PYTHONPATH=tools:tools/research python -m unittest discover -s tools/research/tests -p test_i1_a2r_q_coexposure.py -v
+      - run: PYTHONPATH=tools:tools/research python -m unittest discover -s tests/research/a2r -p test_i1_a2r_postflight.py -v
+      - run: PYTHONPATH=tools:tools/research python -m unittest discover -s tests/research/a2r -p test_i1_a2r_geo_intrinsic_join.py -v
+      - run: PYTHONPATH=tools:tools/research python -m unittest discover -s tests/research/a2r -p test_i1_a2r_control_cold.py -v
+      - run: PYTHONPATH=tools:tools/research python -m unittest discover -s tests/research/a2r -p test_i1_a2r_candidate_provenance.py -v
+      - run: PYTHONPATH=tools:tools/research python -m unittest discover -s tests/research/a2r -p test_i1_a2r_q_coexposure.py -v

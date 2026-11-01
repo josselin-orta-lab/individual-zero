@@ -31,7 +31,7 @@ class HistoricalGateTests(unittest.TestCase):
                 with self.subTest(bad=bad),self.assertRaises(ValueError):
                     _validate_capsule_members(z)
     def test_no_birth_or_network_in_loader(self):
-        src=(Path(__file__).parent.parent/"i1_a1p_h48_reproduce.py").read_text()
+        src=(Path(__file__).resolve().parents[3]/"tools"/"research"/"i1_a1p_h48_reproduce.py").read_text()
         for forbidden in ("birth_i1_m11(", "run_step(", "requests.get(", "urllib.request.urlopen("):
             self.assertNotIn(forbidden,src)
 
