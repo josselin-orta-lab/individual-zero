@@ -11,6 +11,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
@@ -121,6 +122,24 @@ class SQLiteWitnessIntegration(unittest.TestCase):
         self.assertEqual(result.terminal_ref, "terminal:death-A")
         self.assertFalse(result.resumption_authorized)
         self.assertEqual(self.terminal.calls, 1)
+
+    def test_initial_audit_failure_refuses_before_external_witness_read(self):
+        fixture = self.create()
+        anchor = Witness(checkpoint(fixture.audit()))
+        for error in (sqlite3.DatabaseError("cold journal unreadable"),
+                      OSError("local filesystem unavailable")):
+            for floor in (None, checkpoint(fixture.audit())):
+                with self.subTest(error=type(error).__name__, pinned=floor is not None):
+                    with patch.object(CognitiveCycleFixture, "audit", side_effect=error):
+                        from i2.modules.lifecycle_external_witness import WitnessRefusal
+                        with self.assertRaises(WitnessRefusal) as caught:
+                            verify_fixture(
+                                fixture=fixture, witness=anchor, minimum_witness=floor,
+                            )
+                    self.assertEqual(caught.exception.reason, "UNKNOWN")
+                    self.assertIs(caught.exception.__cause__, error)
+                    self.assertEqual(anchor.calls, [])
+        self.assertEqual(fixture.audit()["committed"], 0)
 
     def test_local_commit_during_external_read_is_refused(self):
         fixture = self.create()

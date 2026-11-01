@@ -271,7 +271,14 @@ def verify_fixture(*, fixture: object, witness: IndependentWitness,
     # The witness port is a separate read with no shared transaction.
     # Catch an intervening *local* commit while the external provider reads;
     # this is not a lock and cannot close a later race or attest physics.
-    before = fixture.audit()
+    try:
+        before = fixture.audit()
+    except Exception as exc:
+        # No reliable local state means no external comparison can resolve
+        # a possibly committed transition. Never consult the witness.
+        raise WitnessRefusal(
+            "UNKNOWN", "local journal unavailable before witness comparison"
+        ) from exc
     if minimum_witness is not None:
         # Local ancestry MUST be checked independently of the latest-head
         # equality. A fully consistent local fork may match a bad provider.
