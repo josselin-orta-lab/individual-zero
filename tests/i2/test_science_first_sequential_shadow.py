@@ -118,7 +118,11 @@ def run_sequence(regimes: tuple[int, ...], *, suppress_first_outcome=False):
                     genesis_ref="genesis:sequential-adaptive", **shared,
                 )
                 prior = previous.feedback_snapshot()
-                assert prior is not None
+                # At capture 30 the first heldout outcome is still pending:
+                # only this capture's COMMIT will publish H2 version 1.
+                if prior is None:
+                    assert index == 1
+                    prior = empty_feedback_memory(op)
             evidence.expected_version = prior.total_observations
             value_source = PaidFeedbackValuationPort(
                 claim=current_claim, forecast=forecast, memory=prior,
