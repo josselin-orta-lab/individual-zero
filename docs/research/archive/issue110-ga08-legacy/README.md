@@ -21,6 +21,12 @@
 
 The `.github/workflows/` children are **inert** at this nested archive path, not registered GitHub Actions workflows. Their original references to root-level `scripts/`, `tests/`, `src/i0/`, and `src/lab/` describe a different source layout. The two scripts import `i0` and the former unscoped `lab`, so executing them from this folder or importing them into I1/I2 would not reproduce an authorized historical experiment.
 
+## Verified historical navigation anchors
+
+- [Original GA08 spatial preregistration](../../stage12-issue110-ga08-spatial-prereg-2026-10-14.fr.md): specifies the six-life physical experiment, its controls and limitations. This is a protocol, **not** evidence that its predicted outcome occurred.
+- [PR #154](https://github.com/josselin-orta-lab/individual-zero/pull/154), merged as [commit `e94e86a868594ed3dac8bee2cec74a8b419876e5`](https://github.com/josselin-orta-lab/individual-zero/commit/e94e86a868594ed3dac8bee2cec74a8b419876e5), is the Git history entry returned for this archived spatial runner's **current path**. This establishes a navigation lead, not yet equality to every original pre-archive source blob or proof of a completed run.
+- [PR #148](https://github.com/josselin-orta-lab/individual-zero/pull/148) contains the earlier normative GA08 context. The current archive may contain later edits; establish full commit-by-commit custody before replay.
+
 ## Provenance and replay limits
 
 - Original experiment protocol, independent evidence, initial commit/ref, caller history, source dependency closure and retained GitHub artifacts must be checked separately before declaring any reproduction complete.
