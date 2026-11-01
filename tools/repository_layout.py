@@ -20,6 +20,28 @@ LEGACY_ROOT_GENERATION_TESTS = frozenset({
     "test_i1_issue136_d1_learning.py", "test_i1_issue136_water_readiness.py",
     "test_i1_m11_cold_recovery.py", "test_i1_model_m11_contract.py",
 })
+HISTORICAL_RESEARCH_MANIFEST = "docs/research/studies/HISTORICAL_ROOT_FILES.md"
+
+
+def check_research_root_placement(root: Path) -> list[str]:
+    """Do not add root-level studies or silently remove historical source paths."""
+    manifest = root / HISTORICAL_RESEARCH_MANIFEST
+    if not manifest.is_file() or manifest.is_symlink():
+        return ["missing or unsafe historical research placement baseline"]
+    expected = set()
+    for line in manifest.read_text(encoding="utf-8").splitlines():
+        if line.startswith("- `") and line.endswith("`"):
+            expected.add(line[3:-1])
+    if not expected or "README.md" not in expected:
+        return ["empty or invalid historical research baseline"]
+    folder = root / "docs/research"
+    actual = {p.name for p in folder.glob("*.md") if p.is_file() and not p.is_symlink()}
+    new = sorted(actual - expected)
+    removed = sorted(expected - actual)
+    return ([f"new root-level research Markdown: {n}; use docs/research/studies/<study-id>/" for n in new]
+            + [f"historical research path missing: {n}; audit provenance before moving" for n in removed])
+
+
 ENTRYPOINTS = (
     "archive/README.md", "tests/TEST_LAYOUT.md", "docs/README.md",
     "docs/research/README.md", "docs/research/studies/README.md",
@@ -127,6 +149,7 @@ def audit(root: Path = ROOT) -> dict:
 def check(root: Path = ROOT) -> dict:
     errors = [f"missing navigation entrypoint: {path}" for path in ENTRYPOINTS
               if not (root / path).is_file()]
+    errors.extend(check_research_root_placement(root))
     for deprecated in ("tools/research/tests", "tools/a1c_tests", "tools/a2r_tests"):
         folder = root / deprecated
         if folder.is_dir() and any(folder.rglob("test_*.py")):

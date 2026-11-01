@@ -11,6 +11,16 @@ SPEC.loader.exec_module(module)
 
 
 class RepositoryLayoutTests(unittest.TestCase):
+    @staticmethod
+    def _seed_research_baseline(root):
+        research = root / "docs/research"
+        research.mkdir(parents=True, exist_ok=True)
+        (research / "README.md").write_text("Historical index")
+        manifest = root / module.HISTORICAL_RESEARCH_MANIFEST
+        manifest.parent.mkdir(parents=True, exist_ok=True)
+        manifest.write_text("# Historical root\\n- `README.md`\\n")
+
+
     def test_generation_owned_routes_and_nonpromotion(self):
         self.assertEqual(module.bucket("tests", "tests/i1/test_memory.py"), "i1")
         self.assertEqual(module.bucket("tests", "tests/i2/test_fixture.py"), "i2")
@@ -46,13 +56,34 @@ class RepositoryLayoutTests(unittest.TestCase):
                 dest = root / path
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 dest.write_text("# Fixture\\n", encoding="utf-8")
+            self._seed_research_baseline(root)
             self.assertEqual(module.check(root)["status"], "PASS")
             obsolete = root / "tools/research/tests/test_backslide.py"
             obsolete.parent.mkdir(parents=True)
             obsolete.write_text("# Fixture\\n", encoding="utf-8")
             self.assertEqual(module.check(root)["status"], "FAIL")
             obsolete.unlink()
+            self._seed_research_baseline(root)
             self.assertEqual(module.check(root)["status"], "PASS")
+
+    def test_historical_research_root_cannot_grow_or_silently_shrink(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            manifest = root / module.HISTORICAL_RESEARCH_MANIFEST
+            manifest.parent.mkdir(parents=True)
+            manifest.write_text("# Historical paths\\n- `README.md`\\n- `stage12-old.md`\\n")
+            research = root / "docs/research"
+            research.mkdir(parents=True)
+            (research / "README.md").write_text("Index")
+            (research / "stage12-old.md").write_text("Original")
+            self.assertEqual(module.check_research_root_placement(root), [])
+            extra = research / "stage12-new.md"
+            extra.write_text("New")
+            self.assertIn("new root-level", module.check_research_root_placement(root)[0])
+            extra.unlink()
+            (research / "stage12-old.md").unlink()
+            self.assertIn("historical research path missing",
+                          module.check_research_root_placement(root)[0])
 
     def test_new_root_generation_test_is_rejected_without_renaming_legacy(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -63,6 +94,7 @@ class RepositoryLayoutTests(unittest.TestCase):
                 dest.write_text("# Fixture\n", encoding="utf-8")
             tests = root / "tests"
             (tests / "test_i1_active_birth.py").write_text("# Existing\n")
+            self._seed_research_baseline(root)
             self.assertEqual(module.check(root)["status"], "PASS")
             (tests / "test_i2_unscoped.py").write_text("# New\n")
             outcome = module.check(root)

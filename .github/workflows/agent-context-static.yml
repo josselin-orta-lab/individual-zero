@@ -44,6 +44,8 @@ on:
       - 'tools/check_navigation_portals.py'
       - 'tests/test_navigation_portals.py'
       - 'docs/research/studies/README.md'
+      - 'docs/research/studies/HISTORICAL_ROOT_FILES.md'
+      - 'docs/research/*.md'
       - 'docs/research/studies/stage-11/README.md'
       - 'docs/research/studies/stage-12/README.md'
       - 'docs/research/studies/i1/README.md'
