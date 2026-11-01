@@ -72,3 +72,32 @@ protocol is justified by this interface.
 
 A PASS validates *interface coherence only*, not that the prototype uses
 this contract or that it improves autonomous survival.
+
+## Local energy reflex source (next incremental engineering step)
+
+`src/i2/modules/local_survival_reflex.py` now implements an **owner-local,
+nonmotor** survival-reflex snapshot from the exact audited predecision energy
+in the existing single SQLite WorldBody. For this bounded world, an energy
+reserve of 1–2 is labelled `PREEMPT`, 3–4 `CONSTRAIN` and 5–100
+`NO_PREEMPTION`. These transparent thresholds relate to the prototype's
+1-unit physical tick and 2-unit chosen action cost; they are researcher-set
+engineering bounds, **not** evidence of learned physiological regulation.
+The source reuses the current capture's `evidence:i2:energy:<N>` ref and
+verifies the entire exact claim/snapshot rather than trusting a free-form
+report. Foreign and stale captures, unobserved energy and terminal energy
+cannot yield a valid snapshot.
+
+The audited `IsolatedI2.decision_evidence()` now includes
+`survival_reflex` at each already-committed decision, derived from the same
+predecision state and validated claim. This is a **read-only, researcher-only
+composition seam**: it does not inject a reflex into paid valuations, alter
+Competition, enable risk re-exposure, preempt an already admitted command,
+change the journal, or introduce a second state owner. The typed reappraisal
+contract can consume a locally sourced report in a controlled test; the
+runtime does **not** yet invoke it as a behavioral policy. Reflex authority
+for actual future action selection, need integration, and independently
+attested M11 remain **NOT_ESTABLISHED**. Do not interpret a local audit as
+independent witness provenance. Old blind-recovery negative cases remain
+unchanged and no tuned revisit bonus was added.
+
+Focused regression: `PYTHONPATH=src python -m unittest discover -s tests/i2 -p 'test_local_survival_reflex.py' -v`.
