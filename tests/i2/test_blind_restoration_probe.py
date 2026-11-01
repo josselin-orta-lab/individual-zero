@@ -88,7 +88,7 @@ class BlindRestorationTests(unittest.TestCase):
             "MODEL_SPECIFIC_NEGATIVE_OR_INCONCLUSIVE")
 
     def test_direct_no_clock_demo_cannot_claim_hidden_reversal(self):
-        with self.assertRaisesRegex(PrototypeRefusal, "requires physical ticks"):
+        with self.assertRaisesRegex(PrototypeRefusal, "requires physical world ticks"):
             demo("restoration", steps=6)
 
     def test_single_source_pinned_machine_readout(self):
