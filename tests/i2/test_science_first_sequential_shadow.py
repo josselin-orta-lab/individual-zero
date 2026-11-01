@@ -53,7 +53,7 @@ class IssuedControlledEvidence(ControlledEvidence):
 
 def _observed_episode(world, evidence, *, name, start, first):
     initial = world.intervene(step=start, semantic=first)
-    result = world.intervene(step=start + 1, semantic=C)
+    result = world.intervene(step=start + 1, semantic=B)
     evidence.record(initial)
     evidence.record(result)
     return MatchedLivedEpisode(name, CONTEXT, (initial, result))
@@ -86,7 +86,7 @@ def run_sequence(regimes: tuple[int, ...], *, suppress_first_outcome=False):
             world, evidence, name="train:prepare", start=1, first=A,
         )
         training_b = _observed_episode(
-            world, evidence, name="train:control", start=4, first=B,
+            world, evidence, name="train:control", start=4, first=C,
         )
         shared = dict(
             life_ref=LIFE, observation_source=subjective,
@@ -101,7 +101,7 @@ def run_sequence(regimes: tuple[int, ...], *, suppress_first_outcome=False):
             )
             op = ForecastOpportunity(
                 LIFE, current_claim.capture.goal_ref, current_claim.capture.ref,
-                step, CONTEXT, A, B, C,
+                step, CONTEXT, A, C, B,
             )
             evidence._opportunity = op
             forecast = project_matched_outcome(
@@ -227,7 +227,7 @@ def run_sequence(regimes: tuple[int, ...], *, suppress_first_outcome=False):
             )
             control = _observed_episode(
                 world, evidence, name=f"heldout:control:{index}",
-                start=start + 4, first=B,
+                start=start + 4, first=C,
             )
             if suppress_first_outcome and index == 0:
                 # Delete the authenticated result AFTER intervention: the
@@ -255,7 +255,7 @@ class SequentialScienceFirstTests(unittest.TestCase):
                 self.assertEqual([x["h2_version_before"] for x in rows],
                                  [0, 0, 1, 2])
                 self.assertEqual([x["uc_per_arm"] for x in rows], [5] * 4)
-                self.assertEqual([x["ablation_advice"] for x in rows], [B] * 4)
+                self.assertEqual([x["ablation_advice"] for x in rows], [C] * 4)
                 reports[name] = rows
 
         stable = reports["stable"]
@@ -263,7 +263,7 @@ class SequentialScienceFirstTests(unittest.TestCase):
         self.assertEqual([x["shadow_gain"] for x in stable], [8, 8, 8, 8])
         reversal = reports["reversal"]
         # Delayed memory reacts, but does NOT rescue the earlier losses.
-        self.assertEqual([x["h2_advice"] for x in reversal], [A, A, A, B])
+        self.assertEqual([x["h2_advice"] for x in reversal], [A, A, A, C])
         self.assertEqual([x["shadow_gain"] for x in reversal], [8, -8, -8, 0])
         self.assertEqual([x["h2_prediction_before"] for x in reversal],
                          ["8", "8", "8", "0"])

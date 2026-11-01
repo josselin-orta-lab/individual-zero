@@ -29,13 +29,21 @@ from i2.modules.delayed_credit_study import (
 )
 
 CONTEXT = ("context:synthetic",)
-BASE_VALUES = {A: 0, B: 2, C: 0}
+# A=collect berry, B=eat berry, C=drink water. C is the matched
+# no-preparation control, while B is the SAME completion in both arms.
+# These are simulated action costs and outcomes, not physiological measurements.
+BASE_VALUES = {A: 0, B: 0, C: 2}
 REGIMES = (("beneficial", 8), ("neutral", 0), ("adverse", -8))
-ORDERS = ((A, B), (B, A))
+ORDERS = ((A, C), (C, A))
 
 
 class TinyControlledWorld:
-    """Research intervention only. Not a live I2 WorldBody or motor executor."""
+    """Research-only physical toy world, not an I2 WorldBody or motor executor.
+
+    A=collect, B=eat, C=drink. Only B can consume an A-collected berry.
+    All three options remain synthetically visible, including an unsuccessful
+    attempt to eat with an empty inventory; physical admission is NOT modeled.
+    """
 
     def __init__(self, *, completion_delta: int) -> None:
         self._completion_delta = completion_delta
@@ -50,14 +58,17 @@ class TinyControlledWorld:
         if step <= self._last_step or semantic not in self.visible():
             raise ValueError("invalid research-controller intervention")
         self._last_step = step
-        if semantic == A:
+        if semantic == A:  # collect: costs effort, stores berry; never feeds
             self._inventory += 1
             outcome = -2
-        elif semantic == B:
+        elif semantic == B:  # eat: ONLY action that consumes the berry
+            if self._inventory:
+                self._inventory -= 1
+                outcome = self._completion_delta - 2
+            else:
+                outcome = -2  # ineffective eating attempt on empty inventory
+        else:  # C is drinking: it never consumes berry or grants food value
             outcome = -2
-        else:
-            outcome = self._completion_delta if self._inventory else 0
-            self._inventory = 0
         # The observed outcome is recorded only after the intervention.
         return ClaimedLivedStep(
             LIFE, step, f"history:capture:{step}", "goal:food", semantic,
@@ -104,7 +115,7 @@ def _shadow_net(completion_delta: int, proposed: str | None) -> int | None:
         return None
     control_world = TinyControlledWorld(completion_delta=completion_delta)
     preparation = control_world.intervene(step=40, semantic=proposed)
-    completion = control_world.intervene(step=41, semantic=C)
+    completion = control_world.intervene(step=41, semantic=B)
     return preparation.lived_delta + completion.lived_delta
 
 
@@ -112,7 +123,7 @@ def exercise(*, completion_delta: int, order: tuple[str, str],
              adaptive: bool, veto: bool = False, synthetic_uc: int = 20,
              omit_observation: bool = False) -> dict[str, object]:
     """Run separate training, advisory owner and offline shadow phases."""
-    if sorted(order) != sorted((A, B)):
+    if sorted(order) != sorted((A, C)):
         raise ValueError("exact paired training order required")
     world = TinyControlledWorld(completion_delta=completion_delta)
     evidence = ControlledEvidence()
@@ -120,7 +131,7 @@ def exercise(*, completion_delta: int, order: tuple[str, str],
     for episode_index, first in enumerate(order):
         start = 1 + 3 * episode_index
         first_event = world.intervene(step=start, semantic=first)
-        last_event = world.intervene(step=start + 1, semantic=C)
+        last_event = world.intervene(step=start + 1, semantic=B)
         evidence.record(first_event)
         if not (omit_observation and first == A):
             evidence.record(last_event)
@@ -133,11 +144,11 @@ def exercise(*, completion_delta: int, order: tuple[str, str],
     current_claim = subjective.add(claim(30, visible=world.visible()))
     opportunity = ForecastOpportunity(
         LIFE, current_claim.capture.goal_ref, current_claim.capture.ref,
-        current_claim.capture.step, CONTEXT, A, B, C,
+        current_claim.capture.step, CONTEXT, A, C, B,
     )
     evidence._opportunity = opportunity
     forecast = project_matched_outcome(
-        prepared=episodes[A], control=episodes[B],
+        prepared=episodes[A], control=episodes[C],
         opportunity=opportunity, source=evidence,
     )
     evidence._issued = forecast
@@ -207,9 +218,9 @@ class ScienceFirstBehavioralSlice(unittest.TestCase):
                     )
                     self.assertEqual(adaptive["training_contrast"], observed_delta)
                     self.assertEqual(ablated["training_contrast"], observed_delta)
-                    self.assertEqual(ablated["suggestion"], B)
+                    self.assertEqual(ablated["suggestion"], C)
                     self.assertEqual(adaptive["suggestion"],
-                                     A if observed_delta > 2 else B)
+                                     A if observed_delta > 2 else C)
                     self.assertEqual(
                         (adaptive["uc_spent"], ablated["uc_spent"]), (5, 5))
                     self.assertEqual(adaptive["control_suggestion"],
@@ -222,7 +233,7 @@ class ScienceFirstBehavioralSlice(unittest.TestCase):
                     )
                     rows.append({
                         "regime": name,
-                        "training_order": "A_then_B" if order[0] == A else "B_then_A",
+                        "training_order": "A_then_C" if order[0] == A else "C_then_A",
                         "observed_contrast": observed_delta,
                         "h2_advice": adaptive["suggestion"],
                         "ablation_advice": ablated["suggestion"],
@@ -236,6 +247,31 @@ class ScienceFirstBehavioralSlice(unittest.TestCase):
                          {name for name, _ in REGIMES})
         print("I2_SCIENCE_FIRST_OFFLINE_SLICE " +
               json.dumps(rows, sort_keys=True, separators=(",", ":")))
+
+    def test_consumption_requires_eat_and_drink_does_not_spend_inventory(self):
+        """Physical semantics, not evidence of autonomous motor admission."""
+        world = TinyControlledWorld(completion_delta=8)
+        preparation = world.intervene(step=1, semantic=A)
+        self.assertEqual(preparation.lived_delta, -2)
+        self.assertEqual(world._inventory, 1)
+        drinking = world.intervene(step=2, semantic=C)
+        self.assertEqual(drinking.lived_delta, -2)
+        self.assertEqual(world._inventory, 1)
+        eating = world.intervene(step=3, semantic=B)
+        self.assertEqual(eating.lived_delta, 6)
+        self.assertEqual(world._inventory, 0)
+        empty_eating = world.intervene(step=4, semantic=B)
+        self.assertEqual(empty_eating.lived_delta, -2)
+
+        adverse = TinyControlledWorld(completion_delta=-8)
+        self.assertEqual(adverse.intervene(step=1, semantic=A).lived_delta, -2)
+        self.assertEqual(adverse.intervene(step=2, semantic=B).lived_delta, -10)
+        self.assertEqual(adverse._inventory, 0)
+        # No food effect may be credited after collecting alone or drinking.
+        no_eat = TinyControlledWorld(completion_delta=8)
+        self.assertEqual(no_eat.intervene(step=1, semantic=A).lived_delta, -2)
+        self.assertEqual(no_eat.intervene(step=2, semantic=C).lived_delta, -2)
+        self.assertEqual(no_eat._inventory, 1)
 
     def test_veto_and_unfunded_cases_keep_advice_nonmotor(self):
         vetoed = exercise(
