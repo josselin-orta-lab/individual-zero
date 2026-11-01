@@ -11,7 +11,7 @@
 5. [Delayed-credit study](DELAYED_CREDIT_STUDY.md), [UC allocation study](UC_ALLOCATION_STUDY.md) and [Competition preview](COMPETITION_PREVIEW.md): explicit hypotheses and limitations.
 6. [Intention ingress](INTENTION_INGRESS.md), [Action Control boundary](ACTION_CONTROL_BOUNDARY.md): declared ports, veto, admission restrictions.
 7. [External witness](LIFECYCLE_EXTERNAL_WITNESS.md) and [operator file witness](OPERATOR_FILE_WITNESS.md): adversarial diagnostics, **not** independent M11 proof.
-8. [Test plan](TEST_PLAN.md): fast synthetic checks and unpassed scientific gates.
+8. [G1-LAB experimental loop](../lab/README.md): one internal SQLite state owner and a no-learning comparator, not a born I2.\n9. [Test plan](TEST_PLAN.md): fast synthetic checks and unpassed scientific gates.
 
 ## External authority
 

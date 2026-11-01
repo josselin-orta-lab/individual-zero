@@ -24,7 +24,7 @@ reproducible scientific-validity defect, remove a specifically documented
 critical-path blocker or act on independent G1 review feedback. Do not
 add a separate cognition/WorldBody/UC/M11 owner.
 
-**Current allowed work:** prepare, request and reconcile independent
+**ADR-0005 exception:** one disposable G1-LAB integrated, non-living research cycle is explicitly authorized. Use paid v5 cognition and one internal body effect in the SAME local SQLite transaction with a no-learning comparator. No motor admission, M11, birth, engine registration or living G3 authority. No open-ended G2 tuning.\n\n**Current allowed work:** prepare, request and reconcile independent
 architecture and scientific reviews of the [minimal G1 loop
 brief](../../docs/architecture/proposals/i2-g1-minimal-living-loop-review-brief-2026-11-01.md)
 under #662, plus independent G0 custody under #661. The chosen candidate

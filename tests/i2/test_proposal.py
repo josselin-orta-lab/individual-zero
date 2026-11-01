@@ -27,7 +27,7 @@ class TestI2Proposal(unittest.TestCase):
         report = inspect_proposal("I2", root=ROOT)
         self.assertEqual(report["status"], "BLOCKED")
         self.assertEqual(set(report["blocked_by"]),
-                         {"lab_implementation_present", "runtime_implementation_present"})
+                         {"runtime_implementation_present"})
         self.assertTrue(report["checks"]["no_parent_runtime_imports"])
         self.assertEqual(report["activation"], "FORBIDDEN")
 
