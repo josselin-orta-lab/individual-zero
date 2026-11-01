@@ -92,4 +92,4 @@ Le diagnostic d'un COMMIT incertain et le maillon historique demandé par `minim
 
 ## G2 : incident de lecture du probe COMMIT incertain
 
-Une exception de lecture locale durant le second probe est classee `UNKNOWN` avant tout acces au temoin, tandis qu'une erreur d'arguments reste un `ValueError`. Aucune permission de retry, reprise ou action et aucune nouvelle couche SQLite.
+Une exception de lecture locale durant le premier audit ou le second probe est classee `UNKNOWN` avant tout acces au temoin. Les controles adversariaux couvrent une erreur I/O, une corruption SQLite de lecture initiale et une inspection terminale. Une erreur d'arguments de la requete reste un `ValueError` lorsqu'elle est atteinte sur un journal lisible. Aucune permission de retry, reprise ou action et aucune nouvelle couche SQLite.
