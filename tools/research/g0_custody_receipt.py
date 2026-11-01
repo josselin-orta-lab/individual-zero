@@ -303,8 +303,10 @@ def _verify_original_files(original_dir: Path, expected: dict, campaign: str) ->
         if target.is_symlink():
             raise ValueError("symlinked original M11 ZIP: " + name)
         before = target.lstat()
-        if not stat.S_ISREG(before.st_mode) or before.st_nlink != 1:
-            raise ValueError("original M11 ZIP is linked or not regular: " + name)
+        if not stat.S_ISREG(before.st_mode):
+            raise ValueError("original M11 ZIP is not a regular file: " + name)
+        if before.st_nlink != 1:
+            raise ValueError("hard-linked original M11 ZIP: " + name)
         if before.st_size <= 0 or before.st_size > ORIGINAL_MAX_BYTES:
             raise ValueError("invalid original M11 ZIP byte size: " + name)
         size_limit = record.get("bytes")
