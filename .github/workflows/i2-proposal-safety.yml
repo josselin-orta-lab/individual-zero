@@ -4,7 +4,12 @@ on:
   pull_request:
     branches: [main]
     paths:
+      # I2 source or fixtures still require the full inert-proposal checks.
+      # Pure documentation changes use agent-context-static.yml instead.
       - 'src/i2/**'
+      - '!src/i2/docs/**'
+      - '!src/i2/README.md'
+      - '!src/i2/AGENTS.md'
       - 'tests/i2/**'
       - '.github/workflows/i2-proposal-safety.yml'
 
