@@ -46,20 +46,17 @@ prospective design and exact parameter-lock candidate retain their historical
 pre-approval wording to preserve provenance; use the report and #662 comment
 for the later execution status. No repeat of the completed v1-r1 experiment is authorized. ADR-0008 now permits **new, separately scoped isolated G3 prototype engineering**; it does not promote the toy G1-LAB results into living scientific evidence, certify M11, or activate the engine.
 
- prepare, request and reconcile independent
-architecture and scientific reviews of the [minimal G1 loop
-brief](../../docs/architecture/proposals/i2-g1-minimal-living-loop-review-brief-2026-11-01.md)
-under #662, plus independent G0 custody under #661. The chosen candidate
-is an *internal deterministic physical state transition under one future
-generation owner*, with a separate independent monotone latest-head
-authority, not another simulated controller. This is a REVIEW CANDIDATE,
-not an accepted architecture.
+**Current implementation record:** [PR #818](https://github.com/josselin-orta-lab/individual-zero/pull/818)
+introduced a bounded, internally executable I2-only WorldBody / paid
+Competition / private action-admission loop under the existing SQLite owner.
+[PR #819](https://github.com/josselin-orta-lab/individual-zero/pull/819)
+added audit-only per-decision evidence and a first matched divergence readout:
+adverse payoff changes the *programmed* chosen-outcome valuation at the fourth
+capture, while stable shows no action divergence over the short tested horizon.
+Neither a prototype software PASS nor this engineered policy is proof of
+natural learning, living M11, externally attested anti-rollback or survival
+benefit. Keep #664 open for the next falsifiable prototype increment.
 
-**Only after documented independent G1 approval:** build a single
-physical, paid, born I2 causal loop for #664, with natural collect/eat
-decisions, real WorldBody consequence, later first-person learning and a
-no-learning comparator. Do not activate from G2 tests, grant motor authority,
-claim M11, or run mortal cohorts before the proper gates.
 **Current owner decision: [ADR-0008](../../docs/decisions/ADR-0008-remove-obsolete-i2-external-g1-review-gate.md).**
 The old external G1 two-reviewer prerequisite is **RETIRED**. Do not ask the
 owner to nominate/certify reviewers before I2 development, and do not route
