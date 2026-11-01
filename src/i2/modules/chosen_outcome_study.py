@@ -20,7 +20,7 @@ from .intention_ingress import ObservationClaim
 
 MAX_RECORDED_CHOICES = 64
 OUTCOME_LIMIT = 200
-FIXED_SCORE_OFFSET = 4  # preregistered toy-domain choice, not physiological value
+FIXED_SCORE_OFFSET = 5  # exploratory G2 recalibration after correcting toy food semantics; not physiology
 
 
 @dataclass(frozen=True, slots=True)
