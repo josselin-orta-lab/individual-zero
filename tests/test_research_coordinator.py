@@ -116,7 +116,8 @@ class ResearchCoordinatorTests(unittest.TestCase):
 
     def test_dependency_graph_and_cli(self):
         diagram = rc.graph(self.program)
-        self.assertIn("I2_G1 --> I2_G3", diagram)
+        self.assertNotIn("I2_G1 --> I2_G3", diagram)
+        self.assertIn("I2_G3 --> I2_G4", diagram)
         self.assertIn("I2_G5 --> I2_G6", diagram)
         self.assertEqual(rc.main(["audit"],self.root), 0)
         self.assertEqual(rc.main(["recommend","--top","2","--at-sha",self.sha,
