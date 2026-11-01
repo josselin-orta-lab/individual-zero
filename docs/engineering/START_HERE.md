@@ -14,7 +14,7 @@ If the task is not already narrowly specified, first run `python tools/research_
 
 For I2 documentation-only updates, the lightweight `agent-context-static.yml` check covers current STATUS, HISTORY, handbook and agent instructions. The Python 3.11/3.12 `i2-proposal-safety.yml` matrix is reserved for I2 source/contract or test changes; `src/i2/docs/**`, the I2 README and scoped AGENTS instructions are deliberately excluded from that heavy matrix. A mixed code-plus-documentation PR **still runs** the I2 safety matrix. This path split does not authorize I2 execution or scientific claims.
 
-For documentation/agent-navigation changes (including the separate architecture atlas), use the single path-scoped `agent-context-static.yml` check. It runs `check_repo_navigation.py`, `test_repo_navigation.py` and the focused agent/research tests, **not** a living engine. Source-integrity drift in a current status page is flagged for research reconciliation; frozen scientific sources must retain their exact Git blobs. See [research coordination](RESEARCH_COORDINATOR.md) and [source dossiers](RESEARCH_DOSSIERS.md).
+For documentation/agent-navigation changes (including the separate architecture atlas, all current engineering guides, and accepted ADRs), use the single path-scoped `agent-context-static.yml` check. It runs `check_repo_navigation.py`, `test_repo_navigation.py` and the focused agent/research tests, **not** a living engine. Source-integrity drift in a current status page is flagged for research reconciliation; frozen scientific sources must retain their exact Git blobs. See [research coordination](RESEARCH_COORDINATOR.md) and [source dossiers](RESEARCH_DOSSIERS.md).
 
 When citing the same source in both curated research manifests, use `python tools/research_coordinator.py audit --structure-only` to detect **cross-manifest source-SHA disagreement** before proposing research work; a structural PASS with `SOURCE_REVIEW_REQUIRED` still demands manual source reconciliation. See the [1 November provenance record](../research/audits/RESEARCH_SOURCE_RECONCILIATION_2026-11-01.md).
 
@@ -39,7 +39,9 @@ The **actual workflow files** determine what runs. The older [I0 CI policy](../r
 | --- | --- |
 | I1 executable source, engine contracts, relevant scripts and structural tooling | [I1 CI](../../.github/workflows/i1-current-ci.yml), Python 3.11 and 3.12, potentially expensive |
 | I1 Markdown, `AGENTS.md`, navigational guides and examples only | `python tools/check_repo_navigation.py --scope current` and targeted local unit tests; **do not start a full mortal cohort run** |
-| I2 prototype source or generation-owned documentation | [I2 proposal-only CI](../../.github/workflows/i2-proposal-safety.yml), synthetic tests only; no birth or motor authorization |
+| I2 prototype source, contracts or synthetic tests | [I2 proposal-only CI](../../.github/workflows/i2-proposal-safety.yml), synthetic tests only; no birth or motor authorization |
+| I2 documentation/agent guides only | [Static agent navigation](../../.github/workflows/agent-context-static.yml), no I2 source execution |
+| Current `docs/engineering/*.md` or accepted `docs/decisions/*.md` only | [Static agent navigation](../../.github/workflows/agent-context-static.yml), current document links and routing tests; no full I1 cohort |
 | Explicit architecture/custody/promotion change | Required [engine structural guard](../../.github/workflows/engine-structural.yml) and generation-specific review, with full checks if executable invariants change |
 
 The I1 workflow excludes generation-owned Markdown from its expensive automatic run; negatives in its ordered GitHub `paths` list must stay **after** positive patterns. The I1 workflow still activates for changes to `scripts/check_engine_repository.py` and its own YAML. Avoid gratuitous CI re-runs on adjacent documentation commits. A skipped check is never a PASS. Preserve the exact commit SHA and any manual approval gate.
