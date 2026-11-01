@@ -94,7 +94,7 @@ class TestI2Proposal(unittest.TestCase):
                     self.assertFalse(output.exists())
                     audit = inspect_proposal(generation, root=ROOT)
                     self.assertEqual(audit["generation"], generation)
-                    self.assertEqual(audit["status"], "BLOCKED")
+                    self.assertEqual(audit["status"],\n                        "STRUCTURE_PRESENT_REVIEW_REQUIRED" if generation == "I2" else "BLOCKED")
                     self.assertEqual(audit["activation"], "FORBIDDEN")
             for generation in ("I0", "I1", "I01", "I02", "I010",
                                "I10beta", "i10", "I-10"):
