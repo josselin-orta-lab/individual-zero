@@ -51,6 +51,26 @@ SCENARIOS = {
 }
 
 
+def _exogenous_phase(physical_ticks: int, count: int) -> int:
+    """Hidden SCRIPTED world clock, never a personal sensory input.
+
+    The first food phase lasts through physical tick 2, the next through
+    tick 4, and so on. At zero ticks the first phase holds; once a finite
+    scripted horizon ends, the last externally specified payoff persists.
+    A cognitive choice may NOT advance this clock or select a payoff epoch.
+    """
+    if (type(physical_ticks) is not int or physical_ticks < 0 or
+            type(count) is not int or count < 1):
+        raise PrototypeRefusal("invalid exogenous world phase request")
+    return min(max(0, (physical_ticks - 1) // WORLD_COGNITIVE_PERIOD),
+               count - 1)
+
+
+def _exogenous_food_impulse(impulses: tuple[int, ...],
+                           physical_ticks: int) -> int:
+    return impulses[_exogenous_phase(physical_ticks, len(impulses))]
+
+
 class PrototypeRefusal(ValueError):
     """Untrusted, inconsistent, stale or terminal local research operation."""
 
@@ -403,7 +423,7 @@ class IsolatedI2:
                 if inventory <= 0:
                     raise PrototypeRefusal("ate absent inventory")
                 inventory -= 1
-                impulse = impulses[i]
+                impulse = _exogenous_food_impulse(impulses, tick_cursor)
             elif action not in (None, DRINK):
                 raise PrototypeRefusal("unknown physical action")
             energy = max(0, min(100, energy - cost + impulse))
@@ -481,6 +501,11 @@ class IsolatedI2:
                 "seq": seq,
                 "physical_ticks_before": sum(
                     1 for revision in tick_revisions if revision < seq),
+                # RESEARCHER-ONLY explanation, never in the subject's
+                # current claim, subjective evidence or valuation source.
+                "exogenous_food_phase": _exogenous_phase(
+                    sum(1 for revision in tick_revisions if revision < seq),
+                    len(json.loads(meta["impulses_json"]))),
                 "before_energy": row["before_energy"],
                 "before_inventory": inventory,
                 "before_resources": resources,
@@ -578,7 +603,11 @@ class IsolatedI2:
             inventory += 1
         elif action == EAT:
             inventory -= 1
-            impulse = json.loads(meta[2])[seq - 1]
+            # Exogenous conditions belong to the WORLD physical clock.
+            # Two subjects acting at the same tick see the same hidden
+            # food payoff despite different numbers of earlier decisions.
+            impulse = _exogenous_food_impulse(
+                tuple(json.loads(meta[2])), state[5])
         elif action not in (None, DRINK):
             raise PrototypeRefusal("invalid physical action")
         if inventory < 0 or resources < 0:
@@ -691,6 +720,8 @@ class IsolatedI2:
         if started["terminal"]:
             raise PrototypeRefusal("terminal individual cannot run a world")
         trace: list[dict] = []
+        meta, _, _ = self._read()
+        exogenous_count = len(json.loads(meta["impulses_json"]))
         for _ in range(ticks):
             previous = self.audit()
             if (previous["terminal"] or
@@ -735,6 +766,8 @@ class IsolatedI2:
             final = self.audit()
             trace.append({
                 "physical_tick": tick["seq"],
+                "researcher_only_food_phase": _exogenous_phase(
+                    tick["seq"], exogenous_count),
                 "before_tick_energy": tick["before_energy"],
                 "after_tick_energy": tick["energy"],
                 "cognitive_due": due,
@@ -908,6 +941,9 @@ def demo(scenario: str, *, steps: int = 6) -> dict:
     """Tiny disposable engineering smoke only, NOT a scientific replicate."""
     if scenario not in SCENARIOS or type(steps) is not int or not 1 <= steps <= MAX_STEPS:
         raise PrototypeRefusal("unknown or unbounded demo")
+    if scenario == "reversal":
+        raise PrototypeRefusal(
+            "reversal requires physical world ticks: use --world / world_demo")
     with tempfile.TemporaryDirectory(prefix="i2-isolated-prototype-") as root:
         arms = {}
         for learning, label in ((True, "observed_chosen"), (False, "fixed")):
@@ -1022,6 +1058,7 @@ def world_demo(scenario: str, *, ticks: int = 12,
     return {
         "status": "SYNCHRONOUS_BOUNDED_WORLD_RESEARCH_ONLY",
         "scenario": scenario,
+        "exogenous_regime_clock": "PHYSICAL_TICKS_NOT_COGNITIVE_REVISIONS",
         "arms": arms,
         "first_choice_contrast": paired_decision_contrast(
             arms["observed_chosen"]["decisions"],

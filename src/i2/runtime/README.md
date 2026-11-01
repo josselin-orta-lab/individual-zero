@@ -149,3 +149,41 @@ PYTHONPATH=src python -m i2.runtime.isolated_prototype --world --scenario neutra
 This remains an explicitly started, internal synchronous toy world. Local
 SQLite replay is not authenticated M11, and nondeath at a bounded horizon
 is censored observation, not proof of longevity.
+
+## Exogenous reversal clock, not cognitive attempt count
+
+**Scientific-validity correction (#664):** the food payoff for a physical EAT
+action is now indexed by the **committed physical world tick**, not by the
+number of cognition events. The previous step-indexed payoff made a subject
+which skipped an unaffordable cognitive window encounter a *different world*
+at the same physical time. That confounded policy and environment.
+
+Each existing scripted payoff phase covers two physical world ticks (the
+existing cognitive-window cadence), with phase 0 through tick 2, phase 1
+through tick 4, phase 2 through tick 6 and phase 3 from tick 7 onward.
+After the eight-element exogenous script is exhausted, the last defined
+payoff persists until the bounded world horizon. This is a **researcher-
+specified hidden environment regime**, not a learned rule or a biologically
+calibrated duration. Both independent arms receive the identical exogenous
+payoff at the same physical tick regardless of whether they have acted or
+how many cognitive windows they missed.
+
+The one-owner commit applies the current physical-tick payoff. Its local
+replay audit recomputes the same payoff from journaled physical ticks,
+rejecting history changes. Diagnostic `exogenous_food_phase` in
+`decision_evidence()` and `researcher_only_food_phase` in the world trace
+are researcher-facing **after-commit readouts**, never published in the
+subject's perception, score or chosen-outcome memory. The unchanged
+past-only mechanism can adapt only after a consequence was actually
+experienced. The world `reversal` control may now be inspected with:
+
+```bash
+PYTHONPATH=src python -m i2.runtime.isolated_prototype --world --scenario reversal --ticks 12
+```
+
+The direct, no-physical-tick `demo("reversal")` is refused because it
+cannot expose a time-dependent reversal and would yield misleading science.
+Existing constant stable/adverse/neutral single-step smokes are unchanged.
+Different post-divergence trajectories are still not matched causal
+survival evidence, and a programmed avoidance response is not proof of
+natural or generalized learning. No frozen G1-LAB data or protocol changes.
