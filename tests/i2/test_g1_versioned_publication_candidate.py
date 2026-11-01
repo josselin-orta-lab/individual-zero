@@ -16,7 +16,10 @@ import tempfile
 import unittest
 
 ZERO = "0" * 64
-GENESIS = {"energy": 4, "inventory": 0, "uc": 40,
+LIFE = "life:i2:g1-review-one"
+GENESIS_REF = "genesis:i2:g1-review-one"
+GENESIS = {"life_ref": LIFE, "genesis_ref": GENESIS_REF,
+           "energy": 4, "inventory": 0, "uc": 40,
            "memory_version": 0, "observed_result": None, "terminal": False}
 
 
@@ -29,6 +32,8 @@ class Anchor:
     revision: int
     digest: str
     terminal: bool
+    life_ref: str
+    genesis_ref: str
 
 
 def _serialize(state: dict) -> str:
@@ -37,6 +42,14 @@ def _serialize(state: dict) -> str:
                 ("energy", "inventory", "uc", "memory_version")) or
             type(state["terminal"]) is not bool):
         raise Refusal("invalid complete owner state")
+    for key, prefix in (("life_ref", "life:i2:"),
+                        ("genesis_ref", "genesis:i2:")):
+        ref = state[key]
+        if (type(ref) is not str or not ref.startswith(prefix) or
+                not 9 <= len(ref) <= 128 or
+                not all(c.isascii() and (c.isalnum() or c in "-_:.")
+                        for c in ref)):
+            raise Refusal("invalid immutable I2 identity")
     if state["observed_result"] not in (None, "benefit", "harm", "death"):
         raise Refusal("invalid outcome")
     if state["terminal"] and state["observed_result"] != "death":
@@ -51,7 +64,9 @@ def _digest(parent: str, revision: int, raw: str) -> str:
 class VersionedOwnerCandidate:
     """Test-only one-transaction state history; no WorldBody transitions."""
 
-    def __init__(self, path: Path, *, create: bool = False):
+    def __init__(self, path: Path, *, create: bool = False,
+                 life_ref: str | None = None,
+                 genesis_ref: str | None = None):
         self.db = sqlite3.connect(path)
         self.db.execute("PRAGMA journal_mode=WAL")
         self.db.execute("PRAGMA synchronous=FULL")
@@ -67,7 +82,10 @@ class VersionedOwnerCandidate:
                   id INTEGER PRIMARY KEY CHECK(id=1), pending INTEGER);
                 INSERT INTO attempt VALUES(1,NULL);
             """)
-            raw = _serialize(GENESIS)
+            if life_ref is None or genesis_ref is None:
+                raise Refusal("explicit I2 genesis identity required")
+            state = {**GENESIS, "life_ref": life_ref, "genesis_ref": genesis_ref}
+            raw = _serialize(state)
             self.db.execute("INSERT INTO versions VALUES(0,?,?,?)",
                             (_digest(ZERO, 0, raw), ZERO, raw))
             self.db.commit()
@@ -76,8 +94,15 @@ class VersionedOwnerCandidate:
         self.db.close()
 
     def genesis_anchor(self) -> Anchor:
-        return Anchor(0, self.db.execute(
-            "SELECT digest FROM versions WHERE revision=0").fetchone()[0], False)
+        row = self.db.execute(
+            "SELECT digest,state FROM versions WHERE revision=0"
+        ).fetchone()
+        if row is None:
+            raise Refusal("missing genesis record")
+        state = json.loads(row[1])
+        _serialize(state)
+        return Anchor(0, row[0], False,
+                      state["life_ref"], state["genesis_ref"])
 
     def pending(self) -> int | None:
         return self.db.execute("SELECT pending FROM attempt WHERE id=1").fetchone()[0]
@@ -90,6 +115,7 @@ class VersionedOwnerCandidate:
         parent = ZERO
         state = None
         digest = None
+        genesis_identity = None
         for i in range(anchor.revision + 1):
             row = self.db.execute(
                 "SELECT digest,parent,state FROM versions WHERE revision=?", (i,)
@@ -102,10 +128,16 @@ class VersionedOwnerCandidate:
                 if (_serialize(state) != raw or predecessor != parent or
                         digest != _digest(parent, i, raw)):
                     raise Refusal("inconsistent local owner history")
+                identity = (state["life_ref"], state["genesis_ref"])
+                if genesis_identity is None:
+                    genesis_identity = identity
+                elif genesis_identity != identity:
+                    raise Refusal("I2 identity changed within revision history")
             except (ValueError, TypeError) as error:
                 raise Refusal("invalid state history") from error
             parent = digest
-        if digest != anchor.digest or state["terminal"] != anchor.terminal:
+        if (digest != anchor.digest or state["terminal"] != anchor.terminal or
+                genesis_identity != (anchor.life_ref, anchor.genesis_ref)):
             raise Refusal("owner disagrees with external anchor")
         return state
 
@@ -122,6 +154,9 @@ class VersionedOwnerCandidate:
             if latest != anchor.revision:
                 raise Refusal("private or forked successor already exists")
             raw = _serialize(body)
+            if ((body["life_ref"], body["genesis_ref"]) !=
+                    (previous["life_ref"], previous["genesis_ref"])):
+                raise Refusal("attempt to change immutable I2 identity")
             if body["uc"] > previous["uc"]:
                 raise Refusal("UC refund forbidden")
             revision = latest + 1
@@ -136,7 +171,8 @@ class VersionedOwnerCandidate:
             self.db.rollback()
             raise
         self._same_process_pending = revision
-        return Anchor(revision, head, body["terminal"])
+        return Anchor(revision, head, body["terminal"],
+                      body["life_ref"], body["genesis_ref"])
 
     def acknowledge_mock_cas(self, new_anchor: Anchor, *, received: bool) -> None:
         """Only an explicit same-process hypothetical CAS ACK can clear pending.
@@ -154,8 +190,10 @@ class VersionedOwnerCandidate:
         self._same_process_pending = None
 
 
-def snapshot(*, result="benefit", terminal=False) -> dict:
-    return {"energy": 0 if terminal else 3, "inventory": 1,
+def snapshot(*, result="benefit", terminal=False,
+             life_ref=LIFE, genesis_ref=GENESIS_REF) -> dict:
+    return {"life_ref": life_ref, "genesis_ref": genesis_ref,
+            "energy": 0 if terminal else 3, "inventory": 1,
             "uc": 36, "memory_version": 0,
             "observed_result": result, "terminal": terminal}
 
@@ -165,7 +203,8 @@ class G1RetainedRevisionTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.path = Path(self.temp.name) / "single-owner.sqlite"
-        self.owner = VersionedOwnerCandidate(self.path, create=True)
+        self.owner = VersionedOwnerCandidate(
+            self.path, create=True, life_ref=LIFE, genesis_ref=GENESIS_REF)
         self.addCleanup(lambda: self.owner.close())
         self.g0 = self.owner.genesis_anchor()
 
@@ -202,7 +241,7 @@ class G1RetainedRevisionTests(unittest.TestCase):
         self.cold_reopen()
         self.assertIsNone(self.owner.pending())
         with self.assertRaisesRegex(Refusal, "absent"):
-            self.owner.public(Anchor(1, "a" * 64, False), verified=True)
+            self.owner.public(Anchor(1, "a" * 64, False, LIFE, GENESIS_REF), verified=True)
         new = self.owner.stage(self.g0, snapshot())
         self.cold_reopen()
         with self.assertRaisesRegex(Refusal, "uncertain CAS"):
@@ -215,11 +254,49 @@ class G1RetainedRevisionTests(unittest.TestCase):
         with self.assertRaisesRegex(Refusal, "fresh head"):
             self.owner.public(self.g0, verified=False)
         with self.assertRaisesRegex(Refusal, "disagrees"):
-            self.owner.public(Anchor(0, "f" * 64, False), verified=True)
+            self.owner.public(Anchor(0, "f" * 64, False, LIFE, GENESIS_REF), verified=True)
         self.owner.db.execute("DELETE FROM versions WHERE revision=0")
         self.owner.db.commit()
         with self.assertRaisesRegex(Refusal, "absent"):
             self.owner.public(self.g0, verified=True)
+
+    def test_c0_distinct_birth_identities_bind_entire_state_history(self):
+        """A second body with identical properties must not alias the first."""
+        other_path = Path(self.temp.name) / "other-life.sqlite"
+        second_life = "life:i2:g1-review-two"
+        second_genesis = "genesis:i2:g1-review-two"
+        other = VersionedOwnerCandidate(
+            other_path, create=True,
+            life_ref=second_life, genesis_ref=second_genesis,
+        )
+        try:
+            witness = other.genesis_anchor()
+            self.assertNotEqual(self.g0, witness)
+            self.assertNotEqual(self.g0.digest, witness.digest)
+            with self.assertRaisesRegex(Refusal, "disagrees"):
+                other.public(self.g0, verified=True)
+            with self.assertRaisesRegex(Refusal, "immutable I2 identity"):
+                other.stage(witness, snapshot())
+            left = self.owner.stage(self.g0, snapshot())
+            right = other.stage(witness, snapshot(
+                life_ref=second_life, genesis_ref=second_genesis,
+            ))
+            self.assertNotEqual(left.digest, right.digest)
+        finally:
+            other.close()
+
+    def test_c0_reused_birth_identity_is_still_ambiguous_without_external_issuer(self):
+        """Duplicate birth certificates remain a BLOCKED G1 concern."""
+        twin = VersionedOwnerCandidate(
+            Path(self.temp.name) / "duplicate-id.sqlite", create=True,
+            life_ref=LIFE, genesis_ref=GENESIS_REF,
+        )
+        try:
+            self.assertEqual(self.g0, twin.genesis_anchor())
+            self.assertEqual(self.owner.stage(self.g0, snapshot()).digest,
+                             twin.stage(twin.genesis_anchor(), snapshot()).digest)
+        finally:
+            twin.close()
 
     def test_c10_external_terminal_anchor_blocks_old_copy_but_local_fake_does_not(self):
         old_copy = Path(self.temp.name) / "old-copy.sqlite"
