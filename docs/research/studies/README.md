@@ -54,3 +54,14 @@ python tools/research_location_index.py --family i1 --limit 20 --json
 ```
 
 The catalog classifies **names**, not verified generation ownership, protocol validity or conclusions. Do not move a report merely because its filename contains a stage or a result keyword.
+
+## Read-only local-link review
+
+Find broken or ambiguous relative Markdown links in the historical root, without editing original evidence:
+
+```bash
+python tools/research_link_audit.py --limit 30
+python tools/research_link_audit.py --json --limit 100
+```
+
+Missing links are **review leads**, not automatic corrections: links may refer to older commits, external archives, intentionally retired paths or files outside this checkout. Review original source SHAs and Git history before modifying a dated report. The scanner does not validate scientific claims.
