@@ -56,10 +56,15 @@ class TestUncertainWitness(unittest.TestCase):
             report["terminal_step"], "proof:test-only",
         ))
 
-    def inspection(self, c, witness, *, count=0, head=ZERO_HASH):
+    def inspection(self, c, witness, *, count=0, head=ZERO_HASH,
+                   method="open", semantic_ref=A, evidence_ref=None, ttl_steps=12):
+        if evidence_ref is None and method == "open":
+            evidence_ref = f"evidence:{c.capture.step}"
         return inspect_uncertain_cognition_with_witness(
             fixture=self.fixture, witness=witness,
             previous_count=count, previous_head=head, claim=c,
+            method=method, semantic_ref=semantic_ref,
+            evidence_ref=evidence_ref, ttl_steps=ttl_steps,
         )
 
     def test_lost_ack_correlated_without_permissions_or_port_reexecution(self):
@@ -143,8 +148,22 @@ class TestUncertainWitness(unittest.TestCase):
             inspect_uncertain_cognition_with_witness(
                 fixture=self.fixture, witness=witness,
                 previous_count=0, previous_head=ZERO_HASH, claim=None,
+                method="observe",
             )
         self.assertEqual(witness.calls, 0)
+
+
+    def test_same_capture_with_wrong_request_refused_before_remote_read(self):
+        c = self.source.add(claim(3))
+        self.fixture.open(claim=c, semantic_ref=A, evidence_ref="evidence:3",
+                          ttl_steps=12)
+        witness = self.witness()
+        calls = len(self.source.calls)
+        with self.assertRaises(WitnessRefusal) as exc:
+            self.inspection(c, witness, semantic_ref="affordance:eat:berry_a")
+        self.assertEqual(exc.exception.reason, "UNKNOWN")
+        self.assertEqual(witness.calls, 0)
+        self.assertEqual(len(self.source.calls), calls)
 
     def test_witness_failure_is_unknown_not_local_fallback(self):
         c = self.source.add(claim(3))

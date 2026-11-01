@@ -43,7 +43,9 @@ class AncestryTests(unittest.TestCase):
     def check(self,f,c,w,floor,count=0,head=ZERO_HASH):
         return inspect_uncertain_cognition_with_witness(
             fixture=f,witness=w,previous_count=count,previous_head=head,
-            claim=c,minimum_witness=floor)
+            claim=c,method="open",semantic_ref=A,
+            evidence_ref=f"evidence:{c.capture.step}",ttl_steps=12,
+            minimum_witness=floor)
     def test_same_latest_head_can_hide_different_ancestor(self):
         a=self.make("a.sqlite")
         b=self.make("b.sqlite")

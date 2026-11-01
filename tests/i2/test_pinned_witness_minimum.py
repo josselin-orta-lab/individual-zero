@@ -51,7 +51,9 @@ class PinnedMinimumTests(unittest.TestCase):
         port=Mock(remote)
         return inspect_uncertain_cognition_with_witness(
             fixture=self.owner,witness=port,previous_count=0,
-            previous_head=ZERO_HASH,claim=c,minimum_witness=minimum,
+            previous_head=ZERO_HASH,claim=c,method="open",semantic_ref=A,
+            evidence_ref=f"evidence:{c.capture.step}",ttl_steps=12,
+            minimum_witness=minimum,
         )
 
     def test_complete_local_and_remote_rollback_needs_out_of_domain_minimum(self):
