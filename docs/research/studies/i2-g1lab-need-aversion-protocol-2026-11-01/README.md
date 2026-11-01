@@ -1,11 +1,14 @@
-# I2 G1-LAB: proposed need × aversion competition experiment
+# I2 G1-LAB: need × aversion competition research design
 
-**Status: PROPOSED / NOT APPROVED / NOT EXECUTED.**
-**Date:** 1 November 2026. **Owner decision needed before any new
-behavioral implementation.**
+**Status: OWNER-ACCEPTED SCIENTIFIC FRAMING AND FACTORIAL DESIGN (ADR-0007); PARAMETER_FREEZE_PENDING; EXECUTION_NOT_AUTHORIZED; NOT_EXECUTED.**
+**Date:** 1 November 2026. The owner accepted the conceptual scientific
+analysis and experimental-control structure in
+[ADR-0007](../../../decisions/ADR-0007-need-nutrition-aversion-scientific-design.md).
+The candidate scoring equation and signal magnitudes/seeds/horizon still
+require explicit, separate, prior-to-code parameter approval.
 **Authority:** no G1-LIVE/G3/M11/engine birth or motor activation is conveyed.
-This is a bounded **prospective exploratory** design, NOT confirmatory
-preregistration or a scientifically established mechanism.
+This remains a bounded **prospective exploratory design**, NOT confirmatory
+preregistration, evidence of natural motivation, or permission to run.
 
 ## 1. Frozen context and why a new model would be necessary
 
@@ -96,7 +99,7 @@ stale-option revisit is included: social learning is a **different**
 future experiment. No action-specific `EAT` command or additional
 forced 'training' consumption is allowed.
 
-## 4. Candidate decision mechanism, subject to owner approval
+## 4. Candidate decision mechanism, NOT YET PARAMETER-FROZEN OR AUTHORIZED
 
 This is an explicitly **engineered low-level competition hypothesis**,
 not an assertion that desire or consciousness emerges naturally.
@@ -187,16 +190,22 @@ identifiable from its ablations**, not maximizing survival or making
 an individual eat. A zero effect or inability to acquire experience is
 a scientifically informative **NO-GO/NOT_ESTABLISHED**.
 
-## 7. Decision required and stop rule
+## 7. Approved direction, remaining freeze and stop rule
 
-**THIS DOCUMENT DOES NOT AUTHORIZE EXECUTION.** It specifies a
-candidate study that needs explicit approval from the project owner
-(or revision/rejection) before writing experimental decision code.
-An approved protocol must also freeze sensory/nutrition magnitudes,
-finite seed/step allocation and exact integer score arithmetic. If
-approved, perform **one bounded G1-LAB increment**, review all outcomes
-including harmful/null, and **stop**. No open-ended threshold,
-reward or heuristic search.
+**ADR-0007 records owner approval of the scientific analysis and the
+four-arm factorial DESIGN IN PRINCIPLE. THIS DOCUMENT STILL DOES NOT
+AUTHORIZE BEHAVIORAL IMPLEMENTATION OR EXPERIMENT EXECUTION.** Before
+code or runs, explicitly freeze the aversive/nutritional signal
+magnitudes, integer equation/clipping/ties, nonaversive versus aversive
+world definitions, finite independent seed/run allocation, initial
+resources, maximum captures, censoring rules and exact stop criterion,
+and obtain a separately recorded owner decision for that complete
+parameter-locked protocol. No constants should be retroactively
+declared approved from the design acceptance.
+
+After that separate authorization, only ONE bounded G1-LAB increment
+may be considered, retaining all negative/null/harmful results.
+No open-ended score, reward, threshold or heuristic search.
 
 Existing approved ADRs remain normative. G1-LIVE issue #662 still
 requires two truly independent architecture/science reviewers and
