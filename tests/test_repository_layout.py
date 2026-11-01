@@ -18,7 +18,7 @@ class RepositoryLayoutTests(unittest.TestCase):
         (research / "README.md").write_text("Historical index")
         manifest = root / module.HISTORICAL_RESEARCH_MANIFEST
         manifest.parent.mkdir(parents=True, exist_ok=True)
-        manifest.write_text("# Historical root\\n- `README.md`\\n")
+        manifest.write_text("# Historical root\n- `README.md`\n")
 
 
     def test_generation_owned_routes_and_nonpromotion(self):
@@ -55,12 +55,12 @@ class RepositoryLayoutTests(unittest.TestCase):
             for path in module.ENTRYPOINTS:
                 dest = root / path
                 dest.parent.mkdir(parents=True, exist_ok=True)
-                dest.write_text("# Fixture\\n", encoding="utf-8")
+                dest.write_text("# Fixture\n", encoding="utf-8")
             self._seed_research_baseline(root)
             self.assertEqual(module.check(root)["status"], "PASS")
             obsolete = root / "tools/research/tests/test_backslide.py"
             obsolete.parent.mkdir(parents=True)
-            obsolete.write_text("# Fixture\\n", encoding="utf-8")
+            obsolete.write_text("# Fixture\n", encoding="utf-8")
             self.assertEqual(module.check(root)["status"], "FAIL")
             obsolete.unlink()
             self._seed_research_baseline(root)
@@ -71,9 +71,9 @@ class RepositoryLayoutTests(unittest.TestCase):
             root = Path(folder)
             manifest = root / module.HISTORICAL_RESEARCH_MANIFEST
             manifest.parent.mkdir(parents=True)
-            manifest.write_text("# Historical paths\\n- `README.md`\\n- `stage12-old.md`\\n")
+            manifest.write_text("# Historical paths\n- `README.md`\n- `stage12-old.md`\n")
             research = root / "docs/research"
-            research.mkdir(parents=True)
+            research.mkdir(parents=True, exist_ok=True)
             (research / "README.md").write_text("Index")
             (research / "stage12-old.md").write_text("Original")
             self.assertEqual(module.check_research_root_placement(root), [])
