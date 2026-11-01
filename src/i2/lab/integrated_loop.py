@@ -143,8 +143,9 @@ class IntegratedLab:
     def create(cls, path: Path, *, life_ref: str, genesis_ref: str,
                learning: bool, deltas: tuple[int, ...],
                initial_uc: int = 60, initial_energy: int = 24,
-               resources: int = 12) -> IntegratedLab:
-        if (type(learning) is not bool or type(deltas) is not tuple or
+               resources: int = 12, revisit: bool = False) -> IntegratedLab:
+        if (type(learning) is not bool or type(revisit) is not bool or
+                (revisit and not learning) or type(deltas) is not tuple or
                 not 1 <= len(deltas) <= MAX_CAPTURES or
                 any(type(x) is not int or not -8 <= x <= 8 for x in deltas) or
                 type(initial_uc) is not int or not 1 <= initial_uc <= 1000000 or
@@ -167,7 +168,8 @@ class IntegratedLab:
                     id INTEGER PRIMARY KEY CHECK(id=1),
                     life_ref TEXT NOT NULL, genesis_ref TEXT NOT NULL,
                     learning INTEGER NOT NULL, deltas_json TEXT NOT NULL,
-                    initial_energy INTEGER NOT NULL, initial_resources INTEGER NOT NULL);
+                    initial_energy INTEGER NOT NULL, initial_resources INTEGER NOT NULL,
+                    revisit INTEGER NOT NULL CHECK(revisit IN (0,1)));
                 CREATE TABLE g1_lab_state (
                     id INTEGER PRIMARY KEY CHECK(id=1),
                     revision INTEGER NOT NULL, energy INTEGER NOT NULL,
@@ -183,9 +185,9 @@ class IntegratedLab:
                     resources INTEGER NOT NULL, terminal INTEGER NOT NULL,
                     uc_remaining INTEGER NOT NULL, cognition_head TEXT NOT NULL UNIQUE);
             """)
-            db.execute("INSERT INTO g1_lab_meta VALUES(1,?,?,?,?,?,?)", (
+            db.execute("INSERT INTO g1_lab_meta VALUES(1,?,?,?,?,?,?,?)", (
                 life_ref, genesis_ref, int(learning), _json(deltas),
-                initial_energy, resources))
+                initial_energy, resources, int(revisit)))
             db.execute("INSERT INTO g1_lab_state VALUES(1,0,?,0,?,0)",
                        (initial_energy, resources))
         lab.audit()
@@ -209,7 +211,7 @@ class IntegratedLab:
     def _read(self) -> tuple[dict, tuple, tuple[dict, ...]]:
         with self._connect() as db:
             meta = db.execute("SELECT life_ref,genesis_ref,learning,deltas_json,"
-                              "initial_energy,initial_resources FROM g1_lab_meta WHERE id=1").fetchone()
+                              "initial_energy,initial_resources,revisit FROM g1_lab_meta WHERE id=1").fetchone()
             state = db.execute("SELECT revision,energy,inventory,resources,terminal "
                                "FROM g1_lab_state WHERE id=1").fetchone()
             rows = db.execute("SELECT seq,capture_ref,capture_step,offered_json,action_ref,"
@@ -223,7 +225,8 @@ class IntegratedLab:
                    "energy", "inventory", "resources", "terminal", "uc_remaining",
                    "cognition_head")
             return ({"learning": bool(meta[2]), "deltas": tuple(json.loads(meta[3])),
-                     "initial_energy": meta[4], "initial_resources": meta[5]},
+                     "initial_energy": meta[4], "initial_resources": meta[5],
+                    "revisit": bool(meta[6])},
                     state, tuple(dict(zip(raw, row)) for row in rows))
 
     def _fixture(self, valuation: object) -> CognitiveCycleFixture:
@@ -307,6 +310,8 @@ class IntegratedLab:
                 scores = observed_chosen_scores(
                     claim=claim, results=previous,
                     source=_StoredResultSource(tuple(past)), priors=PRIORS,
+                    revisit_after=2 if meta["revisit"] else None,
+                    revisit_bonus=9 if meta["revisit"] else 0,
                 )
                 values = event["advice"]["values"]
                 by_candidate = {c["candidate_ref"]: c["semantic_ref"]
@@ -480,6 +485,8 @@ class IntegratedLab:
         valuation = ChosenOutcomeValuationStudy(
             claim=claim, results=history if meta["learning"] else (),
             source=_StoredResultSource(history), priors=PRIORS,
+            revisit_after=2 if meta["revisit"] else None,
+            revisit_bonus=9 if meta["revisit"] else 0,
         )
         fixture = self._fixture(valuation)
         if index == 0:
@@ -512,18 +519,19 @@ class IntegratedLab:
 
 
 def run_pair(deltas: tuple[int, ...], *, initial_energy: int = 24,
-             initial_uc: int = 60) -> dict:
+             initial_uc: int = 60, include_revisit: bool = False) -> dict:
     """Independently seeded, equal-initial-budget learning/ablated comparison."""
     outcomes = {}
     with tempfile.TemporaryDirectory(prefix="i2-g1lab-disposable-") as tmp:
-        for learning in (False, True):
-            label = "observational" if learning else "fixed"
+        for label in (("fixed", "observational", "revisit")
+                      if include_revisit else ("fixed", "observational")):
+            learning = label != "fixed"
             db = Path(tmp) / f"{label}.sqlite"
             lab = IntegratedLab.create(
                 db, life_ref=f"lab-life:{label}",
                 genesis_ref=f"lab-genesis:{label}", learning=learning,
                 deltas=deltas, initial_energy=initial_energy,
-                initial_uc=initial_uc,
+                initial_uc=initial_uc, revisit=(label == "revisit"),
             )
             steps = []
             for _ in deltas:
