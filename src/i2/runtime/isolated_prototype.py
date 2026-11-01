@@ -161,12 +161,15 @@ class IsolatedI2:
         identity = uuid4().hex
         obj = cls(path, "i2:prototype:life:" + identity,
                   "i2:prototype:genesis:" + identity)
-        CognitiveCycleFixture.create(
-            path=obj.path, life_ref=obj.life_ref, synthetic_uc=initial_uc,
-            observation_source=obj.observations, valuation_source=_UnusedValuation(),
-            current_source=obj.current, safety_source=obj.safety,
-            genesis_ref=obj.genesis_ref, terminal_source=_TerminalPort(),
-        )
+        try:
+            CognitiveCycleFixture.create(
+                path=obj.path, life_ref=obj.life_ref, synthetic_uc=initial_uc,
+                observation_source=obj.observations, valuation_source=_UnusedValuation(),
+                current_source=obj.current, safety_source=obj.safety,
+                genesis_ref=obj.genesis_ref, terminal_source=_TerminalPort(),
+            )
+        except FileExistsError as exc:
+            raise PrototypeRefusal("refuse reused or existing local identity file") from exc
         # Cognition creates the only SQLite owner. A partially initialized
         # genesis remains unusable: inspection requires both complete schemas.
         with obj._connect() as db:
