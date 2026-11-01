@@ -40,7 +40,9 @@ class ComposedEmergencyDeadlineTests(unittest.TestCase):
         self.assertEqual(second.energy, 8)
         row = life.decision_evidence()[1]
         self.assertTrue(row["deadline_infeasible_collect_suppressed"])
-        self.assertTrue(row["last_resort_priority_applied"])
+        # Food already wins after the physically impossible collect is
+        # suppressed, so no extra synthetic priority is manufactured.
+        self.assertFalse(row["last_resort_priority_applied"])
         self.assertEqual(second.actual_uc_spent, 5)
         self.assertEqual(row["candidate_scores"][COLLECT], 0)
 
