@@ -21,6 +21,16 @@ The [global research coordinator](../../engineering/RESEARCH_COORDINATOR.md) pro
 
 These are navigation-only indexes: they never change the scientific status of a record.
 
+## Other historical families
+
+- [I1 records](i1/README.md)
+- [M11 records](m11/README.md)
+- [Stage 9 records](stage-9/README.md)
+- [Stage 10 records](stage-10/README.md)
+- [Cross-cutting records](cross-cutting/README.md)
+
+The remaining Stage 4, Stage 5 and A-series records are accessible through the global catalogue; their small counts do not justify extra duplicate directory layers.
+
 ## New study layout (English directory and file names)
 
 Create new records within `docs/research/studies/<study-id>/` only when a **new** study has a clearly identified owner. Link its protocol, measurements/results, negative evidence, limitations and independent review from a local `README.md`. Do not duplicate an existing document to create an appearance of independent evidence.
