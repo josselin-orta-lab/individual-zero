@@ -269,7 +269,7 @@ class IsolatedPrototypeTests(unittest.TestCase):
         self.assertTrue(IsolatedI2.inspect(self.path).audit()["terminal"])
 
     def test_scheduled_world_cognition_runs_out_before_physics(self):
-        subject = self.create(initial_uc=4, initial_energy=8, impulses=(6,))
+        subject = self.create(initial_uc=4, initial_energy=8, impulses=(6,) * 8)
         result = subject.run_world(ticks=12)
         trace = result["trace"]
         self.assertEqual(trace[1]["selected_action"], COLLECT)
