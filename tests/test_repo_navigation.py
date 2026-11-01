@@ -14,6 +14,9 @@ SPEC.loader.exec_module(module)
 class NavigationSanity(unittest.TestCase):
     def test_architecture_portal_is_required_and_not_archived(self):
         self.assertIn("docs/architecture/ATLAS.md", module.ENTRYPOINTS)
+        self.assertIn("archive/README.md", module.ENTRYPOINTS)
+        self.assertIn("tests/README.md", module.ENTRYPOINTS)
+        self.assertFalse(module.is_historical("archive/README.md"))
         self.assertIn("docs/architecture/proposals/README.md", module.ENTRYPOINTS)
         self.assertFalse(module.is_historical("docs/architecture/proposals/README.md"))
         self.assertTrue(module.is_historical(

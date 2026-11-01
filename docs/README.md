@@ -17,6 +17,12 @@ These files are intentionally short and should remain understandable without rea
 
 For task-oriented agents start at [agent navigation](engineering/AGENT_NAVIGATION.md), then use the [Architecture Atlas](architecture/ATLAS.md) to trace generation ownership, real I1 causal flow and proposal boundaries; [I1's handbook](../src/i1/docs/README.md) documents the active engine, and [I2's handbook](../src/i2/docs/README.md) documents non-living proposal fixtures. Their own `docs/STATUS.md` files hold short current summaries; `STATUS_HISTORY.md` preserves earlier updates. Global documentation does not override generation-owned source or contracts.
 
+## Physical location and custody
+
+Generation-owned [I1](../src/i1/docs/README.md) and [I2](../src/i2/docs/README.md) handbooks live alongside their source. Dated studies remain under [research](research/README.md) or generation-owned scientific sources. [The archive index](../archive/README.md) distinguishes frozen I0 from historical references, and [the test index](../tests/README.md) routes software checks. Preserve original evidence citations and source blob identity before relocating files.
+
+To locate paths without loading entire directories, run `python tools/repository_layout.py inventory --kind docs --match stage12 --limit 15` (or use `--kind tests` / `--kind archives`). This is read-only navigation, not a scientific verdict.
+
 ## Documentation areas
 
 ### `presentation/`
