@@ -433,6 +433,94 @@ class IsolatedPrototypeTests(unittest.TestCase):
         self.assertFalse(contrast["observed_at_same_tick"])
 
 
+    def test_world_reversal_same_tick_same_food_with_different_revisions(self):
+        # Matching world tick eight, nonmatching numbers of cognition
+        # steps: old step-indexed environment would give different food!
+        fast = self.create(impulses=SCENARIOS["reversal"], initial_energy=70)
+        slow = IsolatedI2.create(
+            Path(self.tmp.name) / "slow.sqlite", learning=True,
+            impulses=SCENARIOS["reversal"], initial_energy=70)
+        fast_last = slow_last = None
+        for tick in range(1, 9):
+            fast.advance_physics()
+            slow.advance_physics()
+            if tick in (2, 4, 6, 8):
+                fast_last = fast.step()
+            if tick in (4, 8):
+                slow_last = slow.step()
+        self.assertEqual((fast_last.seq, slow_last.seq), (4, 2))
+        self.assertEqual((fast_last.chosen, slow_last.chosen), (EAT, EAT))
+        self.assertEqual(
+            (fast_last.energy - fast_last.before_energy,
+             slow_last.energy - slow_last.before_energy),
+            (-10, -10),
+        )
+        self.assertEqual(fast.decision_evidence()[-1]["exogenous_food_phase"], 3)
+        self.assertEqual(slow.decision_evidence()[-1]["exogenous_food_phase"], 3)
+        self.assertEqual(fast.audit()["physical_ticks"], 8)
+        self.assertEqual(slow.audit()["physical_ticks"], 8)
+        self.assertNotEqual(fast.audit()["revision"], slow.audit()["revision"])
+
+    def test_equal_cognitive_revision_different_world_ticks_change_food(self):
+        early = self.create(impulses=SCENARIOS["reversal"], initial_energy=70)
+        late = IsolatedI2.create(
+            Path(self.tmp.name) / "late.sqlite", learning=True,
+            impulses=SCENARIOS["reversal"], initial_energy=70)
+        early_eat = late_eat = None
+        for tick in range(1, 9):
+            early.advance_physics()
+            late.advance_physics()
+            if tick in (2, 4):
+                early_eat = early.step()
+            if tick in (4, 8):
+                late_eat = late.step()
+        self.assertEqual((early_eat.seq, late_eat.seq), (2, 2))
+        self.assertEqual((early_eat.chosen, late_eat.chosen), (EAT, EAT))
+        self.assertEqual(
+            (early_eat.energy - early_eat.before_energy,
+             late_eat.energy - late_eat.before_energy),
+            (4, -10),
+        )
+        self.assertEqual(early.decision_evidence()[-1]["exogenous_food_phase"], 1)
+        self.assertEqual(late.decision_evidence()[-1]["exogenous_food_phase"], 3)
+
+    def test_world_reversal_adapts_only_after_negative_personal_outcome(self):
+        report = world_demo("reversal", ticks=12, initial_energy=40)
+        self.assertEqual(
+            report["exogenous_regime_clock"],
+            "PHYSICAL_TICKS_NOT_COGNITIVE_REVISIONS",
+        )
+        observed = report["arms"]["observed_chosen"]["decisions"]
+        fixed = report["arms"]["fixed"]["decisions"]
+        self.assertEqual(len(observed), len(fixed))
+        self.assertEqual([x["exogenous_food_phase"] for x in observed],
+                         [0, 1, 2, 3, 4, 5])
+        for j in range(5):
+            self.assertEqual(observed[j]["chosen"], fixed[j]["chosen"])
+            self.assertEqual(observed[j]["energy_after"], fixed[j]["energy_after"])
+            self.assertEqual(observed[j]["uc_remaining"], fixed[j]["uc_remaining"])
+        self.assertEqual(observed[3]["chosen"], EAT)
+        self.assertEqual(observed[3]["energy_after"] -
+                         observed[3]["before_energy"], -10)
+        self.assertEqual(observed[5]["outcomes_used_by_valuation"],
+                         observed[5]["subjective_outcomes_available"])
+        self.assertEqual(fixed[5]["outcomes_used_by_valuation"], ())
+        self.assertEqual(report["first_choice_contrast"]["first_divergence_seq"], 6)
+        self.assertEqual(
+            report["first_choice_contrast"]["classification"],
+            "MATCHED_PRECHOICE_PROGRAMMED_VALUATION_CONTRAST",
+        )
+        self.assertEqual(report["scientific_verdict"], "NOT_ESTABLISHED")
+
+    def test_direct_no_tick_demo_refuses_fake_reversal(self):
+        with self.assertRaisesRegex(PrototypeRefusal, "requires physical world"):
+            demo("reversal", steps=6)
+        negative = demo("adverse", steps=6)
+        self.assertEqual(negative["scientific_verdict"], "NOT_ESTABLISHED")
+        self.assertEqual(
+            negative["behavioral_contrast"]["first_divergence_seq"], 4)
+
+
 
 if __name__ == "__main__":
     unittest.main()
