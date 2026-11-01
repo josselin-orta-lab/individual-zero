@@ -2,8 +2,7 @@
 
 **Status: ACCEPTED as a project-owner research-priority decision, 1 November 2026.**
 This decision confirms and sharpens [ADR-0002](ADR-0002-scientific-prototype-first.md).
-It is **not** an acceptance of G1, an authorization for G3, a birth permission,
-a scientific result, or an automatic promotion of I2.
+**Later owner correction:** [ADR-0008](ADR-0008-remove-obsolete-i2-external-g1-review-gate.md) authorizes isolated I2 prototype implementation and research-only internal birth/actions without prior third-party G1 reviews. It does not establish living M11, scientific H1/H2/H3 proof or active-engine promotion.
 
 ## Basis and identified drift
 
@@ -39,12 +38,13 @@ a living, observable loop displaces the scientific objective.
    transitions, UC, admitted actions, true body outcomes, non-offers/vetoes,
    mortality and all null/negative results. Fix confirmatory study design
    and sampling **before** G4/G5, not after favorable pilot results.
-4. **Shortest authorized route:** resolve I1 provenance G0 (#661) and obtain
-   an **independent** architecture and scientific G1 verdict (#662) on
-   single-owner physical publication, M11 witness, birth/death, first-person
-   chronology and motor safety. Only then implement and verify a minimal
-   I2-owned WorldBody, UC Scheduler, actual motor admission and M11
-   persistence for G3. G4/G5/G6 remain separate gates; I1 stays active.
+4. **Current shortest route (ADR-0008 supersedes the old external review hold):**
+   implement one minimal I2-owned internal WorldBody, paid UC, ordinary
+   safety/admission, subjective feedback and fresh local genesis for #664
+   **now**. Record faults, terminal/rollback limits and missing external M11
+   witness honestly. G0 custody #661 continues in parallel; formal
+   I1/I2 comparison and registration require their own evidence and
+   deliberate owner decision. No outside reviewer signature is a coding gate.
 5. **Complexity budget:** prefer extending existing I2-owned components
    over another owner, compatibility layer, parallel simulator or synthetic
    adapter. New G2 work must eliminate a specific shortest-path blocker or
@@ -69,7 +69,8 @@ Do not let the short experiment expand into another open-ended G2 campaign.
 
 ## Next checkpoint
 
-After the bounded G2 experiment, prioritize the independent G1 decision
-(#662) and the minimal living-loop implementation plan (#664). An agent
-must report both the engineering result and the unresolved authorization,
-not silently build a living runtime or infer scientific success.
+The independent two-reviewer G1 decision request #662 is obsolete by
+ADR-0008. Prioritize implementation #664 with a bounded internal research
+world, explicit checks and no automatic activation. Report the observed
+engineering evidence and unresolved trust/provenance gaps, never a fabricated
+scientific GO.

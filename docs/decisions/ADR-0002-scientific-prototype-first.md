@@ -1,6 +1,6 @@
 # ADR-0002 - Scientific prototype first and drift escalation
 
-**Status: ACCEPTED as an engineering and research-prioritization decision, 1 November 2026.** Project-owner decision. This does **not** approve I2 G1/G3, living execution or an experiment.
+**Status: ACCEPTED as an engineering and research-prioritization decision, 1 November 2026.** Project-owner decision. **Later decision:** [ADR-0008](ADR-0008-remove-obsolete-i2-external-g1-review-gate.md) withdraws external G1 signoff as an I2 prototyping prerequisite and authorizes bounded, isolated I2 engineering. Scientific GO, registry promotion and authenticated M11 remain unestablished.
 
 ## Problem and evidence
 
@@ -11,7 +11,7 @@ I1 produced implementable mechanisms and strong safety work, but A1-C reported a
 1. **Scientific question first.** Every intervention names H1, H2 or H3 (or an explicit blocker on the shortest route to those questions), a falsifiable prediction, an ablation/negative control, expected observed output and its limitations. Do not choose work merely because another guard or module could be added.
 2. **Minimum integrated prototype.** Prefer one small, measurable experience-to-later-decision vertical slice over further parallel simulators, wrappers, compatibility modes or redundant owners. Reuse I2-owned existing components. The prototype does not need perfect realism, but must expose what it actually does and does not prove.
 3. **Separate engineering from scientific proof.** A controlled offline G2 exercise is allowed to explore a causal path with explicitly manipulated training conditions, but must not be reported as autonomous first-person learning, a living WorldBody, M11 attestation, G1 approval or a G3 gate. An offline shadow consequence is not an executed motor action.
-4. **Protect indispensable constraints.** No inherited I1 runtime/memory, hidden-world oracle to cognition, free UC, forced motor action, unreviewed birth, postmortem recovery or fabricated evidence. ADR-0001 and existing G1 review requirements remain in force.
+4. **Protect indispensable constraints.** No inherited I1 runtime/memory, hidden-world oracle to cognition, free UC, forced motor action, unreviewed birth, postmortem recovery or fabricated evidence. ADR-0001 still applies; the obsolete external G1 review prerequisite was removed by ADR-0008.
 5. **Stop-and-signal drift.** At every material planning checkpoint, the agent checks whether the work:
    - adds complexity without a new measurable H1/H2/H3 observation;
    - repeats synthetic guards while the integrated path is not demonstrated;
@@ -28,4 +28,4 @@ Run a deterministic offline intervention with favorable, neutral and adverse out
 
 ## Consequences and next decision
 
-Deliver a reproducible result and then decide, based on observed limitations, whether to simplify, modify H2, test H1/H3 or request G1 review. Do **not** build a full living I2 runtime before G1/G3 authorization. Project-owner preference for a useful prototype never overrides identity, mortality or provenance safeguards.
+Deliver a reproducible result and then decide, based on observed limitations, whether to simplify, modify H2, test H1/H3 or request G1 review. Under ADR-0008, implement the minimal isolated I2 prototype without a prior external G1 review; do not confuse a simulated research birth, modeled mortality or paid internal action with verified M11, real-world motor authority or promotion. Project-owner preference for a useful prototype never overrides identity, mortality or provenance safeguards.
