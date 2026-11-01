@@ -1,9 +1,10 @@
-"""G2 chosen-only adaptation with one bounded research-controller exploration.
+"""G2 chosen-only preparatory-advice adaptation, with scripted eating.
 
-No born I2, motor authority, authenticated perception or online learning
-owner. Controller follows a nonmotor recommendation and separately imposes
-one exploration trial, then returns ONLY the chosen result to next capture.
-Fixed regimes and frozen prior/offset; no hidden outcome reaches cognition.
+No born I2, motor authority, authenticated perception or online learning.
+Researcher follows or overrides the first recommendation, then ALWAYS forces
+a distinct eating action B to score its outcome. This cannot demonstrate
+self-directed collect->eat sequence completion. No hidden future outcome
+reaches current cognition; raw results include that externally forced step.
 """
 from __future__ import annotations
 import json
@@ -99,13 +100,14 @@ def run(regimes, *, explore=False, revisit=False):
             assert CognitiveCycleFixture.reopen(
                 valuation_source=valuation, **ports,
             ).audit() == fixture.audit()
-            # Exploration is the ONE externally controlled trial on cycle 3.
-            # It is not chosen, admitted or dispatched by I2 itself.
+            # One optional researcher override of the preparatory advice at
+            # cycle 3. Separately, every trial forces B=eat after this step.
+            # No physical action is admitted or dispatched by I2 itself.
             chosen = ((B if recommendation == A else A)
                       if explore and index == 3 else recommendation)
             world._completion_delta = hidden_delta
             first = world.intervene(step=step + 1, semantic=chosen)
-            completion = world.intervene(step=step + 2, semantic=C)
+            completion = world.intervene(step=step + 2, semantic=B)
             observed_net = first.lived_delta + completion.lived_delta
             lived = ObservedChosenResult(
                 LIFE, current.capture.ref, chosen, step + 2,
@@ -119,6 +121,7 @@ def run(regimes, *, explore=False, revisit=False):
                 "advice": recommendation,
                 "controller_followed": chosen,
                 "exploration_intervention": chosen != recommendation,
+                "controller_forced_eating_after_advice": True,
                 "stale_revisit_enabled": revisit,
                 "observed_net": observed_net,
                 "uc": 5,
@@ -149,25 +152,25 @@ class ChosenOutcomeAdaptationTests(unittest.TestCase):
 
         stable, stable_no = reports["stable"]
         self.assertEqual([r["advice"] for r in stable], [A]*6)
-        self.assertEqual(sum(r["observed_net"] for r in stable), 28)
-        self.assertEqual(sum(r["observed_net"] for r in stable_no), 36)
+        self.assertEqual(sum(r["observed_net"] for r in stable), 16)
+        self.assertEqual(sum(r["observed_net"] for r in stable_no), 24)
 
         reversal, reversal_no = reports["reversal"]
         self.assertEqual([r["advice"] for r in reversal], [A, A, B, B, B, B])
         self.assertEqual([r["advice"] for r in reversal_no], [A, A, B, B, B, B])
-        self.assertEqual(sum(r["observed_net"] for r in reversal), -20)
-        self.assertEqual(sum(r["observed_net"] for r in reversal_no), -12)
+        self.assertEqual(sum(r["observed_net"] for r in reversal), -32)
+        self.assertEqual(sum(r["observed_net"] for r in reversal_no), -24)
 
         adverse, adverse_no = reports["adverse"]
         self.assertEqual([r["advice"] for r in adverse], [A, B, B, B, B, B])
-        self.assertEqual(sum(r["observed_net"] for r in adverse), -28)
-        self.assertEqual(sum(r["observed_net"] for r in adverse_no), -20)
+        self.assertEqual(sum(r["observed_net"] for r in adverse), -40)
+        self.assertEqual(sum(r["observed_net"] for r in adverse_no), -32)
 
         recovery, recovery_no = reports["recovery"]
         self.assertEqual([r["advice"] for r in recovery], [A, A, B, B, A, A])
         self.assertEqual([r["advice"] for r in recovery_no], [A, A, B, B, B, B])
-        self.assertEqual(sum(r["observed_net"] for r in recovery), 12)
-        self.assertEqual(sum(r["observed_net"] for r in recovery_no), -12)
+        self.assertEqual(sum(r["observed_net"] for r in recovery), 0)
+        self.assertEqual(sum(r["observed_net"] for r in recovery_no), -24)
 
         print("I2_CHOSEN_OBSERVATIONAL_G2 "+json.dumps({
             n: {"bounded_exploration": list(a),
@@ -192,6 +195,8 @@ class ChosenOutcomeAdaptationTests(unittest.TestCase):
                 ablated = run(sequence)
                 self.assertFalse(any(row["exploration_intervention"]
                                      for row in revisiting))
+                self.assertTrue(all(row["controller_forced_eating_after_advice"]
+                                    for row in revisiting))
                 self.assertTrue(all(row["controller_followed"] == row["advice"]
                                     for row in revisiting))
                 self.assertEqual([row["uc"] for row in revisiting], [5]*6)
@@ -205,10 +210,10 @@ class ChosenOutcomeAdaptationTests(unittest.TestCase):
             "recovery": [A, A, B, B, A, A],
         }
         expected_totals = {
-            "stable": (36, 36),
-            "reversal": (-20, -12),
-            "adverse": (-28, -20),
-            "recovery": (4, -12),
+            "stable": (24, 24),
+            "reversal": (-32, -24),
+            "adverse": (-40, -32),
+            "recovery": (-8, -24),
         }
         for name, (revisiting, ablated) in reports.items():
             self.assertEqual([row["advice"] for row in revisiting],

@@ -54,12 +54,13 @@ The scores still enter the same paid v5 Competition. Untried options get no
 imagined outcome or free novelty bonus. This heuristic is authored by the
 experimenter; it is not a learned intrinsic exploration drive.
 
-The controller follows the nonmotor advice in all six captures, then returns
-only the outcome of that action for the next capture. Compare to the no-revisit
+The controller follows the nonmotor preparatory advice in all six captures,
+and **then scripts a second action B=eat** before recording its two-step outcome.
+This is NOT a freely completed action sequence. Compare to the no-revisit
 ablation with identical synthetic UC (5 per capture), stable/reversal/adverse/
-recovery regimes and cold reopens. Expected net outcome totals for revisit
-versus no-revisit, respectively: stable **36/36**, reversal **-20/-12**,
-adverse **-28/-20**, recovery **4/-12**. These include worse outcomes in
+recovery regimes and cold reopens. Corrected expected two-step net outcome
+totals for revisit versus no-revisit: stable **24/24**, reversal **-32/-24**,
+adverse **-40/-32**, recovery **-8/-24**. These include worse outcomes in
 two regimes. Invalid/future/replayed chosen evidence is rejected.
 
 This is a developmental G2 test of an *advice-to-consequence-to-later-advice*
@@ -70,3 +71,35 @@ No G1/G3/G4-G6 permission or scientific claim follows. Per
 [ADR-0003](../../../docs/decisions/ADR-0003-integrated-living-i2-milestone.md),
 the next substantive gate is independent G1 review for a minimal living loop,
 not continued accumulation of synthetic protection layers.
+
+## Scientific correction: food-action semantics, 1 November 2026
+
+**DRIFT DETECTED: experimental construct validity, not a runtime bug.**
+The previous versions of the four `test_science_first_*.py` studies used the
+synthetic `C=drink:water` action as the berry-consuming completion and kept
+`B=eat:berry_a` as a -2 no-op. This invalidated any interpretation of
+those passes as an actual `collect -> eat` causal mechanism. Preserve the
+historical PR #777-#782 records, but **do not count their food-learning
+conclusions as established**. They were not living or confirmatory science
+even before this correction.
+
+The shared `TinyControlledWorld` now uses **A=collect berry** (inventory+1,
+step net -2), **B=eat berry** (consume exactly one carried berry; step
+net `completion_delta - 2`, or -2 on empty inventory), and **C=drink
+water** (step net -2, never consumes a berry or produces nutritional value).
+For paired H2 studies, C is the no-preparation control and B is the same
+experimenter-commanded completion in both arms. All H2 forecasts and paired
+controls use `(preparation=A, alternative=C, completion=B)`; that
+triple is distinct, temporally ordered and physically consistent.
+
+The researcher still **forces the later B eating action** in all existing
+matched-pair and chosen-outcome two-step trials. The prep-choice is made
+via paid Competition and may be followed without intervention, but **the
+individual does not independently decide to eat**. In the six-step study
+`controller_forced_eating_after_advice=true` exposes this directly.
+Corrected G2 reports are software evidence about *advice for preparations
+when eating is scripted*, not proof of autonomous delayed credit,
+first-person WorldBody consequences, G3, H2 natural learning or H3
+integration. The next real scientific milestone remains an unforced
+sequence in an independently reviewed living loop after G1/G3. Avoid
+another optimization of fixed bonuses before that review.

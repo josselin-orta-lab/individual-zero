@@ -55,7 +55,7 @@ def chosen_only(regimes: tuple[int, ...]):
             training, evidence, name="training:prepare", start=1, first=A,
         )
         control = _observed_episode(
-            training, evidence, name="training:control", start=4, first=B,
+            training, evidence, name="training:control", start=4, first=C,
         )
         adaptive_world = TinyControlledWorld(completion_delta=8)
         ablation_world = TinyControlledWorld(completion_delta=8)
@@ -74,7 +74,7 @@ def chosen_only(regimes: tuple[int, ...]):
             )
             opportunity = ForecastOpportunity(
                 LIFE, current_claim.capture.goal_ref, current_claim.capture.ref,
-                step, CONTEXT, A, B, C,
+                step, CONTEXT, A, C, B,
             )
             evidence._opportunity = opportunity
             forecast = project_matched_outcome(
@@ -125,7 +125,7 @@ def chosen_only(regimes: tuple[int, ...]):
                 baseline.control_suggested_candidate_ref,
             )
             assert (advice.motor_authority, baseline.motor_authority) == ("NONE", "NONE")
-            assert chosen in (A, B) and ablated in (A, B)
+            assert chosen in (A, C) and ablated in (A, C)
             assert adaptive.audit()["committed"] == index + 1
             assert adaptive.audit()["feedback_version"] == 0
             assert ablation.audit()["feedback_version"] == 0
@@ -138,11 +138,11 @@ def chosen_only(regimes: tuple[int, ...]):
             adaptive_world._completion_delta = delta
             ablation_world._completion_delta = delta
             first = adaptive_world.intervene(step=step + 1, semantic=chosen)
-            result = adaptive_world.intervene(step=step + 2, semantic=C)
+            result = adaptive_world.intervene(step=step + 2, semantic=B)
             baseline_first = ablation_world.intervene(
                 step=step + 1, semantic=ablated,
             )
-            baseline_result = ablation_world.intervene(step=step + 2, semantic=C)
+            baseline_result = ablation_world.intervene(step=step + 2, semantic=B)
             evidence.record(first)
             evidence.record(result)
             observed_choices.append((first, result))
@@ -156,6 +156,7 @@ def chosen_only(regimes: tuple[int, ...]):
                 "observed_chosen_net": observed_net,
                 "observed_ablation_net": control_net,
                 "observed_advantage": observed_net - control_net,
+                "controller_forced_eating_after_advice": True,
                 "h2_feedback_version": adaptive.audit()["feedback_version"],
                 "uc_per_arm": 5,
                 "motor_authority": advice.motor_authority,
@@ -183,7 +184,7 @@ class ChosenOnlyFeedbackGapTests(unittest.TestCase):
                 )
                 self.assertEqual(
                     [x["ablation_advice_followed_by_controller"] for x in rows],
-                    [B, B, B, B],
+                    [C, C, C, C],
                 )
                 self.assertEqual([x["h2_feedback_version"] for x in rows],
                                  [0, 0, 0, 0])
@@ -205,7 +206,7 @@ class ChosenOnlyFeedbackGapTests(unittest.TestCase):
                     compare_matched_outcomes(
                         prepared=first_episode, control=first_episode,
                         preparatory_action_ref=A,
-                        completion_action_ref=C, source=evidence,
+                        completion_action_ref=B, source=evidence,
                     )
                 reports[name] = rows
         self.assertEqual(
@@ -225,7 +226,7 @@ class ChosenOnlyFeedbackGapTests(unittest.TestCase):
         paired, paired_memory = run_sequence(REVERSAL)
         self.assertEqual(paired_memory.total_observations, 3)
         self.assertEqual(
-            [x["h2_advice"] for x in paired], [A, A, A, B],
+            [x["h2_advice"] for x in paired], [A, A, A, C],
         )
         print("I2_CHOSEN_ONLY_FEEDBACK_GAP_G2 " + json.dumps(
             reports, sort_keys=True, separators=(",", ":"),
