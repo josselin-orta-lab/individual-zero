@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 from i2.runtime.isolated_prototype import (
-    IsolatedI2, SCENARIOS, COLLECT, DRINK, PrototypeRefusal,
+    IsolatedI2, SCENARIOS, COLLECT, DRINK,
 )
 
 
@@ -43,13 +43,22 @@ class DeadlineAwarePaidPolicy(unittest.TestCase):
         self.assertFalse(changed.decision_evidence()[0][
             "deadline_infeasible_collect_suppressed"])
 
-    def test_incompatible_policy_flags_refused_at_genesis(self):
+    def test_composed_policy_requires_explicit_fresh_genesis(self):
         with tempfile.TemporaryDirectory() as root:
-            with self.assertRaises(PrototypeRefusal):
-                IsolatedI2.create(
-                    Path(root) / "life.sqlite", learning=True,
-                    impulses=SCENARIOS["stable"], deadline_aware=True,
-                    last_resort_exploration=True)
+            life = IsolatedI2.create(
+                Path(root) / "life.sqlite", learning=True,
+                impulses=SCENARIOS["stable"], deadline_aware=True,
+                last_resort_exploration=True)
+            meta, _body, _rows = life._read()
+            self.assertEqual(meta["deadline_aware"], 1)
+            self.assertEqual(meta["last_resort_exploration"], 1)
+            first = life.step()
+            self.assertEqual(first.chosen, COLLECT)
+            self.assertEqual(first.actual_uc_spent, 4)
+            self.assertEqual(life.audit()["revision"], 1)
+            self.assertFalse(life.audit()["m11_authenticated"])
+            self.assertFalse(life.decision_evidence()[0][
+                "deadline_infeasible_collect_suppressed"])
 
 
 if __name__ == "__main__":
