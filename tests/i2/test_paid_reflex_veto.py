@@ -12,14 +12,14 @@ from i2.runtime.isolated_prototype import (
 
 
 class LastResortSurvivalTests(unittest.TestCase):
-    def make(self, energy, *, learning=False, impulses=None):
+    def make(self, energy, *, learning=False, impulses=None, enabled=True):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         path = Path(tmp.name) / "life.sqlite"
         return IsolatedI2.create(
             path, learning=learning, impulses=impulses or SCENARIOS["stable"],
             initial_energy=energy,
-            last_resort_exploration=True), path
+            last_resort_exploration=enabled), path
 
     def test_low_energy_favorable_food_is_chosen_through_paid_control(self):
         life, _ = self.make(8)
@@ -71,9 +71,8 @@ class LastResortSurvivalTests(unittest.TestCase):
                            decision["candidate_scores"][COLLECT])
 
     def test_opt_out_preserves_history_in_previously_harmful_food(self):
-        life, path = self.make(16, learning=True, impulses=SCENARIOS["adverse"])
-        with sqlite3.connect(path) as db:
-            db.execute("UPDATE proto_meta SET last_resort_exploration=0")
+        life, _ = self.make(16, learning=True, impulses=SCENARIOS["adverse"],
+                            enabled=False)
         self.assertEqual(life.step().chosen, COLLECT)
         self.assertEqual(life.step().chosen, EAT)
         self.assertEqual(life.step().chosen, COLLECT)
