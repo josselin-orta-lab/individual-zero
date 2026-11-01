@@ -188,6 +188,7 @@ class IntegratedLab:
                     offered_json TEXT NOT NULL, action_ref TEXT,
                     control_status TEXT, observed_step INTEGER NOT NULL,
                     net INTEGER NOT NULL, before_energy INTEGER NOT NULL,
+                    metabolic_debit INTEGER NOT NULL, food_energy_impulse INTEGER NOT NULL,
                     energy INTEGER NOT NULL, inventory INTEGER NOT NULL,
                     resources INTEGER NOT NULL, terminal INTEGER NOT NULL,
                     uc_remaining INTEGER NOT NULL, cognition_head TEXT NOT NULL UNIQUE);
@@ -222,13 +223,15 @@ class IntegratedLab:
             state = db.execute("SELECT revision,energy,inventory,resources,terminal "
                                "FROM g1_lab_state WHERE id=1").fetchone()
             rows = db.execute("SELECT seq,capture_ref,capture_step,offered_json,action_ref,"
-                              "control_status,observed_step,net,before_energy,energy,inventory,"
+                              "control_status,observed_step,net,before_energy,"
+                              "metabolic_debit,food_energy_impulse,energy,inventory,"
                               "resources,terminal,uc_remaining,cognition_head "
                               "FROM g1_lab_steps ORDER BY seq").fetchall()
             if meta is None or meta[:2] != (self.life_ref, self.genesis_ref) or state is None:
                 raise LabRefusal("foreign or incomplete lab owner")
             raw = ("seq", "capture_ref", "capture_step", "offered_json", "action_ref",
                    "control_status", "observed_step", "net", "before_energy",
+                   "metabolic_debit", "food_energy_impulse",
                    "energy", "inventory", "resources", "terminal", "uc_remaining",
                    "cognition_head")
             return ({"learning": bool(meta[2]), "deltas": tuple(json.loads(meta[3])),
@@ -329,25 +332,29 @@ class IntegratedLab:
                             for v in values)):
                     raise LabRefusal("lab score uses absent or altered chosen outcome")
             before = energy
-            physical_net = -1  # passive metabolism on abstention
+            metabolic_debit = 1  # passive metabolism on abstention
+            food_energy_impulse = 0
             if chosen == COLLECT:
                 if resources <= 0:
                     raise LabRefusal("lab collected absent resource")
                 resources -= 1
                 inventory += 1
-                physical_net = -2
+                metabolic_debit = 2
             elif chosen == EAT:
                 if inventory <= 0:
                     raise LabRefusal("lab ate absent inventory")
                 inventory -= 1
-                physical_net = meta["deltas"][index] - 2
+                metabolic_debit = 2
+                food_energy_impulse = meta["deltas"][index]
             elif chosen == DRINK:
-                physical_net = -2
-            energy = min(100, max(0, energy + physical_net))
+                metabolic_debit = 2
+            energy = min(100, max(0, energy - metabolic_debit + food_energy_impulse))
             seen_terminal = energy == 0
             uc_remaining -= (event["intake_uc"] +
                              event["competition_uc"] + event["control_uc"])
-            if (record["net"] != energy - before or
+            if (record["metabolic_debit"] != metabolic_debit or
+                    record["food_energy_impulse"] != food_energy_impulse or
+                    record["net"] != energy - before or
                     record["energy"] != energy or
                     record["inventory"] != inventory or
                     record["resources"] != resources or
@@ -437,29 +444,32 @@ class IntegratedLab:
             elif candidate is not None:
                 raise LabRefusal("veto/abstention cannot apply an action")
         energy, inventory, resources = state[1:4]
-        raw_net = -1  # abstention still incurs a modeled metabolic tick
+        metabolic_debit = 1  # abstention still incurs a modeled metabolic tick
+        food_energy_impulse = 0
         if chosen == COLLECT:
             if resources <= 0:
                 raise LabRefusal("collect without resource")
             resources -= 1
             inventory += 1
-            raw_net = -2
+            metabolic_debit = 2
         elif chosen == EAT:
             if inventory <= 0:
                 raise LabRefusal("eat without inventory")
             inventory -= 1
-            raw_net = deltas[seq-1] - 2
+            metabolic_debit = 2
+            food_energy_impulse = deltas[seq-1]
         elif chosen == DRINK:
-            raw_net = -2
-        energy_next = min(100, max(0, energy + raw_net))
+            metabolic_debit = 2
+        energy_next = min(100, max(0, energy - metabolic_debit + food_energy_impulse))
         net = energy_next - energy
         terminal = int(energy_next == 0)
         conn.execute("UPDATE g1_lab_state SET revision=?,energy=?,inventory=?,"
                      "resources=?,terminal=? WHERE id=1",
                      (seq, energy_next, inventory, resources, terminal))
-        conn.execute("INSERT INTO g1_lab_steps VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (
+        conn.execute("INSERT INTO g1_lab_steps VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (
             seq, claim.capture.ref, claim.capture.step, _json(expected), chosen, status,
-            claim.capture.step+1, net, energy, energy_next, inventory, resources,
+            claim.capture.step+1, net, energy, metabolic_debit, food_energy_impulse,
+            energy_next, inventory, resources,
             terminal, remaining_uc, event_head))
 
     def step(self, *, veto: bool = False, fault: str | None = None) -> LabStep:
