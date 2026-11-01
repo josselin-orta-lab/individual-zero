@@ -63,7 +63,7 @@ The documentation directory explains the project. Scientific evidence may be rec
 
 Reusable comparison protocols belong in `../benchmarks/`.
 
-The [research map](../RESEARCH_MAP.md) defines research axes and planning templates; it is **not** a live census. For current questions and work, consult [GitHub issues](https://github.com/josselin-orta-lab/individual-zero/issues), the active generation's evidence matrix, and the original dated study records.
+The [research map](../RESEARCH_MAP.md) defines cross-cutting axes and points to the [global research coordinator](engineering/RESEARCH_COORDINATOR.md), [incremental corpus index](engineering/RESEARCH_CORPUS.md) and [source-pinned dossiers](engineering/RESEARCH_DOSSIERS.md). They support agent navigation and evidence-gap review; they are **not** a live census or an independent scientific verdict. Always inspect the [original dated studies](research/README.md), [active I1 evidence matrix](../src/i1/docs/EVIDENCE_MATRIX.md) and [current GitHub issues](https://github.com/josselin-orta-lab/individual-zero/issues).
 
 ## Licensing
 

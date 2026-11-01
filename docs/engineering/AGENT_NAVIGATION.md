@@ -7,6 +7,7 @@ This is a **navigation index**, not a second architectural specification. It sho
 | If your task is... | Start here | Then verify |
 | --- | --- | --- |
 | Determine what is currently active | `config/engine-registry.json` | current HEAD and generation `engine.json` |
+| Decide the next scientific intervention | `docs/engineering/RESEARCH_COORDINATOR.md` and `config/research-program.json` | dated evidence, source-pinned dossiers, current issues and unreviewed gaps |
 | See the architecture, causal path and intervention owners | `docs/architecture/ATLAS.md` | `docs/architecture/ENGINE_GENERATIONS.md`, generation-owned Stage maps and real call sites |
 | Inspect I2 G1 proposals versus G2 tests | `docs/architecture/proposals/README.md` | dated proposal headers and `src/i2/docs/STATUS.md` |
 | Modify the living I1 engine | `src/i1/AGENTS.md`, `src/i1/docs/README.md` | `src/i1/docs/STATUS.md`, code, targeted tests |
@@ -18,6 +19,8 @@ This is a **navigation index**, not a second architectural specification. It sho
 | Inspect archived I0 | `docs/architecture/ENGINE_GENERATIONS.md` | `config/archives/i0-20261017.json` without modifying history |
 | Contribute or file an issue | `CONTRIBUTING.md` | issue/PR templates and code owner policy |
 | Run engineering scripts | `docs/engineering/START_HERE.md` | `src/iN/engine.json` and `docs/engineering/SCRIPT_INVENTORY.md` |
+
+For research priorities use `python tools/research_coordinator.py recommend` and inspect `python tools/research_dossiers.py gaps` before choosing a code route. For broad historical lookup use `python tools/research_corpus.py report --top 8`; its lexical matches are unreviewed. Only then open the [Architecture Atlas](../architecture/ATLAS.md) for ownership and implementation paths.
 
 ## Source of truth
 

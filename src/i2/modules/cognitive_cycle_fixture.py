@@ -422,6 +422,27 @@ class UncertainCommitInspection:
     resumption_authorized: bool = False
     retry_authorized: bool = False
     m11_authenticated: bool = False
+    audited_prefix: AuditedLocalPrefix | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class AuditedLocalPrefix:
+    """One fully replayed local SQLite snapshot and its requested prefix.
+
+    A missing prefix is represented by None; a matching prefix is only
+    evidence about this local file, NOT independent custody, M11 ancestry,
+    physical causality or authorization to resume/retry an operation.
+    """
+
+    requested_seq: int
+    observed_committed: int
+    observed_head: str
+    prefix_step: int | None
+    prefix_head: str | None
+    prefix_terminal_ref: str | None
+    motor_authority: str = "NONE"
+    resumption_authorized: bool = False
+    m11_authenticated: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -813,6 +834,53 @@ class CognitiveCycleFixture:
             report["feedback_version"] = (0 if stored is None else
                 _h2_memory_parse(json.loads(stored)).total_observations)
             return report
+        finally:
+            conn.close()
+
+    @staticmethod
+    def _prefix_from_verified_snapshot(
+        conn: sqlite3.Connection, *, committed: int, count: int, head: str,
+    ) -> AuditedLocalPrefix:
+        """Reuse an already fully replayed SQLite snapshot, never another owner."""
+        if type(committed) is not int or committed < 0:
+            raise ValueError("invalid requested prefix sequence")
+        prefix_step = None
+        prefix_head = None
+        prefix_terminal_ref = None
+        if committed == 0:
+            prefix_step, prefix_head = -1, ZERO_HASH
+        elif committed <= count:
+            row = conn.execute(
+                "SELECT physical_step,event_hash,event_json FROM events WHERE seq=?",
+                (committed,),
+            ).fetchone()
+            if row is None:
+                raise ValueError("fully audited synthetic prefix is missing")
+            prefix_step, prefix_head, body = row
+            record = json.loads(body)
+            if record.get("kind") == "synthetic_terminal":
+                prefix_terminal_ref = record["terminal_ref"]
+        return AuditedLocalPrefix(
+            requested_seq=committed, observed_committed=count,
+            observed_head=head, prefix_step=prefix_step,
+            prefix_head=prefix_head, prefix_terminal_ref=prefix_terminal_ref,
+        )
+
+    def audited_local_prefix(self, *, committed: int) -> AuditedLocalPrefix:
+        """Extract one historical hash from a FULLY audited v5 read snapshot.
+
+        The caller must independently supply a previously verified expected
+        prefix. This local method does not establish an external authority.
+        """
+        if type(committed) is not int or committed < 0:
+            raise ValueError("invalid requested prefix sequence")
+        conn = self._connect(readonly=True)
+        try:
+            conn.execute("BEGIN")
+            _balance, _step, count, head, _owner = self._verify(conn)
+            return self._prefix_from_verified_snapshot(
+                conn, committed=committed, count=count, head=head,
+            )
         finally:
             conn.close()
 
@@ -1253,6 +1321,7 @@ class CognitiveCycleFixture:
         expected_step: int, target_ref: str, event_kind: str,
         expected_claim: dict[str, object] | None = None,
         expected_terminal: dict[str, object] | None = None,
+        minimum_sequence: int | None = None,
     ) -> UncertainCommitInspection:
         """Inspect exactly one v5 snapshot without consulting external ports.
 
@@ -1266,6 +1335,9 @@ class CognitiveCycleFixture:
             raise ValueError("invalid declared predecessor head")
         if type(expected_step) is not int or expected_step < 0:
             raise ValueError("invalid expected synthetic step")
+        if (minimum_sequence is not None and
+                (type(minimum_sequence) is not int or minimum_sequence < 0)):
+            raise ValueError("invalid pinned prefix sequence")
         _ref(target_ref, "uncertain commit target")
         if event_kind not in ("cognitive", "synthetic_terminal"):
             raise ValueError("invalid expected event kind")
@@ -1278,6 +1350,14 @@ class CognitiveCycleFixture:
         try:
             conn.execute("BEGIN")
             _balance, _step, count, head, _owner = self._verify(conn)
+            # The attempted event AND pinned historical prefix are inspected
+            # under this SAME SQLite BEGIN and the SAME complete v5 replay.
+            audited_prefix = (
+                None if minimum_sequence is None else
+                self._prefix_from_verified_snapshot(
+                    conn, committed=minimum_sequence, count=count, head=head,
+                )
+            )
             previous_record = (
                 ZERO_HASH if previous_count == 0 else (
                     conn.execute("SELECT event_hash FROM events WHERE seq=?",
@@ -1321,13 +1401,14 @@ class CognitiveCycleFixture:
                 expected_seq=previous_count + 1, target_ref=target_ref,
                 observed_committed=count, observed_head=head,
                 recorded_event_head=recorded_head,
+                audited_prefix=audited_prefix,
             )
         finally:
             conn.close()
 
     def inspect_uncertain_cognition(
         self, *, previous_count: int, previous_head: str,
-        claim: ObservationClaim,
+        claim: ObservationClaim, minimum_sequence: int | None = None,
     ) -> UncertainCommitInspection:
         """Check a possibly committed *claimed* capture, never retry it."""
         if type(claim) is not ObservationClaim:
@@ -1339,11 +1420,13 @@ class CognitiveCycleFixture:
             previous_count=previous_count, previous_head=previous_head,
             expected_step=claim.capture.step, target_ref=claim.capture.ref,
             event_kind="cognitive", expected_claim=_claim_map(claim),
+            minimum_sequence=minimum_sequence,
         )
 
     def inspect_uncertain_terminal(
         self, *, previous_count: int, previous_head: str,
         physical_step: int, terminal_ref: str, evidence_ref: str,
+        minimum_sequence: int | None = None,
     ) -> UncertainCommitInspection:
         """Inspect a claimed terminal seal without ever re-sealing."""
         terminal_ref = _ref(terminal_ref, "synthetic terminal ref")
@@ -1361,6 +1444,7 @@ class CognitiveCycleFixture:
             previous_count=previous_count, previous_head=previous_head,
             expected_step=physical_step, target_ref=terminal_ref,
             event_kind="synthetic_terminal", expected_terminal=expected,
+            minimum_sequence=minimum_sequence,
         )
 
     def lookup(self, *, capture_ref: str) -> CycleReceipt | None:

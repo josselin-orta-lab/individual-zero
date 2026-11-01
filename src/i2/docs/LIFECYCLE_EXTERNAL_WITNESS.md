@@ -65,3 +65,31 @@ Le changement de protocole v1 vers `i2-lifecycle-external-witness-proposal-v2` c
 ## Adaptateur challenge en lecture seule (G2)
 
 `challenge_witness_adapter.py` relie l'enveloppe de la PR #724 au contrat `read_verified_latest`. Ses quatre sources sont injectees : generation du defi, horloge de confiance, transport et verification cryptographique. Il exige la meme identite vie/genese apres verification et transmet toute erreur afin que l'audit la classe `UNKNOWN`. Aucune cle, implementation cryptographique, fournisseur independant, protection persistante contre les nonces reutilises ni monotonie du service n'existent dans l'adaptateur. Les tests de replay de nonce sont intentionnellement negatifs. La borne `minimum_witness` est aussi desormais transmise par le chemin terminal de l'inspection des COMMIT incertains, qui refusait autrement de l'appliquer. Le code ne produit aucune autorite de reprise, de commande ou de naissance. G3 non etabli.
+
+## Garde de non-rejeu des défis dans une instance (G2)
+
+L'adaptateur réserve désormais chaque nonce hexadécimal de 256 bits dans un registre en mémoire protégé par un verrou **avant** tout appel au transport. Une répétition, une valeur malformée ou une réponse perdue ne déclenchent pas un second appel externe avec le même défi dans cette instance. Après échec du transport, le nonce reste consommé volontairement. Des tests couvrent valeur invalide, timeout et requêtes concurrentes. Ce garde ne prouve ni entropie, ni unicité entre processus/redémarrages, ni fraîcheur du dernier état, ni signature indépendante ou M11 réel. Un nonce réutilisé après un redémarrage reste une limite ouverte. Aucun droit moteur ou de reprise.
+
+## Source de défis persistante, laboratoire G2
+
+`durable_challenge_source.py` reserve un nonce avant la requete externe dans un journal append-only local distinct du proprietaire cognitif v5. Verrou OS cooperatif, controle de permissions, refus de fichiers lies, validation stricte des octets, `fsync` du journal et du repertoire permettent des tests de non-rejeu entre instances utilisant le meme repertoire non restaure. Le registre limite volontairement la capacite a 4096 reservations puis echoue ferme. Le fournisseur par defaut utilise `secrets.token_hex(32)` ; un fournisseur injecte est exclusivement un outil de test. Une copie ou restauration de l'ensemble du repertoire, un disque trompeur, un adversaire de meme UID, un systeme de fichiers non durable ou une corruption physique peuvent annuler ces garanties. Aucun ancrage externe, signataire independant, Scheduler, preuve M11 ou autorite de reprise.
+
+## G2 : refus de réinitialisation partielle du registre
+
+Un journal absent associé à un verrou existant, ou l'inverse, échoue désormais en lecture. Une fois initialisé, un journal vide est également refusé. Seul un répertoire vierge sans aucun des deux fichiers est initialisable. Les tests démontrent toutefois qu'une restauration ou suppression **simultanée** des deux fichiers permet de réutiliser un nonce ; il faut une borne externe réellement indépendante pour détecter ce scénario. Protection limitée aux processus coopératifs d'un même répertoire, aucun M11 ni droit de reprise.
+
+## G2 : contrôle d'identité des fichiers de garde
+
+Le registre local vérifie l'identité (device/inode) du répertoire, du verrou après acquisition et du journal pendant la réservation. Il refuse une substitution détectée au lieu de valider un verrou détaché. Cela ne protège pas contre les remplacements antérieurs à l'ouverture, les attaquants capables de manipuler les fichiers avec le même UID, le rollback intégral ou un faux stockage durable. Aucun changement d'autorité M11 ni de reprise.
+
+## G2 : ascendance locale verifiee a froid
+
+`verify_fixture` exige maintenant, lorsqu'une borne `minimum_witness` est fournie, que le hash et le pas du maillon historique exact soient retrouves dans le journal SQLite v5 apres rejeu complet. Une extension locale dont la tete recente concorde avec le fournisseur mais dont le prefixe diverge est refusee `FORK`. Un fichier local trop court est `STALE`. Cette preuve porte seulement sur le journal local fourni et sur la borne **declaree** : elle ne demontre pas que la borne a ete authentifiee, que le fournisseur est independant, ni que l'effet physique a eu lieu. Les inspections restent sans reprise ou pouvoir moteur.
+
+## Inspection incertaine avec ascendance dans un seul snapshot (G2)
+
+Le diagnostic d'un COMMIT incertain et le maillon historique demandé par `minimum_witness` proviennent désormais du même snapshot SQLite audité. L'inspection refuse `FORK` avant de contacter le témoin lorsque l'ascendance locale diverge, `STALE` si le préfixe manque, et `UNKNOWN` lorsqu'une modification concurrente est détectée au réaudit. Cette cohérence est locale et temporaire, non linéarisable avec le fournisseur externe, sans permission de rejeu, d'action ou de reprise et sans attestation M11 réelle.
+
+## G2 : incident de lecture du probe COMMIT incertain
+
+Une exception de lecture locale durant le second probe est classee `UNKNOWN` avant tout acces au temoin, tandis qu'une erreur d'arguments reste un `ValueError`. Aucune permission de retry, reprise ou action et aucune nouvelle couche SQLite.

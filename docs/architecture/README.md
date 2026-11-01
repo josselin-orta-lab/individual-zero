@@ -7,6 +7,7 @@
 | What you need | Read this | Verify in the owning source |
 | --- | --- | --- |
 | Understand the whole system and its causal handoffs | **[Architecture Atlas](ATLAS.md)** | [engine registry](../../config/engine-registry.json) |
+| Choose the next justified research intervention | [Research coordinator](../engineering/RESEARCH_COORDINATOR.md) and [curated dossiers](../engineering/RESEARCH_DOSSIERS.md) | Original scientific records and current open review gates, not a software PASS |
 | Locate which generation owns Lab, state, identity and runtime | [Engine generations](ENGINE_GENERATIONS.md) | each generation's `engine.json` and executable code |
 | Modify an active I1 mechanism | [I1 handbook](../../src/i1/docs/README.md), [Stage ownership](../../src/i1/docs/STAGES_AND_INTERFACES.md) | [I1 engine contract](../../src/i1/engine.json), active callers and tests |
 | Investigate I1 learning or scientific claims | [Evidence matrix](../../src/i1/docs/EVIDENCE_MATRIX.md) | dated experimental protocols and traces |

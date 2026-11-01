@@ -85,6 +85,8 @@ No I2 entrypoint appears in its engine contract; never call a fixture's success 
 
 At the recorded baseline, **I1 general L3 adaptive benefit is NOT_ESTABLISHED**; the A1-C confirmatory result was a targeted NO_GO, and A2-R remained NOT_EXECUTED. Do not transfer that verdict or that experience into I2; verify the [living evidence index](../../src/i1/docs/EVIDENCE_MATRIX.md) for any later revision.
 
+**Select the research question before editing code.** The [global coordinator](../engineering/RESEARCH_COORDINATOR.md) identifies missing evidence and gate dependencies; [curated dossiers](../engineering/RESEARCH_DOSSIERS.md) preserve dated negative, inconclusive and unexecuted findings. This Atlas only locates owners after the research objective has been justified.
+
 ## 5. Agent intervention protocol
 
 1. **Identify:** generation, live HEAD/branch SHA, issue or experiment, and source-owner entrypoint.

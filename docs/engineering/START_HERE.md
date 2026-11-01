@@ -8,6 +8,12 @@
 4. Review [strict autonomy](../decisions/ADR-0001-strict-generation-autonomy.md), [generation map](../architecture/ENGINE_GENERATIONS.md) and [promotion procedure](ENGINE_PROMOTION.md) only for generation-sensitive work.
 5. For old I0 material, see [archive index](../../config/archives/i0-20261017.json); do not rewrite preserved bytes.
 
+## Research-first intervention selection
+
+If the task is not already narrowly specified, first run `python tools/research_coordinator.py status` and `python tools/research_coordinator.py recommend`. Its recommendations are provisional and do not authorize experiments, births or changes to scientific gates. See [global research coordination](RESEARCH_COORDINATOR.md).
+
+For documentation/agent-navigation changes (including the separate architecture atlas), use the single path-scoped `agent-context-static.yml` check. It runs `check_repo_navigation.py`, `test_repo_navigation.py` and the focused agent/research tests, **not** a living engine. Source-integrity drift in a current status page is flagged for research reconciliation; frozen scientific sources must retain their exact Git blobs. See [research coordination](RESEARCH_COORDINATOR.md) and [source dossiers](RESEARCH_DOSSIERS.md).
+
 ## Lightweight first checks
 
 ```bash

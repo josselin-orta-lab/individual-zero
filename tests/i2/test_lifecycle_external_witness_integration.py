@@ -144,6 +144,40 @@ class SQLiteWitnessIntegration(unittest.TestCase):
         self.assertEqual(witness.calls, 1)
         self.assertTrue(fixture.audit()["synthetic_terminal"])
 
+    def test_external_failure_after_concurrent_terminal_is_unknown(self):
+        fixture = self.create()
+        class FailingAfterCommit:
+            def read_verified_latest(self, *, life_ref, genesis_ref):
+                self_fixture.seal_terminal(
+                    physical_step=0, terminal_ref="terminal:race",
+                    evidence_ref="evidence:synthetic-term",
+                )
+                raise TimeoutError("witness lost")
+        self_fixture = fixture
+        from i2.modules.lifecycle_external_witness import WitnessRefusal
+        with self.assertRaises(WitnessRefusal) as failure:
+            verify_fixture(fixture=fixture, witness=FailingAfterCommit())
+        self.assertEqual(failure.exception.reason, "UNKNOWN")
+        self.assertIn("changed", str(failure.exception))
+
+    def test_stale_external_response_with_concurrent_local_commit_is_unknown(self):
+        fixture = self.create()
+        old = checkpoint(fixture.audit())
+        class StaleAfterCommit:
+            def read_verified_latest(self, *, life_ref, genesis_ref):
+                self_fixture.seal_terminal(
+                    physical_step=0, terminal_ref="terminal:race",
+                    evidence_ref="evidence:synthetic-term",
+                )
+                # Deliberate valid advanced head to classify STALE against
+                # the initial genesis if the post-read audit were skipped.
+                return checkpoint(self_fixture.audit())
+        self_fixture = fixture
+        from i2.modules.lifecycle_external_witness import WitnessRefusal
+        with self.assertRaises(WitnessRefusal) as failure:
+            verify_fixture(fixture=fixture, witness=StaleAfterCommit())
+        self.assertEqual(failure.exception.reason, "UNKNOWN")
+
     def test_stable_two_audits_remain_inspection_only(self):
         fixture = self.create()
         witness = Witness(checkpoint(fixture.audit()))

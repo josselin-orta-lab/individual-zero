@@ -37,6 +37,34 @@ Le test `minimum_witness` refuse un témoin externe régressif (`STALE`), équiv
 
 Les contrats `challenge_witness_contract.py` et `challenge_witness_adapter.py` spécifient et testent des enveloppes de témoin avec nonce, identité, fenêtre de validité et vérifications **injectées**. La borne `minimum_witness` est également transmise par l'inspection terminale. Il n'existe pas de fournisseur externe authentifié, ni de gestion persistante de nonce, ni de service de signature/de temps fiable ; les tests montrent un risque de rejeu avec nonce réutilisé. Ces diagnostics G2 n'autorisent **aucune naissance, action, reprise, ni promotion G3**. Voir [l'audit externe](LIFECYCLE_EXTERNAL_WITNESS.md) et le [registre historique](STATUS_HISTORY.md).
 
+### G2 : non-réutilisation des défis dans une instance
+
+L'adaptateur de témoin réserve et valide maintenant le nonce avant tout appel au transport, sous verrou interthreads. Une répétition ou un nonce malformé est refusé, et un échec réseau ne libère pas le nonce. Il s'agit d'un garde **volatile** uniquement : aucune garantie d'unicité après redémarrage ou entre processus, aucune source cryptographique indépendante ni M11 vivant. Les tests sont synthétiques et ne donnent aucune autorité motrice ni de reprise.
+
+
+### G2 : registre de defis local durable (proposition)
+
+Le composant `durable_challenge_source.py` reserve des defis avant transport dans un journal append-only distinct du SQLite cognitif v5. Tests de redemarrage, concurrence cooperative, corruption et permissions. Cette persistance est **locale et restaurable**, sans anti-rollback global ni preuve d'independance M11. I1 actif ; I2 sans naissance, moteur ou autorite de reprise.
+
+
+### G2 : refus de perte partielle du registre de défis
+
+L'initialisation de `durable_challenge_source.py` refuse les états partiellement absents ou vidés au redémarrage. La suppression simultanée du verrou et du journal reste un contre-exemple documenté ; elle ne peut être détectée sans autre domaine de confiance. Aucun droit moteur ou naissance I2.
+
+
+### G2 : identité des fichiers du registre
+
+Le laboratoire vérifie les inodes de ses fichiers de garde sous verrou et avant sortie, avec tests de substitution du verrou et du répertoire. Reste vulnérable aux remplacements cohérents avant la lecture et au rollback global. I2 reste inerte, G3 non établi.
+
+### G2 : relecture locale après refus du témoin
+
+`verify_fixture` réaudite désormais le journal local même si le fournisseur externe lève une erreur ou signale `STALE`, `FORK` ou `UNANCHORED`. Une modification concurrente ou un échec du second audit est classé `UNKNOWN`, sans reprise ni rejeu. L'inspection des COMMIT incertains refuse également les erreurs du second audit. Protection locale contre une course détectée, non linéarisable, aucune authentification M11 ni effet physique.
+
+
+### G2 : controle du prefixe historique local
+
+L'audit froid peut verifier une tete historique SQLite v5. `verify_fixture` compare ce prefixe a une borne precedemment verifiee declaree, refusant une divergence `FORK` meme quand la tete actuelle correspond au fournisseur. Aucun serveur independant ni preuve M11 n'est ajoute, aucune activation I2.
+
 ## Next authorized work
 
 Review [architecture](ARCHITECTURE.md), [research hypothesis](../../../docs/architecture/proposals/i2-continuity-and-learning-contract-2026-10-31.md) and [promotion procedure](../../../docs/engineering/ENGINE_PROMOTION.md); close separately the genuine-world, independent custody and preregistered science gates. Do not instantiate an I2 individual.
