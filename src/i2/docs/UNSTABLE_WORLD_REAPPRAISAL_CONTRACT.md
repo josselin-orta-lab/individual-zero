@@ -246,3 +246,22 @@ the ordinary 4+5 UC, neither has the current EAT consequence available
 to the second decision, and no researcher selects the action. The
 observed sequence is a programmed toy-world behavior, NOT evidence
 that I2 independently invented or maintained a multi-step plan.
+
+
+## Physical time between steps: necessary survival-plan constraint
+
+An ordered two-action projection must account for elapsed world ticks, not
+only the per-action energy costs. The bounded `assess_collect_then_eat`
+accepts `ticks_before_second_action` (0 by default for immediate adjacent
+decisions). It conservatively subtracts one metabolic energy unit per tick
+*after* the collect action and *before* any eating attempt. If energy reaches
+zero in between, the plan reports `DEPLETED_BEFORE_SECOND_STEP` rather than
+falsely claiming a feasible rescue. If only one or two units remain, the
+second action is possible but its outcome remains UNKNOWN and it may cause
+terminal energy. No two-step plan executes by itself; motor authority,
+per-step UC and the actual world clock are unchanged.
+
+This improvement is a pure planning feasibility boundary, not an inference
+that the unknown berry will help. A future plan scheduler must bind the
+elapsed time to an authenticated current clock and must refuse to infer
+that a proposed delay is guaranteed.
