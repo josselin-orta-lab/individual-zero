@@ -164,3 +164,46 @@ exhaustive proof of distributed correctness.
 before implementation #664. Tests passing, adding this note, or
 sharing the model **never** changes `G1=REVIEW_REQUIRED` or
 `G3=NOT_ESTABLISHED`. No I2 registration or birth is permitted.
+
+## R1 version retention: bounded executable candidate (1 November 2026)
+
+**Scope: feasibility response to the specific C5/C7 failure in PR #792,
+NOT an additional G2 learning campaign.** The separate
+`tests/i2/test_g1_versioned_publication_candidate.py` is a **test-only**
+SQLite version-retention representation. One database retains append-only
+canonical **full-state revisions** (body energy, inventory, UC, memory
+version, visible-result token, terminal), with a `pending` attempt marker
+committed in the **same** transaction as the private successor. It is
+not connected to the current v5 cognitive fixture, is not a second running
+I2 owner, and cannot create or enact a physical life.
+
+The test shows the previously witnessed *exact complete* state remains
+retrievable across an actual SQLite close/reopen even after a private
+newer COMMIT. The candidate new body result is withheld from the old
+observation; only a **hypothetical successful acknowledged CAS** allows
+it to be considered the next public state. Missing earlier versions,
+mismatched heads, pre-COMMIT failure and uncertain ACK fail closed.
+A lost acknowledgment leaves durable `pending` and forbids further
+attempts across restarts. Retaining past records does not give an
+old state permission to become current again.
+
+**Non-negotiable negative control:** restore the SQLite file AND its
+same-domain fabricated witness to their preterminal versions, and the
+dead individual appears alive in this model. The caller-injected
+`Anchor`, `verified=True` and ACK are **untrusted assumptions**;
+there is no independently operated monotone non-equivocating service,
+actual signer, epoch fencing, cryptographic external CAS or real
+M11 authentication. No physical WorldBody law, first-person observation
+issuer, real UC Scheduler, cognitive H2 or motor admission is implemented.
+Five bounded local tests (one-owner SQLite feasibility, not exhaustive
+model checking) must be verified in exact-head CI.
+
+**Architecture reviewer decision:** either explicitly accept this
+**version-retention representation as a design direction** for a later
+**single** G3 owner that also absorbs the existing v5 cognition, or
+identify the precise conflicting invariant. Independently prove or
+reject the trust-domain/latest-head/terminal model. Do not infer
+`ACCEPT_G1_ARCHITECTURE` from this test or this document. Science
+reviewer still must evaluate H1/H2/H3 causal evidence separately.
+The stop rule of ADR-0004 remains: no further G2 tuning and no
+living implementation before both independent G1 reviews.
