@@ -123,7 +123,7 @@ def exercise(*, completion_delta: int, order: tuple[str, str],
              adaptive: bool, veto: bool = False, synthetic_uc: int = 20,
              omit_observation: bool = False) -> dict[str, object]:
     """Run separate training, advisory owner and offline shadow phases."""
-    if sorted(order) != sorted((A, B)):
+    if sorted(order) != sorted((A, C)):
         raise ValueError("exact paired training order required")
     world = TinyControlledWorld(completion_delta=completion_delta)
     evidence = ControlledEvidence()
