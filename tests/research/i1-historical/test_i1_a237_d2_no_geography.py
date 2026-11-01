@@ -6,7 +6,7 @@ import subprocess
 import sys
 import unittest
 
-sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
+sys.path.insert(0,str(Path(__file__).resolve().parents[3]/"scripts"))
 from build_i1_fork import generate
 
 
@@ -95,7 +95,7 @@ with TemporaryDirectory() as home:
 """
             env=os.environ.copy()
             env["PYTHONPATH"]=str(generated)+os.pathsep+str(
-                Path(__file__).resolve().parents[1]/"src")
+                Path(__file__).resolve().parents[3]/"src")
             run=subprocess.run([sys.executable,"-c",code],
                 env=env,capture_output=True,text=True)
             self.assertEqual(run.returncode,0,run.stderr+"\n"+run.stdout)
