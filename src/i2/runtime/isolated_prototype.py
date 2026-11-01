@@ -257,10 +257,6 @@ class _DeadlineAwareValuation(ChosenOutcomeValuationStudy):
                      if v.candidate_ref in selected else v for v in values)
 
 
-class _DeadlineAwareLastResort(_LastResortValuation):
-    """Reserved for later tested policy composition, never silently active."""
-
-
 class _PreviousResults:
     def __init__(self, records: tuple[ObservedChosenResult, ...]):
         self.known = frozenset(records)
