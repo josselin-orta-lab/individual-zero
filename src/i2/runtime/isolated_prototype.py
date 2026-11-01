@@ -48,6 +48,10 @@ SCENARIOS = {
     "adverse": (-8,) * MAX_STEPS,
     "neutral": (0,) * MAX_STEPS,
     "reversal": (6, 6, 6, -8, -8, -8, -8, -8),
+    # Blind negative-to-positive change at world tick 7. This schedule is
+    # exogenous researcher-defined world physics; NEVER a cognitive cue.
+    # Locked separately from the original seven-case viability battery.
+    "restoration": (-8, -8, -8, 6, 6, 6, 6, 6),
 }
 
 
@@ -941,9 +945,9 @@ def demo(scenario: str, *, steps: int = 6) -> dict:
     """Tiny disposable engineering smoke only, NOT a scientific replicate."""
     if scenario not in SCENARIOS or type(steps) is not int or not 1 <= steps <= MAX_STEPS:
         raise PrototypeRefusal("unknown or unbounded demo")
-    if scenario == "reversal":
+    if scenario in ("reversal", "restoration"):
         raise PrototypeRefusal(
-            "reversal requires physical world ticks: use --world / world_demo")
+            "hidden world change requires physical ticks: use --world / world_demo")
     with tempfile.TemporaryDirectory(prefix="i2-isolated-prototype-") as root:
         arms = {}
         for learning, label in ((True, "observed_chosen"), (False, "fixed")):

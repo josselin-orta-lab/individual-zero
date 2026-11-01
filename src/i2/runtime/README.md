@@ -187,3 +187,39 @@ Existing constant stable/adverse/neutral single-step smokes are unchanged.
 Different post-divergence trajectories are still not matched causal
 survival evidence, and a programmed avoidance response is not proof of
 natural or generalized learning. No frozen G1-LAB data or protocol changes.
+
+## Blind hidden-recovery falsifier (ADR-0008, issue #664)
+
+The frozen seven-case viability study stays untouched. A **separate bounded
+negative-to-positive hidden world scenario** is now available in the same
+single-owner runtime: food EAT yields -8 at physical phases 0-2 and +6
+starting at physical tick 7. Neither the phase, prospective benefit,
+researcher output nor the world script is published to cognition. The
+individual only sees its own committed body state, affordances, paid scores,
+and **previously chosen** consequences. No novelty/revisit bonus or
+forced exposure is added.
+
+Run the small source-locked two-world/two-policy diagnostic:
+
+```bash
+PYTHONPATH=src python -m i2.runtime.blind_restoration_probe --json
+```
+
+It compares hidden restoration to a persistently harmful control with the
+same initial food harms, 16-tick world clock, 60 UC, 40 energy, eight
+resources, and unchanged observational/fixed policies. Researcher-only
+`_subjective_history` compares what the observational subject actually
+could experience in both worlds, excluding world-phase/oracle fields.
+A postchange EAT counts as **contact** only if selected and committed;
+a positive food result becomes *personally available* only in a later
+capture. If no EAT contact occurs, hidden recovery is not identifiable,
+even when the counterfactual opportunity would have improved survival.
+
+This is intended to preserve an informative **failure to rediscover** as
+a negative finding. Do not alter priors, +5 offset, physical laws or UC,
+or grant free curiosity to force a successful result. These four tiny
+deterministic runs are an engineering/scientific falsifier, not
+independent statistical replication, open-ended G2 tuning, living I2 or
+authenticated M11. As with the reversal, the direct no-clock
+`demo("restoration")` is refused. The original one-shot G1-LAB remains
+closed and unchanged.
