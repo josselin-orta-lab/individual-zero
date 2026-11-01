@@ -122,7 +122,7 @@ class NavigationSanity(unittest.TestCase):
 
     def test_historical_a0_birth_pilot_requires_operator_dispatch(self):
         workflow = (ROOT / ".github/workflows/i1-eco-a0.yml").read_text(encoding="utf-8")
-        events = workflow.split("\\non:\\n", 1)[-1].split("\\npermissions:", 1)[0]
+        events = workflow.partition("on:")[2].partition("permissions:")[0]
         self.assertIn("  workflow_dispatch:", events)
         self.assertNotIn("  push:", events)
         self.assertNotIn("  pull_request:", events)
