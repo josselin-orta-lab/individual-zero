@@ -25,7 +25,7 @@ from i2.modules.chosen_outcome_study import (
     ChosenOutcomeValuationStudy, ObservedChosenResult, observed_chosen_scores,
 )
 from i2.modules.cognitive_cycle_fixture import (
-    CognitiveCycleFixture, CommitAcknowledgmentLost,
+    CognitiveCycleFixture, CommitAcknowledgmentLost, FaultInjected, ZERO_HASH,
 )
 from i2.modules.intention_continuity import FirstPersonCapture
 from i2.modules.intention_ingress import ObservationClaim
@@ -184,7 +184,15 @@ class IsolatedI2:
                     id INTEGER PRIMARY KEY CHECK(id=1),
                     revision INTEGER NOT NULL, energy INTEGER NOT NULL,
                     inventory INTEGER NOT NULL, resources INTEGER NOT NULL,
-                    terminal INTEGER NOT NULL CHECK(terminal IN (0,1)));
+                    terminal INTEGER NOT NULL CHECK(terminal IN (0,1)),
+                    tick_count INTEGER NOT NULL DEFAULT 0 CHECK(tick_count>=0));
+                CREATE TABLE proto_ticks(
+                    seq INTEGER PRIMARY KEY,
+                    after_revision INTEGER NOT NULL CHECK(after_revision>=0),
+                    before_energy INTEGER NOT NULL, energy INTEGER NOT NULL,
+                    terminal INTEGER NOT NULL CHECK(terminal IN (0,1)),
+                    remaining_uc INTEGER NOT NULL,
+                    cognition_head TEXT NOT NULL);
                 CREATE TABLE proto_steps(
                     seq INTEGER PRIMARY KEY, capture_ref TEXT NOT NULL UNIQUE,
                     capture_step INTEGER NOT NULL UNIQUE,
@@ -200,7 +208,7 @@ class IsolatedI2:
             db.execute("INSERT INTO proto_meta VALUES(1,?,?,?,?,?,?)", (
                 obj.life_ref, obj.genesis_ref, int(learning), _json(impulses),
                 initial_energy, resources))
-            db.execute("INSERT INTO proto_state VALUES(1,0,?,0,?,0)",
+            db.execute("INSERT INTO proto_state VALUES(1,0,?,0,?,0,0)",
                        (initial_energy, resources))
             db.commit()
         obj.audit()
@@ -252,7 +260,8 @@ class IsolatedI2:
         )
 
     def _claim(self, index: int, energy: int, inventory: int,
-               resources: int, records: tuple[dict, ...]) -> ObservationClaim:
+               resources: int, records: tuple[dict, ...], *,
+               physical_ticks: int) -> ObservationClaim:
         offered = _offers(inventory, resources)
         refs = [f"evidence:i2:capture:{index}", f"evidence:i2:energy:{energy}"]
         refs.extend(f"evidence:i2:outcome:{r['seq']}" for r in records
@@ -260,7 +269,8 @@ class IsolatedI2:
         return ObservationClaim(
             self.life_ref,
             FirstPersonCapture(
-                FIRST_STEP + STEP_GAP * index, f"capture:i2:{index}",
+                FIRST_STEP + STEP_GAP * index + physical_ticks,
+                f"capture:i2:{index}",
                 "goal:food", offered),
             f"source:i2:previous-commit:{index}",
             tuple(sorted(refs)),
@@ -287,17 +297,42 @@ class IsolatedI2:
             events = db.execute(
                 "SELECT seq,capture_ref,physical_step,event_hash,event_json "
                 "FROM events ORDER BY seq").fetchall()
-        if len(events) != len(rows):
+            db.row_factory = sqlite3.Row
+            ticks = tuple(dict(row) for row in db.execute(
+                "SELECT seq,after_revision,before_energy,energy,terminal,"
+                "remaining_uc,cognition_head FROM proto_ticks ORDER BY seq"))
+        if len(events) != len(rows) or state["tick_count"] != len(ticks):
             raise PrototypeRefusal("missing cognitive source event")
         energy, inventory, resources = (
             meta["initial_energy"], 0, meta["initial_resources"])
         used_uc = 0
         earlier: list[dict] = []
         terminal = False
+        tick_cursor = 0
+
+        def replay_metabolism(after_revision: int, previous_head: str) -> None:
+            nonlocal energy, terminal, tick_cursor
+            while (tick_cursor < len(ticks) and
+                   ticks[tick_cursor]["after_revision"] == after_revision):
+                tick = ticks[tick_cursor]
+                if (terminal or tick["seq"] != tick_cursor + 1 or
+                        tick["before_energy"] != energy or
+                        tick["remaining_uc"] != capacity - used_uc or
+                        tick["cognition_head"] != previous_head):
+                    raise PrototypeRefusal("autonomic tick or UC provenance mismatch")
+                energy = max(0, energy - 1)
+                terminal = energy == 0
+                if tick["energy"] != energy or tick["terminal"] != int(terminal):
+                    raise PrototypeRefusal("autonomic energy not replayable")
+                tick_cursor += 1
+
         for i, (row, saved) in enumerate(zip(rows, events)):
+            previous_head = ZERO_HASH if i == 0 else events[i - 1][3]
+            replay_metabolism(i, previous_head)
             if terminal or row["seq"] != i + 1 or saved[0] != i + 1:
                 raise PrototypeRefusal("post-terminal or nonsequential transition")
-            claim = self._claim(i, energy, inventory, resources, tuple(earlier))
+            claim = self._claim(i, energy, inventory, resources, tuple(earlier),
+                                physical_ticks=tick_cursor)
             event = json.loads(saved[4])
             if (row["capture_ref"] != claim.capture.ref or
                     row["capture_step"] != claim.capture.step or
@@ -375,13 +410,18 @@ class IsolatedI2:
                     or row["remaining_uc"] != capacity - used_uc):
                 raise PrototypeRefusal("body effect or paid UC not replayable")
             earlier.append(row)
+        last_head = ZERO_HASH if not events else events[-1][3]
+        replay_metabolism(len(rows), last_head)
+        if tick_cursor != len(ticks):
+            raise PrototypeRefusal("autonomic event ordered after unknown revision")
         if (state["energy"], state["inventory"], state["resources"],
                 state["terminal"]) != (energy, inventory, resources, int(terminal)):
             raise PrototypeRefusal("head state contradicts causal journal")
         if cognition["remaining_synthetic_uc"] != capacity - used_uc:
             raise PrototypeRefusal("separate or free synthetic UC")
         return {"life_ref": self.life_ref, "genesis_ref": self.genesis_ref,
-                "revision": len(rows), "energy": energy, "inventory": inventory,
+                "revision": len(rows), "physical_ticks": tick_cursor,
+                "energy": energy, "inventory": inventory,
                 "resources": resources, "terminal": terminal,
                 "remaining_uc": capacity - used_uc, "actual_uc_spent": used_uc,
                 "motor_scope": "INTERNAL_ONLY", "m11_authenticated": False,
@@ -403,6 +443,8 @@ class IsolatedI2:
             saved = db.execute(
                 "SELECT seq,event_hash,event_json FROM events ORDER BY seq"
             ).fetchall()
+            tick_revisions = tuple(row[0] for row in db.execute(
+                "SELECT after_revision FROM proto_ticks ORDER BY seq"))
         if len(rows) != head["revision"] or len(saved) != len(rows):
             raise PrototypeRefusal("decision inspection crossed a revision")
         inventory, resources = 0, meta["initial_resources"]
@@ -432,6 +474,8 @@ class IsolatedI2:
                      event["control_uc"])
             output.append({
                 "seq": seq,
+                "physical_ticks_before": sum(
+                    1 for revision in tick_revisions if revision < seq),
                 "before_energy": row["before_energy"],
                 "before_inventory": inventory,
                 "before_resources": resources,
@@ -477,7 +521,7 @@ class IsolatedI2:
             "SELECT life_ref,genesis_ref,impulses_json FROM proto_meta WHERE id=1"
         ).fetchone()
         state = conn.execute(
-            "SELECT revision,energy,inventory,resources,terminal "
+            "SELECT revision,energy,inventory,resources,terminal,tick_count "
             "FROM proto_state WHERE id=1").fetchone()
         if (meta is None or meta[:2] != (self.life_ref, self.genesis_ref)
                 or state is None or state[0] + 1 != seq or state[4]):
@@ -487,7 +531,8 @@ class IsolatedI2:
             r)) for r in conn.execute(
                 "SELECT seq,capture_ref,action_ref,observed_step,net "
                 "FROM proto_steps ORDER BY seq"))
-        expected = self._claim(state[0], state[1], state[2], state[3], prior)
+        expected = self._claim(state[0], state[1], state[2], state[3], prior,
+                               physical_ticks=state[5])
         if claim != expected:
             raise PrototypeRefusal("capture not issued from previous committed world")
         event_row = conn.execute(
@@ -545,6 +590,79 @@ class IsolatedI2:
             inventory, resources, terminal, remaining_uc, event_head,
         ))
 
+    def advance_physics(self, *, fault: str | None = None) -> dict:
+        """Advance one metabolic tick even with ZERO UC and no cognition.
+
+        Externally scheduled toy physical time, NOT a real-time Scheduler.
+        Runs inside the SAME owner SQLite database and transaction. Never
+        consults Competition, consumes hidden impulses, or gains motor authority.
+        A lost COMMIT acknowledgment halts this in-process executor.
+        """
+        if self.inspection_only or self.halted:
+            raise PrototypeRefusal("prototype is inspection-only or halted")
+        if fault not in (None, "before_commit", "after_commit"):
+            raise PrototypeRefusal("invalid physical tick fault")
+        prior = self.audit()
+        if prior["terminal"]:
+            raise PrototypeRefusal("terminal body cannot advance")
+        db = self._connect()
+        try:
+            db.execute("BEGIN IMMEDIATE")
+            row = db.execute(
+                "SELECT revision,energy,inventory,resources,terminal,tick_count "
+                "FROM proto_state WHERE id=1").fetchone()
+            account = db.execute(
+                "SELECT committed,remaining_uc,chain_head "
+                "FROM account WHERE id=1").fetchone()
+            if (row is None or account is None or row[4] or
+                    row[0] != prior["revision"] or
+                    row[1] != prior["energy"] or
+                    row[5] != prior["physical_ticks"] or
+                    account[0] != row[0] or
+                    account[1] != prior["remaining_uc"]):
+                raise PrototypeRefusal("stale or terminal physical owner")
+            energy = max(0, row[1] - 1)
+            terminal = int(energy == 0)
+            tick_seq = row[5] + 1
+            db.execute(
+                "UPDATE proto_state SET energy=?,terminal=?,tick_count=? "
+                "WHERE id=1", (energy, terminal, tick_seq))
+            db.execute(
+                "INSERT INTO proto_ticks VALUES(?,?,?,?,?,?,?)",
+                (tick_seq, row[0], row[1], energy, terminal,
+                 account[1], account[2]))
+            if fault == "before_commit":
+                raise FaultInjected("physical tick rolled back before COMMIT")
+            db.execute("COMMIT")
+            if fault == "after_commit":
+                raise CommitAcknowledgmentLost(
+                    "physical tick may be committed; inspect only, never retry")
+        except BaseException as exc:
+            if db.in_transaction:
+                db.execute("ROLLBACK")
+            if isinstance(exc, (sqlite3.Error, CommitAcknowledgmentLost)):
+                self.halted = True
+            raise
+        finally:
+            db.close()
+        try:
+            verified = self.audit()
+        except BaseException:
+            self.halted = True
+            raise
+        if (verified["physical_ticks"] != prior["physical_ticks"] + 1 or
+                verified["revision"] != prior["revision"] or
+                verified["remaining_uc"] != prior["remaining_uc"] or
+                verified["energy"] != energy):
+            self.halted = True
+            raise PrototypeRefusal("ambiguous physical tick after COMMIT")
+        return {
+            "seq": tick_seq, "after_cognitive_revision": prior["revision"],
+            "before_energy": row[1], "energy": energy,
+            "terminal": bool(terminal), "remaining_uc": verified["remaining_uc"],
+            "cognition_committed": False, "external_motor_authority": "NONE",
+        }
+
     def step(self, *, veto: bool = False, fault: str | None = None) -> PrototypeStep:
         if self.inspection_only or self.halted:
             raise PrototypeRefusal("prototype is inspection-only or halted")
@@ -556,7 +674,8 @@ class IsolatedI2:
             raise PrototypeRefusal("terminal or completed bounded research run")
         index = state["revision"]
         claim = self._claim(index, state["energy"], state["inventory"],
-                            state["resources"], records)
+                            state["resources"], records,
+                            physical_ticks=state["tick_count"])
         self.observations.digest = claim.digest()
         self.current.capture_ref = claim.capture.ref
         self.safety.veto = veto
@@ -611,7 +730,7 @@ def paired_decision_contrast(
     """
     prechoice_fields = (
         "before_energy", "before_inventory", "before_resources", "visible",
-        "uc_before", "subjective_outcomes_available",
+        "physical_ticks_before", "uc_before", "subjective_outcomes_available",
     )
     common = min(len(observational), len(fixed))
     for i in range(common):

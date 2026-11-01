@@ -170,6 +170,63 @@ class IsolatedPrototypeTests(unittest.TestCase):
         self.assertEqual(compared["classification"],
                          "UNMATCHED_PRECHOICE_NO_CAUSAL_ATTRIBUTION")
 
+    def test_physics_continues_at_zero_uc_and_terminal_absorbs(self):
+        subject = self.create(initial_uc=0, initial_energy=3, impulses=(6,))
+        self.assertEqual(subject.audit()["remaining_uc"], 0)
+        for n in (1, 2, 3):
+            result = subject.advance_physics()
+            self.assertEqual(result["energy"], 3 - n)
+            self.assertFalse(result["cognition_committed"])
+            self.assertEqual(subject.audit()["revision"], 0)
+            self.assertEqual(subject.audit()["actual_uc_spent"], 0)
+            self.assertEqual(subject.audit()["physical_ticks"], n)
+        self.assertTrue(subject.audit()["terminal"])
+        with self.assertRaises(PrototypeRefusal):
+            subject.advance_physics()
+        with self.assertRaises(PrototypeRefusal):
+            subject.step()
+        self.assertTrue(IsolatedI2.inspect(self.path).audit()["terminal"])
+
+    def test_cognition_sees_new_energy_only_after_committed_ticks(self):
+        subject = self.create(initial_energy=20)
+        subject.advance_physics()
+        subject.advance_physics()
+        decision = subject.step()
+        self.assertEqual(decision.before_energy, 18)
+        self.assertEqual(subject.decision_evidence()[0]["physical_ticks_before"], 2)
+        subject.advance_physics()
+        next_decision = subject.step()
+        self.assertEqual(next_decision.before_energy, decision.energy - 1)
+        self.assertEqual(subject.decision_evidence()[1]["physical_ticks_before"], 3)
+        self.assertEqual(subject.audit()["revision"], 2)
+        self.assertEqual(subject.audit()["physical_ticks"], 3)
+
+    def test_tick_before_commit_rolls_back_and_after_commit_halts(self):
+        subject = self.create(initial_uc=0, initial_energy=4)
+        before = subject.audit()
+        with self.assertRaises(FaultInjected):
+            subject.advance_physics(fault="before_commit")
+        self.assertEqual(subject.audit(), before)
+        with self.assertRaises(CommitAcknowledgmentLost):
+            subject.advance_physics(fault="after_commit")
+        self.assertEqual(subject.audit()["physical_ticks"], 1)
+        with self.assertRaises(PrototypeRefusal):
+            subject.advance_physics()
+        cold = IsolatedI2.inspect(self.path)
+        self.assertEqual(cold.audit()["energy"], 3)
+        with self.assertRaises(PrototypeRefusal):
+            cold.advance_physics()
+
+    def test_physical_tick_tamper_rejected_before_any_action(self):
+        subject = self.create()
+        subject.advance_physics()
+        with sqlite3.connect(self.path) as db:
+            db.execute("UPDATE proto_ticks SET energy=99 WHERE seq=1")
+        with self.assertRaises(PrototypeRefusal):
+            subject.audit()
+        with self.assertRaises(PrototypeRefusal):
+            subject.step()
+
 
 if __name__ == "__main__":
     unittest.main()
