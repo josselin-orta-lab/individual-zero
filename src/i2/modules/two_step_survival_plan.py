@@ -25,12 +25,14 @@ class TwoStepPlan:
 
 
 def assess_collect_then_eat(*, claim: ObservationClaim, energy: int,
-                            inventory: int, resources: int) -> TwoStepPlan:
+                            inventory: int, resources: int,
+                            ticks_before_second_action: int = 0) -> TwoStepPlan:
     """Check physical feasibility, not viability or the hidden food payoff.
 
     Collect may be available now; EAT becomes available only after a
     successful collect, and its payoff remains unknown until chosen.
-    The worst known two-step action cost is four energy units. There is no
+    The known two-step action cost is four energy units plus the
+    explicitly supplied physical metabolism between decisions. There is no
     secret-food lookup, UC discount, free pre-execution or guaranteed rescue.
     """
     if type(claim) is not ObservationClaim:
@@ -40,6 +42,9 @@ def assess_collect_then_eat(*, claim: ObservationClaim, energy: int,
             type(inventory) is not int or not 0 <= inventory <= 32 or
             type(resources) is not int or not 0 <= resources <= 32):
         raise ValueError("invalid bounded body state")
+    if (type(ticks_before_second_action) is not int or
+            not 0 <= ticks_before_second_action <= 32):
+        raise ValueError("invalid bounded time until second action")
     if f"evidence:i2:energy:{energy}" not in claim.subjective_evidence_refs:
         raise ValueError("energy not bound to current capture")
     if COLLECT not in claim.capture.accessible_semantics or resources == 0:
@@ -47,7 +52,9 @@ def assess_collect_then_eat(*, claim: ObservationClaim, energy: int,
     # If the body reaches zero energy at collect, the second step cannot act.
     if energy <= STEP_COST:
         return TwoStepPlan((COLLECT, EAT), "INSUFFICIENT_ENERGY_TO_COLLECT", None)
-    after_collect = energy - STEP_COST
+    after_collect = energy - STEP_COST - ticks_before_second_action
+    if after_collect <= 0:
+        return TwoStepPlan((COLLECT, EAT), "DEPLETED_BEFORE_SECOND_STEP", None)
     if after_collect <= STEP_COST:
         return TwoStepPlan((COLLECT, EAT), "FOOD_ATTEMPT_MAY_BE_TERMINAL", after_collect)
     return TwoStepPlan((COLLECT, EAT), "PHYSICALLY_SEQUENCEABLE_OUTCOME_UNKNOWN",

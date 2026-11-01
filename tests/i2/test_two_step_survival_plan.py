@@ -39,6 +39,28 @@ class TwoStepTests(unittest.TestCase):
             claim=claim(2), energy=2, inventory=0, resources=1)
         self.assertEqual(result.status, "INSUFFICIENT_ENERGY_TO_COLLECT")
 
+    def test_metabolic_ticks_can_make_plan_infeasible_before_second_step(self):
+        critical = assess_collect_then_eat(
+            claim=claim(5), energy=5, inventory=0, resources=1,
+            ticks_before_second_action=2)
+        self.assertEqual(critical.status, "FOOD_ATTEMPT_MAY_BE_TERMINAL")
+        self.assertEqual(critical.guaranteed_pre_food_energy, 1)
+        exhausted = assess_collect_then_eat(
+            claim=claim(4), energy=4, inventory=0, resources=1,
+            ticks_before_second_action=2)
+        self.assertEqual(exhausted.status, "DEPLETED_BEFORE_SECOND_STEP")
+        self.assertIsNone(exhausted.guaranteed_pre_food_energy)
+        self.assertEqual(assess_collect_then_eat(
+            claim=claim(10), energy=10, inventory=0, resources=1,
+            ticks_before_second_action=2).guaranteed_pre_food_energy, 6)
+
+    def test_metabolic_time_requires_canonical_nonnegative_integer(self):
+        for bad in (-1, True, 1.5, 33):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                assess_collect_then_eat(
+                    claim=claim(10), energy=10, inventory=0, resources=1,
+                    ticks_before_second_action=bad)
+
     def test_missing_resource_and_unobserved_energy_refused(self):
         self.assertEqual(assess_collect_then_eat(
             claim=claim(8, offered=()), energy=8, inventory=0, resources=0
