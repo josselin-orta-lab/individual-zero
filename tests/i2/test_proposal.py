@@ -63,6 +63,23 @@ class TestI2Proposal(unittest.TestCase):
                     path.write_text(code + "\n")
                     self.assertFalse(_source_imports_other_generation(path, "I2"))
 
+    def test_i2_test_tree_has_no_foreign_generation_imports_or_symlinks(self):
+        # CI tests must not accidentally execute borrowed I0/I1 test
+        # fixtures. Static AST checks are narrower than dependency audits.
+        tree = ROOT / "tests" / "i2"
+        self.assertTrue(tree.is_dir())
+        self.assertFalse(tree.is_symlink())
+        files = sorted(tree.rglob("*"))
+        self.assertTrue(any(path.suffix == ".py" for path in files))
+        for path in files:
+            with self.subTest(path=path.relative_to(tree)):
+                self.assertFalse(path.is_symlink(), "symlinked I2 test content")
+                if path.is_file() and path.suffix == ".py":
+                    self.assertFalse(
+                        _source_imports_other_generation(path, "I2"),
+                        "direct or unverifiable dynamic import from a foreign generation",
+                    )
+
     def test_symlinked_previous_lab_is_not_an_independent_owner(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
