@@ -33,7 +33,7 @@ These are structural checks, not scientific evidence. For changing I1 behavior, 
 
 ## Current CI routing (do not use the archived I0 policy)
 
-The **actual workflow files** determine what runs. The older [I0 CI policy](../research/ci-execution-policy.md) describes historical behaviour only.
+The **actual workflow files** determine what runs. The older [I0 CI policy](../research/ci-execution-policy.md) describes historical behaviour only. See the [workflow ownership and historical trigger guide](WORKFLOW_INVENTORY.md) to distinguish current checks from manual, focused and historical campaign launchers before editing or dispatching any YAML.
 
 | Changed scope | Verification |
 | --- | --- |
