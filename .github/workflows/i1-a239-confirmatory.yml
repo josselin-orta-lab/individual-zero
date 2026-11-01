@@ -29,7 +29,7 @@ jobs:
       - name: Check syntax and preregistration before mortal births
         run: |
           python -m compileall -q scripts/i1_a239_lock.py scripts/i1_a239_fixtures.py scripts/run_i1_a239_preflight.py scripts/run_i1_a239_factorial.py scripts/audit_i1_a239_factorial.py src/i1_overlays/i1_a239_runtime.py
-          python -m unittest discover -s tests -p 'test_i1_a238_factorial_smoke.py' -v
+          python -m unittest discover -s tests/research/i1-historical -p 'test_i1_a238_factorial_smoke.py' -v
       - name: Run physically independent 160 A2.39 mortal lives
         run: python scripts/run_i1_a239_factorial.py --output artifacts/a239-confirmatory --source-sha "${{ steps.freeze.outputs.source }}"
       - name: Independent canonical and WAL audit

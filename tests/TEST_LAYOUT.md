@@ -16,7 +16,7 @@ Do not recreate that old source path; its original bytes remain under
 | Research analysis tooling tests | `tests/research/a1p/`, `tests/research/a1c/`, `tests/research/a2r/` | Inspect the matching scientific tooling and its named CI contract before running |
 | Frozen I0 historical tests | [`archive/i0/tests/`](../archive/i0/tests/) | Isolated historical verification only; not a natural-I1 acceptance oracle |
 
-Eight older I1 tests still live at the test root. They are **legacy placements**, not examples to follow. Do not rename or relocate them until their imports, direct invocations, workflow globs and published references have been independently checked.
+Five older I1 tests still live at the test root. They are **legacy placements**, not examples to follow. Do not rename or relocate them until their imports, direct invocations, workflow globs and published references have been independently checked.
 
 **New tests:** put I1 tests in `tests/i1/`, I2 synthetic tests in `tests/i2/`, and shared structural tests in `tests/` (or a dedicated infrastructure suite with explicit discovery). Do not add another `tests/test_i1_*.py` or `tests/test_i2_*.py` at the root. The lightweight placement guard checks this rule without running an engine.
 
