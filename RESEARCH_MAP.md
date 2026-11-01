@@ -13,34 +13,39 @@ Research axes map scientific questions and related work. They do not define the 
 | **AXIS-ACTION** | Action selection, agency, and control | arbitration, planning, veto, motor control, exploration, agency |
 | **AXIS-SELF** | Self, metacognition, and continuity | self-model, monitoring, reflection, identity, narrative, temporal continuity |
 
-## Active questions
+## Current research state
 
-The tables below are **unpopulated research-axis planning templates**, not a live issue tracker or evidence index. There are already active [I1 research questions](https://github.com/josselin-orta-lab/individual-zero/issues), historical studies under [research docs](docs/research/README.md), and [I1's evidence matrix](src/i1/docs/EVIDENCE_MATRIX.md). Do not infer that no research exists from these empty templates.
+The active questions, evidence gaps, negative and unexecuted findings, I2 gates and intervention candidates are **not maintained in static tables on this page**. Empty planning templates previously shown here did not represent the real research backlog.
 
-| Question ID | Question | Axes | EXP | Dependencies | Status |
-| --- | --- | --- | --- | --- | --- |
-| _none yet_ | | | | | |
+Agents should first read [the research coordination guide](docs/engineering/RESEARCH_COORDINATOR.md), whose [curated program](config/research-program.json) links reported findings to exact source Git blobs, research questions, reviews and blocking dependencies. From the repository root:
 
-## Experiments
+```bash
+python tools/research_coordinator.py status
+python tools/research_coordinator.py recommend --top 5
+python tools/research_coordinator.py trace --id question:I1-L3
+python tools/research_coordinator.py graph --mode knowledge
+python tools/research_corpus.py report --top 8
+python tools/research_corpus.py review --topic study:A1-C
+python tools/research_dossiers.py list
+python tools/research_dossiers.py gaps
+python tools/research_coordinator.py catalog --limit 20
+```
 
-This table is not automatically synchronized with the repository's experiment records or GitHub issues.
+The [curated dossier register](docs/engineering/RESEARCH_DOSSIERS.md) records selected protocol/outcome/review chains with pinned sources and explicit missing evidence. The [incremental corpus index](docs/engineering/RESEARCH_CORPUS.md) discovers direct research identifiers and candidate protocol/results relationships across the wider repository. Its status-language and filename hints require human scientific review. The seed program covers only selected I1 and I2 research questions. It is **not** a census of all research, a live GitHub issue tracker, an independently verified scientific verdict or a permission to run a study. File names returned by the catalog are unreviewed candidates, not scientific evidence.
 
-| EXP | Question | Target | Axes | Status | Decision |
-| --- | --- | --- | --- | --- | --- |
-| _none yet_ | | | | | |
+## Where evidence actually lives
 
-Statuses: **OPEN**, **ACTIVE**, **RESULTS**, **CLOSED**.
+- [I1 evidence matrix](src/i1/docs/EVIDENCE_MATRIX.md) distinguishes implementation, observed behavior and scientific limits.
+- [I1 current status](src/i1/docs/STATUS.md) records the latest maintained local assessment; original protocols, traces and independent conclusions must still be inspected at their exact SHAs.
+- [I2 proposal status](src/i2/docs/STATUS.md) and [the I1 → I2 gate decision](docs/architecture/proposals/i2-transition-and-scientific-gates-2026-10-31.md) describe the unpromoted generation and required scientific reviews.
+- [Research records](docs/research/README.md), [formal EXP conventions](experiments/README.md) and [live GitHub issues](https://github.com/josselin-orta-lab/individual-zero/issues) provide broader historical and operational context.
 
-## Architectural candidates
+An experiment, an architectural proposal and an accepted ADR answer different questions. No GitHub label, green software test or closed issue alone establishes a scientific result.
 
-| Candidate | Triggering EXPs | Scope | Status |
-| --- | --- | --- | --- |
-| _none yet_ | | | |
+## Research governance and maintenance
 
-## External dependencies
+A research contributor creates or updates the **original** preregistration, method, observations, control results and review decision first. The curated graph is then updated with precise source paths, pinned Git blob identities, falsifiable claims and scope limits. If a source changes, the affected recommendation remains blocked for review until it is reconciled. Negative or null evidence remains visible.
 
-| Component | Purpose | RAI decision | Version | License | Related EXP |
-| --- | --- | --- | --- | --- | --- |
-| _none yet_ | | | | | |
+For an architectural candidate consult [accepted decisions](docs/decisions/) and [the generation-promotion process](docs/engineering/ENGINE_PROMOTION.md). For an external component apply [RAI](docs/research/rai.md) and the applicable license/provenance process. These decisions do not belong in a speculative empty global inventory.
 
-Update this map when a scientific question becomes active, an EXP changes state, a major external dependency is adopted for research, or an architectural candidate opens. Detailed evidence stays in `experiments/`; shared decisions stay in `docs/decisions/`.
+The six research axes above remain cross-cutting themes rather than permanent agent teams or separate branches.

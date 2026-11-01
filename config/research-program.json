@@ -1,0 +1,576 @@
+{
+  "schema": "individual-zero-research-program/v1",
+  "project": "josselin-orta-lab/individual-zero",
+  "as_of": "2026-11-01",
+  "description": "Curated evidence-linked research graph seed, falsifiable questions and review candidates. Reports and status are text sources, never scientific authority; cataloged files are unreviewed.",
+  "source_checks": [
+    {
+      "id": "i1-l3",
+      "path": "src/i1/docs/STATUS.md",
+      "marker": "general adaptive benefit at L3 is **NOT_ESTABLISHED**",
+      "authority": "status",
+      "blob_sha": "6c9dec0566634d021723be7c7542f575d52b3bf3"
+    },
+    {
+      "id": "i1-a1c",
+      "path": "src/i1/docs/STATUS.md",
+      "marker": "A1-C confirmatory result was a targeted **NO_GO**",
+      "authority": "status",
+      "blob_sha": "6c9dec0566634d021723be7c7542f575d52b3bf3"
+    },
+    {
+      "id": "i1-a2r",
+      "path": "src/i1/docs/STATUS.md",
+      "marker": "A2-R remains **NOT_EXECUTED (0/96)**",
+      "authority": "status",
+      "blob_sha": "6c9dec0566634d021723be7c7542f575d52b3bf3"
+    },
+    {
+      "id": "i1-matrix",
+      "path": "src/i1/docs/EVIDENCE_MATRIX.md",
+      "marker": "SCIENTIFICALLY_ESTABLISHED",
+      "authority": "evidence_index",
+      "blob_sha": "af6a0a6fe8d233de5595137eb4687f03585958ce"
+    },
+    {
+      "id": "i2-proposal",
+      "path": "src/i2/docs/STATUS.md",
+      "marker": "PROPOSAL_ONLY / NOT_REGISTERED / NOT_EXECUTABLE / NOT_BORN",
+      "authority": "status",
+      "blob_sha": "6d32486607ec95bea012096aa3cafb15bb71c811"
+    },
+    {
+      "id": "g0",
+      "path": "docs/architecture/proposals/i2-transition-and-scientific-gates-2026-10-31.md",
+      "marker": "G0 PARTIAL",
+      "authority": "dated_decision",
+      "blob_sha": "e83b07c33ab54b2b964ffb96a23e6591811cbc78"
+    },
+    {
+      "id": "g1",
+      "path": "src/i2/docs/STATUS.md",
+      "marker": "Architectural and scientific review still required",
+      "authority": "status",
+      "blob_sha": "6d32486607ec95bea012096aa3cafb15bb71c811"
+    },
+    {
+      "id": "g2",
+      "path": "src/i2/docs/STATUS.md",
+      "marker": "Independent **synthetic** research fixtures",
+      "authority": "status",
+      "blob_sha": "6d32486607ec95bea012096aa3cafb15bb71c811"
+    },
+    {
+      "id": "g3",
+      "path": "src/i2/docs/STATUS.md",
+      "marker": "no independently authenticated living M11",
+      "authority": "status",
+      "blob_sha": "6d32486607ec95bea012096aa3cafb15bb71c811"
+    },
+    {
+      "id": "g4",
+      "path": "src/i2/docs/STATUS.md",
+      "marker": "no I2 confirmatory study",
+      "authority": "status",
+      "blob_sha": "6d32486607ec95bea012096aa3cafb15bb71c811"
+    },
+    {
+      "id": "h1",
+      "path": "docs/architecture/proposals/i2-continuity-and-learning-contract-2026-10-31.md",
+      "marker": "**H1 (continuité)**",
+      "authority": "proposal",
+      "blob_sha": "fcf924b73763a7c5da283480b2d6ee0da8cbfd68"
+    },
+    {
+      "id": "h2",
+      "path": "docs/architecture/proposals/i2-continuity-and-learning-contract-2026-10-31.md",
+      "marker": "**H2 (crédit différé)**",
+      "authority": "proposal",
+      "blob_sha": "fcf924b73763a7c5da283480b2d6ee0da8cbfd68"
+    },
+    {
+      "id": "h3",
+      "path": "docs/architecture/proposals/i2-continuity-and-learning-contract-2026-10-31.md",
+      "marker": "**H3 (arbitrage cohérent)**",
+      "authority": "proposal",
+      "blob_sha": "fcf924b73763a7c5da283480b2d6ee0da8cbfd68"
+    }
+  ],
+  "questions": [
+    {
+      "id": "I1-L3",
+      "generation": "I1",
+      "axis": "AXIS-ARCH",
+      "question": "Does a born individual adapt usefully in independent unfamiliar worlds?",
+      "reported_assessment": "NOT_ESTABLISHED",
+      "source_checks": [
+        "i1-l3",
+        "i1-a1c",
+        "i1-a2r",
+        "i1-matrix"
+      ],
+      "missing_evidence": "New preregistered independent-world mortal lives with controls, exact-SHA traces and a causal decision witness.",
+      "negative_or_null": "A1-C targeted NO_GO; A2-R NOT_EXECUTED (0/96)."
+    },
+    {
+      "id": "I2-H1",
+      "generation": "I2",
+      "axis": "AXIS-ACTION",
+      "question": "Can lived intention persist without inherited motor authority?",
+      "reported_assessment": "PROPOSED_NOT_ESTABLISHED",
+      "source_checks": [
+        "h1",
+        "i2-proposal"
+      ],
+      "missing_evidence": "Independent G1 review and negative motor/UC/veto/expiration controls followed by lived tests.",
+      "negative_or_null": "Synthetic G2 code does not establish physical causality."
+    },
+    {
+      "id": "I2-H2",
+      "generation": "I2",
+      "axis": "AXIS-MEMORY",
+      "question": "Can personally experienced preparation receive valid delayed credit?",
+      "reported_assessment": "PROPOSED_NOT_ESTABLISHED",
+      "source_checks": [
+        "h2",
+        "i2-proposal"
+      ],
+      "missing_evidence": "Neutral, reversed, adverse and novel-world controls, with actual physical consequences.",
+      "negative_or_null": "Retrospective I1 results cannot certify improvement."
+    },
+    {
+      "id": "I2-H3",
+      "generation": "I2",
+      "axis": "AXIS-REGULATION",
+      "question": "Can needs, exploration, sleep and learned value arbitrate under real costs?",
+      "reported_assessment": "PROPOSED_NOT_ESTABLISHED",
+      "source_checks": [
+        "h3",
+        "i2-proposal"
+      ],
+      "missing_evidence": "Independent tracing of exposure, Q read, Competition, veto, admission, physical action, UC and survival.",
+      "negative_or_null": "Option preference in a synthetic fixture is not a living action."
+    }
+  ],
+  "gates": [
+    {
+      "id": "I2-G0",
+      "generation": "I2",
+      "label": "Independently preserved I1 source/evidence baseline",
+      "reported_assessment": "PARTIAL",
+      "source_checks": [
+        "g0",
+        "i1-a1c",
+        "i1-a2r"
+      ],
+      "prerequisites": []
+    },
+    {
+      "id": "I2-G1",
+      "generation": "I2",
+      "label": "Independent review of hypotheses, ownership, crash boundaries",
+      "reported_assessment": "REVIEW_REQUIRED",
+      "source_checks": [
+        "g1",
+        "h1",
+        "h2",
+        "h3"
+      ],
+      "prerequisites": []
+    },
+    {
+      "id": "I2-G2",
+      "generation": "I2",
+      "label": "Synthetic proposal fixtures only",
+      "reported_assessment": "SYNTHETIC_ONLY",
+      "source_checks": [
+        "g2",
+        "i2-proposal"
+      ],
+      "prerequisites": []
+    },
+    {
+      "id": "I2-G3",
+      "generation": "I2",
+      "label": "Independent living WorldBody, UC, M11 and adversarial safeguards",
+      "reported_assessment": "NOT_ESTABLISHED",
+      "source_checks": [
+        "g3",
+        "i2-proposal"
+      ],
+      "prerequisites": [
+        "I2-G1"
+      ]
+    },
+    {
+      "id": "I2-G4",
+      "generation": "I2",
+      "label": "Frozen, independently reviewed confirmatory preregistration",
+      "reported_assessment": "NOT_STARTED",
+      "source_checks": [
+        "g4",
+        "i2-proposal"
+      ],
+      "prerequisites": [
+        "I2-G0",
+        "I2-G1",
+        "I2-G3"
+      ]
+    },
+    {
+      "id": "I2-G5",
+      "generation": "I2",
+      "label": "Controlled independent living I1/I2 comparison",
+      "reported_assessment": "NOT_STARTED",
+      "source_checks": [
+        "g4",
+        "i2-proposal"
+      ],
+      "prerequisites": [
+        "I2-G0",
+        "I2-G1",
+        "I2-G3",
+        "I2-G4"
+      ]
+    },
+    {
+      "id": "I2-G6",
+      "generation": "I2",
+      "label": "Explicit human scientific and architecture decision",
+      "reported_assessment": "NOT_STARTED",
+      "source_checks": [
+        "g4",
+        "i2-proposal"
+      ],
+      "prerequisites": [
+        "I2-G5"
+      ]
+    }
+  ],
+  "interventions": [
+    {
+      "id": "I2-G1-REVIEW",
+      "gate": "I2-G1",
+      "questions": [
+        "I2-H1",
+        "I2-H2",
+        "I2-H3"
+      ],
+      "issue": 662,
+      "agent_route": "i2-proposal",
+      "title": "Independently review I2 contracts before more implementation",
+      "action": "Review H1–H3, UC, expiry, motor veto, publication ownership, M11 crash and negative controls; record an external review.",
+      "expected_knowledge": "Identify contradictions and missing guarantees blocking G3.",
+      "disconfirming_result": "Unresolved crash, rollback or privileged motor state invalidates readiness.",
+      "deliverables": [
+        "Signed G1 decision",
+        "Counterexample matrix"
+      ],
+      "priority_class": "blocking",
+      "information_gain": 3,
+      "effort": 2,
+      "risk": 1,
+      "requires_gates": []
+    },
+    {
+      "id": "I1-G0-ARCHIVE",
+      "gate": "I2-G0",
+      "questions": [
+        "I1-L3"
+      ],
+      "issue": 661,
+      "agent_route": "research-evidence",
+      "title": "Verify independently reproducible I1 scientific baseline",
+      "action": "Check source protection, 8 A1-P / 48 A1-C archives, hashes, M11 provenance, negative results and independent access.",
+      "expected_knowledge": "Identify what evidence is permanently reproducible and what remains unavailable.",
+      "disconfirming_result": "Missing third-party custody or missing original traces keeps G0 PARTIAL.",
+      "deliverables": [
+        "Hash manifest",
+        "External custody audit"
+      ],
+      "priority_class": "blocking",
+      "information_gain": 3,
+      "effort": 2,
+      "risk": 1,
+      "requires_gates": []
+    },
+    {
+      "id": "I2-M11-THREAT",
+      "gate": "I2-G1",
+      "questions": [
+        "I2-H1"
+      ],
+      "issue": 664,
+      "agent_route": "i2-witness",
+      "title": "Falsify I2 independent custody before building a living runtime",
+      "action": "Model crash windows, anti-rollback outside the local SQLite, terminal seals, double-writer fencing and physical exactly-once effects.",
+      "expected_knowledge": "Determine which trust domains and witnesses are not independently established.",
+      "disconfirming_result": "Local hashes or injected witnesses alone cannot prove M11 independence.",
+      "deliverables": [
+        "Adversarial threat model",
+        "Testable failure matrix"
+      ],
+      "priority_class": "risk",
+      "information_gain": 3,
+      "effort": 2,
+      "risk": 2,
+      "requires_gates": []
+    },
+    {
+      "id": "I1-L3-READOUT",
+      "gate": "I2-G0",
+      "questions": [
+        "I1-L3"
+      ],
+      "issue": 304,
+      "agent_route": "research-evidence",
+      "title": "Reassess what I1 scientifically demonstrated",
+      "action": "Separate current software coverage, historical NO_GO, 0/96 A2-R and the smallest falsifiable residual claim.",
+      "expected_knowledge": "Pin actual failures and evidence gaps rather than increase test count.",
+      "disconfirming_result": "No generalizable effect or missing traces retains NOT_ESTABLISHED.",
+      "deliverables": [
+        "Gap/evidence matrix",
+        "Next falsifiable question"
+      ],
+      "priority_class": "knowledge",
+      "information_gain": 3,
+      "effort": 1,
+      "risk": 1,
+      "requires_gates": []
+    },
+    {
+      "id": "I2-G3-CONTRACT",
+      "gate": "I2-G3",
+      "questions": [
+        "I2-H1",
+        "I2-H2",
+        "I2-H3"
+      ],
+      "issue": 664,
+      "agent_route": "i2-proposal",
+      "title": "Design G3 independent I2 only after G1 approval",
+      "action": "Specify genuinely independent WorldBody, true UC, action admission, M11 and irreversible death without I1 imports.",
+      "expected_knowledge": "Make software gates and failure cases independently testable.",
+      "disconfirming_result": "Synthetic G2 cannot substitute for a living independent runtime.",
+      "deliverables": [
+        "Reviewed G3 contracts",
+        "Adversarial tests"
+      ],
+      "priority_class": "blocking",
+      "information_gain": 3,
+      "effort": 3,
+      "risk": 3,
+      "requires_gates": [
+        "I2-G1"
+      ]
+    },
+    {
+      "id": "I2-G4-PREREG",
+      "gate": "I2-G4",
+      "questions": [
+        "I2-H2",
+        "I2-H3"
+      ],
+      "issue": 663,
+      "agent_route": "research-evidence",
+      "title": "Preregister unbiased I1/I2 comparison",
+      "action": "Lock independent worlds, matched births, controls, N/H, censoring, predeclared statistics and stopping rules.",
+      "expected_knowledge": "Prevent post-hoc success criteria and enable falsification.",
+      "disconfirming_result": "Bias, leaked truth, insufficient controls invalidate a study.",
+      "deliverables": [
+        "Frozen protocol",
+        "Independent review"
+      ],
+      "priority_class": "blocking",
+      "information_gain": 3,
+      "effort": 3,
+      "risk": 3,
+      "requires_gates": [
+        "I2-G0",
+        "I2-G1",
+        "I2-G3"
+      ]
+    },
+    {
+      "id": "I2-G5-COMPARISON",
+      "gate": "I2-G5",
+      "questions": [
+        "I1-L3",
+        "I2-H1",
+        "I2-H2",
+        "I2-H3"
+      ],
+      "issue": 665,
+      "agent_route": "research-evidence",
+      "title": "Conduct preregistered independent lives only after G0–G4",
+      "action": "Compare independent I1/I2 births, physically lived evidence, actual outcomes and negative controls.",
+      "expected_knowledge": "Test whether experience drives useful durable adaptation.",
+      "disconfirming_result": "Null or adverse effect is NO_GO or inconclusive, never an automatic promotion.",
+      "deliverables": [
+        "Raw traces",
+        "Independent confirmatory verdict"
+      ],
+      "priority_class": "science",
+      "information_gain": 3,
+      "effort": 3,
+      "risk": 3,
+      "requires_gates": [
+        "I2-G0",
+        "I2-G1",
+        "I2-G3",
+        "I2-G4"
+      ]
+    },
+    {
+      "id": "I2-G6-DECISION",
+      "gate": "I2-G6",
+      "questions": [
+        "I1-L3",
+        "I2-H1",
+        "I2-H2",
+        "I2-H3"
+      ],
+      "issue": 665,
+      "agent_route": "research-evidence",
+      "title": "Request explicit human promotion review",
+      "action": "Submit reviewed experimental evidence, architecture safeguards and unresolved risks; do not change engine registry.",
+      "expected_knowledge": "Clarify whether I2 is genuinely supported or remains a proposal.",
+      "disconfirming_result": "Failed gates or missing evidence retain I1 active.",
+      "deliverables": [
+        "Human decision",
+        "Documented reasons"
+      ],
+      "priority_class": "science",
+      "information_gain": 2,
+      "effort": 2,
+      "risk": 3,
+      "requires_gates": [
+        "I2-G5"
+      ]
+    }
+  ],
+  "policy": {
+    "no_auto_execution": true,
+    "no_auto_promotion": true,
+    "no_auto_scientific_go": true,
+    "unreviewed_evidence_fails_closed": true,
+    "score_is_heuristic_not_probability": true,
+    "github_snapshot_max_age_hours": 24
+  },
+  "findings": [
+    {
+      "id": "I1-A1C-TARGETED-NOGO",
+      "kind": "negative_result",
+      "reported_assessment": "NO_GO",
+      "summary": "The A1-C preregistered targeted study did not meet its confirmatory criterion.",
+      "questions": [
+        "I1-L3"
+      ],
+      "gates": [
+        "I2-G0"
+      ],
+      "source_checks": [
+        "i1-a1c",
+        "g0"
+      ],
+      "scope_limit": "This does not by itself disprove every possible architecture or establish I2 effectiveness."
+    },
+    {
+      "id": "I1-A2R-NOT-EXECUTED",
+      "kind": "not_executed",
+      "reported_assessment": "NOT_EXECUTED",
+      "summary": "A2-R remains unexecuted (0/96).",
+      "questions": [
+        "I1-L3"
+      ],
+      "gates": [
+        "I2-G0"
+      ],
+      "source_checks": [
+        "i1-a2r"
+      ],
+      "scope_limit": "Missing trials cannot be counted as positive, negative, or inconclusive measured lives."
+    },
+    {
+      "id": "I1-L3-UNESTABLISHED",
+      "kind": "open_evidence_gap",
+      "reported_assessment": "NOT_ESTABLISHED",
+      "summary": "Generalized autonomous adaptive benefit at L3 is not scientifically established.",
+      "questions": [
+        "I1-L3"
+      ],
+      "gates": [],
+      "source_checks": [
+        "i1-l3",
+        "i1-matrix"
+      ],
+      "scope_limit": "A source-text match is not a new scientific assessment of HEAD."
+    },
+    {
+      "id": "I2-G2-SYNTHETIC",
+      "kind": "software_only",
+      "reported_assessment": "SYNTHETIC_ONLY",
+      "summary": "G2 implements controlled synthetic research fixtures, not independent living-world mechanisms.",
+      "questions": [
+        "I2-H1",
+        "I2-H2",
+        "I2-H3"
+      ],
+      "gates": [
+        "I2-G2"
+      ],
+      "source_checks": [
+        "g2",
+        "i2-proposal"
+      ],
+      "scope_limit": "No causal physical-world, living-birth, motor or independent M11 authority follows."
+    },
+    {
+      "id": "I2-G1-REVIEW-PENDING",
+      "kind": "pending_review",
+      "reported_assessment": "REVIEW_REQUIRED",
+      "summary": "Independent architecture/science review is still required for I2 G1.",
+      "questions": [
+        "I2-H1",
+        "I2-H2",
+        "I2-H3"
+      ],
+      "gates": [
+        "I2-G1"
+      ],
+      "source_checks": [
+        "g1",
+        "h1",
+        "h2",
+        "h3"
+      ],
+      "scope_limit": "Issue or document updates do not equal an accepted review; verify independently."
+    },
+    {
+      "id": "I2-G3-CUSTODY-GAP",
+      "kind": "open_evidence_gap",
+      "reported_assessment": "NOT_ESTABLISHED",
+      "summary": "I2 G3 does not yet establish independent living M11, UC, physical WorldBody and birth.",
+      "questions": [
+        "I2-H1",
+        "I2-H2",
+        "I2-H3"
+      ],
+      "gates": [
+        "I2-G3"
+      ],
+      "source_checks": [
+        "g3",
+        "i2-proposal"
+      ],
+      "scope_limit": "Independent physics, authority and persistence require separate reviewed evidence."
+    }
+  ],
+  "catalog_roots": [
+    "docs/research",
+    "src/i1/docs",
+    "src/i2/docs",
+    "docs/architecture/proposals",
+    "experiments"
+  ]
+}

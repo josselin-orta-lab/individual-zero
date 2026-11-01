@@ -1,0 +1,416 @@
+{
+  "schema": "individual-zero-agent-context/v1",
+  "default_route": "repository",
+  "description": "Read-only navigation hints. Source, registry, generation contracts and scientific evidence retain their own authority. These routes grant no execution, birth, recovery or scientific permissions.",
+  "routes": {
+    "repository": {
+      "generation": "any",
+      "summary": "Repository orientation and generation selection",
+      "match_paths": [
+        "README.md",
+        "AGENTS.md",
+        "config/engine-registry.json"
+      ],
+      "keywords": [
+        "onboarding",
+        "repository",
+        "generations"
+      ],
+      "documents": [
+        "AGENTS.md",
+        "docs/engineering/AGENT_NAVIGATION.md",
+        "docs/engineering/START_HERE.md"
+      ],
+      "owners": [
+        "config/engine-registry.json"
+      ],
+      "tests": [
+        "tests/test_repo_navigation.py"
+      ],
+      "invariants": [
+        "Registry decides the active generation; generation engine.json and executable code decide what can run.",
+        "A software PASS never implies a scientific GO."
+      ],
+      "checks": [
+        "python tools/check_repo_navigation.py --scope entrypoints"
+      ]
+    },
+    "i1-core": {
+      "generation": "I1",
+      "summary": "Active I1 architecture, Lab and runtime integration",
+      "match_paths": [
+        "src/i1/",
+        "tests/i1/"
+      ],
+      "keywords": [
+        "i1 runtime",
+        "i1 birth",
+        "i1 lab",
+        "i1 architecture"
+      ],
+      "documents": [
+        "src/i1/AGENTS.md",
+        "src/i1/docs/README.md",
+        "src/i1/docs/STATUS.md",
+        "src/i1/docs/COGNITIVE_FLOW.md",
+        "src/i1/docs/EVIDENCE_MATRIX.md"
+      ],
+      "owners": [
+        "src/i1/engine.json",
+        "src/i1/runtime/",
+        "src/i1/lab/"
+      ],
+      "tests": [
+        "tests/i1/"
+      ],
+      "invariants": [
+        "Only actual I1 birth/runtime wiring proves activation.",
+        "First-person observations, paid UC, irreversible mortality and M11 custody apply."
+      ],
+      "checks": [
+        "python scripts/check_engine_contracts.py --json",
+        "python scripts/check_engine_repository.py --json"
+      ]
+    },
+    "i1-action": {
+      "generation": "I1",
+      "summary": "I1 candidate arbitration, Competition and Action Control",
+      "match_paths": [
+        "src/i1/modules/competition.py",
+        "src/i1/modules/action_control.py",
+        "src/i1/modules/planning.py",
+        "src/i1/modules/goal_manager.py"
+      ],
+      "keywords": [
+        "competition",
+        "action control",
+        "action selection",
+        "goal arbitration"
+      ],
+      "documents": [
+        "src/i1/AGENTS.md",
+        "src/i1/docs/NEEDS_AND_ACTION.md",
+        "src/i1/docs/STAGES_AND_INTERFACES.md"
+      ],
+      "owners": [
+        "src/i1/modules/competition.py",
+        "src/i1/modules/action_control.py"
+      ],
+      "tests": [
+        "tests/i1/test_i1_competition_fallback_adjudication.py"
+      ],
+      "invariants": [
+        "Candidates and opinions are not motor authority; admission follows the actual action boundary.",
+        "No hidden-world oracle, forced actions or free UC."
+      ],
+      "checks": [
+        "python -m unittest discover -s tests/i1 -p 'test_i1_competition_fallback_adjudication.py' -v"
+      ]
+    },
+    "i1-memory": {
+      "generation": "I1",
+      "summary": "I1 autobiographical memory and paid consolidation",
+      "match_paths": [
+        "src/i1/modules/memory.py",
+        "src/i1/modules/consolidation_",
+        "src/i1/modules/paid_action_consolidation.py",
+        "src/i1/runtime/consolidation_"
+      ],
+      "keywords": [
+        "autobiographical memory",
+        "memory consolidation",
+        "memory",
+        "sleep consolidation"
+      ],
+      "documents": [
+        "src/i1/AGENTS.md",
+        "src/i1/docs/MEMORY_AND_LEARNING.md",
+        "src/i1/docs/CONSOLIDATION_AND_PUBLICATION.md",
+        "src/i1/docs/UC_AND_SCHEDULING.md"
+      ],
+      "owners": [
+        "src/i1/modules/memory.py",
+        "src/i1/modules/consolidation_transaction.py"
+      ],
+      "tests": [
+        "tests/i1/test_i1_autobiographical_read_equivalence.py"
+      ],
+      "invariants": [
+        "Memory provenance is first-person and generation-owned.",
+        "Consolidation has actual paid UC and respects M11 custody."
+      ],
+      "checks": [
+        "python -m unittest discover -s tests/i1 -p 'test_i1_autobiographical_read_equivalence.py' -v"
+      ]
+    },
+    "i1-m11": {
+      "generation": "I1",
+      "summary": "I1 mortal persistence and M11 restoration constraints",
+      "match_paths": [
+        "src/i1/runtime/m11_transactional_mortal.py",
+        "src/i1/runtime/sqlite_life_store.py",
+        "src/i1/runtime/sqlite_runtime_custody.py"
+      ],
+      "keywords": [
+        "m11",
+        "mortal persistence",
+        "cold recovery",
+        "rollback",
+        "postmortem"
+      ],
+      "documents": [
+        "src/i1/AGENTS.md",
+        "src/i1/docs/MORTALITY_AND_M11.md",
+        "src/i1/docs/DATA_CONTRACTS_AND_CUSTODY.md"
+      ],
+      "owners": [
+        "src/i1/runtime/m11_transactional_mortal.py",
+        "src/i1/runtime/sqlite_runtime_custody.py"
+      ],
+      "tests": [
+        "tests/i1/test_i1_m11_adversarial.py"
+      ],
+      "invariants": [
+        "No postmortem recovery, hidden rollback, cross-generation restoration or resurrection.",
+        "A synthetic or locally consistent witness is not independent authentication."
+      ],
+      "checks": [
+        "python -m unittest discover -s tests/i1 -p 'test_i1_m11_adversarial.py' -v"
+      ]
+    },
+    "i2-proposal": {
+      "generation": "I2",
+      "summary": "I2 independent synthetic proposal, not a registered living generation",
+      "match_paths": [
+        "src/i2/",
+        "tests/i2/"
+      ],
+      "keywords": [
+        "i2",
+        "i2 proposal",
+        "synthetic cognitive cycle",
+        "unified synthetic"
+      ],
+      "documents": [
+        "src/i2/AGENTS.md",
+        "src/i2/docs/README.md",
+        "src/i2/docs/STATUS.md",
+        "src/i2/docs/ARCHITECTURE.md",
+        "src/i2/docs/TEST_PLAN.md"
+      ],
+      "owners": [
+        "src/i2/engine.json",
+        "src/i2/modules/"
+      ],
+      "tests": [
+        "tests/i2/"
+      ],
+      "invariants": [
+        "I2 is proposal-only: unregistered, not executable and not born.",
+        "Synthetic opinions, UC and witness fixtures grant no motor, recovery or scientific rights."
+      ],
+      "checks": [
+        "python -m unittest discover -s tests/i2 -p 'test_*.py' -v"
+      ]
+    },
+    "i2-witness": {
+      "generation": "I2",
+      "summary": "I2 synthetic external, file and uncertain-state witnesses",
+      "match_paths": [
+        "src/i2/modules/lifecycle_external_witness.py",
+        "src/i2/modules/operator_file_witness.py",
+        "src/i2/modules/challenge_witness_",
+        "src/i2/modules/uncertain_witness_inspection.py",
+        "tests/i2/test_lifecycle_external_witness.py",
+        "tests/i2/test_uncertain_witness_inspection.py"
+      ],
+      "keywords": [
+        "external witness",
+        "challenge witness",
+        "witness",
+        "independent witness",
+        "witness inspection"
+      ],
+      "documents": [
+        "src/i2/AGENTS.md",
+        "src/i2/docs/LIFECYCLE_EXTERNAL_WITNESS.md",
+        "src/i2/docs/OPERATOR_FILE_WITNESS.md",
+        "src/i2/docs/STATUS.md"
+      ],
+      "owners": [
+        "src/i2/modules/lifecycle_external_witness.py",
+        "src/i2/modules/uncertain_witness_inspection.py"
+      ],
+      "tests": [
+        "tests/i2/test_lifecycle_external_witness.py",
+        "tests/i2/test_uncertain_witness_inspection.py"
+      ],
+      "invariants": [
+        "G2 fixtures are diagnostic and synthetic; no independent M11 authenticity is established.",
+        "Never allow uncertain-state inspection to authorize retry, recovery, birth or action."
+      ],
+      "checks": [
+        "python -m unittest discover -s tests/i2 -p 'test_*witness*.py' -v"
+      ]
+    },
+    "research-evidence": {
+      "generation": "any",
+      "summary": "Research questions, preregistrations and reproducible evidence",
+      "match_paths": [
+        "docs/research/",
+        "experiments/",
+        "benchmarks/"
+      ],
+      "keywords": [
+        "experiment",
+        "preregistration",
+        "scientific evidence",
+        "heldout",
+        "research result"
+      ],
+      "documents": [
+        "docs/research/README.md",
+        "docs/engineering/DOCUMENT_AUTHORITY.md",
+        "src/i1/docs/EVIDENCE_MATRIX.md",
+        "src/i2/docs/STATUS.md"
+      ],
+      "owners": [
+        "experiments/",
+        "docs/research/"
+      ],
+      "tests": [],
+      "invariants": [
+        "A dated result is evidence about its exact protocol and SHA, not an instruction for HEAD.",
+        "Negative and NOT_EXECUTED results remain visible; software correctness is not scientific validity."
+      ],
+      "checks": [
+        "python tools/check_repo_navigation.py --scope current"
+      ]
+    },
+    "tooling-ci": {
+      "generation": "any",
+      "summary": "Engineering scripts, workflow selection and repository checks",
+      "match_paths": [
+        "scripts/",
+        "tools/",
+        ".github/workflows/",
+        "config/tool-inventory.json",
+        "config/script-custody.json"
+      ],
+      "keywords": [
+        "script",
+        "workflow",
+        "github actions",
+        "ci",
+        "tooling"
+      ],
+      "documents": [
+        "docs/engineering/START_HERE.md",
+        "docs/engineering/SCRIPT_INVENTORY.md",
+        "docs/engineering/AGENT_CONTEXT.md"
+      ],
+      "owners": [
+        "tools/",
+        "scripts/",
+        ".github/workflows/"
+      ],
+      "tests": [
+        "tests/test_repo_navigation.py",
+        "tests/test_agent_context.py"
+      ],
+      "invariants": [
+        "Script inventory classifies paths but does not prove historical scripts unused.",
+        "Do not run expensive scientific cohorts or legacy workflows from routing suggestions."
+      ],
+      "checks": [
+        "python tools/check_tool_inventory.py",
+        "python tools/agent_context.py audit --json"
+      ]
+    },
+    "research-coordination": {
+      "generation": "any",
+      "summary": "Establish global research status, trace negative/uncertain evidence, inspect coverage gaps and prioritize falsifiable interventions",
+      "match_paths": [
+        "config/research-program.json",
+        "tools/research_coordinator.py",
+        "tests/test_research_coordinator.py",
+        "docs/engineering/RESEARCH_COORDINATOR.md",
+        "tools/research_corpus.py",
+        "tests/test_research_corpus.py",
+        "docs/engineering/RESEARCH_CORPUS.md",
+        "config/research-dossiers.json",
+        "tools/research_dossiers.py",
+        "tests/test_research_dossiers.py",
+        "docs/engineering/RESEARCH_DOSSIERS.md"
+      ],
+      "keywords": [
+        "global research",
+        "research coordination",
+        "next intervention",
+        "scientific bottlenecks",
+        "research roadmap",
+        "corpus ingestion",
+        "experiment relation",
+        "research dossier",
+        "protocol outcome",
+        "independent evidence review"
+      ],
+      "documents": [
+        "docs/engineering/RESEARCH_COORDINATOR.md",
+        "src/i1/docs/EVIDENCE_MATRIX.md",
+        "src/i1/docs/STATUS.md",
+        "src/i2/docs/STATUS.md",
+        "docs/architecture/proposals/i2-transition-and-scientific-gates-2026-10-31.md",
+        "docs/engineering/RESEARCH_CORPUS.md",
+        "docs/engineering/RESEARCH_DOSSIERS.md"
+      ],
+      "owners": [
+        "config/research-program.json",
+        "config/engine-registry.json",
+        "tools/research_corpus.py",
+        "config/research-dossiers.json"
+      ],
+      "tests": [
+        "tests/test_research_coordinator.py",
+        "tests/test_research_knowledge.py",
+        "tests/test_research_corpus.py",
+        "tests/test_research_dossiers.py"
+      ],
+      "invariants": [
+        "Source-marker matching is not evidence or gate approval.",
+        "No automatic execution, birth, cohort launch or I2 promotion.",
+        "Retain negative and unexecuted outcomes and review G0/G1 before living comparisons."
+      ],
+      "checks": [
+        "python tools/research_coordinator.py audit",
+        "python -m unittest discover -s tests -p test_research_coordinator.py -v",
+        "python -m unittest discover -s tests -p test_research_knowledge.py -v",
+        "python -m unittest discover -s tests -p test_research_corpus.py -v",
+        "python tools/research_dossiers.py audit",
+        "python -m unittest discover -s tests -p test_research_dossiers.py -v"
+      ]
+    }
+  },
+  "workflows": {
+    ".github/workflows/agent-context-static.yml": {
+      "classification": "lightweight_static",
+      "execution": "scoped_pr",
+      "note": "Only agent navigation files and focused unit tests."
+    },
+    ".github/workflows/engine-structural.yml": {
+      "classification": "structural",
+      "execution": "manual_or_called",
+      "note": "May invoke generation structure checks; inspect exact workflow first."
+    },
+    ".github/workflows/i1-current-ci.yml": {
+      "classification": "expensive_runtime_ci",
+      "execution": "path_gated_or_manual",
+      "note": "May run full I1 integration and M11 checks; not for navigation-only edits."
+    },
+    ".github/workflows/i2-proposal-safety.yml": {
+      "classification": "synthetic_proposal_checks",
+      "execution": "path_gated",
+      "note": "Tests I2 fixtures only; not birth or scientific promotion."
+    }
+  }
+}
