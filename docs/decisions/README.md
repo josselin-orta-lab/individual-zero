@@ -61,3 +61,5 @@ A filled illustrative example is available in [../../examples/adr-example.md](..
 - [ADR-0002: scientific prototype first and drift escalation](ADR-0002-scientific-prototype-first.md) (1 November 2026). Prioritize falsifiable end-to-end behavior and flag research-direction drift; does not authorize a living I2.
 
 - [ADR-0003: integrated living I2 demonstration as the next milestone](ADR-0003-integrated-living-i2-milestone.md) (1 November 2026). Reaffirm the scientific goal and narrow the route through independent G1 review; no living authorization.
+
+- [ADR-0004: evidence-driven development and G2 stop rule](ADR-0004-evidence-driven-development-and-g2-stop-rule.md) (1 November 2026). Next I2 task is independent G1 review and then the minimum G3 living loop; no synthetic G2 campaign or permission bypass.

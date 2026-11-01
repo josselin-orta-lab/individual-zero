@@ -14,13 +14,27 @@ For synthetic changes, use `python -m unittest discover -s tests/i2 -p 'test_*.p
 
 [ADR-0002](../../docs/decisions/ADR-0002-scientific-prototype-first.md) requires **science-first, minimum integrated** offline I2 prototypes. Initial H2 slice: controlled experience -> claimed subjective evidence -> past-only credit -> paid Competition advice -> separately labelled offline shadow outcome, with no-H2 ablation and negative cases. Do not create another living state owner or confuse software tests with a valid H1/H2/H3 study. Signal **DRIFT DETECTED** if the next change adds complexity without helping a falsifiable end-to-end question. G1/G3 remain blocked.
 
-## Next milestone: living causal loop, after independent G1 review
+## Current stop rule and next milestone (owner-approved)
 
-[ADR-0003](../../docs/decisions/ADR-0003-integrated-living-i2-milestone.md)
-records the owner-approved priority: a minimum born I2 must eventually
-perceive, propose and receive an admitted physical action, experience its
-WorldBody consequence and change a later choice, versus an equal-resource
-learning ablation. The offline chosen-only revisit study is only a short G2
-diagnostic, not a substitute for that milestone. Request the independent G1
-review in #662 before implementing or enabling any living authority. Do not
-add new standalone G2 owners or endlessly polish synthetic witnesses.
+Follow [ADR-0003](../../docs/decisions/ADR-0003-integrated-living-i2-milestone.md)
+and [ADR-0004](../../docs/decisions/ADR-0004-evidence-driven-development-and-g2-stop-rule.md).
+**After merged PR #786, do not start another open-ended G2 observational,
+revisit, constant-tuning or synthetic guard campaign.** Only fix a
+reproducible scientific-validity defect, remove a specifically documented
+critical-path blocker or act on independent G1 review feedback. Do not
+add a separate cognition/WorldBody/UC/M11 owner.
+
+**Current allowed work:** prepare, request and reconcile independent
+architecture and scientific reviews of the [minimal G1 loop
+brief](../../docs/architecture/proposals/i2-g1-minimal-living-loop-review-brief-2026-11-01.md)
+under #662, plus independent G0 custody under #661. The chosen candidate
+is an *internal deterministic physical state transition under one future
+generation owner*, with a separate independent monotone latest-head
+authority, not another simulated controller. This is a REVIEW CANDIDATE,
+not an accepted architecture.
+
+**Only after documented independent G1 approval:** build a single
+physical, paid, born I2 causal loop for #664, with natural collect/eat
+decisions, real WorldBody consequence, later first-person learning and a
+no-learning comparator. Do not activate from G2 tests, grant motor authority,
+claim M11, or run mortal cohorts before the proper gates.

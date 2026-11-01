@@ -79,6 +79,27 @@ The [initial dated G0 metadata audit](../research/audits/I1_G0_PROVIDER_ARTIFACT
 
 Use `python tools/research_dossiers.py show --id I1-G0-CUSTODY` and `python tools/research_dossiers.py g0-provider-inventory` to identify the immediate preservation dependency before proposing living G3 work. Metadata validation does not authorize a study, change the scientific verdict, or prove the artifacts are still available after the dated observation.
 
+## Current owner-approved intervention priority (ADR-0004, 1 November 2026)
+
+**Stop open-ended G2 work after PR #786.** H2 observed-action and unforced
+collect/eat pilots exposed necessary limits but do not demonstrate a living
+I2 or generalizable adaptation. Further constant tuning, parallel
+synthetic witnesses/owners or more G2-only tests are not the critical path.
+Exception: a reproducible science-validity defect, a proven immediate
+dependency, or independent G1 reviewer feedback.
+
+The next I2 development action is an **independent, exact-SHA G1
+architecture/science review** (#662), supported by the [one-page
+implementation handoff](../architecture/proposals/i2-g1-minimal-living-loop-review-brief-2026-11-01.md),
+plus independent G0 evidence custody (#661). The recommender already
+prioritizes these blocking tasks; **do not change its scoring to manufacture
+progress**. After the gates, implement one minimal independent
+WorldBody -> subjective capture -> paid cognition -> admitted act ->
+next-capture learning loop (#664), not individual subcomponent campaigns.
+A missing independent reviewer or external witness is a **blocking
+dependency to report**; no agent can self-certify an independent verdict.
+See [ADR-0004](../decisions/ADR-0004-evidence-driven-development-and-g2-stop-rule.md).
+
 ## Agent decision cycle
 
 1. Re-read HEAD, registry, engine contracts, current statuses, evidence matrix and this program. Flag contradictions.
