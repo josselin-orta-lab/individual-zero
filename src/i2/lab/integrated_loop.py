@@ -235,6 +235,119 @@ class IntegratedLab:
             genesis_ref=self.genesis_ref, terminal_source=self.terminal_source,
         )
 
+    def _verify_causal_history(
+        self, *, meta: dict, records: tuple[dict, ...],
+        cognitive_events: tuple[tuple, ...], capacity: int,
+    ) -> None:
+        """Replay every local body and past-only choice, not just the last row.
+
+        An event-head reference is one-way: the v5 cognitive hash does NOT
+        cryptographically commit the body rows. Replaying them detects
+        inconsistent laboratory traces, NOT independently authenticated M11.
+        """
+        from i2.modules.chosen_outcome_study import observed_chosen_scores
+
+        energy, inventory, resources = (
+            meta["initial_energy"], 0, meta["initial_resources"],
+        )
+        uc_remaining = capacity
+        seen_terminal = False
+        past: list[ObservedChosenResult] = []
+        for index, (record, saved) in enumerate(zip(records, cognitive_events)):
+            seq = index + 1
+            if seen_terminal or record["seq"] != seq or saved[0] != seq:
+                raise LabRefusal("lab history crossed terminal or skipped a revision")
+            if type(energy) is not int or type(inventory) is not int or type(resources) is not int:
+                raise LabRefusal("invalid replayed body fields")
+            offered = _visible(inventory, resources)
+            capture_step = FIRST_STEP + STEP_GAP * index
+            capture_ref = f"capture:lab:{index}"
+            # Evidence must be issued only for PREVIOUS committed chosen actions.
+            evidence = tuple(sorted(
+                [f"evidence:lab:{index}"] +
+                [r.evidence_ref for r in past]
+            ))
+            claim = ObservationClaim(
+                self.life_ref,
+                FirstPersonCapture(capture_step, capture_ref, "goal:food", offered),
+                f"source:lab:past:{index}", evidence,
+            )
+            event = json.loads(saved[3])
+            if (record["capture_ref"] != capture_ref or
+                    record["capture_step"] != capture_step or
+                    record["offered_json"] != _json(offered) or
+                    record["observed_step"] != capture_step + 1 or
+                    record["before_energy"] != energy or
+                    saved[1] != capture_ref or
+                    event["claim_digest"] != claim.digest() or
+                    event["claim"]["source_event_ref"] != claim.source_event_ref or
+                    tuple(event["claim"]["subjective_evidence_refs"]) != evidence or
+                    event["claim"]["capture"]["accessible_semantics"] != list(offered)):
+                raise LabRefusal("lab capture or subjective history contradicts body")
+            frame, review = event["frame"], event["control_review"]
+            status = None if review is None else review["status"]
+            if status != record["control_status"]:
+                raise LabRefusal("lab safety review status not replayable")
+            chosen = None
+            if status == "REVIEWED_NOT_ADMITTED":
+                if frame is None or review is None:
+                    raise LabRefusal("missing paid frame for lab action")
+                ref = review["suggested_candidate_ref"]
+                candidates = [c["semantic_ref"] for c in frame["candidates"]
+                              if c["candidate_ref"] == ref]
+                if len(candidates) != 1 or candidates[0] not in offered:
+                    raise LabRefusal("lab action was not the reviewed candidate")
+                chosen = candidates[0]
+            elif review is not None and review["suggested_candidate_ref"] is not None:
+                raise LabRefusal("veto or abstention applied action")
+            if record["action_ref"] != chosen:
+                raise LabRefusal("lab action differs from paid cognitive advice")
+            if frame is not None:
+                previous = tuple(past) if meta["learning"] else ()
+                scores = observed_chosen_scores(
+                    claim=claim, results=previous,
+                    source=_StoredResultSource(tuple(past)), priors=PRIORS,
+                )
+                values = event["advice"]["values"]
+                by_candidate = {c["candidate_ref"]: c["semantic_ref"]
+                                for c in frame["candidates"]}
+                if (len(values) != len(by_candidate) or
+                        any(v["candidate_ref"] not in by_candidate or
+                            v["value"] != scores[by_candidate[v["candidate_ref"]]]
+                            for v in values)):
+                    raise LabRefusal("lab score uses absent or altered chosen outcome")
+            before = energy
+            physical_net = -1  # passive metabolism on abstention
+            if chosen == COLLECT:
+                if resources <= 0:
+                    raise LabRefusal("lab collected absent resource")
+                resources -= 1
+                inventory += 1
+                physical_net = -2
+            elif chosen == EAT:
+                if inventory <= 0:
+                    raise LabRefusal("lab ate absent inventory")
+                inventory -= 1
+                physical_net = meta["deltas"][index] - 2
+            elif chosen == DRINK:
+                physical_net = -2
+            energy = min(100, max(0, energy + physical_net))
+            seen_terminal = energy == 0
+            uc_remaining -= (event["intake_uc"] +
+                             event["competition_uc"] + event["control_uc"])
+            if (record["net"] != energy - before or
+                    record["energy"] != energy or
+                    record["inventory"] != inventory or
+                    record["resources"] != resources or
+                    record["terminal"] != int(seen_terminal) or
+                    record["uc_remaining"] != uc_remaining):
+                raise LabRefusal("lab effect or paid UC history cannot replay")
+            if chosen is not None:
+                past.append(ObservedChosenResult(
+                    self.life_ref, capture_ref, chosen, capture_step + 1,
+                    f"evidence:lab:result:{seq}", record["net"],
+                ))
+
     def audit(self) -> dict:
         """Cross-check local lab and cognitive journal. NOT remote attestation."""
         meta, state, records = self._read()
@@ -246,9 +359,12 @@ class IntegratedLab:
                 cognitive["motor_authority"] != "NONE"):
             raise LabRefusal("cognitive and body revisions diverge")
         with self._connect() as db:
-            stored = db.execute("SELECT seq,capture_ref,event_hash FROM events ORDER BY seq").fetchall()
-        if any((row["seq"], row["capture_ref"], row["cognition_head"]) != stored[i]
-               for i, row in enumerate(records)):
+            stored = tuple(db.execute(
+                "SELECT seq,capture_ref,event_hash,event_json FROM events ORDER BY seq"
+            ).fetchall())
+        if (len(stored) != len(records) or
+                any((row["seq"], row["capture_ref"], row["cognition_head"]) != stored[i][:3]
+                    for i, row in enumerate(records))):
             raise LabRefusal("lab transition not bound to paid cognition")
         if records:
             final = records[-1]
@@ -261,6 +377,9 @@ class IntegratedLab:
                 raise LabRefusal("noncanonical lab genesis")
         with self._connect() as db:
             capacity = db.execute("SELECT capacity FROM identity WHERE id=1").fetchone()[0]
+        self._verify_causal_history(
+            meta=meta, records=records, cognitive_events=stored, capacity=capacity,
+        )
         return {"cognition": cognitive, "revision": state[0], "energy": state[1],
                 "inventory": state[2], "resources": state[3],
                 "terminal": bool(state[4]), "learning": meta["learning"],
