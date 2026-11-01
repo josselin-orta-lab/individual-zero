@@ -12,7 +12,7 @@ A new process may inspect the journal, but cannot resume this prototype.
 from __future__ import annotations
 
 import argparse
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from hashlib import sha256
 import json
 from pathlib import Path
@@ -30,7 +30,7 @@ from i2.modules.cognitive_cycle_fixture import (
 )
 from i2.modules.intention_continuity import FirstPersonCapture
 from i2.modules.intention_ingress import ObservationClaim, INTAKE_UC
-from i2.modules.competition_preview import UC_PER_CANDIDATE
+from i2.modules.competition_preview import UC_PER_CANDIDATE, MAX_VALUE_MAGNITUDE
 from i2.modules.action_control_boundary import CONTROL_UC
 
 COLLECT = "affordance:collect:berry_a"
@@ -132,14 +132,12 @@ class _SafetyPort:
                    if c.candidate_ref == candidate_ref]
         if len(offered) != 1:
             raise PrototypeRefusal("reflex safety candidate is not in paid frame")
-        # A low reserve forbids a speculative EAT, not the physical clock.
-        # No unchosen payoff is predicted and no alternative is forced.
-        reflex_veto = offered[0] == EAT and reflex.state in ("PREEMPT", "CONSTRAIN")
+        # The reflex changes paid *priority*, never the safety veto.
+        # Explicit safety constraints still take precedence over exploration.
         return SafetyFinding(
             life_ref, frame.frame_ref, frame.capture_ref, candidate_ref,
-            control_receipt_ref, self.veto or reflex_veto,
-            (reflex.evidence_ref if reflex_veto else
-             "evidence:i2:internal-safety-review"),
+            control_receipt_ref, self.veto,
+            "evidence:i2:internal-safety-review",
         )
 
 
@@ -151,6 +149,48 @@ class _TerminalPort:
 class _UnusedValuation:
     def evaluate_batch(self, **kwargs: object) -> tuple:
         raise PrototypeRefusal("valuation is unavailable during journal inspection")
+
+
+class _LastResortValuation(ChosenOutcomeValuationStudy):
+    """A categorical last-resort priority in the *paid* existing batch.
+
+    Does not change the original H2 scores or infer hidden food payoff.
+    Only the current capture-bound local energy source can request EAT.
+    Its priority is marked in the published subjective value's evidence ref.
+    """
+
+    def __init__(self, *, reflex: LocalEnergySurvivalReflex, **kwargs: object):
+        super().__init__(**kwargs)
+        if reflex.claim != self.claim:
+            raise PrototypeRefusal("foreign or stale survival priority")
+        self.reflex = reflex
+
+    def evaluate_batch(self, *, frame: object, receipts: tuple) -> tuple:
+        values = super().evaluate_batch(frame=frame, receipts=receipts)
+        priority = self.reflex.last_resort_food_priority()
+        if priority is None:
+            return values
+        by_semantic = {
+            c.candidate_ref: c.semantic_ref for c in frame.candidates
+        }
+        candidates = [v for v in values if by_semantic[v.candidate_ref] == priority]
+        if len(candidates) != 1:
+            raise PrototypeRefusal("last-resort food absent from paid batch")
+        # If EAT already wins uniquely, no artificial boost is needed.
+        competitors = [v.value for v in values
+                       if v.candidate_ref != candidates[0].candidate_ref]
+        if not competitors or candidates[0].value > max(competitors):
+            return values
+        top = max(v.value for v in values)
+        # Categorical ordering, not a tuned reward or a claim food is safe.
+        if top >= MAX_VALUE_MAGNITUDE:
+            raise PrototypeRefusal("cannot encode bounded last-resort priority")
+        return tuple(
+            replace(v, value=top + 1,
+                    evidence_ref=v.evidence_ref + ":last-resort-energy")
+            if v is candidates[0] else v
+            for v in values
+        )
 
 
 class _PreviousResults:
@@ -195,8 +235,11 @@ class IsolatedI2:
     @classmethod
     def create(cls, path: Path, *, learning: bool, impulses: tuple[int, ...],
                initial_uc: int = 60, initial_energy: int = 40,
-               resources: int = 8) -> IsolatedI2:
-        if (type(learning) is not bool or type(impulses) is not tuple or
+               resources: int = 8,
+               last_resort_exploration: bool = False) -> IsolatedI2:
+        if (type(learning) is not bool or
+                type(last_resort_exploration) is not bool or
+                type(impulses) is not tuple or
                 not 1 <= len(impulses) <= MAX_STEPS or
                 any(type(n) is not int or not -8 <= n <= 8 for n in impulses)
                 or type(initial_uc) is not int or not 0 <= initial_uc <= 1000
@@ -223,6 +266,8 @@ class IsolatedI2:
                     id INTEGER PRIMARY KEY CHECK(id=1),
                     life_ref TEXT NOT NULL, genesis_ref TEXT NOT NULL,
                     learning INTEGER NOT NULL CHECK(learning IN (0,1)),
+                    last_resort_exploration INTEGER NOT NULL
+                        CHECK(last_resort_exploration IN (0,1)),
                     impulses_json TEXT NOT NULL,
                     initial_energy INTEGER NOT NULL, initial_resources INTEGER NOT NULL);
                 CREATE TABLE proto_state(
@@ -250,8 +295,9 @@ class IsolatedI2:
                     cognition_head TEXT NOT NULL UNIQUE);
             """)
             db.execute("BEGIN IMMEDIATE")
-            db.execute("INSERT INTO proto_meta VALUES(1,?,?,?,?,?,?)", (
-                obj.life_ref, obj.genesis_ref, int(learning), _json(impulses),
+            db.execute("INSERT INTO proto_meta VALUES(1,?,?,?,?,?,?,?)", (
+                obj.life_ref, obj.genesis_ref, int(learning),
+                int(last_resort_exploration), _json(impulses),
                 initial_energy, resources))
             db.execute("INSERT INTO proto_state VALUES(1,0,?,0,?,0,0)",
                        (initial_energy, resources))
@@ -407,11 +453,10 @@ class IsolatedI2:
                 if len(selected_semantics) != 1:
                     raise PrototypeRefusal("unbound reflex safety candidate")
                 local_reflex = LocalEnergySurvivalReflex(claim, energy)
-                required_veto = (selected_semantics[0] == EAT and
-                                 local_reflex.state in ("PREEMPT", "CONSTRAIN"))
-                if required_veto and (safety["veto"] is not True or
-                                      safety["evidence_ref"] != local_reflex.evidence_ref):
-                    raise PrototypeRefusal("survival reflex veto bypassed in journal")
+                if (local_reflex.last_resort_food_priority() == EAT and
+                        selected_semantics[0] != EAT and
+                        safety["evidence_ref"] == local_reflex.evidence_ref):
+                    raise PrototypeRefusal("reflex evidence forged as veto")
             action = None
             if status == "REVIEWED_NOT_ADMITTED":
                 if frame is None or review is None:
@@ -443,11 +488,26 @@ class IsolatedI2:
                 mapped = {c["candidate_ref"]: c["semantic_ref"]
                           for c in frame["candidates"]}
                 values = event["advice"]["values"]
+                priority = (LocalEnergySurvivalReflex(
+                    claim, energy).last_resort_food_priority()
+                    if meta["last_resort_exploration"] else None)
+                priority_applied = False
+                if priority in mapped.values():
+                    competing = [scores[k] for k in mapped.values() if k != priority]
+                    if competing and scores[priority] <= max(competing):
+                        top = max(scores[k] for k in mapped.values())
+                        if top >= MAX_VALUE_MAGNITUDE:
+                            raise PrototypeRefusal("last-resort score cannot be bounded")
+                        scores[priority] = top + 1
+                        priority_applied = True
                 if (len(values) != len(mapped) or any(
                         v["candidate_ref"] not in mapped
                         or v["value"] != scores[mapped[v["candidate_ref"]]]
+                        or (v["evidence_ref"].endswith(":last-resort-energy") !=
+                            (priority_applied and
+                             mapped[v["candidate_ref"]] == priority))
                         for v in values)):
-                    raise PrototypeRefusal("unobserved outcome influenced paid score")
+                    raise PrototypeRefusal("unobserved or unbound priority influenced paid score")
             before = energy
             cost = 1 if action is None else 2
             impulse = 0
@@ -571,6 +631,10 @@ class IsolatedI2:
                     if meta["learning"] else ()
                 ),
                 "candidate_scores": dict(sorted(values.items())),
+                "last_resort_priority_applied": any(
+                    v["evidence_ref"].endswith(":last-resort-energy")
+                    for v in (advice["values"] if advice is not None else ())
+                ),
                 "chosen": row["action_ref"],
                 "control_status": row["control_status"],
                 "internal_admission": row["admission_ref"] is not None,
@@ -875,8 +939,15 @@ class IsolatedI2:
         self.safety.veto = veto
         self.safety.energy_reflex = LocalEnergySurvivalReflex(claim, state["energy"])
         past = self._history(records) if meta["learning"] else ()
-        valuation = ChosenOutcomeValuationStudy(
-            claim=claim, results=past, source=_PreviousResults(past), priors=PRIORS)
+        evaluator = (_LastResortValuation if meta["last_resort_exploration"]
+                     else ChosenOutcomeValuationStudy)
+        valuation_args = dict(
+            claim=claim, results=past, source=_PreviousResults(past),
+            priors=PRIORS,
+        )
+        valuation = (evaluator(reflex=self.safety.energy_reflex, **valuation_args)
+                     if meta["last_resort_exploration"] else
+                     evaluator(**valuation_args))
         fixture = self._fixture(valuation)
         try:
             if index == 0:
@@ -991,7 +1062,8 @@ def paired_decision_contrast(
     }
 
 
-def demo(scenario: str, *, steps: int = 6) -> dict:
+def demo(scenario: str, *, steps: int = 6,
+         last_resort_exploration: bool = False) -> dict:
     """Tiny disposable engineering smoke only, NOT a scientific replicate."""
     if scenario not in SCENARIOS or type(steps) is not int or not 1 <= steps <= MAX_STEPS:
         raise PrototypeRefusal("unknown or unbounded demo")
@@ -1003,7 +1075,8 @@ def demo(scenario: str, *, steps: int = 6) -> dict:
         for learning, label in ((True, "observed_chosen"), (False, "fixed")):
             individual = IsolatedI2.create(
                 Path(root) / (label + ".sqlite"), learning=learning,
-                impulses=SCENARIOS[scenario][:steps])
+                impulses=SCENARIOS[scenario][:steps],
+                last_resort_exploration=last_resort_exploration)
             trace = []
             while len(trace) < steps:
                 outcome = individual.step()
@@ -1016,7 +1089,9 @@ def demo(scenario: str, *, steps: int = 6) -> dict:
                 "audit": individual.audit(),
             }
     return {"status": "ISOLATED_RESEARCH_PROTOTYPE_ONLY",
-            "scenario": scenario, "arms": arms,
+            "scenario": scenario,
+            "last_resort_exploration": last_resort_exploration,
+            "arms": arms,
             "behavioral_contrast": paired_decision_contrast(
                 arms["observed_chosen"]["decisions"], arms["fixed"]["decisions"]),
             "scientific_verdict": "NOT_ESTABLISHED",
@@ -1087,9 +1162,11 @@ def paired_world_endpoints(observed: dict, fixed: dict) -> dict:
 
 def world_demo(scenario: str, *, ticks: int = 12,
                initial_uc: int = 60, initial_energy: int = 40,
-               resources: int = 8) -> dict:
+               resources: int = 8,
+               last_resort_exploration: bool = False) -> dict:
     """Disposable paired engineering smoke for the world-owned cadence."""
-    if (scenario not in SCENARIOS or type(ticks) is not int or
+    if (type(last_resort_exploration) is not bool or
+            scenario not in SCENARIOS or type(ticks) is not int or
             not 1 <= ticks <= WORLD_TICK_LIMIT or
             type(initial_uc) is not int or not 0 <= initial_uc <= 1000 or
             type(initial_energy) is not int or not 1 <= initial_energy <= 100 or
@@ -1101,7 +1178,8 @@ def world_demo(scenario: str, *, ticks: int = 12,
             individual = IsolatedI2.create(
                 Path(root) / (label + ".sqlite"), learning=learning,
                 impulses=SCENARIOS[scenario], initial_uc=initial_uc,
-                initial_energy=initial_energy, resources=resources)
+                initial_energy=initial_energy, resources=resources,
+                last_resort_exploration=last_resort_exploration)
             execution = individual.run_world(ticks=ticks)
             arms[label] = {
                 "execution": execution,
@@ -1112,6 +1190,7 @@ def world_demo(scenario: str, *, ticks: int = 12,
     return {
         "status": "SYNCHRONOUS_BOUNDED_WORLD_RESEARCH_ONLY",
         "scenario": scenario,
+        "last_resort_exploration": last_resort_exploration,
         "exogenous_regime_clock": "PHYSICAL_TICKS_NOT_COGNITIVE_REVISIONS",
         "arms": arms,
         "first_choice_contrast": paired_decision_contrast(
@@ -1138,14 +1217,18 @@ def main() -> None:
     parser.add_argument("--initial-uc", type=int, default=60)
     parser.add_argument("--initial-energy", type=int, default=40)
     parser.add_argument("--resources", type=int, default=8)
+    parser.add_argument("--last-resort", action="store_true",
+                        help="Opt into researcher-specified emergency food priority")
     args = parser.parse_args()
     if args.world:
         print(_json(world_demo(args.scenario, ticks=args.ticks,
                                initial_uc=args.initial_uc,
                                initial_energy=args.initial_energy,
-                               resources=args.resources)))
+                               resources=args.resources,
+                               last_resort_exploration=args.last_resort)))
     else:
-        print(_json(demo(args.scenario, steps=args.steps)))
+        print(_json(demo(args.scenario, steps=args.steps,
+                         last_resort_exploration=args.last_resort)))
 
 
 if __name__ == "__main__":
