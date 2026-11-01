@@ -46,6 +46,13 @@ def _json(value: object) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
 
 
+def _energy_evidence(energy: int) -> str:
+    """Capture-bound toy interoception, not an authenticated hunger signal."""
+    if type(energy) is not int or not 0 <= energy <= 100:
+        raise LabRefusal("invalid prior committed model energy")
+    return f"evidence:lab:body-energy:{energy}"
+
+
 def _visible(inventory: int, resources: int) -> tuple[str, ...]:
     affordances = [DRINK]
     if resources:
@@ -267,7 +274,7 @@ class IntegratedLab:
             capture_ref = f"capture:lab:{index}"
             # Evidence must be issued only for PREVIOUS committed chosen actions.
             evidence = tuple(sorted(
-                [f"evidence:lab:{index}"] +
+                [f"evidence:lab:{index}", _energy_evidence(energy)] +
                 [r.evidence_ref for r in past]
             ))
             claim = ObservationClaim(
@@ -469,7 +476,7 @@ class IntegratedLab:
             self.life_ref,
             FirstPersonCapture(at, f"capture:lab:{index}", "goal:food", offered),
             f"source:lab:past:{index}", tuple(sorted(
-                [f"evidence:lab:{index}"] +
+                [f"evidence:lab:{index}", _energy_evidence(state[1])] +
                 [f"evidence:lab:result:{row['seq']}" for row in rows
                  if row["action_ref"] is not None])),
         )
