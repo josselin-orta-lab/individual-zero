@@ -78,8 +78,6 @@ class BodyEnergyComponentAccounting(unittest.TestCase):
         self.assertEqual(self.rows(),[])
 
     def test_aversive_valence_not_invented_from_nutrition(self):
-        with sqlite3.connect(self.path) as db:
-            pass
         lab=self.create()
         lab.step()
         with sqlite3.connect(self.path) as db:
