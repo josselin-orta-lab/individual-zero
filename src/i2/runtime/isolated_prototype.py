@@ -119,12 +119,27 @@ class _CurrentPort:
 class _SafetyPort:
     def __init__(self):
         self.veto = False
+        self.energy_reflex: LocalEnergySurvivalReflex | None = None
 
     def check(self, *, life_ref: str, frame: object, candidate_ref: str,
               control_receipt_ref: str) -> SafetyFinding:
+        reflex = self.energy_reflex
+        if (reflex is None or frame.capture_ref != reflex.claim.capture.ref or
+                frame.claim_digest != reflex.claim.digest() or
+                life_ref != reflex.claim.life_ref):
+            raise PrototypeRefusal("safety lacks current owner-bound survival reflex")
+        offered = [c.semantic_ref for c in frame.candidates
+                   if c.candidate_ref == candidate_ref]
+        if len(offered) != 1:
+            raise PrototypeRefusal("reflex safety candidate is not in paid frame")
+        # A low reserve forbids a speculative EAT, not the physical clock.
+        # No unchosen payoff is predicted and no alternative is forced.
+        reflex_veto = offered[0] == EAT and reflex.state in ("PREEMPT", "CONSTRAIN")
         return SafetyFinding(
             life_ref, frame.frame_ref, frame.capture_ref, candidate_ref,
-            control_receipt_ref, self.veto, "evidence:i2:internal-safety-review",
+            control_receipt_ref, self.veto or reflex_veto,
+            (reflex.evidence_ref if reflex_veto else
+             "evidence:i2:internal-safety-review"),
         )
 
 
@@ -380,6 +395,23 @@ class IsolatedI2:
                 raise PrototypeRefusal("first-person chronology or body provenance mismatch")
             frame, review = event["frame"], event["control_review"]
             status = None if review is None else review["status"]
+            # Reject a local journal that bypassed the survival constraint.
+            # This recomputes from prior committed body state, without reading
+            # a hidden food phase or trusting the saved safety label.
+            safety = event["safety_finding"]
+            if safety is not None and frame is not None:
+                selected_semantics = [
+                    c["semantic_ref"] for c in frame["candidates"]
+                    if c["candidate_ref"] == safety["candidate_ref"]
+                ]
+                if len(selected_semantics) != 1:
+                    raise PrototypeRefusal("unbound reflex safety candidate")
+                local_reflex = LocalEnergySurvivalReflex(claim, energy)
+                required_veto = (selected_semantics[0] == EAT and
+                                 local_reflex.state in ("PREEMPT", "CONSTRAIN"))
+                if required_veto and (safety["veto"] is not True or
+                                      safety["evidence_ref"] != local_reflex.evidence_ref):
+                    raise PrototypeRefusal("survival reflex veto bypassed in journal")
             action = None
             if status == "REVIEWED_NOT_ADMITTED":
                 if frame is None or review is None:
@@ -841,6 +873,7 @@ class IsolatedI2:
         self.observations.digest = claim.digest()
         self.current.capture_ref = claim.capture.ref
         self.safety.veto = veto
+        self.safety.energy_reflex = LocalEnergySurvivalReflex(claim, state["energy"])
         past = self._history(records) if meta["learning"] else ()
         valuation = ChosenOutcomeValuationStudy(
             claim=claim, results=past, source=_PreviousResults(past), priors=PRIORS)
