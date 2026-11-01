@@ -38,6 +38,80 @@ class AtomicH2Tests(unittest.TestCase):
         c=self.source.add(claim(step,visible=(A,B,C)))
         return c
 
+    def test_same_step_h2_outcome_cannot_be_learned_before_next_capture(self):
+        from i2.modules.intention_ingress import ObservationClaim
+        from i2.modules.intention_continuity import FirstPersonCapture
+        from i2.modules.cognitive_cycle_fixture import (
+            _h2_replay_transition, _h2_transition_map, _json,
+        )
+        old, update = TransitionTests().transition()
+        observed_at = update.new_memory.last_observed_step
+        self.assertEqual(observed_at, 17)
+        self.ports["life_ref"] = old.life_ref
+
+        class Subject:
+            def verify(self, *, life_ref, claim, digest):
+                return True
+
+        self.ports["observation_source"] = Subject()
+        fixture = self.make()
+
+        def capture(step):
+            return ObservationClaim(
+                old.life_ref,
+                FirstPersonCapture(
+                    step, f"capture:h2:{step}", old.goal_ref,
+                    tuple(sorted((A, B, C))),
+                ),
+                f"source:h2:{step}", (f"evidence:{step}",),
+            )
+
+        for step in (observed_at - 1, observed_at):
+            with self.subTest(unperceived_step=step):
+                with self.assertRaisesRegex(ValueError, "before the current capture"):
+                    fixture.open(
+                        claim=capture(step), semantic_ref=A,
+                        evidence_ref=f"evidence:{step}", ttl_steps=12,
+                        feedback_previous=old, feedback_update=update,
+                    )
+                self.assertEqual(fixture.audit()["committed"], 0)
+                self.assertEqual(fixture.audit()["feedback_version"], 0)
+                self.assertEqual(fixture.audit()["remaining_synthetic_uc"], 20)
+
+        # A later declared capture may receive already observed feedback.
+        later_step = observed_at + 1
+        accepted = capture(later_step)
+        receipt = fixture.open(
+            claim=accepted, semantic_ref=A,
+            evidence_ref=f"evidence:{later_step}", ttl_steps=12,
+            feedback_previous=old, feedback_update=update,
+        )
+        self.assertEqual(receipt.seq, 1)
+        self.assertEqual(fixture.audit()["committed"], 1)
+        self.assertEqual(fixture.audit()["feedback_version"], 1)
+        self.assertFalse(fixture.audit()["m11_authenticated"])
+        cold = CognitiveCycleFixture.reopen(path=self.path, **self.ports)
+        self.assertEqual(cold.audit()["feedback_version"], 1)
+
+        payload = json.loads(_json(_h2_transition_map(old, update)))
+        with self.assertRaisesRegex(ValueError, "unobserved current/future"):
+            _h2_replay_transition(
+                payload, None, observed_at, life_ref=old.life_ref,
+            )
+        self.assertEqual(
+            _h2_replay_transition(
+                payload, None, later_step, life_ref=old.life_ref,
+            ),
+            update.new_memory,
+        )
+        with self.assertRaisesRegex(ValueError, "needs past observed feedback"):
+            cold.inspect_uncertain_cognition(
+                previous_count=0, previous_head="0"*64,
+                claim=capture(observed_at), method="open",
+                semantic_ref=A, evidence_ref=f"evidence:{observed_at}",
+                ttl_steps=12, feedback_previous=old, feedback_update=update,
+            )
+
     def test_one_commit_and_cold_replay(self):
         fixture=self.make()
         old,update=TransitionTests().transition()
