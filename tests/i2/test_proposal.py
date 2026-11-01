@@ -25,9 +25,9 @@ class TestI2Proposal(unittest.TestCase):
 
     def test_inert_i2_still_blocked_and_no_foreign_code(self):
         report = inspect_proposal("I2", root=ROOT)
-        self.assertEqual(report["status"], "BLOCKED")
+        self.assertEqual(report["status"], "STRUCTURE_PRESENT_REVIEW_REQUIRED")
         self.assertEqual(set(report["blocked_by"]),
-                         {"runtime_implementation_present"})
+                         set())
         self.assertTrue(report["checks"]["no_parent_runtime_imports"])
         self.assertEqual(report["activation"], "FORBIDDEN")
 

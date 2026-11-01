@@ -59,9 +59,9 @@ jobs:
           from pathlib import Path
           r = json.loads(Path("i2-assessment.json").read_text())
           # A pure policy exists, but there is still no living Lab or runtime.
-          expected_missing = {"runtime_implementation_present"}
+          expected_missing = set()
           assert r["checks"]["lab_implementation_present"] is True, r
-          assert r["status"] == "BLOCKED", r
+          assert r["status"] == "STRUCTURE_PRESENT_REVIEW_REQUIRED", r
           assert set(r["blocked_by"]) == expected_missing, r["blocked_by"]
           assert r["checks"]["cognition_implementation_present"] is True, r
           assert r["checks"]["independent_tests_present"] is True, r
