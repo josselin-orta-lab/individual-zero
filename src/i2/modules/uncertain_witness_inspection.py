@@ -56,50 +56,53 @@ def _inspect(*, fixture: object, witness: IndependentWitness,
         if (minimum_witness.life_ref != before["life_ref"] or
                 minimum_witness.genesis_ref != before["genesis_ref"]):
             raise ValueError("foreign pinned witness")
+    # Every path that consults a local attempt (including local STALE/FORK
+    # and CONFLICT_LOCAL) must reach this final audit. A terminal or other
+    # concurrent write makes the early classification stale.
     try:
-        local = local_probe()
-    except Exception as exc:
-        # Preserve validation failures; unreadable SQLite is not proof of
-        # an absent COMMIT. No direct sqlite3 import outside sole owner.
-        if isinstance(exc, ValueError):
-            raise
-        raise WitnessRefusal(
-            "UNKNOWN", "local uncertain-commit inspection unavailable"
-        ) from exc
-    if (type(local) is not UncertainCommitInspection or
-            local.observed_committed != before["committed"] or
-            local.observed_head != before["chain_head"]):
-        raise WitnessRefusal(
-            "UNKNOWN", "local synthetic journal moved between audit and attempt inspection"
-        )
-    if minimum_witness is not None:
-        prefix = local.audited_prefix
-        if prefix is None or prefix.requested_seq != minimum_witness.committed:
-            raise WitnessRefusal("UNKNOWN", "missing same-snapshot pinned prefix")
-        if (prefix.observed_head != before["chain_head"] or
-                prefix.observed_committed != before["committed"]):
-            raise WitnessRefusal("UNKNOWN", "local journal moved during prefix inspection")
-        if prefix.prefix_head is None:
-            raise WitnessRefusal("STALE", "local history shorter than pinned witness")
-        if (prefix.prefix_head != minimum_witness.chain_head or
-                prefix.prefix_step != minimum_witness.last_step or
-                prefix.prefix_terminal_ref != minimum_witness.terminal_ref or
-                (minimum_witness.terminal_ref is not None and
-                 prefix.observed_committed > minimum_witness.committed)):
-            raise WitnessRefusal("FORK", "local attempt does not descend from pinned witness")
-    if local.outcome == "CONFLICT_LOCAL":
-        # A wrong attempt or predecessor is not an external-head mismatch.
-        # Refuse before even consulting an untrusted provider.
-        raise WitnessRefusal("UNKNOWN", "attempt conflicts with audited local predecessor")
-    if local.outcome not in {"RECORDED_LOCAL_ONLY", "ABSENT_LOCAL_ONLY"}:
-        raise WitnessRefusal("UNKNOWN", "unknown local attempt inspection result")
+        try:
+            local = local_probe()
+        except Exception as exc:
+            # Invalid input is still invalid input when the journal is
+            # stationary. A broken local read is never proof of absence.
+            if isinstance(exc, ValueError):
+                raise
+            raise WitnessRefusal(
+                "UNKNOWN", "local uncertain-commit inspection unavailable"
+            ) from exc
+        if (type(local) is not UncertainCommitInspection or
+                local.observed_committed != before["committed"] or
+                local.observed_head != before["chain_head"]):
+            raise WitnessRefusal(
+                "UNKNOWN", "local synthetic journal moved between audit and attempt inspection"
+            )
+        if minimum_witness is not None:
+            prefix = local.audited_prefix
+            if prefix is None or prefix.requested_seq != minimum_witness.committed:
+                raise WitnessRefusal("UNKNOWN", "missing same-snapshot pinned prefix")
+            if (prefix.observed_head != before["chain_head"] or
+                    prefix.observed_committed != before["committed"]):
+                raise WitnessRefusal("UNKNOWN", "local journal moved during prefix inspection")
+            if prefix.prefix_head is None:
+                raise WitnessRefusal("STALE", "local history shorter than pinned witness")
+            if (prefix.prefix_head != minimum_witness.chain_head or
+                    prefix.prefix_step != minimum_witness.last_step or
+                    prefix.prefix_terminal_ref != minimum_witness.terminal_ref or
+                    (minimum_witness.terminal_ref is not None and
+                     prefix.observed_committed > minimum_witness.committed)):
+                raise WitnessRefusal("FORK", "local attempt does not descend from pinned witness")
+        if local.outcome == "CONFLICT_LOCAL":
+            # Wrong attempt or predecessor; do not consult untrusted witness.
+            raise WitnessRefusal("UNKNOWN", "attempt conflicts with audited local predecessor")
+        if local.outcome not in {"RECORDED_LOCAL_ONLY", "ABSENT_LOCAL_ONLY"}:
+            raise WitnessRefusal("UNKNOWN", "unknown local attempt inspection result")
 
-    try:
         corroboration = compare_audit(report=before, witness=witness,
                                       minimum_witness=minimum_witness)
     finally:
-        # Run this even when the remote provider fails/refuses. A concurrent
-        # local COMMIT must not be mislabeled as a stable STALE/UNANCHORED.
+        # Also run after a *local* refusal or an invalid local probe. An
+        # intervening SQLite change overrides a stale diagnostic. This is
+        # still NOT a cross-domain lock or M11 proof.
         try:
             after = fixture.audit()
         except Exception as exc:
@@ -108,7 +111,7 @@ def _inspect(*, fixture: object, witness: IndependentWitness,
             ) from exc
         if after != before:
             raise WitnessRefusal(
-                "UNKNOWN", "local synthetic journal moved during external inspection"
+                "UNKNOWN", "local synthetic journal changed during uncertain inspection"
             )
     return UncertainWitnessInspection(local=local, witness=corroboration)
 

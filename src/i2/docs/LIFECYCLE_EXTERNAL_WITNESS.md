@@ -88,7 +88,7 @@ Le registre local vérifie l'identité (device/inode) du répertoire, du verrou 
 
 ## Inspection incertaine avec ascendance dans un seul snapshot (G2)
 
-Le diagnostic d'un COMMIT incertain et le maillon historique demandé par `minimum_witness` proviennent désormais du même snapshot SQLite audité. L'inspection refuse `FORK` avant de contacter le témoin lorsque l'ascendance locale diverge, `STALE` si le préfixe manque, et `UNKNOWN` lorsqu'une modification concurrente est détectée au réaudit. Cette cohérence est locale et temporaire, non linéarisable avec le fournisseur externe, sans permission de rejeu, d'action ou de reprise et sans attestation M11 réelle.
+Le diagnostic d'un COMMIT incertain et le maillon historique demandé par `minimum_witness` proviennent désormais du même snapshot SQLite audité. L'inspection refuse `FORK` avant de contacter le témoin lorsque l'ascendance locale diverge, `STALE` si le préfixe manque, et `UNKNOWN` lorsqu'une modification concurrente est détectée au réaudit. **Le réaudit final s'exécute aussi sur les refus locaux précoces `STALE`, `FORK`, `CONFLICT_LOCAL` et sur l'échec du probe** : toute modification du journal pendant ces branches prévaut et devient `UNKNOWN` sans appel au témoin. Les tests injectent un scellage terminal exactement après la lecture locale. Cette cohérence est locale et temporaire, non linéarisable avec le fournisseur externe, sans permission de rejeu, d'action ou de reprise et sans attestation M11 réelle.
 
 ## G2 : second audit obligatoire aussi pendant la verification d'ascendance
 
