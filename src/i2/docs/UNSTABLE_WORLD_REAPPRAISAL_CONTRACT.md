@@ -265,3 +265,15 @@ This improvement is a pure planning feasibility boundary, not an inference
 that the unknown berry will help. A future plan scheduler must bind the
 elapsed time to an authenticated current clock and must refuse to infer
 that a proposed delay is guaranteed.
+
+
+## Actual physical-deadline regression
+
+The focused `test_two_step_physical_deadline.py` compares a prospective
+two-tick delay with the actual single-owner physical clock. At initial
+energy=4, COLLECT spends 2; two independent metabolic ticks exhaust the
+body before EAT can be attempted, even in a favorable-food world. At
+energy=5 and no intervening ticks, the ordinary paid COLLECT and EAT
+actions remain possible. This is an execution falsifier for a fixed
+toy-world deadline, not yet a runtime planner, a food oracle, a
+multi-strategy comparison or proof of autonomous survival.
