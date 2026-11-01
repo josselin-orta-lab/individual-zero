@@ -23,6 +23,14 @@ on:
       - 'docs/engineering/AGENT_HANDOFF.md'
       - 'docs/engineering/DOCUMENT_AUTHORITY.md'
       - 'docs/engineering/COMPONENT_OWNERSHIP.md'
+      # Navigation atlas PRs use this same small check; no heavy engine CI.
+      - 'docs/architecture/ATLAS.md'
+      - 'docs/architecture/README.md'
+      - 'docs/architecture/ENGINE_GENERATIONS.md'
+      - 'docs/architecture/proposals/README.md'
+      - 'docs/engineering/AGENT_NAVIGATION.md'
+      - 'tools/check_repo_navigation.py'
+      - 'tests/test_repo_navigation.py'
       - '.github/workflows/agent-context-static.yml'
 
 permissions:
@@ -43,15 +51,15 @@ jobs:
       - name: Check metadata and focused routing tests without running an engine
         run: |
           python tools/agent_context.py audit --json
-          python tools/research_coordinator.py audit
+          python tools/research_coordinator.py audit --structure-only > /tmp/iz-research-audit.json
           python -m unittest discover -s tests -p test_research_coordinator.py -v
           python -m unittest discover -s tests -p test_research_knowledge.py -v
           python -m unittest discover -s tests -p test_research_corpus.py -v
-          python tools/research_dossiers.py audit > /tmp/iz-dossier-audit.json
+          python tools/research_dossiers.py audit --structure-only > /tmp/iz-dossier-audit.json
           python -m unittest discover -s tests -p test_research_dossiers.py -v
-          python tools/research_dossiers.py show --id I1-A1C-TARGETED > /tmp/iz-a1c-dossier.json
-          python tools/research_dossiers.py gaps > /tmp/iz-dossier-gaps.json
-          python tools/research_dossiers.py compare --left I1-A1C-TARGETED --right I1-A2R-REWARD > /tmp/iz-dossier-compare.json
+          python tools/research_dossiers.py show --id I1-A1C-TARGETED > /tmp/iz-a1c-dossier.json || test "$?" -eq 2
+          python tools/research_dossiers.py gaps > /tmp/iz-dossier-gaps.json || test "$?" -eq 2
+          python tools/research_dossiers.py compare --left I1-A1C-TARGETED --right I1-A2R-REWARD > /tmp/iz-dossier-compare.json || test "$?" -eq 2
           python - <<'PY'
           import json
           from pathlib import Path
@@ -59,7 +67,24 @@ jobs:
           audit = json.loads(Path('/tmp/iz-dossier-audit.json').read_text())
           gaps = json.loads(Path('/tmp/iz-dossier-gaps.json').read_text())
           comparison = json.loads(Path('/tmp/iz-dossier-compare.json').read_text())
+          program = json.loads(Path('config/research-program.json').read_text())
+          manifest = json.loads(Path('config/research-dossiers.json').read_text())
+          research_audit = json.loads(Path('/tmp/iz-research-audit.json').read_text())
+          psources = {entry['id']: entry for entry in program['source_checks']}
+          dsources = {entry['id']: entry for entry in manifest['sources']}
+          assert research_audit['status'] == 'PASS'
+          assert research_audit['audit_mode'] == 'STRUCTURE_ONLY'
+          assert all(item['status'] == 'PIN_MATCH' or
+                     (item['status'] == 'SOURCE_BLOB_DRIFT'
+                      and psources[sid]['authority'] == 'status')
+                     for sid, item in research_audit['source_integrity'].items())
           assert audit['status'] == 'PASS'
+          assert audit['audit_mode'] == 'STRUCTURE_ONLY'
+          assert all(item['status'] == 'PIN_MATCH' or
+                     (item['status'] == 'SOURCE_BLOB_DRIFT'
+                      and item['marker_present']
+                      and dsources[sid]['authority'] == 'current_status_snapshot')
+                     for sid, item in audit['source_integrity'].items())
           assert dossier['reported_assessment'] == 'NO_GO'
           assert dossier['primary_record'] == 'PRIMARY_ORIGINAL_RESULT_NOT_LINKED'
           assert dossier['scientific_verdict'] == 'NOT_EVALUATED'
@@ -82,9 +107,9 @@ jobs:
           assert lead['scientific_verdict'] == 'NOT_EVALUATED'
           print('CORPUS_NAVIGATION_NO_SCIENTIFIC_PROMOTION_PASS')
           PY
-          python tools/research_coordinator.py status --format json > /tmp/research-state.json
+          python tools/research_coordinator.py status --format json > /tmp/research-state.json || test "$?" -eq 2
           python tools/research_coordinator.py graph --mode knowledge --format json > /tmp/research-graph.json
-          python tools/research_coordinator.py trace --id question:I1-L3 > /tmp/research-trace.json
+          python tools/research_coordinator.py trace --id question:I1-L3 > /tmp/research-trace.json || test "$?" -eq 2
           python tools/research_coordinator.py catalog --limit 3 > /tmp/research-catalog.json
           python - <<'PY'
           import json
@@ -93,12 +118,13 @@ jobs:
           graph = json.loads(Path("/tmp/research-graph.json").read_text())
           trace = json.loads(Path("/tmp/research-trace.json").read_text())
           catalog = json.loads(Path("/tmp/research-catalog.json").read_text())
-          assert state["status"] == "RECORDED_TEXT_MATCHES", state["status"]
+          assert state["status"] in ("RECORDED_TEXT_MATCHES", "SOURCE_REVIEW_REQUIRED"), state["status"]
           assert state["scientific_verdict"] == "NOT_EVALUATED"
           assert graph["status"] == "CURATED_PROVENANCE_ONLY"
-          assert trace["status"] == "PROVENANCE_LINKS_ONLY"
+          assert trace["status"] in ("PROVENANCE_LINKS_ONLY", "SOURCE_REVIEW_REQUIRED")
           assert catalog["scientific_verdict"] == "NOT_EVALUATED"
           print("SOURCE_PINNED_RESEARCH_NAVIGATION_PASS")
           PY
           python -m unittest discover -s tests -p test_agent_context.py -v
+          python -m unittest discover -s tests -p test_repo_navigation.py -v
           python tools/check_repo_navigation.py --scope entrypoints

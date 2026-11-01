@@ -63,6 +63,14 @@ The global coordinator's evidence and gate logic remains curated; corpus index e
 
 The [research dossier register](RESEARCH_DOSSIERS.md) bridges the wide lexical corpus index and the small, prioritized research program. Run `python tools/research_dossiers.py list`, `show --id I1-A1C-TARGETED` and `gaps` to see original preregistrations, dated outcomes, post-hoc diagnostics, what is not independently verified, and precisely scoped comparisons. **Never treat a dossier, its Git source pins or its completion as a scientific approval.**
 
+### Live status drift is different from immutable evidence
+
+The source-pinned research **claims** are reviewed separately from the repository's changing `src/i1/docs/STATUS.md` and `src/i2/docs/STATUS.md`. A current status file may gain new software findings without changing the historical preregistration or negative result. Its Git blob SHA still changes: recommendations depending on it must explicitly report `SOURCE_REVIEW_REQUIRED`, not silently claim an up-to-date scientific view.
+
+For research decisions, `python tools/research_coordinator.py audit` stays **strict** and returns a failure on any source drift. The lighter `audit --structure-only` is for documentation CI: it checks program structure, reports every mismatched blob under `source_review_required`, and never declares research freshness. CI may tolerate a blob-only change to a current status while requiring exact pins for dated sources, protocols and evidence indexes. If an anchor disappears, the static smoke check must fail.
+
+A developer must reconcile source changes against their exact SHAs before updating the corresponding pin; the lack of a failing CI job never constitutes evidence approval.
+
 ## Agent decision cycle
 
 1. Re-read HEAD, registry, engine contracts, current statuses, evidence matrix and this program. Flag contradictions.

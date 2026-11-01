@@ -33,6 +33,12 @@ All commands are read-only. The audit checks structure and source byte identity 
 
 Each dossier has an explicit protocol/cohort/endpoint/contrast identity to prevent comparisons of superficially related studies. A1-C and A2-R cannot contradict each other merely because both concern I1 and L3: they have different protocols and populations, and A2-R has not been executed. Even identical identities and differing reported assessments yield only a **potential disagreement to review**, not a proven contradiction.
 
+### Distinguish structural checks from source freshness
+
+`python tools/research_dossiers.py audit` is strict: a moved Git source blob, even with the same quoted marker, is reported as a failure. `python tools/research_dossiers.py audit --structure-only` validates schema, roles, reference scopes and generation safeguards while exposing source drift in `source_status` and `source_review_required`.
+
+The single lightweight navigation CI permits **only** an unchanged-marker blob drift in documents explicitly classified `current_status_snapshot`; no historical protocol, result, review proposal, or other pinned source may silently drift. A dossier depending on a changed status remains `REVIEW_SOURCE_CHANGES_FIRST` until reconciled; no independent approval is inferred.
+
 ## The agent's research decision sequence
 
 1. Begin with [global scientific status](RESEARCH_COORDINATOR.md), its question/gate graph and negative findings.

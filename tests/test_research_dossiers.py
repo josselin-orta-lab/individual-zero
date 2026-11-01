@@ -181,5 +181,29 @@ class ResearchDossierTests(unittest.TestCase):
                 self.assertEqual(payload["scientific_verdict"], "NOT_EVALUATED")
 
 
+
+    def test_structure_only_exposes_live_status_drift_and_strict_fails(self):
+        path = self.root / "src/i2/docs/STATUS.md"
+        path.write_text(path.read_text(encoding="utf-8") +
+                        "\nG2 synthetic witness note, no new authorization.\n",
+                        encoding="utf-8")
+        structural = dossier.validate(self.root, strict_sources=False)
+        self.assertEqual(structural["status"], "PASS")
+        self.assertEqual(structural["source_status"], "SOURCE_REVIEW_REQUIRED")
+        self.assertIn("i2-status", structural["source_review_required"])
+        self.assertEqual(structural["scientific_verdict"], "NOT_EVALUATED")
+        with redirect_stdout(io.StringIO()) as out:
+            self.assertEqual(dossier.main(["audit", "--structure-only"], self.root), 0)
+        self.assertEqual(json.loads(out.getvalue())["audit_mode"], "STRUCTURE_ONLY")
+        with redirect_stdout(io.StringIO()) as out:
+            self.assertEqual(dossier.main(["audit"], self.root), 2)
+        self.assertEqual(json.loads(out.getvalue())["status"], "FAIL")
+        with redirect_stdout(io.StringIO()) as out:
+            self.assertEqual(dossier.main(["show", "--id", "I2-G1-INDEPENDENT-REVIEW"], self.root), 2)
+        view = json.loads(out.getvalue())
+        self.assertEqual(view["decision"], "REVIEW_SOURCE_CHANGES_FIRST")
+        self.assertEqual(view["approval"], "NOT_GRANTED")
+
+
 if __name__ == "__main__":
     unittest.main()

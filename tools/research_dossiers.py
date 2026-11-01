@@ -82,9 +82,14 @@ def source_integrity(root: Path, src: dict) -> dict:
     return result
 
 
-def validate(root: Path = ROOT) -> dict:
-    """Validate structure and exact sources; no cohort or scientific operation."""
+def validate(root: Path = ROOT, *, strict_sources: bool = True) -> dict:
+    """Validate structure; optionally report source drift without failing structural CI.
+
+    Strict mode fails closed on changed evidence. Structure-only mode still
+    exposes every mismatched exact blob and never approves a dossier.
+    """
     errors: list[str] = []
+    source_drift: list[str] = []
     try:
         manifest = load_json(root, MANIFEST)
         registry = load_json(root, REGISTRY)
@@ -142,7 +147,9 @@ def validate(root: Path = ROOT) -> dict:
         source_by_id[ident] = s
         source_results[ident] = source_integrity(root, s)
         if source_results[ident]["status"] != "PIN_MATCH":
-            errors.append(ident + ": " + source_results[ident]["status"])
+            source_drift.append(ident)
+            if strict_sources:
+                errors.append(ident + ": " + source_results[ident]["status"])
 
     for dossier in dossiers:
         if not isinstance(dossier, dict):
@@ -227,8 +234,11 @@ def validate(root: Path = ROOT) -> dict:
     return {"status": "FAIL" if errors else "PASS", "errors": sorted(set(errors)),
             "sources": len(source_by_id), "dossiers": len(dossiers),
             "source_integrity": source_results,
+            "source_review_required": sorted(source_drift),
+            "source_status": "SOURCE_REVIEW_REQUIRED" if source_drift else "PIN_MATCH",
+            "audit_mode": "STRICT_SOURCES" if strict_sources else "STRUCTURE_ONLY",
             "scientific_verdict": "NOT_EVALUATED",
-            "warning": "PASS checks cited file identities and manifest syntax only. It does not certify scientific outcomes, independent reviews, M11 archives or active gates."}
+            "warning": "Structure-only PASS does NOT validate source freshness. Every changed source requires review. Neither mode certifies scientific outcomes, independent reviews, M11 archives or active gates."}
 
 
 def dossier_view(dossier: dict, source_by_id: dict, audit: dict) -> dict:
@@ -272,9 +282,9 @@ def dossier_view(dossier: dict, source_by_id: dict, audit: dict) -> dict:
     }
 
 
-def load_views(root: Path = ROOT) -> tuple[dict, dict, list[dict]]:
+def load_views(root: Path = ROOT, *, strict_sources: bool = True) -> tuple[dict, dict, list[dict]]:
     manifest = load_json(root, MANIFEST)
-    result = validate(root)
+    result = validate(root, strict_sources=strict_sources)
     by_id = {x["id"]: x for x in manifest["sources"]}
     views = [dossier_view(d, by_id, result) for d in manifest["dossiers"]]
     return manifest, result, views
@@ -327,7 +337,9 @@ def gaps_report(views: list[dict]) -> dict:
 def main(argv: list[str] | None = None, root: Path = ROOT) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     cmd = parser.add_subparsers(dest="command", required=True)
-    cmd.add_parser("audit")
+    audit_parser = cmd.add_parser("audit")
+    audit_parser.add_argument("--structure-only", action="store_true",
+                              help="Keep source drift visible without blocking structure-only checks")
     cmd.add_parser("list")
     cmd.add_parser("gaps")
     pshow = cmd.add_parser("show")
@@ -337,7 +349,9 @@ def main(argv: list[str] | None = None, root: Path = ROOT) -> int:
     pcompare.add_argument("--right", required=True)
     args = parser.parse_args(argv)
     try:
-        manifest, audit, views = load_views(root)
+        manifest, audit, views = load_views(
+            root, strict_sources=not (args.command == "audit"
+                                     and getattr(args, "structure_only", False)))
         if args.command == "audit":
             result = audit
         elif args.command == "list":

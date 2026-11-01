@@ -540,7 +540,9 @@ def explain(knowledge: dict, identifier: str) -> dict:
 def main(argv: list[str] | None = None, root: Path = ROOT) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
-    commands.add_parser("audit")
+    audit_parser = commands.add_parser("audit")
+    audit_parser.add_argument("--structure-only", action="store_true",
+                              help="Validate schema and report source drift without failing on live status updates")
     graph_parser = commands.add_parser("graph", help="Gate dependency or provenance graph")
     graph_parser.add_argument("--mode", choices=("gates", "knowledge"), default="gates")
     graph_parser.add_argument("--format", choices=("mermaid", "json"), default="mermaid")
@@ -563,11 +565,16 @@ def main(argv: list[str] | None = None, root: Path = ROOT) -> int:
         if args.command == "audit":
             outcome = audit(root)
             if outcome["status"] == "PASS":
-                changed = [key for key, value in source_integrity(root, read_json(root, PROGRAM)).items()
+                sources = source_integrity(root, read_json(root, PROGRAM))
+                changed = [key for key, value in sources.items()
                            if value["status"] != "PIN_MATCH"]
-                if changed:
+                outcome["source_review_required"] = sorted(changed)
+                outcome["source_status"] = ("SOURCE_REVIEW_REQUIRED" if changed else "PIN_MATCH")
+                outcome["source_integrity"] = sources
+                if changed and not args.structure_only:
                     outcome["status"] = "FAIL"
-                    outcome["errors"] += ["source marker changed: " + key for key in changed]
+                    outcome["errors"] += ["source pin or marker changed: " + key for key in changed]
+            outcome["audit_mode"] = "STRUCTURE_ONLY" if args.structure_only else "STRICT_SOURCES"
             print(json.dumps(outcome, ensure_ascii=False, indent=2))
             return 0 if outcome["status"] == "PASS" else 1
         program = read_json(root, PROGRAM)

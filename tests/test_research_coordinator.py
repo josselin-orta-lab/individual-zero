@@ -3,6 +3,8 @@ from datetime import datetime, timezone, timedelta
 import importlib.util
 import json
 import hashlib
+from contextlib import redirect_stdout
+import io
 from pathlib import Path
 import tempfile
 import unittest
@@ -119,6 +121,27 @@ class ResearchCoordinatorTests(unittest.TestCase):
         self.assertEqual(rc.main(["recommend","--top","2","--at-sha",self.sha,
                                   "--format","json"],self.root), 0)
         self.assertEqual(rc.main(["recommend","--top","31"],self.root), 2)
+
+
+
+    def test_structural_audit_reports_live_status_drift_without_scientific_approval(self):
+        path = self.root / "src/i2/docs/STATUS.md"
+        path.write_text(path.read_text(encoding="utf-8") + "\nG2 synthetic status updated.\n",
+                        encoding="utf-8")
+        with redirect_stdout(io.StringIO()) as output:
+            self.assertEqual(rc.main(["audit", "--structure-only"], self.root), 0)
+        report = json.loads(output.getvalue())
+        self.assertEqual(report["status"], "PASS")
+        self.assertEqual(report["audit_mode"], "STRUCTURE_ONLY")
+        self.assertEqual(report["source_status"], "SOURCE_REVIEW_REQUIRED")
+        self.assertIn("i2-proposal", report["source_review_required"])
+        self.assertEqual(report["scientific_verdict"], "NOT_EVALUATED")
+        with redirect_stdout(io.StringIO()) as output:
+            self.assertEqual(rc.main(["audit"], self.root), 1)
+        self.assertEqual(json.loads(output.getvalue())["status"], "FAIL")
+        state = rc.research_state(self.root, at_sha=self.sha)
+        self.assertEqual(state["status"], "SOURCE_REVIEW_REQUIRED")
+        self.assertTrue(all(not gate["gate_approved"] for gate in state["gates"]))
 
 
 if __name__ == "__main__":
