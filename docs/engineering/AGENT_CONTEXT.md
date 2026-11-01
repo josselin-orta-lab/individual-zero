@@ -31,7 +31,7 @@ If multiple changed paths resolve to different component owners, the router emit
 | What passed on the exact SHA? | Local test output and/or GitHub CI results for that SHA |
 | What is scientifically established? | Generation-owned evidence matrix, preregistration, traces and reviewed verdict |
 
-A historical document never overrides current code or an accepted current contract. See [document authority classes](DOCUMENT_AUTHORITY.md) and [component ownership guide](COMPONENT_OWNERSHIP.md).
+A historical document never overrides current code or an accepted current contract. See [document authority classes](DOCUMENT_AUTHORITY.md) and the [architecture atlas](../architecture/ATLAS.md), which is the single canonical cross-generation ownership map.
 
 ## Script and workflow custody
 

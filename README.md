@@ -18,7 +18,7 @@ If this is your first visit:
 
 The documentation is layered. You do not need to understand the complete architecture to inspect an experiment or contribute a focused change.
 
-**For development agents:** read [AGENTS.md](AGENTS.md) and the [two-minute navigation map](docs/engineering/AGENT_NAVIGATION.md) before editing. The registry, generation-owned contracts, code, software checks and scientific evidence answer different questions; historical reports do not override live HEAD.
+**For development agents:** understand the global research priorities through the [research coordinator](docs/engineering/RESEARCH_COORDINATOR.md), then inspect the [Architecture Atlas](docs/architecture/ATLAS.md), [AGENTS.md](AGENTS.md) and [two-minute navigation map](docs/engineering/AGENT_NAVIGATION.md) before editing. The registry, generation-owned contracts, code, software checks and scientific evidence answer different questions; historical reports do not override live HEAD.
 
 ## Architectural generations
 
