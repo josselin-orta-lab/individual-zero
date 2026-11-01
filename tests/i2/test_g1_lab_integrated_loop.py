@@ -159,6 +159,37 @@ class G1LabClosedLoopTests(unittest.TestCase):
                 self.assertNotIn('"observed_result"', observed)
         self.assertEqual(firsts[0], firsts[1])
 
+    def test_historical_body_tampering_fails_closed_before_next_capture(self):
+        lab = self.make(initial_energy=40)
+        lab.step()
+        lab.step()
+        before = lab.audit()
+        self.assertEqual(before["revision"], 2)
+        with sqlite3.connect(self.path) as db:
+            db.execute("UPDATE g1_lab_steps SET net=net+1 WHERE seq=1")
+        with self.assertRaisesRegex(LabRefusal, "cannot replay"):
+            lab.audit()
+        with self.assertRaisesRegex(LabRefusal, "cannot replay"):
+            lab.step()
+
+    def test_historical_action_mutation_fails_closed_even_if_final_body_same(self):
+        lab = self.make(initial_energy=40)
+        lab.step()
+        lab.step()
+        with sqlite3.connect(self.path) as db:
+            db.execute("UPDATE g1_lab_steps SET action_ref=? WHERE seq=1", (DRINK,))
+        with self.assertRaisesRegex(LabRefusal, "differs from paid"):
+            lab.audit()
+
+    def test_past_body_energy_forgery_fails_even_with_matching_head(self):
+        lab = self.make(initial_energy=40)
+        lab.step()
+        lab.step()
+        with sqlite3.connect(self.path) as db:
+            db.execute("UPDATE g1_lab_steps SET before_energy=25 WHERE seq=1")
+        with self.assertRaisesRegex(LabRefusal, "capture or subjective"):
+            lab.audit()
+
     def test_foreign_identity_reopening_refused(self):
         lab = self.make()
         lab.step()
