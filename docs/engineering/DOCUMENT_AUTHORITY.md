@@ -20,6 +20,14 @@ Dated investigations, old issue reports, historical status ledgers, unapproved p
 
 Examples: `src/i1/docs/STATUS_HISTORY.md`, `src/i2/docs/STATUS_HISTORY.md`, `archive/i0/`, dated `docs/research/` reports and unreconciled proposal files.
 
+## Authority conflict and navigation procedure
+
+1. **Current selection:** use `config/engine-registry.json`, current branch SHA and the generation's `engine.json`. A dated status report cannot override live state.
+2. **Implementation claims:** check generation-owned source and its relevant contracts and tests. If they disagree with docs, report a discrepancy, not a silent compatibility fallback.
+3. **Scientific claims:** navigate using the [original-path study indexes](../research/studies/README.md), then inspect the actual preregistration, original records, custody, controls and independent review. Filename hints and Git blob hashes provide routing/provenance, not scientific validation.
+4. **Historical custody:** preserve `archive/i0/` and the [419-file historical root baseline](../research/studies/HISTORICAL_ROOT_FILES.md). A broken-looking historical link is a review lead, not permission to rewrite evidence.
+5. **Choosing work:** use the [research coordinator](RESEARCH_COORDINATOR.md) plus current GitHub blockers to select a minimal intervention and explicitly state what remains `NOT_EVALUATED`.
+
 ## Practical rule for agents
 
 For a targeted engineering change: consult the registry and contracts, task-scoped routing, real code paths and targeted tests. For a scientific assertion: independently inspect evidence, protocol and verdict. Treat all dated PRs, screenshots and status reports as snapshots, not live HEAD. Never delete or relocate historical sources by name-pattern alone; check provenance, imports, links and reproducibility first.

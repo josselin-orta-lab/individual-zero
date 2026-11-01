@@ -25,6 +25,14 @@ This is a **navigation index**, not a second architectural specification. It sho
 
 For research priorities use `python tools/research_coordinator.py recommend` and inspect `python tools/research_dossiers.py gaps` before choosing a code route. For broad historical lookup use `python tools/research_corpus.py report --top 8`; its lexical matches are unreviewed. Only then open the [Architecture Atlas](../architecture/ATLAS.md) for ownership and implementation paths.
 
+## Decision path for the next intervention
+
+Do not choose work from directory size or the age of the latest PR. Establish the active generation from the registry, then consult the [research coordinator](RESEARCH_COORDINATOR.md) with `python tools/research_coordinator.py recommend`. Inspect the question's source-pinned [dossier](RESEARCH_DOSSIERS.md), exact original evidence, negative findings and unresolved blockers. Compare this with live GitHub issues/PRs and checks **on their exact SHAs**. Prefer completing or unblocking an already open, high-value task over starting a competing campaign.
+
+Classify the proposed work before touching code: (a) repository/doc navigation, (b) generation-owned implementation, (c) synthetic engineering verification, or (d) scientific observation requiring separate authorization. Record an expected falsifying outcome and the smallest relevant test before implementation. If a source pin disagrees, custody is missing or a scientific gate is unreviewed, record the uncertainty rather than promoting the claim.
+
+For physical file location, [historical research study indexes](../research/studies/README.md) and `python tools/research_location_index.py --family stage-12 --limit 20` route to original paths with Git blob hashes. `python tools/research_link_audit.py --limit 20` produces historical link review leads. The [research-root placement baseline](../research/studies/HISTORICAL_ROOT_FILES.md) prevents new unowned root reports. Existing records are not moved or reclassified by name alone.
+
 ## Source of truth
 
 **Registry** says *which generation is active*. **Engine contract + real code** say *what is installed and executable*. **ADRs** say *what is allowed*. **CI on an exact SHA** says *what software was checked*. **Experimental evidence** says *what was measured*, and only a reviewed scientific gate can say *what was established*. An older issue, PR, historical status ledger, theoretical proposal or test fixture never overrides these.
