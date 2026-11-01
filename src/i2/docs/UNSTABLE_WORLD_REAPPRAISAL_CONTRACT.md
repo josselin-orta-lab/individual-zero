@@ -315,3 +315,27 @@ replacement survival strategy is still absent. At energy=10 the normal
 COLLECT action remains. The historic trials leave the new switch off.
 An extra experimental policy is not permission to reactivate I2, declare
 M11 authentication, predict hidden food, or claim learned planning.
+
+
+## Opt-in combined emergency/deadline policy (new experimental cohort)
+
+A fresh I2-only genesis may now enable both `last_resort_exploration`
+and `deadline_aware`. The same **paid candidate batch** first assigns
+zero positive value to COLLECT when its necessary two-tick delay would
+exhaust the body before EAT. It then gives an available EAT the
+categorical last-resort priority only if it would otherwise lose the
+competition and its source-verified emergency conditions hold. When
+EAT already wins, no synthetic priority is invented. Action Control can
+still veto; no hidden food payoff is consulted. The single-owner audit
+recomputes both value transformations and checks distinct evidence
+markers. Older control policies remain opt-out at genesis.
+
+The matched bounded examples intentionally retain the unfavorable case.
+At initial energy=4 with no inventory, COLLECT is not a timely rescue:
+the composed policy picks DRINK, which **also does not restore energy**.
+With initial energy=8 and already collected inventory, physical time
+can lower energy to 4; the composed policy attempts EAT, which restores
+energy in the stable world but can cause terminal energy in the adverse
+world. This is not evidence of generalized survival benefit, a learned
+planner or reliable toxic-food detection. It is the smallest practical
+behavioral composition and is separately falsifiable.
