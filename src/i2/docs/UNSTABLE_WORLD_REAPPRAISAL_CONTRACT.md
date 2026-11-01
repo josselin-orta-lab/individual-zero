@@ -101,3 +101,26 @@ independent witness provenance. Old blind-recovery negative cases remain
 unchanged and no tuned revisit bonus was added.
 
 Focused regression: `PYTHONPATH=src python -m unittest discover -s tests/i2 -p 'test_local_survival_reflex.py' -v`.
+
+## Paid Action Control survival constraint (increment after #829)
+
+The isolated world now supplies the exact current owner-derived
+`LocalEnergySurvivalReflex` to its **existing paid Action Control safety
+port**, never directly to Competition valuation. For a candidate EAT with
+energy reserve <= 4, the safety source emits a positive veto referenced to
+the exact observed energy evidence; the already-paid control returns
+`VETOED`, and no internal eating admission/effect is created. No substitute
+action is picked, no hidden reward predicted, and metabolism continues.
+
+The same owner replay recomputes the required veto from *predecision*
+committed energy and rejects a missing/misbound veto. This is a deliberately
+conservative, mechanistic restriction: it may prevent a beneficial recovery
+meal under critical scarcity. That adverse possibility is a required
+scientific falsifier, not something to tune away. PREEMPT/CONSTRAIN on
+other actions remains informational in this limited increment. This is not
+an authenticated M11 witness, a real physiological reflex, or full
+reappraisal/need integration. The historical blind restoration and
+seven-case batteries remain unchanged.
+
+Focused software regression:
+`PYTHONPATH=src python -m unittest discover -s tests/i2 -p 'test_paid_reflex_veto.py' -v`.
