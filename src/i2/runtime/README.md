@@ -60,3 +60,19 @@ PYTHONPATH=src python -m i2.runtime.isolated_prototype --scenario adverse --step
 
 A neutral payoff may induce an abstaining score tie. Preserve that null/negative
 outcome rather than adjusting the scores or claiming it is adaptive.
+
+## Owner-controlled physical time (prototype only)
+
+The prototype now exposes `advance_physics()`: one **explicitly scheduled**
+body-metabolism tick with energy -1, in the same SQLite world owner,
+without cognition, an action or UC consumption. It keeps running if the
+cognitive budget is zero. Every tick is transactionally journaled and
+replayed alongside the existing cognitive events, and terminal energy=0
+absorbs all subsequent cognition and physical ticks.
+
+A future cognitive capture sees only the *committed post-tick body energy*.
+It cannot see future tick sequences, world impulses, unchosen outcomes or
+new researcher-only decision diagnostics. Before-COMMIT failures roll back;
+after-COMMIT ambiguity halts further in-process operation. Cold-open remains
+inspection only. Neither this manual clock nor SQLite is a real-time
+Scheduler, independent M11 witness or authenticated irreversible life.
