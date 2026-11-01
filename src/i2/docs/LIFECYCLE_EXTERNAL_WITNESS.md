@@ -90,6 +90,20 @@ Le registre local vérifie l'identité (device/inode) du répertoire, du verrou 
 
 Le diagnostic d'un COMMIT incertain et le maillon historique demandé par `minimum_witness` proviennent désormais du même snapshot SQLite audité. L'inspection refuse `FORK` avant de contacter le témoin lorsque l'ascendance locale diverge, `STALE` si le préfixe manque, et `UNKNOWN` lorsqu'une modification concurrente est détectée au réaudit. Cette cohérence est locale et temporaire, non linéarisable avec le fournisseur externe, sans permission de rejeu, d'action ou de reprise et sans attestation M11 réelle.
 
+## G2 : second audit obligatoire aussi pendant la verification d'ascendance
+
+`verify_fixture` réaudite désormais le journal **même lorsque** le contrôle
+d'ascendance d'une borne `minimum_witness` refuse `STALE` ou `FORK`.
+Si une écriture concurrente a modifié l'état entre le premier audit et cette
+vérification, le résultat est `UNKNOWN`, pas un diagnostic fondé sur une
+copie périmée. Une panne du lecteur de préfixe (`sqlite3`, I/O ou contenu
+illisible) est également `UNKNOWN` **avant** tout appel externe, avec
+conservation de la cause. Une borne malformée ou d'une autre identité reste
+une erreur d'entrée `ValueError`. Les tests injectent une transition
+terminale concurrente et des défauts de lecture. Le contrôle ne rend
+aucune lecture localement ou globalement linéarisable et ne fournit
+ni authentification M11 ni autorité de reprise.
+
 ## G2 : refus d'un audit initial indisponible
 
 `verify_fixture` refuse désormais `UNKNOWN` si le **premier** audit SQLite est indisponible (erreur de lecture SQLite ou I/O), avant de consulter le témoin. Les tests vérifient ce refus avec et sans borne `minimum_witness`. Le second audit demeure obligatoire après un appel externe. Cette classification est un diagnostic local G2 sans autorisation de réparation, rejeu, reprise ni action, et ne rend pas le témoin indépendant.
