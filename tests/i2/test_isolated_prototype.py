@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 from i2.runtime.isolated_prototype import (
     IsolatedI2, PrototypeRefusal, COLLECT, EAT, SCENARIOS, demo,
-    paired_decision_contrast,
+    paired_decision_contrast, world_demo, WORLD_TICK_LIMIT,
 )
 from i2.modules.cognitive_cycle_fixture import (
     FaultInjected, CommitAcknowledgmentLost,
@@ -226,6 +226,116 @@ class IsolatedPrototypeTests(unittest.TestCase):
             subject.audit()
         with self.assertRaises(PrototypeRefusal):
             subject.step()
+
+    def test_scheduled_world_owns_metabolism_and_paid_action_windows(self):
+        subject = self.create(initial_energy=20)
+        execution = subject.run_world(ticks=4)
+        trace = execution["trace"]
+        self.assertEqual(len(trace), 4)
+        self.assertEqual([row["physical_tick"] for row in trace], [1, 2, 3, 4])
+        self.assertEqual([row["cognitive_committed"] for row in trace],
+                         [False, True, False, True])
+        self.assertEqual(trace[0]["reason"], "NO_COGNITIVE_WINDOW")
+        self.assertEqual(trace[1]["selected_action"], COLLECT)
+        self.assertEqual(trace[3]["selected_action"], EAT)
+        self.assertTrue(all(
+            row["internal_admission"] is None
+            for row in (trace[0], trace[2])
+        ))
+        self.assertEqual(subject.audit()["physical_ticks"], 4)
+        self.assertEqual(subject.audit()["revision"], 2)
+        self.assertEqual(subject.audit()["actual_uc_spent"], 9)
+        self.assertEqual(subject.decision_evidence()[0]["physical_ticks_before"], 2)
+        self.assertEqual(subject.decision_evidence()[1]["physical_ticks_before"], 4)
+        with sqlite3.connect(self.path) as db:
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM proto_ticks").fetchone()[0], 4)
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM events").fetchone()[0], 2)
+        self.assertEqual(execution["status"], "BOUNDED_OBSERVATION_END_NONTERMINAL")
+        self.assertFalse(execution["m11_authenticated"])
+
+    def test_scheduled_world_ages_to_terminal_with_no_uc_or_cognition(self):
+        subject = self.create(initial_uc=0, initial_energy=4, impulses=(6,))
+        report = subject.run_world(ticks=12)
+        self.assertEqual(report["status"], "MODELED_TERMINAL")
+        self.assertEqual(len(report["trace"]), 4)
+        self.assertEqual(report["audit"]["energy"], 0)
+        self.assertEqual(report["audit"]["physical_ticks"], 4)
+        self.assertEqual(report["audit"]["revision"], 0)
+        self.assertEqual(report["audit"]["remaining_uc"], 0)
+        self.assertEqual(report["trace"][1]["reason"], "COGNITION_UNFUNDED")
+        self.assertEqual(report["trace"][-1]["reason"], "PHYSICAL_TERMINAL")
+        with self.assertRaisesRegex(PrototypeRefusal, "terminal"):
+            subject.run_world(ticks=1)
+        self.assertTrue(IsolatedI2.inspect(self.path).audit()["terminal"])
+
+    def test_scheduled_world_cognition_runs_out_before_physics(self):
+        subject = self.create(initial_uc=4, initial_energy=8, impulses=(6,) * 8)
+        result = subject.run_world(ticks=12)
+        trace = result["trace"]
+        self.assertEqual(trace[1]["selected_action"], COLLECT)
+        self.assertEqual(trace[1]["remaining_uc"], 0)
+        self.assertEqual(trace[3]["reason"], "COGNITION_UNFUNDED")
+        self.assertEqual(result["status"], "MODELED_TERMINAL")
+        self.assertEqual(result["audit"]["revision"], 1)
+        self.assertEqual(result["audit"]["actual_uc_spent"], 4)
+        self.assertGreater(result["audit"]["physical_ticks"], 2)
+
+    def test_scheduled_world_preserves_physics_after_cognitive_horizon(self):
+        subject = self.create(initial_energy=30, impulses=(6,))
+        result = subject.run_world(ticks=6)
+        self.assertEqual(result["audit"]["revision"], 1)
+        self.assertEqual(result["audit"]["physical_ticks"], 6)
+        self.assertEqual(result["trace"][3]["reason"],
+                         "COGNITIVE_HORIZON_EXHAUSTED")
+        self.assertEqual(result["trace"][5]["reason"],
+                         "COGNITIVE_HORIZON_EXHAUSTED")
+        self.assertFalse(result["audit"]["terminal"])
+
+    def test_scheduled_world_chunked_calls_preserve_decisions_and_uc(self):
+        subject = self.create(initial_energy=30)
+        first = subject.run_world(ticks=3)
+        second = subject.run_world(ticks=5)
+        path2 = Path(self.tmp.name) / "whole.sqlite"
+        whole = IsolatedI2.create(
+            path2, learning=True, impulses=SCENARIOS["stable"],
+            initial_energy=30)
+        single = whole.run_world(ticks=8)
+        combined = (*first["trace"], *second["trace"])
+        for a, b in zip(combined, single["trace"]):
+            self.assertEqual(
+                (a["physical_tick"], a["reason"], a["selected_action"],
+                 a["physical_end_energy"], a["remaining_uc"]),
+                (b["physical_tick"], b["reason"], b["selected_action"],
+                 b["physical_end_energy"], b["remaining_uc"]),
+            )
+        self.assertEqual(subject.audit()["revision"], whole.audit()["revision"])
+        self.assertEqual(subject.audit()["energy"], whole.audit()["energy"])
+        self.assertEqual(subject.audit()["remaining_uc"], whole.audit()["remaining_uc"])
+
+    def test_scheduled_world_horizon_is_censored_not_claimed_survival(self):
+        subject = self.create(initial_uc=0, initial_energy=40)
+        report = subject.run_world(ticks=WORLD_TICK_LIMIT)
+        self.assertEqual(report["status"], "RESEARCH_HORIZON_CENSORED")
+        self.assertFalse(report["audit"]["terminal"])
+        self.assertEqual(report["audit"]["energy"], 40 - WORLD_TICK_LIMIT)
+        self.assertEqual(report["audit"]["revision"], 0)
+        self.assertEqual(subject.run_world(ticks=1)["trace"], ())
+        with self.assertRaisesRegex(PrototypeRefusal, "horizon"):
+            subject.advance_physics()
+
+    def test_scheduled_world_paired_behavioral_contrast_not_overclaimed(self):
+        report = world_demo("adverse", ticks=8)
+        self.assertEqual(report["scientific_verdict"], "NOT_ESTABLISHED")
+        self.assertEqual(report["first_choice_contrast"]["first_divergence_seq"], 4)
+        self.assertEqual(
+            report["first_choice_contrast"]["classification"],
+            "MATCHED_PRECHOICE_PROGRAMMED_VALUATION_CONTRAST",
+        )
+        for arm in report["arms"].values():
+            self.assertEqual(arm["audit"]["physical_ticks"], 8)
+            self.assertEqual(arm["audit"]["revision"], 4)
+            self.assertFalse(arm["audit"]["m11_authenticated"])
+
 
 
 if __name__ == "__main__":

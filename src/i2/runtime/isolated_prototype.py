@@ -28,7 +28,9 @@ from i2.modules.cognitive_cycle_fixture import (
     CognitiveCycleFixture, CommitAcknowledgmentLost, FaultInjected, ZERO_HASH,
 )
 from i2.modules.intention_continuity import FirstPersonCapture
-from i2.modules.intention_ingress import ObservationClaim
+from i2.modules.intention_ingress import ObservationClaim, INTAKE_UC
+from i2.modules.competition_preview import UC_PER_CANDIDATE
+from i2.modules.action_control_boundary import CONTROL_UC
 
 COLLECT = "affordance:collect:berry_a"
 EAT = "affordance:eat:berry_a"
@@ -36,6 +38,9 @@ DRINK = "affordance:drink:water"
 # Existing I2 study comparator, NOT an endogenous discovered value function.
 PRIORS = {COLLECT: 3, EAT: 4, DRINK: 1}
 MAX_STEPS = 8
+# In-process research-world cadence; not calibrated biology or real time.
+WORLD_COGNITIVE_PERIOD = 2
+WORLD_TICK_LIMIT = 32
 FIRST_STEP = 10
 STEP_GAP = 8
 SCENARIOS = {
@@ -605,6 +610,8 @@ class IsolatedI2:
         prior = self.audit()
         if prior["terminal"]:
             raise PrototypeRefusal("terminal body cannot advance")
+        if prior["physical_ticks"] >= WORLD_TICK_LIMIT:
+            raise PrototypeRefusal("physical research horizon exhausted")
         db = self._connect()
         try:
             db.execute("BEGIN IMMEDIATE")
@@ -661,6 +668,107 @@ class IsolatedI2:
             "before_energy": row[1], "energy": energy,
             "terminal": bool(terminal), "remaining_uc": verified["remaining_uc"],
             "cognition_committed": False, "external_motor_authority": "NONE",
+        }
+
+    def run_world(self, *, ticks: int = 12) -> dict:
+        """Run a fixed internal world cadence without per-tick operator calls.
+
+        This synchronous bounded runner owns WHEN the body ticks and WHEN
+        cognition is eligible, but uses only the existing SQLite state
+        owner. No extra world truth or externally admitted motor commands.
+        The operator chooses a *maximum observation horizon*, never an
+        action or a hidden payoff. A physical tick always precedes any
+        cognitive opportunity, including when UC is exhausted.
+
+        This is NOT a background clock, a real-time scheduler, M11, a
+        scientific survival test or independently authenticated execution.
+        """
+        if type(ticks) is not int or not 1 <= ticks <= WORLD_TICK_LIMIT:
+            raise PrototypeRefusal("invalid bounded world observation horizon")
+        if self.inspection_only or self.halted:
+            raise PrototypeRefusal("world execution unavailable")
+        started = self.audit()
+        if started["terminal"]:
+            raise PrototypeRefusal("terminal individual cannot run a world")
+        trace: list[dict] = []
+        for _ in range(ticks):
+            previous = self.audit()
+            if (previous["terminal"] or
+                    previous["physical_ticks"] >= WORLD_TICK_LIMIT):
+                break
+            # The world always advances before any possible cognition.
+            tick = self.advance_physics()
+            state = self.audit()
+            due = tick["seq"] % WORLD_COGNITIVE_PERIOD == 0
+            action = None
+            cognitive = None
+            if tick["terminal"]:
+                reason = "PHYSICAL_TERMINAL"
+            elif not due:
+                reason = "NO_COGNITIVE_WINDOW"
+            else:
+                meta, body, _ = self._read()
+                if state["revision"] >= len(json.loads(meta["impulses_json"])):
+                    reason = "COGNITIVE_HORIZON_EXHAUSTED"
+                else:
+                    # Reserve all costs, including a safety review, using
+                    # the ACTUAL I2-owned port price constants. Avoid an
+                    # incompletely paid cognitive attempt or free action.
+                    available = _offers(body["inventory"], body["resources"])
+                    required_uc = (
+                        INTAKE_UC + len(available) * UC_PER_CANDIDATE +
+                        CONTROL_UC
+                    )
+                    if state["remaining_uc"] < required_uc:
+                        reason = "COGNITION_UNFUNDED"
+                    else:
+                        try:
+                            cognitive = self.step()
+                        except BaseException:
+                            # A tick may already be committed. An unknown
+                            # action cannot be replayed or skipped casually.
+                            self.halted = True
+                            raise
+                        action = cognitive.chosen
+                        reason = ("COGNITIVE_ACTION_COMMITTED" if action
+                                  else "COGNITIVE_ABSTENTION_COMMITTED")
+            final = self.audit()
+            trace.append({
+                "physical_tick": tick["seq"],
+                "before_tick_energy": tick["before_energy"],
+                "after_tick_energy": tick["energy"],
+                "cognitive_due": due,
+                "cognitive_committed": cognitive is not None,
+                "reason": reason,
+                "selected_action": action,
+                "internal_admission": (
+                    cognitive.admission_ref if cognitive else None),
+                "physical_end_energy": final["energy"],
+                "cognitive_revision": final["revision"],
+                "remaining_uc": final["remaining_uc"],
+                "terminal": final["terminal"],
+            })
+            if final["terminal"]:
+                break
+        ending = self.audit()
+        status = (
+            "MODELED_TERMINAL" if ending["terminal"] else
+            "RESEARCH_HORIZON_CENSORED" if
+            ending["physical_ticks"] >= WORLD_TICK_LIMIT else
+            "BOUNDED_OBSERVATION_END_NONTERMINAL"
+        )
+        return {
+            "status": status,
+            "scheduler": "IN_PROCESS_FIXED_CADENCE_RESEARCH_ONLY",
+            "cognitive_period_ticks": WORLD_COGNITIVE_PERIOD,
+            "tick_limit": WORLD_TICK_LIMIT,
+            "started_at_physical_tick": started["physical_ticks"],
+            "requested_additional_ticks": ticks,
+            "trace": tuple(trace),
+            "audit": ending,
+            "m11_authenticated": False,
+            "scientific_verdict": "NOT_ESTABLISHED",
+            "external_motor_authority": "NONE",
         }
 
     def step(self, *, veto: bool = False, fault: str | None = None) -> PrototypeStep:
@@ -818,12 +926,57 @@ def demo(scenario: str, *, steps: int = 6) -> dict:
             "m11_authenticated": False, "active_engine": False}
 
 
+def world_demo(scenario: str, *, ticks: int = 12,
+               initial_uc: int = 60, initial_energy: int = 40) -> dict:
+    """Disposable paired engineering smoke for the world-owned cadence."""
+    if (scenario not in SCENARIOS or type(ticks) is not int or
+            not 1 <= ticks <= WORLD_TICK_LIMIT or
+            type(initial_uc) is not int or not 0 <= initial_uc <= 1000 or
+            type(initial_energy) is not int or not 1 <= initial_energy <= 100):
+        raise PrototypeRefusal("invalid bounded world smoke")
+    with tempfile.TemporaryDirectory(prefix="i2-world-schedule-") as root:
+        arms = {}
+        for learning, label in ((True, "observed_chosen"), (False, "fixed")):
+            individual = IsolatedI2.create(
+                Path(root) / (label + ".sqlite"), learning=learning,
+                impulses=SCENARIOS[scenario], initial_uc=initial_uc,
+                initial_energy=initial_energy)
+            execution = individual.run_world(ticks=ticks)
+            arms[label] = {
+                "execution": execution,
+                "decisions": individual.decision_evidence(),
+                "audit": individual.audit(),
+            }
+    return {
+        "status": "SYNCHRONOUS_BOUNDED_WORLD_RESEARCH_ONLY",
+        "scenario": scenario,
+        "arms": arms,
+        "first_choice_contrast": paired_decision_contrast(
+            arms["observed_chosen"]["decisions"],
+            arms["fixed"]["decisions"],
+        ),
+        "scientific_verdict": "NOT_ESTABLISHED",
+        "m11_authenticated": False,
+        "active_engine": False,
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--scenario", choices=sorted(SCENARIOS), default="adverse")
     parser.add_argument("--steps", type=int, default=6)
+    parser.add_argument("--world", action="store_true",
+                        help="Use world-owned bounded physical cadence")
+    parser.add_argument("--ticks", type=int, default=12)
+    parser.add_argument("--initial-uc", type=int, default=60)
+    parser.add_argument("--initial-energy", type=int, default=40)
     args = parser.parse_args()
-    print(_json(demo(args.scenario, steps=args.steps)))
+    if args.world:
+        print(_json(world_demo(args.scenario, ticks=args.ticks,
+                               initial_uc=args.initial_uc,
+                               initial_energy=args.initial_energy)))
+    else:
+        print(_json(demo(args.scenario, steps=args.steps)))
 
 
 if __name__ == "__main__":
