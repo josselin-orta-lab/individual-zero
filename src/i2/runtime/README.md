@@ -31,3 +31,32 @@ No independently authenticated, non-equivocating external M11 witness,
 cross-domain anti-rollback guarantee or physical robot effect exists. This
 mechanism is not qualified for live engine registration or external action.
 Retain I1 as active; do not rerun or tune the closed v1-r1 16-arm study.
+
+## Auditable first-person decision contrasts
+
+`demo` also publishes `arms[*].decisions` and `behavioral_contrast`.
+The readout is **researcher-only**, generated from an audited, already
+committed local journal. It never becomes an additional sensory input.
+Each decision includes the exact prechoice energy/inventory/resources,
+offered actions, paid scores, personally observed older outcomes, outcomes
+actually used by the valuation, UC and eventual selected physical effect.
+No future impulse or unchosen-world outcome is available to cognition.
+
+The first action divergence can be called a **matched programmed valuation
+contrast** only if the prehistory, state, affordances, experience and UC
+match, and the *existing researcher-written scores* explain the choice.
+In the eight-capture toy world this commonly exposes adverse fourth-capture
+avoidance versus a fixed prior, while the stable scenario shows no
+action divergence over a short horizon. Neither is natural intelligence,
+generalization, a survival benefit or a confirmatory scientific result.
+After the first divergence, later rewards and mortality are **unmatched**
+trajectories, not a causal contrast of equivalent worlds.
+
+Use the single existing command to inspect without launching new cohorts:
+
+```bash
+PYTHONPATH=src python -m i2.runtime.isolated_prototype --scenario adverse --steps 6
+```
+
+A neutral payoff may induce an abstaining score tie. Preserve that null/negative
+outcome rather than adjusting the scores or claiming it is adaptive.
