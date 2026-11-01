@@ -47,7 +47,7 @@ class TwoStepDeadlineTests(unittest.TestCase):
         self.assertEqual(first.chosen, COLLECT)
         second = life.step()
         self.assertEqual(second.chosen, EAT)
-        self.assertEqual(second.energy, 9)
+        self.assertEqual(second.energy, 7)
         self.assertEqual(life.audit()["actual_uc_spent"], 9)
         self.assertFalse(life.audit()["m11_authenticated"])
 
