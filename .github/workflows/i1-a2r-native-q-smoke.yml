@@ -2,7 +2,7 @@ name: A2-R native Q smoke
 on:
   pull_request:
     paths:
-      - 'tools/research/tests/test_i1_a2r_q_native_smoke.py'
+      - 'tests/research/a2r/test_i1_a2r_q_native_smoke.py'
       - 'tools/research/i1_a2r_m11_cold.py'
       - 'tools/research/i1_a2r_q_replay.py'
       - 'tools/research/i1_a2r_stage8_evidence.py'
@@ -28,4 +28,4 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: python -m pip install -e .
-      - run: PYTHONPATH=tools/research python -m unittest discover -s tools/research/tests -p test_i1_a2r_q_native_smoke.py -v
+      - run: PYTHONPATH=tools/research python -m unittest discover -s tests/research/a2r -p test_i1_a2r_q_native_smoke.py -v
