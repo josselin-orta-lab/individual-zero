@@ -175,7 +175,7 @@ def verify_provider_exports(root: Path, plan: dict, campaign: str = "ALL") -> di
         "source_ref_protection_checked_now": False,
         "G0_scientific_gate": "PARTIAL",
         "scientific_verdict": "NOT_EVALUATED",
-        "warning": "Provider packages only. Verify inner original M11 ZIPs via the locked A1-P/A1-C readers; preserve copies independently and commission a G0 review.",
+        "warning": "Provider SHA-256 only. In A1-P/A1-C, life ZIP downloads themselves contain life.sqlite; compare their byte hashes to frozen original research references without assuming an inner ZIP. This is not an M11 chain audit or independent custody.",
     }
 
 

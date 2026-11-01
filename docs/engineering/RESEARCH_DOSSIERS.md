@@ -10,7 +10,7 @@ The seed now covers five distinct cases, including a distinct G0 custody risk:
 
 | Dossier | Reported assessment | What is actually linked | Key gap to verify |
 | --- | --- | --- | --- |
-| `I1-G0-CUSTODY` | `PARTIAL` | Verified historical source ref/tree, 58 dated GitHub Actions artifact metadata records and A1-P/A1-C audits | **Original M11 ZIPs and independent durable copies not reverified**; retention expires 28 Nov 2026; source ref `protected=false` |
+| `I1-G0-CUSTODY` | `PARTIAL` | All 58 historical Actions ZIPs recovered and SHA-256/CRC-checked on 1 Nov; 8 A1-P hashes match frozen source pins; initial metadata audit retained | **Independent A1-C sealed manifest, M11 chain audit and independent custody not verified**; Actions expiry 28 Nov 2026; source ref `protected=false` |
 | `I1-A1C-TARGETED` | `NO_GO` | Original A1-C preregistration, a later post-hoc diagnostic, a dated I1 status summary | Original primary outcome record, independent M11 archive custody and replication |
 | `I1-A2R-REWARD` | `NOT_EXECUTED` | Frozen prospective protocol and I1 status summary | No 96-life cohort exists; **do not invent a result or run it to fill the dossier** |
 | `I1-A235B-COMPETITION` | `INCONCLUSIVE` | Original prospective preregistration and reported results | The intended natural contested-opportunity condition was not met; **software CI PASS is not scientific confirmation** |

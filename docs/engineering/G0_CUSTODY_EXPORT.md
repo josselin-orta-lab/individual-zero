@@ -6,7 +6,11 @@
 
 As observed on 1 November 2026, A1-P [run 40938021102](https://github.com/josselin-orta-lab/individual-zero/actions/runs/40938021102) held **8 life artifacts and 1 aggregate**; A1-C [run 40944104333](https://github.com/josselin-orta-lab/individual-zero/actions/runs/40944104333) held **48 life artifacts and 1 aggregate**. GitHub displayed an expected **28 November 2026** expiry. The 8 individual A1-P jobs passed but the **A1-P aggregate job failed**. A1-C software jobs passed yet its **targeted scientific result remains NO_GO**. The source archive branch is still **unprotected** at the dated inspection. Recheck GitHub availability and retention immediately before the operator export.
 
-The inventory's `provider_artifact_digest` is the GitHub package's reported SHA-256, **not** an attestation of any M11 archive, SQL event chain, causal benefit, or independent storage.
+**Operational update, 1 November 2026 (after the original metadata-only audit):** all **58** historical GitHub Actions ZIPs were actually retrieved (56 lives, 2 aggregates; **101,252,766 bytes**). Their byte SHA-256 values match the original GitHub artifact digests and all ZIP CRC checks passed. The 56 life-artifact ZIPs contain `life.sqlite` and `report.json` **directly**, without a nested original ZIP in these exact runs. The eight A1-P life ZIP SHA-256 values also match the historical `ORIGINAL_SHA256` list from the frozen reproduction reader. A user-controlled **private backup outside GitHub** now exists, with 58 uploads accepted and two cross-campaign files retrieved back with matching SHA-256. A portable 58-artifact transfer bundle was created with SHA-256 `65e288e41cfb097719ec4620a9247a662408e1bc631568e937c2dff0b8dc0bb8`. The owner retains its private copy and receipt; no original ZIP bytes or custody paths have been committed here.
+
+**Unresolved:** the 48 A1-C bytes have not been reconciled to an *independently sealed* original scientific manifest; no M11 causal-journal audit, independently governed durable second copy, independent attestation or branch protection has been completed. **G0 remains PARTIAL**; software PASS and archive byte identity do not authorize a scientific GO.
+
+The inventory's `provider_artifact_digest` identifies the exact downloaded Actions ZIP bytes. In these historical runs the life ZIP is itself the M11 ZIP, but this match **does not** attest native M11 chain validity, causal learning, independent source authenticity or long-term scientific custody.
 
 ## Phase 1: plan and operator-reviewed download
 
@@ -27,7 +31,7 @@ chmod 700 "$IZ_G0_EXPORT_ROOT"
 bash /tmp/iz-g0-export-review.sh
 ```
 
-**Do not put originals under the public repository**, attach private M11 data to an issue or PR, check it into Git, or use an unaudited bulk ZIP extractor. A downloaded artifact may itself be a provider ZIP wrapping the original M11 ZIP: keep those layers distinct. A 401/404/expired artifact must be reported as missing rather than replaced by a synthetic life. If the `gh api` transport returns an unexpected body, the next phase refuses its byte digest.
+**Do not put originals under the public repository**, attach private M11 data to an issue or PR, or check them into Git. In the two historical runs audited here, the 56 life artifact downloads are **direct M11 ZIP archives** containing `life.sqlite` and `report.json`, not ZIPs requiring another extraction step. For a different run, inspect its contents before interpreting the format; never blindly extract a suspected inner ZIP. A 401/404/expired artifact must be reported as missing rather than replaced by a synthetic life. If the `gh api` transport returns an unexpected body, the next phase refuses its SHA-256.
 
 ## Phase 2: offline package-byte receipt
 
@@ -54,7 +58,7 @@ Or use `--campaign ALL` if all 58 are present. A failure on missing, extra, alte
 
 ## Phase 3: verify original M11 ZIP identities against frozen source pins
 
-Preserve each provider package unchanged, then stage the **original** inner ZIPs in separate private, empty A1-P and A1-C directories outside the repository. Inspect provider ZIP members and extract only through an isolated, bounded ZIP reader with checks for duplicate names, path traversal, link entries and ZIP bombs. The G0 tool deliberately **does not unpack or execute** downloaded packages, so an untrusted package cannot trick the research agent into overwriting evidence. Do not silently treat the GitHub wrapper as an original M11 ZIP.
+For these two campaigns, **do not extract a nonexistent inner ZIP**: the downloaded life-artifact ZIP already contains `life.sqlite` and `report.json`. Preserve the original ZIP bytes unchanged. For the separate `verify-originals` command, stage **copies of the 8 A1-P or 48 A1-C life ZIPs only** in a private directory outside the repository, excluding the two aggregate ZIPs. The G0 tool reads and hashes the staged ZIP files without decompressing them or opening SQLite. Check the original filenames, sizes and research SHA pins before making any copy. A different campaign might use different wrapping, which would require its own inspection and protocol.
 
 Run the **new offline originals-byte stage** once the operator has staged all original ZIPs. It reads the historical A1-P eight-hash matrix from the *exact Git blob* of the existing A1-P reproducibility tool; A1-C uses the separately SHA-256-pinned original 48-life manifest and the exact Git blob of its existing cold audit. Any changed frozen reader, missing ZIP, unexpected extra file, mismatched hash/size or duplicate A1-C entry is a hard failure:
 
