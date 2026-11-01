@@ -65,3 +65,5 @@ A filled illustrative example is available in [../../examples/adr-example.md](..
 - [ADR-0004: evidence-driven development and G2 stop rule](ADR-0004-evidence-driven-development-and-g2-stop-rule.md) (1 November 2026). Next I2 task is independent G1 review and then the minimum G3 living loop; no synthetic G2 campaign or permission bypass.
 
 - [ADR-0005: authorized non-living integrated G1-LAB, G1-LIVE unchanged](ADR-0005-authorize-nonliving-integrated-g1-lab.md) (1 November 2026).
+
+- [ADR-0006: evidence-grounded aversion reappraisal](ADR-0006-evidence-grounded-aversion-reappraisal.md) (1 November 2026). A hidden payoff change is not learnable from an unchanged chosen-outcome history; stale +9 remains an artificial comparator.
