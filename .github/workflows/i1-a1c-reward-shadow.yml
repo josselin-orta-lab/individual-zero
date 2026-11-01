@@ -4,7 +4,7 @@ on:
     paths:
       - 'tools/research/i1_a1c_reward_shadow.py'
       - 'tools/research/i1_a1c_reward_shadow_audit.py'
-      - 'tools/research/tests/test_i1_a1c_reward_shadow.py'
+      - 'tests/research/a1c/test_i1_a1c_reward_shadow.py'
       - 'docs/research/audits/I1_ECO_A1C_FIXED_TAPE_REWARD_SENSITIVITY_2026-10-30.md'
       - 'docs/research/audits/I1_ECO_A1C_FIXED_TAPE_REWARD_SUMMARY_2026-10-30.json'
       - '.github/workflows/i1-a1c-reward-shadow.yml'
@@ -35,6 +35,6 @@ jobs:
           python -m py_compile tools/research/i1_a1c_reward_shadow.py tools/research/i1_a1c_reward_shadow_audit.py
       - name: Run focused positive and adversarial contracts only
         run: |
-          python -m unittest discover -s tools/research/tests -p 'test_i1_a1c_reward_shadow.py' -v
+          python -m unittest discover -s tests/research/a1c -p 'test_i1_a1c_reward_shadow.py' -v
       - name: Ensure the original A1-C cohort was not regenerated
         run: test ! -d reports/i1-eco-a1c-cohort

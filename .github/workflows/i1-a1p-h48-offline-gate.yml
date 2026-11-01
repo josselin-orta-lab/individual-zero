@@ -3,7 +3,7 @@ on:
   pull_request:
     paths:
       - 'tools/research/i1_a1p_h48_reproduce.py'
-      - 'tools/research/tests/test_i1_a1p_h48_reproduce.py'
+      - 'tests/research/a1p/test_i1_a1p_h48_reproduce.py'
       - '.github/workflows/i1-a1p-h48-offline-gate.yml'
 permissions:
   contents: read
@@ -22,4 +22,4 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Strictly synthetic offline gate only, never download original lives
-        run: PYTHONPATH=tools/research python -m unittest discover -s tools/research/tests -p test_i1_a1p_h48_reproduce.py -v
+        run: PYTHONPATH=tools/research python -m unittest discover -s tests/research/a1p -p test_i1_a1p_h48_reproduce.py -v

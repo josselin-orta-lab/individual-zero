@@ -81,6 +81,7 @@ individual-zero/
 - [I1 research handbook](src/i1/docs/README.md) holds the active generation's mechanism descriptions and evidence limits.
 - [Architecture Atlas](docs/architecture/ATLAS.md) lets agents trace the I1 causal path, component owners, tests and scientific boundaries before editing.
 - [Generation map](docs/architecture/ENGINE_GENERATIONS.md) explains engine ownership and archive boundaries.
+- [Test placement](tests/README.md), [archive custody](archive/README.md) and [research records](docs/research/README.md) provide physical navigation without promoting historical evidence.
 - [Research documentation](docs/research/README.md) and `experiments/` record hypotheses, protocols, observations, uncertainty, and negative outcomes.
 - [Engineering start guide](docs/engineering/START_HERE.md) explains current entrypoints. The older `individual-zero` CLI is a historical I0 bootstrap demo, not an I1 science run.
 

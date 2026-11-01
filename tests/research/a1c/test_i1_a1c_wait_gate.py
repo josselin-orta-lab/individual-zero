@@ -6,7 +6,7 @@ import tempfile
 import unittest
 import sys
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "tools" / "research"))
 
 from i1_a1c_wait_gate import scan_gate, summarize, ROLES, SEEDS, ARMS
 from i1_a1c_wait_gate_audit import audited_cohort

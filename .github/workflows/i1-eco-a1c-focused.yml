@@ -3,7 +3,7 @@ on:
   pull_request:
     paths:
       - 'tools/i1_eco_a1c_*.py'
-      - 'tools/a1c_tests/**'
+      - 'tests/research/a1c/**'
       - 'docs/research/I1_ECO_A1C_PREREGISTRATION_2026-10-29.md'
       - '.github/workflows/i1-eco-a1c-focused.yml'
   workflow_dispatch:
@@ -34,6 +34,6 @@ jobs:
         shell: bash
         run: |
           python -m py_compile tools/i1_eco_a1c_statistics.py tools/i1_eco_a1c_birth.py tools/run_i1_eco_a1c.py tools/aggregate_i1_eco_a1c.py tools/i1_eco_a1c_mechanism.py
-          python -m unittest discover -s tools/a1c_tests -p 'test_*.py' -v
+          PYTHONPATH=tools python -m unittest discover -s tests/research/a1c -p 'test_*.py' -v
       - name: Ensure A1-C cohort was not started by validation
         run: test ! -d reports/i1-eco-a1c-cohort

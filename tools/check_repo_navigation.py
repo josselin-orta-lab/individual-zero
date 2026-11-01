@@ -14,6 +14,8 @@ from urllib.parse import unquote
 ROOT = Path(__file__).resolve().parents[1]
 ENTRYPOINTS = (
     "README.md", "AGENTS.md", "CONTRIBUTING.md", "RESEARCH_MAP.md",
+    "archive/README.md", "tests/README.md",
+    "docs/research/studies/README.md", "tests/research/a2r/README.md",
     "docs/README.md", "docs/engineering/AGENT_NAVIGATION.md",
     "docs/engineering/START_HERE.md", "docs/architecture/README.md",
     "docs/architecture/ENGINE_GENERATIONS.md",
@@ -53,6 +55,8 @@ STALE = ("Experimental code may remain experimental until results justify integr
 
 
 def is_historical(path: str) -> bool:
+    if path == "archive/README.md":
+        return False
     # The proposals/ index is a current route; its dated proposals are archival.
     if path == "docs/architecture/proposals/README.md":
         return False

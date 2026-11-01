@@ -35,6 +35,14 @@ on:
       - 'docs/engineering/AGENT_NAVIGATION.md'
       - 'tools/check_repo_navigation.py'
       - 'tests/test_repo_navigation.py'
+      - 'tools/repository_layout.py'
+      - 'tests/test_repository_layout.py'
+      - 'tests/README.md'
+      - 'archive/README.md'
+      - 'docs/README.md'
+      - 'docs/research/README.md'
+      - 'AGENTS.md'
+      - 'README.md'
       - 'src/i2/docs/STATUS.md'
       - 'src/i2/docs/STATUS_HISTORY.md'
       - 'src/i2/docs/README.md'
@@ -161,3 +169,6 @@ jobs:
           python -m unittest discover -s tests -p test_repo_navigation.py -v
           python tools/check_repo_navigation.py --scope entrypoints
           python tools/check_repo_navigation.py --scope current
+          python tools/repository_layout.py audit --json > /tmp/iz-repository-layout.json
+          python tools/repository_layout.py check
+          python -m unittest discover -s tests -p test_repository_layout.py -v
