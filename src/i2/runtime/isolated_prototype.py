@@ -12,7 +12,7 @@ A new process may inspect the journal, but cannot resume this prototype.
 from __future__ import annotations
 
 import argparse
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from hashlib import sha256
 import json
 from pathlib import Path
@@ -30,7 +30,7 @@ from i2.modules.cognitive_cycle_fixture import (
 )
 from i2.modules.intention_continuity import FirstPersonCapture
 from i2.modules.intention_ingress import ObservationClaim, INTAKE_UC
-from i2.modules.competition_preview import UC_PER_CANDIDATE
+from i2.modules.competition_preview import UC_PER_CANDIDATE, MAX_VALUE_MAGNITUDE
 from i2.modules.action_control_boundary import CONTROL_UC
 
 COLLECT = "affordance:collect:berry_a"
@@ -132,14 +132,12 @@ class _SafetyPort:
                    if c.candidate_ref == candidate_ref]
         if len(offered) != 1:
             raise PrototypeRefusal("reflex safety candidate is not in paid frame")
-        # A low reserve forbids a speculative EAT, not the physical clock.
-        # No unchosen payoff is predicted and no alternative is forced.
-        reflex_veto = offered[0] == EAT and reflex.state in ("PREEMPT", "CONSTRAIN")
+        # The reflex changes paid *priority*, never the safety veto.
+        # Explicit safety constraints still take precedence over exploration.
         return SafetyFinding(
             life_ref, frame.frame_ref, frame.capture_ref, candidate_ref,
-            control_receipt_ref, self.veto or reflex_veto,
-            (reflex.evidence_ref if reflex_veto else
-             "evidence:i2:internal-safety-review"),
+            control_receipt_ref, self.veto,
+            "evidence:i2:internal-safety-review",
         )
 
 
@@ -151,6 +149,43 @@ class _TerminalPort:
 class _UnusedValuation:
     def evaluate_batch(self, **kwargs: object) -> tuple:
         raise PrototypeRefusal("valuation is unavailable during journal inspection")
+
+
+class _LastResortValuation(ChosenOutcomeValuationStudy):
+    """A categorical last-resort priority in the *paid* existing batch.
+
+    Does not change the original H2 scores or infer hidden food payoff.
+    Only the current capture-bound local energy source can request EAT.
+    Its priority is marked in the published subjective value's evidence ref.
+    """
+
+    def __init__(self, *, reflex: LocalEnergySurvivalReflex, **kwargs: object):
+        super().__init__(**kwargs)
+        if reflex.claim != self.claim:
+            raise PrototypeRefusal("foreign or stale survival priority")
+        self.reflex = reflex
+
+    def evaluate_batch(self, *, frame: object, receipts: tuple) -> tuple:
+        values = super().evaluate_batch(frame=frame, receipts=receipts)
+        priority = self.reflex.last_resort_food_priority()
+        if priority is None:
+            return values
+        by_semantic = {
+            c.candidate_ref: c.semantic_ref for c in frame.candidates
+        }
+        candidates = [v for v in values if by_semantic[v.candidate_ref] == priority]
+        if len(candidates) != 1:
+            raise PrototypeRefusal("last-resort food absent from paid batch")
+        top = max(v.value for v in values)
+        # Categorical ordering, not a tuned reward or a claim food is safe.
+        if top >= MAX_VALUE_MAGNITUDE:
+            raise PrototypeRefusal("cannot encode bounded last-resort priority")
+        return tuple(
+            replace(v, value=top + 1,
+                    evidence_ref=v.evidence_ref + ":last-resort-energy")
+            if v is candidates[0] else v
+            for v in values
+        )
 
 
 class _PreviousResults:
@@ -407,11 +442,10 @@ class IsolatedI2:
                 if len(selected_semantics) != 1:
                     raise PrototypeRefusal("unbound reflex safety candidate")
                 local_reflex = LocalEnergySurvivalReflex(claim, energy)
-                required_veto = (selected_semantics[0] == EAT and
-                                 local_reflex.state in ("PREEMPT", "CONSTRAIN"))
-                if required_veto and (safety["veto"] is not True or
-                                      safety["evidence_ref"] != local_reflex.evidence_ref):
-                    raise PrototypeRefusal("survival reflex veto bypassed in journal")
+                if (local_reflex.last_resort_food_priority() == EAT and
+                        selected_semantics[0] != EAT and
+                        safety["evidence_ref"] == local_reflex.evidence_ref):
+                    raise PrototypeRefusal("reflex evidence forged as veto")
             action = None
             if status == "REVIEWED_NOT_ADMITTED":
                 if frame is None or review is None:
@@ -443,11 +477,21 @@ class IsolatedI2:
                 mapped = {c["candidate_ref"]: c["semantic_ref"]
                           for c in frame["candidates"]}
                 values = event["advice"]["values"]
+                priority = LocalEnergySurvivalReflex(
+                    claim, energy).last_resort_food_priority()
+                if priority in mapped.values():
+                    top = max(scores[k] for k in mapped.values())
+                    if top >= MAX_VALUE_MAGNITUDE:
+                        raise PrototypeRefusal("last-resort score cannot be bounded")
+                    scores[priority] = top + 1
                 if (len(values) != len(mapped) or any(
                         v["candidate_ref"] not in mapped
                         or v["value"] != scores[mapped[v["candidate_ref"]]]
+                        or (v["evidence_ref"].endswith(":last-resort-energy") !=
+                            (priority is not None and
+                             mapped[v["candidate_ref"]] == priority))
                         for v in values)):
-                    raise PrototypeRefusal("unobserved outcome influenced paid score")
+                    raise PrototypeRefusal("unobserved or unbound priority influenced paid score")
             before = energy
             cost = 1 if action is None else 2
             impulse = 0
@@ -875,8 +919,9 @@ class IsolatedI2:
         self.safety.veto = veto
         self.safety.energy_reflex = LocalEnergySurvivalReflex(claim, state["energy"])
         past = self._history(records) if meta["learning"] else ()
-        valuation = ChosenOutcomeValuationStudy(
-            claim=claim, results=past, source=_PreviousResults(past), priors=PRIORS)
+        valuation = _LastResortValuation(
+            claim=claim, results=past, source=_PreviousResults(past),
+            priors=PRIORS, reflex=self.safety.energy_reflex)
         fixture = self._fixture(valuation)
         try:
             if index == 0:
