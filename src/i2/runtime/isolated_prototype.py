@@ -387,6 +387,86 @@ class IsolatedI2:
                 "motor_scope": "INTERNAL_ONLY", "m11_authenticated": False,
                 "engine_registered": False, "science": "NOT_ESTABLISHED"}
 
+    def decision_evidence(self) -> tuple[dict, ...]:
+        """Researcher-only readout of AUDITED predecision states and paid scores.
+
+        This is a read-only inspection surface, not a sensor or a new state
+        owner. It never feeds the subject or changes its policy. A local
+        replay check is NOT an external M11 attestation.
+        """
+        head = self.audit()
+        meta, _, rows = self._read()
+        with self._connect() as db:
+            capacity = db.execute(
+                "SELECT capacity FROM identity WHERE id=1"
+            ).fetchone()[0]
+            saved = db.execute(
+                "SELECT seq,event_hash,event_json FROM events ORDER BY seq"
+            ).fetchall()
+        if len(rows) != head["revision"] or len(saved) != len(rows):
+            raise PrototypeRefusal("decision inspection crossed a revision")
+        inventory, resources = 0, meta["initial_resources"]
+        remaining = capacity
+        experienced: list[dict] = []
+        output = []
+        for row, (seq, digest, payload) in zip(rows, saved):
+            if seq != row["seq"] or digest != row["cognition_head"]:
+                raise PrototypeRefusal("unbound decision inspection")
+            event = json.loads(payload)
+            frame, advice = event["frame"], event["advice"]
+            values = {}
+            if frame is not None:
+                if advice is None:
+                    raise PrototypeRefusal("missing paid competition evidence")
+                refs = {c["candidate_ref"]: c["semantic_ref"]
+                        for c in frame["candidates"]}
+                for v in advice["values"]:
+                    if v["candidate_ref"] not in refs:
+                        raise PrototypeRefusal("unbound candidate valuation")
+                    values[refs[v["candidate_ref"]]] = v["value"]
+                if len(values) != len(refs):
+                    raise PrototypeRefusal("incomplete paid valuation readout")
+            elif advice is not None:
+                raise PrototypeRefusal("advice without paid frame")
+            spent = (event["intake_uc"] + event["competition_uc"] +
+                     event["control_uc"])
+            output.append({
+                "seq": seq,
+                "before_energy": row["before_energy"],
+                "before_inventory": inventory,
+                "before_resources": resources,
+                "visible": tuple(json.loads(row["offered_json"])),
+                "subjective_outcomes_available": tuple(
+                    dict(item) for item in experienced
+                ),
+                "outcomes_used_by_valuation": (
+                    tuple(dict(item) for item in experienced)
+                    if meta["learning"] else ()
+                ),
+                "candidate_scores": dict(sorted(values.items())),
+                "chosen": row["action_ref"],
+                "control_status": row["control_status"],
+                "internal_admission": row["admission_ref"] is not None,
+                "uc_before": remaining,
+                "uc_spent": spent,
+                "uc_remaining": row["remaining_uc"],
+                "energy_after": row["energy"],
+                "inventory_after": row["inventory"],
+                "resources_after": row["resources"],
+                "terminal": bool(row["terminal"]),
+            })
+            remaining -= spent
+            if remaining != row["remaining_uc"]:
+                raise PrototypeRefusal("decision readout invented free UC")
+            if row["action_ref"] is not None:
+                experienced.append({
+                    "seq": seq, "action": row["action_ref"],
+                    "observed_net": row["net"],
+                    "observed_step": row["observed_step"],
+                })
+            inventory, resources = row["inventory"], row["resources"]
+        return tuple(output)
+
     def _apply(self, *, conn: sqlite3.Connection, seq: int, claim: ObservationClaim,
                frame: dict | None, control_review: dict | None,
                remaining_uc: int, event_head: str) -> None:
@@ -520,6 +600,76 @@ class IsolatedI2:
         )
 
 
+def paired_decision_contrast(
+    observational: tuple[dict, ...], fixed: tuple[dict, ...],
+) -> dict:
+    """Describe the first difference, not estimate a general learning effect.
+
+    Only an identical *predecision* environment, personal outcome history and
+    UC budget permits a policy-rule attribution. Later trajectory contrasts
+    after a first different action are confounded by changed world states.
+    """
+    prechoice_fields = (
+        "before_energy", "before_inventory", "before_resources", "visible",
+        "uc_before", "subjective_outcomes_available",
+    )
+    common = min(len(observational), len(fixed))
+    for i in range(common):
+        observed, control = observational[i], fixed[i]
+        if observed["chosen"] == control["chosen"]:
+            continue
+        before_matched = all(
+            observational[j]["chosen"] == fixed[j]["chosen"]
+            and observational[j]["energy_after"] == fixed[j]["energy_after"]
+            and observational[j]["inventory_after"] == fixed[j]["inventory_after"]
+            and observational[j]["resources_after"] == fixed[j]["resources_after"]
+            and observational[j]["uc_spent"] == fixed[j]["uc_spent"]
+            for j in range(i)
+        )
+        same_context = all(observed[k] == control[k] for k in prechoice_fields)
+        matched = before_matched and same_context
+        scores_changed = {
+            semantic: {
+                "observational": observed["candidate_scores"].get(semantic),
+                "fixed": control["candidate_scores"].get(semantic),
+            }
+            for semantic in sorted(
+                set(observed["candidate_scores"]) |
+                set(control["candidate_scores"])
+            )
+            if observed["candidate_scores"].get(semantic) !=
+               control["candidate_scores"].get(semantic)
+        }
+        status = (
+            "MATCHED_PRECHOICE_PROGRAMMED_VALUATION_CONTRAST"
+            if matched and scores_changed else
+            "SAME_SCORES_UNEXPLAINED_CHOICE_DIFFERENCE"
+            if matched else "UNMATCHED_PRECHOICE_NO_CAUSAL_ATTRIBUTION"
+        )
+        return {
+            "classification": status,
+            "first_divergence_seq": observed["seq"],
+            "matched_prechoice": matched,
+            "observational_action": observed["chosen"],
+            "fixed_action": control["chosen"],
+            "candidate_score_differences": scores_changed,
+            "not_a_natural_learning_or_survival_verdict": True,
+        }
+    return {
+        "classification": (
+            "NO_ACTION_DIVERGENCE_IN_OBSERVED_HORIZON"
+            if len(observational) == len(fixed) else
+            "UNEQUAL_EXPOSURE_NO_CAUSAL_ATTRIBUTION"
+        ),
+        "first_divergence_seq": None,
+        "matched_prechoice": None,
+        "observational_action": None,
+        "fixed_action": None,
+        "candidate_score_differences": {},
+        "not_a_natural_learning_or_survival_verdict": True,
+    }
+
+
 def demo(scenario: str, *, steps: int = 6) -> dict:
     """Tiny disposable engineering smoke only, NOT a scientific replicate."""
     if scenario not in SCENARIOS or type(steps) is not int or not 1 <= steps <= MAX_STEPS:
@@ -536,9 +686,15 @@ def demo(scenario: str, *, steps: int = 6) -> dict:
                 trace.append(asdict(outcome))
                 if outcome.terminal:
                     break
-            arms[label] = {"trace": trace, "audit": individual.audit()}
+            arms[label] = {
+                "trace": trace,
+                "decisions": individual.decision_evidence(),
+                "audit": individual.audit(),
+            }
     return {"status": "ISOLATED_RESEARCH_PROTOTYPE_ONLY",
             "scenario": scenario, "arms": arms,
+            "behavioral_contrast": paired_decision_contrast(
+                arms["observed_chosen"]["decisions"], arms["fixed"]["decisions"]),
             "scientific_verdict": "NOT_ESTABLISHED",
             "m11_authenticated": False, "active_engine": False}
 

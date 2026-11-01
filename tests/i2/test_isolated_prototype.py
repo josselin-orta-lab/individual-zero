@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 from i2.runtime.isolated_prototype import (
     IsolatedI2, PrototypeRefusal, COLLECT, EAT, SCENARIOS, demo,
+    paired_decision_contrast,
 )
 from i2.modules.cognitive_cycle_fixture import (
     FaultInjected, CommitAcknowledgmentLost,
@@ -108,6 +109,66 @@ class IsolatedPrototypeTests(unittest.TestCase):
         self.assertEqual(first, [COLLECT, COLLECT])
         self.assertTrue(all(not arm["audit"]["engine_registered"]
                             for arm in result["arms"].values()))
+
+    def test_adverse_first_divergence_is_a_matched_engineered_score_contrast(self):
+        report = demo("adverse", steps=6)
+        difference = report["behavioral_contrast"]
+        self.assertEqual(
+            difference["classification"],
+            "MATCHED_PRECHOICE_PROGRAMMED_VALUATION_CONTRAST",
+        )
+        self.assertEqual(difference["first_divergence_seq"], 4)
+        self.assertTrue(difference["matched_prechoice"])
+        self.assertEqual(difference["observational_action"], COLLECT)
+        self.assertEqual(difference["fixed_action"], EAT)
+        self.assertEqual(difference["candidate_score_differences"][EAT],
+                         {"observational": -5, "fixed": 4})
+        left = report["arms"]["observed_chosen"]["decisions"]
+        right = report["arms"]["fixed"]["decisions"]
+        for idx in range(3):
+            self.assertEqual(left[idx]["chosen"], right[idx]["chosen"])
+            self.assertEqual(left[idx]["energy_after"], right[idx]["energy_after"])
+            self.assertEqual(left[idx]["uc_spent"], right[idx]["uc_spent"])
+        self.assertEqual(left[3]["uc_before"], right[3]["uc_before"])
+        self.assertEqual(left[3]["subjective_outcomes_available"],
+                         right[3]["subjective_outcomes_available"])
+        self.assertEqual(left[3]["outcomes_used_by_valuation"],
+                         left[3]["subjective_outcomes_available"])
+        self.assertEqual(right[3]["outcomes_used_by_valuation"], ())
+        self.assertTrue(difference["not_a_natural_learning_or_survival_verdict"])
+
+    def test_stable_null_and_neutral_tie_are_preserved_not_tuned(self):
+        stable = demo("stable", steps=6)
+        self.assertEqual(
+            stable["behavioral_contrast"]["classification"],
+            "NO_ACTION_DIVERGENCE_IN_OBSERVED_HORIZON",
+        )
+        self.assertIsNone(stable["behavioral_contrast"]["first_divergence_seq"])
+        neutral = demo("neutral", steps=6)
+        contrast = neutral["behavioral_contrast"]
+        self.assertEqual(contrast["first_divergence_seq"], 4)
+        self.assertTrue(contrast["matched_prechoice"])
+        self.assertIsNone(contrast["observational_action"])
+        self.assertEqual(contrast["fixed_action"], EAT)
+
+    def test_decision_inspection_cannot_feed_subject_or_fabricate_match(self):
+        subject = self.create()
+        self.assertEqual(subject.decision_evidence(), ())
+        subject.step()
+        self.assertEqual(subject.decision_evidence()[0]["subjective_outcomes_available"], ())
+        subject.step()
+        readings = subject.decision_evidence()
+        self.assertEqual(len(readings), 2)
+        self.assertEqual(readings[1]["subjective_outcomes_available"][0]["seq"], 1)
+        self.assertNotIn("impulses", readings[1])
+        forged = [dict(v) for v in readings]
+        forged[0]["energy_after"] += 1
+        # Context that only diverges AFTER a selected action cannot be
+        # treated as the same prehistory for a later divergence.
+        forged[1]["chosen"] = None
+        compared = paired_decision_contrast(tuple(forged), readings)
+        self.assertEqual(compared["classification"],
+                         "UNMATCHED_PRECHOICE_NO_CAUSAL_ATTRIBUTION")
 
 
 if __name__ == "__main__":
