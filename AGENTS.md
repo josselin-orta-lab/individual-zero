@@ -34,6 +34,10 @@ If documentation conflicts with executable source, identify the discrepancy rath
 - First-person observations only, no hidden-world oracle, no forced actions, no free UC, no bypass of Action Control. Death is irreversible; uncertain or terminal M11 state cannot be restored.
 - A green test or plausible survival is **not** a scientific GO.
 
+## Scientific-prototype priority and drift reporting
+
+Follow [ADR-0002](docs/decisions/ADR-0002-scientific-prototype-first.md), the project owner's explicit 1 November 2026 decision. Prefer a **minimal integrated prototype that measures H1/H2/H3** over polishing G2 component guards for their own sake. Before each new intervention name the target question, falsifier, ablation/control, observable and the smallest runnable test. Record all negative/null outcomes, costs and what remains unobserved. **Signal DRIFT DETECTED** to the owner when work piles up complexity, repeated local proofs or CI without increasing end-to-end scientific information, and recommend a concrete correction. Request an arbitration if the scientific goal or safety authority must change. The prohibition on I2 birth or promotion without independent gates is unchanged.
+
 ## Change workflow and handoff
 
 1. Record generation, task/issue, baseline SHA, intended files, dependency chain, invariants, expected behavioral impact and limits **before** editing.
