@@ -83,8 +83,13 @@ class EnergyObservationDoesNotImplyDrive(unittest.TestCase):
                         right["claim"]["subjective_evidence_refs"],
                     )
                     self.assertNotEqual(before_low, before_high)
-                self.assertEqual(low[-1].energy, 1)
-                self.assertEqual(high[-1].energy, 44)
+                # Fixed and observational arms have DIFFERENT net energy
+                # trajectories; compare each arm to its own experienced net.
+                self.assertEqual(low[-1].energy,
+                                 17 + sum(s.result_net for s in low))
+                self.assertEqual(high[-1].energy,
+                                 60 + sum(s.result_net for s in high))
+                self.assertEqual(high[-1].energy - low[-1].energy, 43)
 
     def test_aversive_cost_and_nutrition_are_not_distinct_observables(self):
         # A scientific construct limitation, not evidence about animal
