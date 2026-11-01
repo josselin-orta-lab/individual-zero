@@ -280,10 +280,28 @@ def verify_fixture(*, fixture: object, witness: IndependentWitness,
             "UNKNOWN", "local journal unavailable before witness comparison"
         ) from exc
     if minimum_witness is not None:
-        # Local ancestry MUST be checked independently of the latest-head
-        # equality. A fully consistent local fork may match a bad provider.
-        _check_fixture_prefix(fixture=fixture, floor=minimum_witness, report=before)
+        # Reject malformed caller-provided bounds as input errors, not as
+        # journal failures. Everything below can then be classified safely.
+        if type(minimum_witness) is not LatestWitness:
+            raise ValueError("exact previously verified witness required")
+        minimum_witness.validate()
+        if (minimum_witness.life_ref != before["life_ref"]
+                or minimum_witness.genesis_ref != before["genesis_ref"]):
+            raise ValueError("foreign pinned witness")
     try:
+        if minimum_witness is not None:
+            # A concurrent commit or corrupt local prefix must NOT escape
+            # the final audit, including on STALE/FORK or read failures.
+            try:
+                _check_fixture_prefix(
+                    fixture=fixture, floor=minimum_witness, report=before
+                )
+            except WitnessRefusal:
+                raise
+            except Exception as exc:
+                raise WitnessRefusal(
+                    "UNKNOWN", "local ancestry unavailable for pinned witness"
+                ) from exc
         inspection = compare_audit(
             report=before, witness=witness, minimum_witness=minimum_witness,
         )

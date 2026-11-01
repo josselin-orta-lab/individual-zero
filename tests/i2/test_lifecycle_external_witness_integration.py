@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 from i2.modules.cognitive_cycle_fixture import CognitiveCycleFixture, SCHEMA as LIFECYCLE_SCHEMA  # noqa: E402
 from i2.modules.lifecycle_external_witness import (  # noqa: E402
-    LatestWitness, WITNESS_SCHEMA, compare_audit, verify_fixture,
+    LatestWitness, WITNESS_SCHEMA, WitnessRefusal, compare_audit, verify_fixture,
 )
 
 LIFE = "life:synthetic-anchor-integration"
@@ -122,6 +122,63 @@ class SQLiteWitnessIntegration(unittest.TestCase):
         self.assertEqual(result.terminal_ref, "terminal:death-A")
         self.assertFalse(result.resumption_authorized)
         self.assertEqual(self.terminal.calls, 1)
+
+    def test_unreadable_pinned_prefix_is_unknown_without_provider(self):
+        fixture = self.create()
+        witness = Witness(checkpoint(fixture.audit()))
+        floor = checkpoint(fixture.audit())
+        for error in (sqlite3.DatabaseError("damaged prefix"),
+                      OSError("prefix unavailable"),
+                      ValueError("invalid stored journal")):
+            with self.subTest(error=type(error).__name__):
+                with patch.object(CognitiveCycleFixture, "audited_local_prefix",
+                                  side_effect=error):
+                    with self.assertRaises(WitnessRefusal) as caught:
+                        verify_fixture(
+                            fixture=fixture, witness=witness, minimum_witness=floor,
+                        )
+                self.assertEqual(caught.exception.reason, "UNKNOWN")
+                self.assertIs(caught.exception.__cause__, error)
+                self.assertEqual(witness.calls, [])
+        self.assertEqual(fixture.audit()["committed"], 0)
+
+    def test_concurrent_terminal_during_failed_pinned_prefix_is_unknown(self):
+        fixture = self.create()
+        initial = fixture.audit()
+        witness = Witness(checkpoint(initial))
+        # A syntactically valid claimed floor ahead of the local genesis
+        # would normally yield STALE, with no external witness request.
+        floor = LatestWitness(
+            WITNESS_SCHEMA, LIFE, GENESIS, LIFECYCLE_SCHEMA,
+            1, 0, "e" * 64, None, None, "proof:claimed-only",
+        )
+        with self.assertRaises(WitnessRefusal) as stable:
+            verify_fixture(fixture=fixture, witness=witness, minimum_witness=floor)
+        self.assertEqual(stable.exception.reason, "STALE")
+        prefix = fixture.audited_local_prefix
+        def interleaved_prefix(*, committed):
+            old_snapshot = prefix(committed=committed)
+            self.seal(fixture)
+            return old_snapshot
+        with patch.object(CognitiveCycleFixture, "audited_local_prefix",
+                          side_effect=interleaved_prefix):
+            with self.assertRaises(WitnessRefusal) as raced:
+                verify_fixture(fixture=fixture, witness=witness,
+                               minimum_witness=floor)
+        # The post-check overrides the stale-prefix diagnostic. Otherwise
+        # this call would describe a snapshot no longer present on disk.
+        self.assertEqual(raced.exception.reason, "UNKNOWN")
+        self.assertIn("changed", str(raced.exception))
+        self.assertEqual(witness.calls, [])
+        self.assertTrue(fixture.audit()["synthetic_terminal"])
+
+    def test_bad_pinned_input_still_refused_without_external_read(self):
+        fixture = self.create()
+        witness = Witness(checkpoint(fixture.audit()))
+        with self.assertRaises(ValueError):
+            verify_fixture(fixture=fixture, witness=witness,
+                           minimum_witness=object())
+        self.assertEqual(witness.calls, [])
 
     def test_initial_audit_failure_refuses_before_external_witness_read(self):
         fixture = self.create()
