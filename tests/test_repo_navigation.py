@@ -112,6 +112,14 @@ class NavigationSanity(unittest.TestCase):
             self.assertEqual(module.inspect(root)["status"], "PASS")
 
 
+    def test_current_engineering_and_decisions_use_one_static_navigation_check(self):
+        light = (ROOT / ".github/workflows/agent-context-static.yml").read_text(encoding="utf-8")
+        heavy = (ROOT / ".github/workflows/i1-current-ci.yml").read_text(encoding="utf-8")
+        for glob in ("docs/engineering/*.md", "docs/decisions/*.md"):
+            self.assertIn("'" + glob + "'", light)
+            self.assertNotIn("'" + glob + "'", heavy)
+        self.assertIn("check_repo_navigation.py --scope current", light)
+
     def test_docs_only_i2_updates_use_lightweight_navigation_ci(self):
         heavy = (ROOT / ".github/workflows/i2-proposal-safety.yml").read_text(encoding="utf-8")
         light = (ROOT / ".github/workflows/agent-context-static.yml").read_text(encoding="utf-8")
