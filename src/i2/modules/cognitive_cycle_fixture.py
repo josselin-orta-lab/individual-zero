@@ -1320,6 +1320,7 @@ class CognitiveCycleFixture:
         self, *, previous_count: int, previous_head: str,
         expected_step: int, target_ref: str, event_kind: str,
         expected_claim: dict[str, object] | None = None,
+        expected_request: dict[str, object] | None = None,
         expected_terminal: dict[str, object] | None = None,
         minimum_sequence: int | None = None,
     ) -> UncertainCommitInspection:
@@ -1343,6 +1344,8 @@ class CognitiveCycleFixture:
             raise ValueError("invalid expected event kind")
         if (event_kind == "cognitive") != (expected_claim is not None):
             raise ValueError("exactly one expected event projection required")
+        if (event_kind == "cognitive") != (expected_request is not None):
+            raise ValueError("cognitive attempt must include its exact request")
         if (event_kind == "synthetic_terminal") != (expected_terminal is not None):
             raise ValueError("exactly one expected terminal projection required")
 
@@ -1391,6 +1394,7 @@ class CognitiveCycleFixture:
                          if event_kind == "synthetic_terminal" else
                          data.get("kind") != "synthetic_terminal" and
                          data["claim"] == expected_claim and
+                         data["request"] == expected_request and
                          digest == data["claim_digest"])
                     )
                     outcome = "RECORDED_LOCAL_ONLY" if matches else "CONFLICT_LOCAL"
@@ -1408,19 +1412,26 @@ class CognitiveCycleFixture:
 
     def inspect_uncertain_cognition(
         self, *, previous_count: int, previous_head: str,
-        claim: ObservationClaim, minimum_sequence: int | None = None,
+        claim: ObservationClaim, method: str,
+        semantic_ref: str | None = None, evidence_ref: str | None = None,
+        ttl_steps: int | None = None, minimum_sequence: int | None = None,
     ) -> UncertainCommitInspection:
-        """Check a possibly committed *claimed* capture, never retry it."""
+        """Correlate a declared capture AND request; never retry or authorize.
+
+        Capture identity alone is insufficient: an open and observe on the
+        same capture have different causal effects. This remains local G2.
+        """
         if type(claim) is not ObservationClaim:
             raise ValueError("exact subjective claim required")
         claim.validate()
         if claim.life_ref != self.life_ref:
             raise ValueError("foreign synthetic life")
+        request = _request(method, semantic_ref, evidence_ref, ttl_steps)
         return self._inspect_uncertain_local(
             previous_count=previous_count, previous_head=previous_head,
             expected_step=claim.capture.step, target_ref=claim.capture.ref,
             event_kind="cognitive", expected_claim=_claim_map(claim),
-            minimum_sequence=minimum_sequence,
+            expected_request=request, minimum_sequence=minimum_sequence,
         )
 
     def inspect_uncertain_terminal(

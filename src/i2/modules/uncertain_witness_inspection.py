@@ -109,9 +109,11 @@ def _inspect(*, fixture: object, witness: IndependentWitness,
 def inspect_uncertain_cognition_with_witness(
     *, fixture: object, witness: IndependentWitness,
     previous_count: int, previous_head: str, claim: ObservationClaim,
+    method: str, semantic_ref: str | None = None,
+    evidence_ref: str | None = None, ttl_steps: int | None = None,
     minimum_witness: LatestWitness | None = None,
 ) -> UncertainWitnessInspection:
-    """Inspect a possibly committed claimed capture. Never dispatch or retry."""
+    """Correlate a declared capture and exact request, never dispatch or retry."""
     if type(fixture) is not CognitiveCycleFixture:
         raise ValueError("exact inert v5 fixture required")
     if minimum_witness is not None:
@@ -125,6 +127,8 @@ def inspect_uncertain_cognition_with_witness(
         fixture=fixture, witness=witness, minimum_witness=minimum_witness,
         local_probe=lambda: fixture.inspect_uncertain_cognition(
             previous_count=previous_count, previous_head=previous_head, claim=claim,
+            method=method, semantic_ref=semantic_ref,
+            evidence_ref=evidence_ref, ttl_steps=ttl_steps,
             minimum_sequence=(None if minimum_witness is None else minimum_witness.committed),
         ),
     )

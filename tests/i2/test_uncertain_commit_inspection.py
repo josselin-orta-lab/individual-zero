@@ -33,9 +33,14 @@ class UncertainLocalCommitTests(unittest.TestCase):
     def cold(self):
         return CognitiveCycleFixture.reopen(**self.ports)
 
-    def inspect(self, c, count=0, head=ZERO_HASH):
+    def inspect(self, c, count=0, head=ZERO_HASH, *,
+                method="open", semantic_ref=A, evidence_ref=None, ttl_steps=12):
+        if evidence_ref is None and method == "open":
+            evidence_ref = f"evidence:{c.capture.step}"
         return self.cold().inspect_uncertain_cognition(
             previous_count=count, previous_head=head, claim=c,
+            method=method, semantic_ref=semantic_ref,
+            evidence_ref=evidence_ref, ttl_steps=ttl_steps,
         )
 
     def test_no_commit_is_absent_local_only_without_retry_permission(self):
@@ -81,6 +86,54 @@ class UncertainLocalCommitTests(unittest.TestCase):
                          "ABSENT_LOCAL_ONLY")
         self.assertEqual(self.inspect(first, count=1, head=prior["chain_head"]).outcome,
                          "ABSENT_LOCAL_ONLY")
+
+
+    def test_same_capture_different_intention_requests_are_not_found(self):
+        c = self.source.add(claim(3))
+        self.fixture.open(claim=c, semantic_ref=A, evidence_ref="evidence:3",
+                          ttl_steps=12)
+        before = (len(self.source.calls), len(self.values.calls),
+                  len(self.current.calls), len(self.safety.calls))
+        self.assertEqual(self.inspect(c).outcome, "RECORDED_LOCAL_ONLY")
+        variants = (
+            dict(method="observe", semantic_ref=None, evidence_ref=None, ttl_steps=None),
+            dict(method="open", semantic_ref=B, evidence_ref="evidence:3", ttl_steps=12),
+            dict(method="open", semantic_ref=A, evidence_ref="evidence:other", ttl_steps=12),
+            dict(method="open", semantic_ref=A, evidence_ref="evidence:3", ttl_steps=11),
+        )
+        for attempted in variants:
+            with self.subTest(attempted=attempted):
+                result = self.cold().inspect_uncertain_cognition(
+                    previous_count=0, previous_head=ZERO_HASH, claim=c, **attempted,
+                )
+                self.assertEqual(result.outcome, "CONFLICT_LOCAL")
+                self.assertIsNone(result.recorded_event_head)
+                self.assertFalse(result.retry_authorized)
+                self.assertFalse(result.resumption_authorized)
+        self.assertEqual(before, (len(self.source.calls), len(self.values.calls),
+                                  len(self.current.calls), len(self.safety.calls)))
+
+    def test_observe_attempt_is_distinct_from_open_on_same_capture(self):
+        c = self.source.add(claim(3))
+        self.fixture.observe(claim=c)
+        self.assertEqual(self.inspect(c, method="observe", semantic_ref=None,
+                                      evidence_ref=None, ttl_steps=None).outcome,
+                         "RECORDED_LOCAL_ONLY")
+        self.assertEqual(self.inspect(c).outcome, "CONFLICT_LOCAL")
+
+    def test_invalid_inspection_request_refused_before_audit(self):
+        c = self.source.add(claim(3))
+        invalid = (
+            dict(method="delete"),
+            dict(method="observe", ttl_steps=12),
+            dict(method="open", semantic_ref=A, evidence_ref="evidence:3", ttl_steps=True),
+            dict(method="open", semantic_ref=A, evidence_ref="evidence:3", ttl_steps=None),
+        )
+        for values in invalid:
+            with self.subTest(values=values), self.assertRaises(ValueError):
+                self.cold().inspect_uncertain_cognition(
+                    previous_count=0, previous_head=ZERO_HASH, claim=c, **values,
+                )
 
     def test_terminal_lost_ack_is_only_locally_recorded(self):
         with self.assertRaises(CommitAcknowledgmentLost):
