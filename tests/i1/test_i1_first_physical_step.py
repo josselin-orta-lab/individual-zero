@@ -5,7 +5,7 @@ import subprocess
 import sys
 import unittest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 from build_i1_fork import generate
 
 
@@ -16,11 +16,10 @@ class I1FirstPhysicalStep(unittest.TestCase):
             generate(output)
             code = """
 import sys
-import i0.modules.stage6_planning as z
 import i1.modules.stage6_planning as o
 from i1lab.stage6_reference_fixture import build_stage6_reference_runtime
 from i1lab.independent_journal_audit import audit_export_bytes
-assert z.SimulatorPlanner is not o.SimulatorPlanner
+assert o.SimulatorPlanner.__module__.startswith('i1.')
 life = build_stage6_reference_runtime(autonomous_mortal=True)
 assert life.individual_id.startswith('i1-')
 assert type(life.planning).__module__ == 'i1.modules.stage6_planning'
@@ -32,12 +31,14 @@ assert result.execution_status in ('applied', 'safety_block', 'dead')
 assert len(life.journal.entries) > before
 assert life.journal.verify()
 audit_export_bytes(life.journal.canonical_bytes())
+# Importing or running I1 must not drag frozen I0 modules into a live step.
+assert not any(name == 'i0' or name.startswith('i0.') for name in sys.modules)
 print('I1_REAL_STEP_OK:' + result.execution_status)
 """
             child = subprocess.run(
                 [sys.executable, "-c", code],
                 env={"PYTHONPATH": str(output) + ":" + str(
-                    Path(__file__).resolve().parents[1] / "src"
+                    Path(__file__).resolve().parents[2] / "src"
                 )},
                 capture_output=True, text=True, check=False,
             )
