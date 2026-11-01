@@ -49,7 +49,16 @@ def _inspect(*, fixture: object, witness: IndependentWitness,
         if (minimum_witness.life_ref != before["life_ref"] or
                 minimum_witness.genesis_ref != before["genesis_ref"]):
             raise ValueError("foreign pinned witness")
-    local = local_probe()
+    try:
+        local = local_probe()
+    except Exception as exc:
+        # Preserve validation failures; unreadable SQLite is not proof of
+        # an absent COMMIT. No direct sqlite3 import outside sole owner.
+        if isinstance(exc, ValueError):
+            raise
+        raise WitnessRefusal(
+            "UNKNOWN", "local uncertain-commit inspection unavailable"
+        ) from exc
     if (type(local) is not UncertainCommitInspection or
             local.observed_committed != before["committed"] or
             local.observed_head != before["chain_head"]):
