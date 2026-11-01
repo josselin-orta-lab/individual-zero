@@ -13,3 +13,14 @@ For synthetic changes, use `python -m unittest discover -s tests/i2 -p 'test_*.p
 ## Current research-direction decision
 
 [ADR-0002](../../docs/decisions/ADR-0002-scientific-prototype-first.md) requires **science-first, minimum integrated** offline I2 prototypes. Initial H2 slice: controlled experience -> claimed subjective evidence -> past-only credit -> paid Competition advice -> separately labelled offline shadow outcome, with no-H2 ablation and negative cases. Do not create another living state owner or confuse software tests with a valid H1/H2/H3 study. Signal **DRIFT DETECTED** if the next change adds complexity without helping a falsifiable end-to-end question. G1/G3 remain blocked.
+
+## Next milestone: living causal loop, after independent G1 review
+
+[ADR-0003](../../docs/decisions/ADR-0003-integrated-living-i2-milestone.md)
+records the owner-approved priority: a minimum born I2 must eventually
+perceive, propose and receive an admitted physical action, experience its
+WorldBody consequence and change a later choice, versus an equal-resource
+learning ablation. The offline chosen-only revisit study is only a short G2
+diagnostic, not a substitute for that milestone. Request the independent G1
+review in #662 before implementing or enabling any living authority. Do not
+add new standalone G2 owners or endlessly polish synthetic witnesses.

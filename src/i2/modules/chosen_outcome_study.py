@@ -53,12 +53,14 @@ class ChosenResultEvidence(Protocol):
 def observed_chosen_scores(
     *, claim: ObservationClaim, results: tuple[ObservedChosenResult, ...],
     source: ChosenResultEvidence, priors: dict[str, int],
+    revisit_after: int | None = None, revisit_bonus: int = 0,
 ) -> dict[str, int]:
     """No counterfactual, no unseen world state, no same-step consequence.
 
     Last observed score is an intentionally crude recency heuristic for
-    reversible environments, NOT a calibrated H2 estimate. The fixed prior
-    and offset must be reported as intervention assumptions. Recompute from
+    reversible environments, NOT a calibrated H2 estimate. Optional bounded
+    stale-action reconsideration is based only on previously observed choices.
+    The fixed prior, offset and revisit settings must be reported. Recompute from
     the exact test evidence for every capture; store NO new owner state.
     """
     if type(claim) is not ObservationClaim:
@@ -69,6 +71,14 @@ def observed_chosen_scores(
         raise ValueError("bounded observations and fixed priors required")
     if not callable(getattr(source, "verify_chosen_result", None)):
         raise ValueError("chosen-outcome evidence source required")
+    if type(revisit_bonus) is not int or not 0 <= revisit_bonus <= MAX_VALUE_MAGNITUDE:
+        raise ValueError("invalid revisit bonus")
+    if revisit_after is None:
+        if revisit_bonus:
+            raise ValueError("revisit bonus requires a threshold")
+    elif (type(revisit_after) is not int or
+          not 1 <= revisit_after <= MAX_RECORDED_CHOICES or revisit_bonus == 0):
+        raise ValueError("invalid bounded revisit rule")
     scores = {}
     for semantic, prior in priors.items():
         _ref(semantic, "prior semantic")
@@ -79,6 +89,7 @@ def observed_chosen_scores(
     last_step = -1
     captures = set()
     evidence_refs = set()
+    last_chosen_index: dict[str, int] = {}
     for result in results:
         if type(result) is not ObservedChosenResult:
             raise ValueError("exact observed chosen result required")
@@ -97,10 +108,23 @@ def observed_chosen_scores(
         last_step = result.observed_step
         captures.add(result.issue_capture_ref)
         evidence_refs.add(result.evidence_ref)
+        last_chosen_index[result.chosen_action_ref] = len(captures) - 1
         score = result.observed_net + FIXED_SCORE_OFFSET
         if abs(score) > MAX_VALUE_MAGNITUDE:
             raise ValueError("chosen-outcome score overflows Competition bounds")
         scores[result.chosen_action_ref] = score
+
+    # G2 research-only: previously tried actions can be revisited after enough
+    # OTHER observed choices. Untried options receive no fabricated outcome or
+    # novelty value. The already-paid Competition, not a controller override,
+    # makes the choice. This is a toy heuristic, not a learned exploration rule.
+    if revisit_after is not None:
+        for semantic, chosen_index in last_chosen_index.items():
+            if len(results) - 1 - chosen_index >= revisit_after:
+                rescored = scores[semantic] + revisit_bonus
+                if abs(rescored) > MAX_VALUE_MAGNITUDE:
+                    raise ValueError("revisit valuation exceeds Competition bounds")
+                scores[semantic] = rescored
     return scores
 
 
@@ -115,7 +139,10 @@ class ChosenOutcomeValuationStudy:
         self, *, claim: ObservationClaim,
         results: tuple[ObservedChosenResult, ...],
         source: ChosenResultEvidence, priors: dict[str, int],
+        revisit_after: int | None = None, revisit_bonus: int = 0,
     ) -> None:
+        self.revisit_after = revisit_after
+        self.revisit_bonus = revisit_bonus
         self.claim = claim
         self.results = results
         self.source = source
@@ -135,6 +162,7 @@ class ChosenOutcomeValuationStudy:
         values = observed_chosen_scores(
             claim=self.claim, results=self.results,
             source=self.source, priors=self.priors,
+            revisit_after=self.revisit_after, revisit_bonus=self.revisit_bonus,
         )
         output = []
         for candidate, receipt in zip(frame.candidates, receipts):
@@ -151,7 +179,8 @@ class ChosenOutcomeValuationStudy:
             bound = json.dumps(
                 [frame.claim_digest, candidate.candidate_ref, receipt.ref,
                  candidate.semantic_ref, values[candidate.semantic_ref],
-                 [r.evidence_ref for r in self.results]],
+                 [r.evidence_ref for r in self.results],
+                 self.revisit_after, self.revisit_bonus],
                 separators=(",", ":"), ensure_ascii=True,
             ).encode("ascii")
             output.append(SubjectiveValuation(

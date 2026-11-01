@@ -50,7 +50,7 @@ class RecordedSource:
         return self.entries.get(result.evidence_ref) == result
 
 
-def run(regimes, *, explore=False):
+def run(regimes, *, explore=False, revisit=False):
     if type(regimes) is not tuple or len(regimes) != len(CAPTURES):
         raise ValueError("fixed six-step sequence required")
     with tempfile.TemporaryDirectory() as temporary:
@@ -71,6 +71,8 @@ def run(regimes, *, explore=False):
             valuation = ChosenOutcomeValuationStudy(
                 claim=current, results=tuple(history),
                 source=evidence, priors=PRIORS,
+                revisit_after=2 if revisit else None,
+                revisit_bonus=9 if revisit else 0,
             )
             fixture = (
                 CognitiveCycleFixture.create(
@@ -117,6 +119,7 @@ def run(regimes, *, explore=False):
                 "advice": recommendation,
                 "controller_followed": chosen,
                 "exploration_intervention": chosen != recommendation,
+                "stale_revisit_enabled": revisit,
                 "observed_net": observed_net,
                 "uc": 5,
             })
@@ -171,6 +174,101 @@ class ChosenOutcomeAdaptationTests(unittest.TestCase):
                 "no_exploration": list(b)}
             for n, (a,b) in reports.items()
         },sort_keys=True,separators=(",",":")))
+
+    def test_no_forced_exploration_stale_revisit_and_equal_uc_ablation(self):
+        """Chosen-only, G2-only re-sampling is advised by paid Competition.
+
+        The research controller always follows the advice. This is not I2
+        motor execution, a born individual or authenticated WorldBody.
+        Stale reassessment can help recovery but must retain adverse costs.
+        """
+        reports = {}
+        for name, sequence in (
+            ("stable", STABLE), ("reversal", REVERSAL),
+            ("adverse", ADVERSE), ("recovery", RECOVERY),
+        ):
+            with self.subTest(condition=name):
+                revisiting = run(sequence, revisit=True)
+                ablated = run(sequence)
+                self.assertFalse(any(row["exploration_intervention"]
+                                     for row in revisiting))
+                self.assertTrue(all(row["controller_followed"] == row["advice"]
+                                    for row in revisiting))
+                self.assertEqual([row["uc"] for row in revisiting], [5]*6)
+                self.assertEqual([row["uc"] for row in ablated], [5]*6)
+                reports[name] = (revisiting, ablated)
+
+        expected_advice = {
+            "stable": [A, A, A, A, A, A],
+            "reversal": [A, A, B, B, A, B],
+            "adverse": [A, B, B, A, B, B],
+            "recovery": [A, A, B, B, A, A],
+        }
+        expected_totals = {
+            "stable": (36, 36),
+            "reversal": (-20, -12),
+            "adverse": (-28, -20),
+            "recovery": (4, -12),
+        }
+        for name, (revisiting, ablated) in reports.items():
+            self.assertEqual([row["advice"] for row in revisiting],
+                             expected_advice[name])
+            self.assertEqual(
+                (sum(row["observed_net"] for row in revisiting),
+                 sum(row["observed_net"] for row in ablated)),
+                expected_totals[name],
+            )
+        self.assertEqual(reports["recovery"][0][4]["controller_followed"], A)
+        print("I2_STALE_REVISIT_G2 "+json.dumps({
+            name: {
+                "advice": [row["advice"] for row in revisiting],
+                "revisit_net": sum(row["observed_net"] for row in revisiting),
+                "no_revisit_net": sum(row["observed_net"] for row in ablated),
+                "uc_each_arm": sum(row["uc"] for row in revisiting),
+                "experimenter_overrides": sum(
+                    row["exploration_intervention"] for row in revisiting),
+            }
+            for name, (revisiting, ablated) in reports.items()
+        }, sort_keys=True, separators=(",", ":")))
+
+    def test_stale_rule_uses_only_prior_chosen_outcomes(self):
+        observer = ObservationPort()
+        current = observer.add(claim(50))
+        source = RecordedSource()
+        outcomes = (
+            ObservedChosenResult(LIFE, "capture:10", A, 12,
+                                 "observed:12", -10),
+            ObservedChosenResult(LIFE, "capture:20", B, 22,
+                                 "observed:22", -2),
+            ObservedChosenResult(LIFE, "capture:30", B, 32,
+                                 "observed:32", -2),
+        )
+        for outcome in outcomes:
+            source.add(outcome)
+        def scores(items, **opts):
+            return observed_chosen_scores(
+                claim=current, results=items, source=source, priors=PRIORS,
+                **opts,
+            )
+        self.assertEqual(scores(outcomes)[A], -6)
+        self.assertEqual(scores(outcomes[:2], revisit_after=2,
+                                revisit_bonus=9)[A], -6)
+        self.assertEqual(scores(outcomes, revisit_after=2,
+                                revisit_bonus=9)[A], 3)
+        self.assertEqual(scores(outcomes, revisit_after=2,
+                                revisit_bonus=9)[B], 2)
+        self.assertEqual(scores(outcomes[:1], revisit_after=2,
+                                revisit_bonus=9)[B], PRIORS[B])
+        for options in (
+            {"revisit_after": None, "revisit_bonus": 9},
+            {"revisit_after": 0, "revisit_bonus": 9},
+            {"revisit_after": True, "revisit_bonus": 9},
+            {"revisit_after": 2, "revisit_bonus": 0},
+            {"revisit_after": 2, "revisit_bonus": -9},
+            {"revisit_after": 2, "revisit_bonus": True},
+        ):
+            with self.subTest(options=options), self.assertRaises(ValueError):
+                scores(outcomes, **options)
 
     def test_cannot_read_current_future_forged_or_replayed_evidence(self):
         source = RecordedSource()
