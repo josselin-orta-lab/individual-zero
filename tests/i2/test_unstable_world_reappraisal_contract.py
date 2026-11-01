@@ -37,7 +37,7 @@ class TestReappraisal(unittest.TestCase):
         self.claim = ObservationClaim(
             "life:i2:test", FirstPersonCapture(
                 40, "capture:i2:test:40", "goal:food",
-                ("affordance:eat:berry_a", "affordance:drink:water")),
+                ("affordance:drink:water", "affordance:eat:berry_a")),
             "source:i2:local:40",
             tuple(sorted(("evidence:i2:bad", "evidence:i2:good",
                           "evidence:i2:context", "evidence:i2:reflex",
