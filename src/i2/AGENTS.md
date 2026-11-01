@@ -24,21 +24,29 @@ reproducible scientific-validity defect, remove a specifically documented
 critical-path blocker or act on independent G1 review feedback. Do not
 add a separate cognition/WorldBody/UC/M11 owner.
 
-**ADR-0005 exception:** one disposable G1-LAB integrated, non-living research cycle is explicitly authorized. Use paid v5 cognition and one internal body effect in the SAME local SQLite transaction with a no-learning comparator. No motor admission, M11, birth, engine registration or living G3 authority. No open-ended G2 tuning.\n\n**ADR-0006:** Do not call absent re-eating after an unobserved hidden payoff reversal an H2 learning failure. Require an identifiable information or motivational basis for reappraisal; do not promote the hand-coded +9 stale revisit bonus. See [study](../../docs/research/studies/i2-g1lab-aversion-reappraisal-2026-11-01/README.md). No new experiment or living permission is granted.
+**ADR-0005 exception:** one disposable G1-LAB integrated, non-living research cycle is explicitly authorized. Use paid v5 cognition and one internal body effect in the SAME local SQLite transaction with a no-learning comparator. No motor admission, M11, birth, engine registration or living G3 authority. No open-ended G2 tuning.
 
-**ADR-0007 is an ACCEPTED scientific framing, NOT an experimental permit.**
-Separate prior committed body energy, actually chosen nutritional benefit,
-separately experienced aversive sensory input, and their distinct memories.
-The four-arm factorial proposal (full, need-off, aversion-off, fixed) is
-approved in principle, but its magnitudes, exact score arithmetic, finite
-runs/horizon and censoring rules are NOT frozen or authorized for code.
-Do NOT implement a hunger bonus, change Competition valuation, model social
-observation, run the new experiment or claim natural motivation without a
-separate owner-approved parameter-locked protocol. The old +9 stale-option
-bonus remains only an artificial comparator. See
-[ADR-0007](../../docs/decisions/ADR-0007-need-nutrition-aversion-scientific-design.md)
-and the [prospective design](../../docs/research/studies/i2-g1lab-need-aversion-protocol-2026-11-01/README.md).
-G1-LIVE and M11 remain unchanged.
+**ADR-0006:** Do not call absent re-eating after an unobserved hidden payoff reversal an H2 learning failure. Require an identifiable information or motivational basis for reappraisal; do not promote the hand-coded +9 stale revisit bonus. See [study](../../docs/research/studies/i2-g1lab-aversion-reappraisal-2026-11-01/README.md). No new experiment or living permission is granted.
+
+**ADR-0007 is an ACCEPTED scientific framing, not a living-engine permit.**
+The owner subsequently approved **only** the exact numerical v1-r1 protocol
+(Git blob `a279067fbfd21f02ee4aa7854509c19f12cfbb62`) and one bounded
+non-living G1-LAB execution, recorded in [the owner authorization](https://github.com/josselin-orta-lab/individual-zero/issues/662#issuecomment-6561384748).
+PR #814 implemented that one 4-cell x 4-arm study; PR #815 froze the
+[complete 16-arm report](../../docs/research/studies/i2-g1lab-need-aversion-protocol-2026-11-01/execution-report.md):
+128 modeled captures, distinct need/aversion contrasts in selected cells,
+a high-energy aversive tie/abstention, and no general learning or survival
+advantage over the fixed-prior control. Every observed effect is compatible
+with the explicitly researcher-designed valuation equation. This is
+**not evidence of naturally emerging need, aversion or autonomous learning**.
+
+**The one-shot authorization is exhausted.** Do not rerun, tune, extend,
+generalize or elevate this experiment under that approval. The original
+prospective design and exact parameter-lock candidate retain their historical
+pre-approval wording to preserve provenance; use the report and #662 comment
+for the later execution status. No social-observation experiment, living I2
+WorldBody, motor authority, M11 witness, birth or G3 implementation is
+authorized. G1-LIVE remains REVIEW_REQUIRED by two independent reviewers.
 
 **Current allowed work:** prepare, request and reconcile independent
 architecture and scientific reviews of the [minimal G1 loop

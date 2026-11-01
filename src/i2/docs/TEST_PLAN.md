@@ -2,6 +2,29 @@
 
 **G2 : les tests logiciels synthétiques sont exécutés en CI ciblée.** Le workflow `.github/workflows/i2-proposal-safety.yml` vérifie les suites `tests/i2/test_*.py` sous Python 3.11/3.12, la compilation et le blocage de toute activation I2. Ils ne créent aucune vie et ne représentent pas une preuve scientifique.
 
+## Completed, closed one-shot G1-LAB factorial (2026-11-01)
+
+The owner separately authorized **one** non-living v1-r1 parameter-locked
+need/nutrition/aversion study (exact protocol Git blob
+`a279067fbfd21f02ee4aa7854509c19f12cfbb62`), not a living G1 or G3
+gate. Merged PR #814 contains the opt-in policy and the bounded
+`tests/i2/test_g1_lab_need_aversion_v1r1.py` verification; PR #815 records
+[all 16 arms and 128 modeled captures](../../../docs/research/studies/i2-g1lab-need-aversion-protocol-2026-11-01/execution-report.md), including null contrasts,
+fixed-prior successes, varied synthetic UC and high-energy aversive
+abstention. The output comes from researcher-specified deterministic
+valuation, **not established natural learning**.
+
+Historical software verification on the exact PR #814 head
+`5a8080fc1fe146ff67e391b6d48655689691f46f`: Python 3.11 and
+3.12 PASS (the same single protocol, not independent scientific
+replications). No new cohort or tuned rerun is permitted under that
+authorization. If an unrelated future code change affects this feature,
+the narrow regression command is
+`python -m unittest discover -s tests/i2 -p 'test_g1_lab_need_aversion_v1r1.py' -v`;
+such a software retest does **not** count as a fresh experimental run.
+Independent G1 architecture/science reviewers remain outstanding (#662),
+and the I2 engine stays unregistered and unexecutable.
+
 ## Invariants logiciels G2 à conserver
 
 1. I2 reste absent du registre actif, sans point d'entrée de naissance.
