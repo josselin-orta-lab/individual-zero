@@ -156,5 +156,84 @@ class FileWitnessTests(unittest.TestCase):
         self.assertEqual(rolled_back.committed, 0)  # NOT anti-rollback proof
 
 
+    def test_missing_lock_is_not_silently_recreated(self):
+        self.genesis()
+        lock = self.dir / ".writer.lock"
+        lock.unlink()
+        with self.assertRaisesRegex(WitnessStoreError, "lock disappeared"):
+            self.store.read_verified_latest(life_ref=LIFE, genesis_ref=GENESIS)
+        cold = OperatorFileWitness(directory=self.dir, key_id="operator:test", key=KEY)
+        with self.assertRaisesRegex(WitnessStoreError, "lock disappeared"):
+            cold.read_verified_latest(life_ref=LIFE, genesis_ref=GENESIS)
+        self.assertFalse(lock.exists())
+
+    def test_lock_swap_during_locked_read_refuses_stale_descriptor(self):
+        self.genesis()
+
+        class SwapLock(OperatorFileWitness):
+            def _scan(self, fd):
+                result = super()._scan(fd)
+                path = self.directory / ".writer.lock"
+                path.unlink()
+                path.touch(mode=0o600)
+                return result
+
+        reader = SwapLock(directory=self.dir, key_id="operator:test", key=KEY)
+        with self.assertRaisesRegex(WitnessStoreError, "replaced"):
+            reader.read_verified_latest(life_ref=LIFE, genesis_ref=GENESIS)
+
+    def test_log_swap_during_stage_refuses_detached_append(self):
+        origin = self.genesis()
+        saved = (self.dir / "heads.jsonl").read_bytes()
+
+        class SwapLog(OperatorFileWitness):
+            def _scan(self, fd):
+                result = super()._scan(fd)
+                path = self.directory / "heads.jsonl"
+                data = path.read_bytes()
+                path.unlink()
+                path.write_bytes(data)
+                path.chmod(0o600)
+                return result
+
+        writer = SwapLog(directory=self.dir, key_id="operator:test", key=KEY)
+        with self.assertRaisesRegex(WitnessStoreError, "replaced"):
+            writer.stage(claim=claim(1), expected_proof_ref=origin.proof_ref)
+        # The detached append must never be represented as a successful receipt.
+        # This old file is still rollbackable; no independent head is proved.
+        self.assertEqual((self.dir / "heads.jsonl").read_bytes(), saved)
+
+    def test_directory_replaced_after_initialization_fails_closed(self):
+        self.genesis()
+        moved = self.dir.parent / "former-witness"
+        self.dir.rename(moved)
+        self.dir.mkdir(mode=0o700)
+        with self.assertRaisesRegex(WitnessStoreError, "directory was replaced"):
+            self.store.read_verified_latest(life_ref=LIFE, genesis_ref=GENESIS)
+        self.assertFalse((self.dir / "heads.jsonl").exists())
+
+    def test_missing_journal_with_existing_lock_is_not_recreated(self):
+        self.genesis()
+        path = self.dir / "heads.jsonl"
+        path.unlink()
+        with self.assertRaisesRegex(WitnessStoreError, "no witnessed genesis"):
+            self.store.stage(claim=claim(0))
+        cold = OperatorFileWitness(directory=self.dir, key_id="operator:test", key=KEY)
+        with self.assertRaisesRegex(WitnessStoreError, "no witnessed genesis"):
+            cold.stage(claim=claim(0))
+        self.assertFalse(path.exists())
+
+    def test_empty_existing_journal_cannot_reset_to_genesis(self):
+        self.genesis()
+        path = self.dir / "heads.jsonl"
+        path.write_bytes(b"")
+        with self.assertRaisesRegex(WitnessStoreError, "empty existing witness history"):
+            self.store.stage(claim=claim(0))
+        cold = OperatorFileWitness(directory=self.dir, key_id="operator:test", key=KEY)
+        with self.assertRaisesRegex(WitnessStoreError, "empty existing witness history"):
+            cold.stage(claim=claim(0))
+        self.assertEqual(path.read_bytes(), b"")
+
+
 if __name__ == "__main__":
     unittest.main()
