@@ -234,3 +234,15 @@ This scoped contract cannot yet compete with another executable two-step
 plan. The next integration must evaluate alternative *sequences* from the
 same current captured evidence and explicitly report costs, uncertain
 consequences and deadlines before taking a risk.
+
+## Two-step paid execution falsifier
+
+The two-step projection alone is not evidence of action. The focused
+`test_two_step_owner_execution.py` now checks the same WorldBody running
+two consecutive independently paid cognition decisions: COLLECT then
+EAT. With the same initial energy=10, stable hidden food leaves energy=12
+while harmful food produces modeled terminal energy=0. Both arms pay
+the ordinary 4+5 UC, neither has the current EAT consequence available
+to the second decision, and no researcher selects the action. The
+observed sequence is a programmed toy-world behavior, NOT evidence
+that I2 independently invented or maintained a multi-step plan.
