@@ -65,6 +65,59 @@ class AtomicH2Tests(unittest.TestCase):
         with self.assertRaises(CommitAcknowledgmentLost):
             f.open(claim=c,semantic_ref=A,evidence_ref="evidence:30",ttl_steps=12,
                    feedback_previous=old,feedback_update=update,_fault_at="after_commit")
+        # A lost acknowledgement must identify the exact atomic H2 content,
+        # not just a matching capture and 'open' request. No port is recalled.
+        from i2.modules.uncertain_witness_inspection import inspect_uncertain_cognition_with_witness
+        from i2.modules.lifecycle_external_witness import WitnessRefusal
+        from test_feedback_calibration import (
+            Source as FeedbackSource, heldout, forecast, read_feedback, learn_from_feedback,
+        )
+        from i2.modules.cognitive_cycle_fixture import ZERO_HASH
+        cold = CognitiveCycleFixture.reopen(path=self.path, **self.ports)
+        expected = dict(
+            previous_count=0, previous_head=ZERO_HASH, claim=c,
+            method="open", semantic_ref=A, evidence_ref="evidence:30",
+            ttl_steps=12,
+        )
+        start = cold.audit()
+        found = cold.inspect_uncertain_cognition(
+            **expected, feedback_previous=old, feedback_update=update)
+        self.assertEqual(found.outcome, "RECORDED_LOCAL_ONLY")
+        self.assertFalse(found.retry_authorized)
+        self.assertFalse(found.resumption_authorized)
+        self.assertFalse(found.m11_authenticated)
+        self.assertEqual(cold.inspect_uncertain_cognition(**expected).outcome,
+                         "CONFLICT_LOCAL")
+        readout = read_feedback(
+            memory=old, forecast=forecast(10), source=FeedbackSource())
+        a, b = heldout(12, -7, 4)
+        another = learn_from_feedback(
+            memory=old, readout=readout,
+            prepared=a, control=b, source=FeedbackSource())
+        self.assertNotEqual(update.heldout_score, another.heldout_score)
+        self.assertEqual(cold.inspect_uncertain_cognition(
+            **expected, feedback_previous=old, feedback_update=another).outcome,
+            "CONFLICT_LOCAL")
+        with self.assertRaisesRegex(ValueError, "both predecessor and update"):
+            cold.inspect_uncertain_cognition(**expected, feedback_previous=old)
+        with self.assertRaisesRegex(ValueError, "both predecessor and update"):
+            cold.inspect_uncertain_cognition(**expected, feedback_update=update)
+
+        class NeverContact:
+            calls = 0
+
+            def read_verified_latest(self, *, life_ref, genesis_ref):
+                self.calls += 1
+                raise AssertionError("foreign witness must not be contacted")
+
+        witness = NeverContact()
+        with self.assertRaises(WitnessRefusal) as exc:
+            inspect_uncertain_cognition_with_witness(
+                fixture=cold, witness=witness, **expected,
+                feedback_previous=old, feedback_update=another)
+        self.assertEqual(exc.exception.reason, "UNKNOWN")
+        self.assertEqual(witness.calls, 0)
+        self.assertEqual(cold.audit(), start)
         self.assertEqual(f.audit()["feedback_version"],1)
         self.assertEqual(CognitiveCycleFixture.reopen(path=self.path,**self.ports).audit()["feedback_version"],1)
         self.assertEqual(f.lookup(capture_ref="capture:cycle30").motor_authority,"NONE")

@@ -1321,6 +1321,7 @@ class CognitiveCycleFixture:
         expected_step: int, target_ref: str, event_kind: str,
         expected_claim: dict[str, object] | None = None,
         expected_request: dict[str, object] | None = None,
+        expected_feedback: dict[str, object] | None = None,
         expected_terminal: dict[str, object] | None = None,
         minimum_sequence: int | None = None,
     ) -> UncertainCommitInspection:
@@ -1395,6 +1396,7 @@ class CognitiveCycleFixture:
                          data.get("kind") != "synthetic_terminal" and
                          data["claim"] == expected_claim and
                          data["request"] == expected_request and
+                         data["feedback_transition"] == expected_feedback and
                          digest == data["claim_digest"])
                     )
                     outcome = "RECORDED_LOCAL_ONLY" if matches else "CONFLICT_LOCAL"
@@ -1414,12 +1416,15 @@ class CognitiveCycleFixture:
         self, *, previous_count: int, previous_head: str,
         claim: ObservationClaim, method: str,
         semantic_ref: str | None = None, evidence_ref: str | None = None,
-        ttl_steps: int | None = None, minimum_sequence: int | None = None,
+        ttl_steps: int | None = None,
+        feedback_previous: object | None = None,
+        feedback_update: object | None = None,
+        minimum_sequence: int | None = None,
     ) -> UncertainCommitInspection:
-        """Correlate a declared capture AND request; never retry or authorize.
+        """Correlate capture, request AND H2 payload, never retry/authorize.
 
-        Capture identity alone is insufficient: an open and observe on the
-        same capture have different causal effects. This remains local G2.
+        The exact feedback projection is part of the same v5 COMMIT as the
+        intention. This is local G2 inspection, not authenticated learning.
         """
         if type(claim) is not ObservationClaim:
             raise ValueError("exact subjective claim required")
@@ -1427,11 +1432,27 @@ class CognitiveCycleFixture:
         if claim.life_ref != self.life_ref:
             raise ValueError("foreign synthetic life")
         request = _request(method, semantic_ref, evidence_ref, ttl_steps)
+        if (feedback_previous is None) != (feedback_update is None):
+            raise ValueError("uncertain H2 requires both predecessor and update")
+        expected_feedback = None
+        if feedback_update is not None:
+            from .delayed_credit_study import _feedback_memory_digest
+            from .feedback_transition_contract import verify_feedback_transition
+            verify_feedback_transition(
+                stored=feedback_previous,
+                expected_previous_digest=_feedback_memory_digest(feedback_previous),
+                update=feedback_update,
+            )
+            # Use the very same canonical event projection as the writer;
+            # compare bytes-equivalent JSON, not objects with tuple/list drift.
+            expected_feedback = json.loads(_json(
+                _h2_transition_map(feedback_previous, feedback_update)))
         return self._inspect_uncertain_local(
             previous_count=previous_count, previous_head=previous_head,
             expected_step=claim.capture.step, target_ref=claim.capture.ref,
             event_kind="cognitive", expected_claim=_claim_map(claim),
-            expected_request=request, minimum_sequence=minimum_sequence,
+            expected_request=request, expected_feedback=expected_feedback,
+            minimum_sequence=minimum_sequence,
         )
 
     def inspect_uncertain_terminal(
