@@ -26,13 +26,16 @@ From a complete local repository checkout:
 python tools/research_dossiers.py audit
 python tools/research_dossiers.py list
 python tools/research_dossiers.py g0-provider-inventory
+python tools/research/g0_custody_receipt.py plan
 python tools/research_dossiers.py show --id I1-G0-CUSTODY
 python tools/research_dossiers.py show --id I1-A1C-TARGETED
 python tools/research_dossiers.py gaps
 python tools/research_dossiers.py compare --left I1-A1C-TARGETED --right I1-A2R-REWARD
 ```
 
-All commands are read-only. **Retention risk:** [G0 artifact custody audit](../research/audits/I1_G0_PROVIDER_ARTIFACT_CUSTODY_2026-11-01.md) and [dated metadata](../../config/research-g0-artifacts.json) enumerate the provider artifacts, IDs, upload SHA digests and 28 Nov 2026 expiration. **These digests do not certify the original M11 inner ZIPs.** The G0 metadata guard checks all historical cohort slots and refuses a fabricated archive protection flag or a fabricated A1-P aggregate success. It cannot authenticate the archived bytes or approve G0.
+All commands are read-only. The [operator-controlled G0 export guide](G0_CUSTODY_EXPORT.md) documents an offline provider-package receipt and uses the existing A1-P/A1-C original-data readers for separate M11 verification. It never downloads private evidence in CI and cannot close G0.
+
+**Retention risk:** [G0 artifact custody audit](../research/audits/I1_G0_PROVIDER_ARTIFACT_CUSTODY_2026-11-01.md) and [dated metadata](../../config/research-g0-artifacts.json) enumerate the provider artifacts, IDs, upload SHA digests and 28 Nov 2026 expiration. **These digests do not certify the original M11 inner ZIPs.** The G0 metadata guard checks all historical cohort slots and refuses a fabricated archive protection flag or a fabricated A1-P aggregate success. It cannot authenticate the archived bytes or approve G0.
 
 The audit checks structure and source byte identity using the exact **Git blob SHA** and an in-file quotation marker. Any modification to a pinned source, even when the quoted words survive, requires source reconciliation. The source-level result `PIN_MATCH` proves only document identity, **not correct scientific interpretation**.
 

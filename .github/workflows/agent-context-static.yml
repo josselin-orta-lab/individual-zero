@@ -12,15 +12,18 @@ on:
       - 'tools/research_coordinator.py'
       - 'tools/research_corpus.py'
       - 'tools/research_dossiers.py'
+      - 'tools/research/g0_custody_receipt.py'
       - 'tests/test_agent_context.py'
       - 'tests/test_research_coordinator.py'
       - 'tests/test_research_knowledge.py'
       - 'tests/test_research_corpus.py'
       - 'tests/test_research_dossiers.py'
+      - 'tests/test_g0_custody_receipt.py'
       - 'docs/engineering/AGENT_CONTEXT.md'
       - 'docs/engineering/RESEARCH_COORDINATOR.md'
       - 'docs/engineering/RESEARCH_CORPUS.md'
       - 'docs/engineering/RESEARCH_DOSSIERS.md'
+      - 'docs/engineering/G0_CUSTODY_EXPORT.md'
       - 'docs/engineering/AGENT_HANDOFF.md'
       - 'docs/engineering/DOCUMENT_AUTHORITY.md'
       - 'docs/engineering/COMPONENT_OWNERSHIP.md'
@@ -65,6 +68,20 @@ jobs:
           python -m unittest discover -s tests -p test_research_corpus.py -v
           python tools/research_dossiers.py audit --structure-only > /tmp/iz-dossier-audit.json || { cat /tmp/iz-dossier-audit.json; exit 1; }
           python tools/research_dossiers.py g0-provider-inventory > /tmp/iz-g0-provider.json
+          python -m unittest discover -s tests -p test_g0_custody_receipt.py -v
+          python tools/research/g0_custody_receipt.py plan > /tmp/iz-g0-export-plan.json
+          python tools/research/g0_custody_receipt.py plan --shell > /tmp/iz-g0-export-plan.sh
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          plan = json.loads(Path('/tmp/iz-g0-export-plan.json').read_text())
+          assert plan['status'] == 'PROVIDER_METADATA_PLAN_ONLY'
+          assert plan['scientific_verdict'] == 'NOT_EVALUATED'
+          assert not plan['external_durable_custody_attested']
+          assert sum(len(v['artifacts']) for v in plan['campaigns'].values()) == 58
+          assert Path('/tmp/iz-g0-export-plan.sh').read_text().count('gh api --method GET') == 58
+          print('G0_OFFLINE_EXPORT_PLAN_NO_NETWORK_PASS')
+          PY
           python -m unittest discover -s tests -p test_research_dossiers.py -v
           python tools/research_dossiers.py show --id I1-A1C-TARGETED > /tmp/iz-a1c-dossier.json || test "$?" -eq 2
           python tools/research_dossiers.py gaps > /tmp/iz-dossier-gaps.json || test "$?" -eq 2

@@ -6,7 +6,7 @@ Formal EXP records may live in `../../experiments/EXP-####/`, while substantial 
 
 The [research map](../../RESEARCH_MAP.md) records cross-cutting research axes. The [incremental corpus indexer](../engineering/RESEARCH_CORPUS.md) can enumerate source blobs and suggest possible protocol/results connections without claiming scientific equivalence. The [global research coordinator](../engineering/RESEARCH_COORDINATOR.md) provides an initially curated, source-linked view of questions, negative evidence, gate dependencies and proposed interventions. Neither is a live census or a substitute for original evidence and independent scientific review.
 
-For the dated G0 archive/ref and A1-P/A1-C expiring provider-artifact inventory, see [the 1 November custody audit](audits/I1_G0_PROVIDER_ARTIFACT_CUSTODY_2026-11-01.md). It does not establish independent M11 preservation or change the A1-C NO_GO.
+For the dated G0 archive/ref and A1-P/A1-C expiring provider-artifact inventory, see [the 1 November custody audit](audits/I1_G0_PROVIDER_ARTIFACT_CUSTODY_2026-11-01.md). It does not establish independent M11 preservation or change the A1-C NO_GO. To prepare an authorized local export and offline byte receipt, see [G0 custody operations](../engineering/G0_CUSTODY_EXPORT.md); no automatic download occurs.
 
 ## Core principle
 

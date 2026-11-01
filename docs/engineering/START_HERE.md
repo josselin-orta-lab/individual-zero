@@ -18,7 +18,7 @@ For documentation/agent-navigation changes (including the separate architecture 
 
 When citing the same source in both curated research manifests, use `python tools/research_coordinator.py audit --structure-only` to detect **cross-manifest source-SHA disagreement** before proposing research work; a structural PASS with `SOURCE_REVIEW_REQUIRED` still demands manual source reconciliation. See the [1 November provenance record](../research/audits/RESEARCH_SOURCE_RECONCILIATION_2026-11-01.md).
 
-**G0 custody retention warning (observed 1 November 2026):** 58 A1-P/A1-C provider artifacts are scheduled to expire on 28 November 2026. No independently accessible durable M11 custody is established; the source archive branch is unprotected. Consult [the dated G0 audit](../research/audits/I1_G0_PROVIDER_ARTIFACT_CUSTODY_2026-11-01.md) before considering G3.
+**G0 custody retention warning (observed 1 November 2026):** 58 A1-P/A1-C provider artifacts are scheduled to expire on 28 November 2026. No independently accessible durable M11 custody is established; the source archive branch is unprotected. Consult [the dated G0 audit](../research/audits/I1_G0_PROVIDER_ARTIFACT_CUSTODY_2026-11-01.md) and the [operator-only export and receipt guide](G0_CUSTODY_EXPORT.md) before considering G3. The provider export plan must be reviewed locally, never run by CI or committed with private M11 data.
 
 ## Lightweight first checks
 
