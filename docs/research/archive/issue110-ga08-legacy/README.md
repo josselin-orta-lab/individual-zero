@@ -24,8 +24,14 @@ The `.github/workflows/` children are **inert** at this nested archive path, not
 ## Verified historical navigation anchors
 
 - [Original GA08 spatial preregistration](../../stage12-issue110-ga08-spatial-prereg-2026-10-14.fr.md): specifies the six-life physical experiment, its controls and limitations. This is a protocol, **not** evidence that its predicted outcome occurred.
-- [PR #154](https://github.com/josselin-orta-lab/individual-zero/pull/154), merged as [commit `e94e86a868594ed3dac8bee2cec74a8b419876e5`](https://github.com/josselin-orta-lab/individual-zero/commit/e94e86a868594ed3dac8bee2cec74a8b419876e5), is the Git history entry returned for this archived spatial runner's **current path**. This establishes a navigation lead, not yet equality to every original pre-archive source blob or proof of a completed run.
+- [PR #154](https://github.com/josselin-orta-lab/individual-zero/pull/154), merged as [commit `e94e86a868594ed3dac8bee2cec74a8b419876e5`](https://github.com/josselin-orta-lab/individual-zero/commit/e94e86a868594ed3dac8bee2cec74a8b419876e5), **introduced all 12 current archived paths**. The commit's changed-file Git blob SHA-1 matches the 12 entries above exactly (**12/12**). This verifies byte identity between that introduction commit and the current archived snapshot, not the entirety of the experiment's earlier working branch or its runtime environment.
 - [PR #148](https://github.com/josselin-orta-lab/individual-zero/pull/148) contains the earlier normative GA08 context. The current archive may contain later edits; establish full commit-by-commit custody before replay.
+
+## Separate execution evidence and reproducibility limits
+
+- [Historical GA08 results](../../stage12-issue110-ga08-results-2026-10-14.fr.md) cites original GitHub Actions runs, exact runner SHAs, null/positive observations and limits. In particular, scientific runs were recorded at source revisions **before** archive introduction commit `e94e86a`; their complete environment and artifacts have not been revalidated here.
+- [Historical migration decision](../../stage12-issue110-ga08-historical-migration-2026-10-14.fr.md) records incompatible later GA08 interfaces, an archived reconciliation with failing legacy tests, and why compatibility must **not** be restored into the current runtime. It reports that the old suite did not pass against that newer integration.
+- Thus: **archived source identity = VERIFIED_12_OF_12_AT_INTRODUCTION_COMMIT**; **original-run source and environment equivalence = UNVERIFIED**; **scientific result = NOT_REEVALUATED**. No tests or cohorts were executed for this archive review.
 
 ## Provenance and replay limits
 
@@ -33,6 +39,6 @@ The `.github/workflows/` children are **inert** at this nested archive path, not
 - [Frozen I0 custody](../../../../archive/i0/README.md) protects a separate recorded migration of 127 workflows and 297 tests. Its manifest **does not attest** these 12 GA08-specific archived paths.
 - The inventory records file identity **at the cited main SHA only**. Compare a later checkout's `git hash-object` for each file against this table before reusing its contents.
 - Do not rewrite historical files to fix missing imports; reconstruct an authentic original checkout in a disposable worktree after verifying the original source commit and evidence.
-- No experiment was run for this index. Status: `SOURCE_REVIEW_REQUIRED`; scientific verdict: `NOT_EVALUATED`.
+- No experiment was run for this index. Archive introduction-commit blob identity: `VERIFIED_12_OF_12`. Earlier experiment-run source and dependency closure: `SOURCE_REVIEW_REQUIRED`; scientific verdict: `NOT_REEVALUATED`.
 
 Return to the [research archive index](../README.md), [study routing](../../studies/README.md) or [original research documentation](../../README.md).
