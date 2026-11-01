@@ -2,7 +2,22 @@
 
 **Status: ACCEPTED by project owner as a scientific interpretation and experimental design direction, 1 November 2026.**
 
-**Study execution status: PENDING_PARAMETER_FREEZE; NOT_AUTHORIZED_TO_RUN; NOT_EXECUTED.**
+**Study status at original ADR acceptance (historical):** PENDING_PARAMETER_FREEZE; NOT_AUTHORIZED_TO_RUN; NOT_EXECUTED.
+
+**Subsequent separately authorized execution (1 November 2026):**
+The owner later accepted the exact v1-r1 numerical lock (Git blob
+`a279067fbfd21f02ee4aa7854509c19f12cfbb62`) and authorized
+**one bounded non-living G1-LAB study** in
+[issue #662](https://github.com/josselin-orta-lab/individual-zero/issues/662#issuecomment-6561384748). PR #814 implemented the single 16-arm
+deterministic factorial; PR #815 froze the
+[complete outcome report](../research/studies/i2-g1lab-need-aversion-protocol-2026-11-01/execution-report.md).
+Observed mechanistic score/action differences do **not** establish natural
+autonomous learning; the fixed-prior control also completes collect/eat,
+and the high-energy aversive full arm abstains on a tie. **No rerun or
+parameter tuning is authorized by that exhausted one-shot permission.**
+The rest of this ADR documents the *original* decision and its
+pre-approval restrictions. The approved exact parameter-lock source remains
+unchanged; G1-LIVE, M11 and G3 are still blocked.
 **Scope:** I2 disposable, non-living G1-LAB research only. G1-LIVE/M11/G0/G3 and independent reviews are **unchanged**.
 
 ## Context and original evidence
@@ -111,5 +126,7 @@ test PASS cannot replace causal evidence or independent review.
   Independent architecture/science G1 reviews remain due in
   [issue #662](https://github.com/josselin-orta-lab/individual-zero/issues/662).
 
-**Date / status:** 2026-11-01, accepted scientific framing;
-parameter freeze and experimental execution **not completed**.
+**Original decision date/status (2026-11-01):** scientific framing
+accepted; parameter freeze and experimental execution were **pending at the
+time of adoption**. The later one-shot authorization, execution and
+non-living scientific limits are documented at the top of this ADR.
