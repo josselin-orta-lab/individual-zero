@@ -14,7 +14,7 @@ import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-FUTURE = re.compile(r"I[2-9][0-9]*\Z")
+FUTURE = re.compile(r"I(?:[2-9]|[1-9][0-9]+)\Z")
 SCHEMA = "individual-zero-engine-contract/v1"
 OWNED_DIRS = ("lab", "modules", "runtime", "config")
 OWNED_DOCS = ("STATUS.md", "ARCHITECTURE.md", "TEST_PLAN.md")

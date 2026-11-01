@@ -16,7 +16,7 @@ import shutil
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-GENERATION = re.compile(r"I[2-9][0-9]*\Z")
+GENERATION = re.compile(r"I(?:[2-9]|[1-9][0-9]+)\Z")
 FOLDERS = ("lab", "modules", "runtime", "config")
 ENGINE_SCHEMA = "individual-zero-engine-contract/v1"
 
