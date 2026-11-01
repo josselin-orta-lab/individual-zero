@@ -170,3 +170,31 @@ physical-tick schedule. Report personally observed adverse EAT results,
 last-resort attempts, terminal ticks, censoring and costs, even when the
 new reflex causes fatal poisoning. These results remain exploratory
 engineered-world observations, not real survival or learning evidence.
+
+
+## Multiple survival plans: a distinct evidence gate (experimental seam)
+
+The next I2-owned pure boundary is
+`src/i2/modules/survival_plan_viability.py`. It requires a verified current
+first-person capture, exact current reflex, and a complete source-verified
+classification of **every other currently offered affordance** as VIABLE,
+NOT_VIABLE or UNKNOWN. The priority classification is:
+
+- If a verified accessible alternative is VIABLE, do not claim the berry is
+  the only remaining plan.
+- If any alternative remains UNKNOWN, say ALTERNATIVE_UNRESOLVED; lack of
+  evidence is not proof that the alternative cannot work.
+- Only when the reflex is urgent and **all other offered plans** are
+  source-verified NOT_VIABLE may the boundary issue a
+  LAST_RESORT_RISK_RECONSIDERATION signal.
+- At noncritical energy, no emergency priority arises.
+
+The output is deliberately NONMOTOR and still requires ordinary paid
+Competition and fresh Action Control. A real source of viability evidence
+for new affordances and its in-owner behavioral integration are **not yet
+implemented**. Do not infer plan viability from the hidden food impulse,
+researcher oracle or imagined future experiences. The presently integrated
+opt-in reflex is still a narrow toy-world heuristic for its fixed three
+known affordances; it must not be promoted as a generic agentic planner.
+The standalone contract provides a falsifiable next integration criterion,
+not a new alternate SQLite owner, legacy compatibility path or safety GO.
