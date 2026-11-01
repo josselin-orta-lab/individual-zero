@@ -39,7 +39,14 @@ def _inspect(*, fixture: object, witness: IndependentWitness,
 
     # Three separate local read transactions. This checks detected changes
     # between reads but cannot lock out subsequent writes or global rollback.
-    before = fixture.audit()
+    # A broken first local read cannot establish absence or consistency;
+    # classify it like subsequent read failures before touching the witness.
+    try:
+        before = fixture.audit()
+    except Exception as exc:
+        raise WitnessRefusal(
+            "UNKNOWN", "local journal unavailable before uncertain witness inspection"
+        ) from exc
     # Validate caller-held evidence before constructing an inspection probe.
     # Never dereference a malformed minimum or run a diagnostic on its behalf.
     if minimum_witness is not None:

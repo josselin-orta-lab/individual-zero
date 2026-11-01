@@ -132,6 +132,32 @@ class TestUncertainWitness(unittest.TestCase):
             self.inspection(c, self.witness(record=other))
         self.assertEqual(exc.exception.reason, "FORK")
 
+    def test_unavailable_initial_local_audit_is_unknown_without_provider(self):
+        c = self.source.add(claim(3))
+        witness = self.witness()
+        for failure in (OSError("unreadable local file"),
+                        sqlite3.DatabaseError("journal corruption")):
+            with self.subTest(failure=type(failure).__name__):
+                with patch.object(CognitiveCycleFixture, "audit", side_effect=failure):
+                    with self.assertRaises(WitnessRefusal) as caught:
+                        self.inspection(c, witness)
+                self.assertEqual(caught.exception.reason, "UNKNOWN")
+                self.assertFalse(witness.calls)
+
+    def test_unavailable_terminal_initial_audit_is_unknown_without_provider(self):
+        witness = self.witness()
+        with patch.object(CognitiveCycleFixture, "audit",
+                          side_effect=sqlite3.DatabaseError("cold terminal read failed")):
+            with self.assertRaises(WitnessRefusal) as caught:
+                inspect_uncertain_terminal_with_witness(
+                    fixture=self.fixture, witness=witness,
+                    previous_count=0, previous_head=ZERO_HASH,
+                    physical_step=3, terminal_ref="terminal:unavailable",
+                    evidence_ref="evidence:missing",
+                )
+        self.assertEqual(caught.exception.reason, "UNKNOWN")
+        self.assertEqual(witness.calls, 0)
+
     def test_sqlite_failure_between_local_audits_is_unknown_without_provider(self):
         c = self.source.add(claim(3))
         witness = self.witness()
