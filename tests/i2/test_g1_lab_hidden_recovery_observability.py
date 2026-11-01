@@ -105,6 +105,24 @@ class HiddenRecoveryIdentifiabilityTests(unittest.TestCase):
             self.assertEqual(data["claim"]["capture"]["goal_ref"], "goal:food")
             self.assertNotIn("hidden_payoff", data["claim"]["capture"])
 
+    def test_energy_evidence_is_prior_state_and_never_changes_food_policy(self):
+        trace, events, _, audit = self.run_counterfactual(
+            regime="recovery", revisit=False, count=8
+        )
+        self.assertEqual(len(trace), len(events))
+        before = 24
+        for i, ((body, _), step) in enumerate(zip(events, trace)):
+            claim = json.loads(body)["claim"]
+            refs = claim["subjective_evidence_refs"]
+            self.assertIn(f"evidence:lab:body-energy:{before}", refs)
+            # The next outcome is not allowed to become current capture input.
+            if step["energy"] != before:
+                self.assertNotIn(f"evidence:lab:body-energy:{step['energy']}", refs)
+            self.assertEqual(claim["capture"]["goal_ref"], "goal:food")
+            before = step["energy"]
+        self.assertEqual(audit["actual_synthetic_uc_spent"], 38)
+        self.assertTrue(trace[-1]["terminal"])
+
     def test_existing_revisit_reveals_change_only_after_same_chosen_action(self):
         # This is a POSITIVE INFORMATION CONTROL, not a policy endorsement.
         # Existing researcher-injected +9 revisit causes EAT at capture 5.
