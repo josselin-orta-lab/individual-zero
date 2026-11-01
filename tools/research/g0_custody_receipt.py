@@ -300,7 +300,11 @@ def _verify_original_files(original_dir: Path, expected: dict, campaign: str) ->
                 or not isinstance(record, dict) or not HEX64.fullmatch(record.get("sha256", ""))):
             raise ValueError("invalid historical M11 expectation")
         target = original_dir / name
+        if target.is_symlink():
+            raise ValueError("symlinked original M11 ZIP: " + name)
         before = target.lstat()
+        if not stat.S_ISREG(before.st_mode) or before.st_nlink != 1:
+            raise ValueError("original M11 ZIP is linked or not regular: " + name)
         if before.st_size <= 0 or before.st_size > ORIGINAL_MAX_BYTES:
             raise ValueError("invalid original M11 ZIP byte size: " + name)
         size_limit = record.get("bytes")
