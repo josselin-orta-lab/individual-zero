@@ -19,7 +19,7 @@ For task-oriented agents start at [agent navigation](engineering/AGENT_NAVIGATIO
 
 ## Physical location and custody
 
-Generation-owned [I1](../src/i1/docs/README.md) and [I2](../src/i2/docs/README.md) handbooks live alongside their source. Dated studies remain under [research](research/README.md) or generation-owned scientific sources. [The archive index](../archive/README.md) distinguishes frozen I0 from historical references, and [the test index](../tests/README.md) routes software checks. Preserve original evidence citations and source blob identity before relocating files.
+Generation-owned [I1](../src/i1/docs/README.md) and [I2](../src/i2/docs/README.md) handbooks live alongside their source. Dated studies remain under [research](research/README.md) or generation-owned scientific sources. [The archive index](../archive/README.md) distinguishes frozen I0 from historical references, and [the test index](../tests/TEST_LAYOUT.md) routes software checks. Preserve original evidence citations and source blob identity before relocating files.
 
 To locate paths without loading entire directories, run `python tools/repository_layout.py inventory --kind docs --match stage12 --limit 15` (or use `--kind tests` / `--kind archives`). This is read-only navigation, not a scientific verdict.
 

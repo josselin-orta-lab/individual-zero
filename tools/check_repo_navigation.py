@@ -14,7 +14,7 @@ from urllib.parse import unquote
 ROOT = Path(__file__).resolve().parents[1]
 ENTRYPOINTS = (
     "README.md", "AGENTS.md", "CONTRIBUTING.md", "RESEARCH_MAP.md",
-    "archive/README.md", "tests/README.md",
+    "archive/README.md", "tests/TEST_LAYOUT.md",
     "docs/research/studies/README.md", "tests/research/a2r/README.md",
     "docs/README.md", "docs/engineering/AGENT_NAVIGATION.md",
     "docs/engineering/START_HERE.md", "docs/architecture/README.md",

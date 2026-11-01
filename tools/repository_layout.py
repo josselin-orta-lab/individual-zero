@@ -21,7 +21,7 @@ LEGACY_ROOT_GENERATION_TESTS = frozenset({
     "test_i1_m11_cold_recovery.py", "test_i1_model_m11_contract.py",
 })
 ENTRYPOINTS = (
-    "archive/README.md", "tests/README.md", "docs/README.md",
+    "archive/README.md", "tests/TEST_LAYOUT.md", "docs/README.md",
     "docs/research/README.md", "docs/research/studies/README.md",
     "docs/engineering/AGENT_NAVIGATION.md",
 )

@@ -1,5 +1,11 @@
 # Software tests: where each suite belongs
 
+This active portal deliberately lives at `tests/TEST_LAYOUT.md`:
+`tests/README.md` is reserved by the preserved I0 archive manifest.
+Do not recreate that old source path; its original bytes remain under
+`archive/i0/tests/README.md`.
+
+
 **Software tests are not scientific evidence.** Check the exact generation, commit SHA and purpose before interpreting a PASS. Tests and old research fixtures have different owners, so not all historical tests live beneath this directory.
 
 | Purpose | Location | How to select |
@@ -21,4 +27,6 @@ python tools/repository_layout.py check
 
 A1-P, A1-C and A2-R research-only tests are organized in [`tests/research/`](research/README.md); their original tool modules remain under `tools/`.
 
-All former `tools/research/tests/`, `tools/a1c_tests/` and `tools/a2r_tests/` suites have been consolidated. Do not reintroduce tests into these tool directories.\n\nTests under `archive/i0/` and synthetic I2 test opinions must not obtain I1 motor, state recovery or scientific authority. For the active generation's official suites and scientific limits, see [I1 engine contract](../src/i1/engine.json), [I1 evidence matrix](../src/i1/docs/EVIDENCE_MATRIX.md), and [I2 test plan](../src/i2/docs/TEST_PLAN.md).
+All former `tools/research/tests/`, `tools/a1c_tests/` and `tools/a2r_tests/` suites have been consolidated. Do not reintroduce tests into these tool directories.
+
+Tests under `archive/i0/` and synthetic I2 test opinions must not obtain I1 motor, state recovery or scientific authority. For the active generation's official suites and scientific limits, see [I1 engine contract](../src/i1/engine.json), [I1 evidence matrix](../src/i1/docs/EVIDENCE_MATRIX.md), and [I2 test plan](../src/i2/docs/TEST_PLAN.md).
