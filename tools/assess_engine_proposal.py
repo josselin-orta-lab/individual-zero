@@ -20,22 +20,85 @@ OWNED_DIRS = ("lab", "modules", "runtime", "config")
 OWNED_DOCS = ("STATUS.md", "ARCHITECTURE.md", "TEST_PLAN.md")
 
 
-def _source_imports_parent(path: Path, parent: str) -> bool:
+_GENERATION_NAMESPACE = re.compile(r"i(0|[1-9][0-9]*)(?:lab)?\Z", re.IGNORECASE)
+
+
+def _foreign_generation_namespace(module: str, generation: str) -> bool:
+    """Detect namespaces owned by a generation other than this proposal."""
+    parts = module.split(".")
+    if parts and parts[0] in {"src", "archive"}:
+        parts = parts[1:]
+    if not parts:
+        return False
+    match = _GENERATION_NAMESPACE.fullmatch(parts[0])
+    return match is not None and int(match.group(1)) != int(generation[1:])
+
+
+def _source_imports_other_generation(path: Path, generation: str) -> bool:
+    """Detect explicit cross-generation and unprovable dynamic imports.
+
+    A static checker cannot prove absence of arbitrary exec, custom loaders,
+    transitive third-party imports or shared mutable services.
+    """
     source = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-    parent_prefix = parent.lower()
+    importlib_names: set[str] = set()
+    builtins_names: set[str] = set()
+    dynamic_names: set[str] = {"__import__"}
     for node in ast.walk(source):
-        modules = []
         if isinstance(node, ast.Import):
-            modules = [alias.name for alias in node.names]
+            for alias in node.names:
+                if _foreign_generation_namespace(alias.name, generation):
+                    return True
+                if alias.name in {"importlib", "importlib.util"}:
+                    importlib_names.add(alias.asname or "importlib")
+                if alias.name == "builtins":
+                    builtins_names.add(alias.asname or "builtins")
         elif isinstance(node, ast.ImportFrom):
-            if node.level == 0:
-                modules = [node.module or ""]
-        if any(module == parent_prefix or
-               module.startswith(parent_prefix + ".") or
-               module == parent_prefix + "lab" or
-               module.startswith(parent_prefix + "lab.")
-               for module in modules):
+            if node.module and _foreign_generation_namespace(node.module, generation):
+                return True
+            # Includes from src import i1 and from .. import i0lab.
+            if any(_foreign_generation_namespace(alias.name, generation)
+                   for alias in node.names):
+                return True
+            if node.level == 0 and node.module == "importlib":
+                dynamic_names.update(
+                    alias.asname or alias.name for alias in node.names
+                    if alias.name == "import_module"
+                )
+            if node.level == 0 and node.module == "builtins":
+                dynamic_names.update(
+                    alias.asname or alias.name for alias in node.names
+                    if alias.name == "__import__"
+                )
+    for node in ast.walk(source):
+        if not isinstance(node, ast.Call):
+            continue
+        fn = node.func
+        is_loader = (
+            isinstance(fn, ast.Name) and fn.id in dynamic_names
+        ) or (
+            isinstance(fn, ast.Attribute) and isinstance(fn.value, ast.Name)
+            and ((fn.attr == "import_module" and fn.value.id in importlib_names)
+                 or (fn.attr == "__import__" and fn.value.id in builtins_names))
+        )
+        if not is_loader:
+            continue
+        name = node.args[0] if node.args else next(
+            (kw.value for kw in node.keywords if kw.arg == "name"), None
+        )
+        # A dynamic target cannot be certified independent by static review.
+        if not isinstance(name, ast.Constant) or type(name.value) is not str:
             return True
+        if _foreign_generation_namespace(name.value.lstrip("."), generation):
+            return True
+        if name.value.startswith("."):
+            package = node.args[1] if len(node.args) >= 2 else next(
+                (kw.value for kw in node.keywords if kw.arg == "package"), None
+            )
+            if (not isinstance(package, ast.Constant)
+                    or type(package.value) is not str
+                    or _foreign_generation_namespace(package.value, generation)):
+                return True
     return False
 
 
@@ -64,7 +127,10 @@ def inspect_proposal(generation: str, *, root: Path = ROOT) -> dict:
         for path in (engine, tests, docs)
     )
     checks["isolated_lab_layout"] = engine.is_dir() and all(
-        (engine / folder / "__init__.py").is_file()
+        (engine / folder).is_dir()
+        and not (engine / folder).is_symlink()
+        and (engine / folder / "__init__.py").is_file()
+        and not (engine / folder / "__init__.py").is_symlink()
         for folder in OWNED_DIRS
     )
     checks["documentation_present"] = docs.is_dir() and all(
@@ -127,21 +193,27 @@ def inspect_proposal(generation: str, *, root: Path = ROOT) -> dict:
         p.name.startswith("test_") and p.name != "test_proposal.py"
         for p in tests.glob("test_*.py")
     )
-    checks["no_parent_runtime_imports"] = True
-    if engine.is_dir() and checks["registered_earlier_parent"]:
-        for path in engine.rglob("*.py"):
+    # Keep the existing JSON check name while enforcing ADR-0001 against
+    # ALL other generations, not only the declared comparative parent.
+    checks["no_parent_runtime_imports"] = bool(
+        engine.is_dir() and not engine.is_symlink()
+        and checks["registered_earlier_parent"]
+    )
+    if checks["no_parent_runtime_imports"]:
+        for path in engine.rglob("*"):
+            # rglob("*.py") would miss a whole symlinked prior-engine tree.
             if path.is_symlink():
                 checks["no_parent_runtime_imports"] = False
                 break
+            if path.suffix != ".py" or not path.is_file():
+                continue
             try:
-                if _source_imports_parent(path, parent):
+                if _source_imports_other_generation(path, generation):
                     checks["no_parent_runtime_imports"] = False
                     break
             except (SyntaxError, UnicodeError, OSError):
                 checks["no_parent_runtime_imports"] = False
                 break
-    else:
-        checks["no_parent_runtime_imports"] = False
     blocked = sorted(key for key, passed in checks.items() if not passed)
     return {
         "schema": "individual-zero-engine-proposal-assessment/v1",
