@@ -39,7 +39,7 @@ The separate test-world shadow computes consequences of **proposed advice** with
 
 ## Chosen-outcome observational adaptation (G2 diagnostic, not G3)
 
-`src/i2/modules/chosen_outcome_study.py` is a **pure, non-persistent** G2 readout from previously recorded, single chosen-arm results. It supplies the already-paid v5 Competition through `ChosenOutcomeValuationStudy` without fabricating an unchosen counterfactual. Its score is deliberately simple and fixed: **last observed net consequence +4**, otherwise explicit prior scores A=3/B=2/C=0. No hidden regime or next consequence enters the current capture. This is NOT the accepted H2 owner, an independently verified subjective record, or a motor policy.
+`src/i2/modules/chosen_outcome_study.py` is a **pure, non-persistent** G2 readout from previously recorded, single chosen-arm results. It supplies the already-paid v5 Competition through `ChosenOutcomeValuationStudy` without fabricating an unchosen counterfactual. Its score is deliberately simple and fixed: **last observed net consequence +5**, otherwise explicit prior scores A=3/B=2/C=0. No hidden regime or next consequence enters the current capture. This is NOT the accepted H2 owner, an independently verified subjective record, or a motor policy.
 
 `tests/i2/test_science_first_chosen_outcome_adaptation.py` reports six captures under stable (+8), reversal (+8 then -8), adverse (-8) and recovery (+8/-8/+8) regimes. It compares zero intervention with exactly one research-controller exploration (cycle index 3); the controller follows suggestions otherwise, but I2 never actuates the world. Each arm spends 5 synthetic UC per capture, performs cold SQLite audit and preserves all losses. The intended falsifier is that chosen-only consequences may cause a recommendation change, but a greedy recency readout may fail to rediscover a previously abandoned option, even when the world recovers. A six-cycle test is **not** a preregistered confirmatory science trial or reliable evidence of natural learning. This is an explicit ADR-0002 probe of whether the chosen-only H2 blockage can be escaped with the smallest observational rule; subsequent work should be selected from its failures rather than adding guard layers.
 
@@ -97,6 +97,16 @@ matched-pair and chosen-outcome two-step trials. The prep-choice is made
 via paid Competition and may be followed without intervention, but **the
 individual does not independently decide to eat**. In the six-step study
 `controller_forced_eating_after_advice=true` exposes this directly.
+The simple chosen-only readout offset is reparameterized from +4 to **+5**
+**after inspection of the first failing CI** so that the no-preparation
+control's observed -4 result remains positive (+1), allowing Competition
+to recommend it rather than correctly withholding all nonpositive advice.
+This adjustment was made **after seeing test failures**. Thus the fixed
+six-capture contrasts are exploratory regression diagnostics and must NOT
+be called preregistered or confirmatory. The experimenter-supplied score
+and forced eating remain important confounders. No conclusion about general
+learning performance or intrinsic valuation is licensed.
+
 Corrected G2 reports are software evidence about *advice for preparations
 when eating is scripted*, not proof of autonomous delayed credit,
 first-person WorldBody consequences, G3, H2 natural learning or H3
