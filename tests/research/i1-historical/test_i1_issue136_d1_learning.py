@@ -8,7 +8,7 @@ import subprocess
 import sys
 import unittest
 
-ROOT=Path(__file__).resolve().parents[1]
+ROOT=Path(__file__).resolve().parents[3]
 sys.path.insert(0,str(ROOT/"scripts"))
 from build_i1_fork import generate
 

@@ -22,7 +22,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - run: python -m pip install -e .
       - name: Existing lived water M11 and owner invariants
-        run: python -m unittest discover -s tests -p 'test_i1_issue136_d1_learning.py' -v
+        run: python -m unittest discover -s tests/research/i1-historical -p 'test_i1_issue136_d1_learning.py' -v
       - name: Execute preregistered D2 physical cohort
         run: python scripts/run_i1_issue136_d2.py --output "i136-d2-py${{ matrix.python-version }}" --source-sha "${{ github.event.pull_request.head.sha || github.sha }}"
       - name: Preserve all mortal WAL journals and source-labeled outcomes

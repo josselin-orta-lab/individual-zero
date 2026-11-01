@@ -38,6 +38,6 @@ jobs:
           python -m unittest discover -s tests/research/i1-historical -p 'test_i1_model_m11_contract.py' -v
           python -m unittest discover -s tests -p 'test_i1_natural_m11_cold_recovery.py' -v
           python -m unittest discover -s tests -p 'test_i1_m11_cold_recovery.py' -v
-          python -m unittest discover -s tests -p 'test_i1_decision_witness.py' -v
+          python -m unittest discover -s tests/research/i1-historical -p 'test_i1_decision_witness.py' -v
       - name: Verify historical I0 planning
         run: python -m unittest discover -s tests -p 'test_stage6_planning.py' -q
