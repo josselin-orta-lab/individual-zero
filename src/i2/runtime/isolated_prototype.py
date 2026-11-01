@@ -228,6 +228,35 @@ class _LastResortValuation(ChosenOutcomeValuationStudy):
         )
 
 
+class _DeadlineAwareValuation(ChosenOutcomeValuationStudy):
+    """Optional paid policy: reject a collect-then-eat plan that misses its deadline.
+
+    This does not assert that an alternative helps; it only removes a
+    demonstrably non-executable rescue candidate from positive valuation.
+    """
+    def evaluate_batch(self, *, frame: object, receipts: tuple) -> tuple:
+        values = super().evaluate_batch(frame=frame, receipts=receipts)
+        if COLLECT not in self.claim.capture.accessible_semantics:
+            return values
+        # This experimental cadence is exactly two physical ticks. No
+        # hidden nutrition, extra UC or independent actuator is introduced.
+        energy_refs = [x for x in self.claim.subjective_evidence_refs
+                       if x.startswith("evidence:i2:energy:")]
+        if len(energy_refs) != 1:
+            raise PrototypeRefusal("unbound deadline energy")
+        try:
+            energy = int(energy_refs[0].removeprefix("evidence:i2:energy:"))
+        except ValueError as exc:
+            raise PrototypeRefusal("invalid deadline energy") from exc
+        if energy - 2 - WORLD_COGNITIVE_PERIOD > 0:
+            return values
+        selected = {c.candidate_ref for c in frame.candidates
+                    if c.semantic_ref == COLLECT}
+        return tuple(replace(v, value=0,
+                             evidence_ref=v.evidence_ref + ":deadline-infeasible")
+                     if v.candidate_ref in selected else v for v in values)
+
+
 class _PreviousResults:
     def __init__(self, records: tuple[ObservedChosenResult, ...]):
         self.known = frozenset(records)
@@ -271,9 +300,12 @@ class IsolatedI2:
     def create(cls, path: Path, *, learning: bool, impulses: tuple[int, ...],
                initial_uc: int = 60, initial_energy: int = 40,
                resources: int = 8,
-               last_resort_exploration: bool = False) -> IsolatedI2:
+               last_resort_exploration: bool = False,
+               deadline_aware: bool = False) -> IsolatedI2:
         if (type(learning) is not bool or
                 type(last_resort_exploration) is not bool or
+                type(deadline_aware) is not bool or
+                (deadline_aware and last_resort_exploration) or
                 type(impulses) is not tuple or
                 not 1 <= len(impulses) <= MAX_STEPS or
                 any(type(n) is not int or not -8 <= n <= 8 for n in impulses)
@@ -303,6 +335,7 @@ class IsolatedI2:
                     learning INTEGER NOT NULL CHECK(learning IN (0,1)),
                     last_resort_exploration INTEGER NOT NULL
                         CHECK(last_resort_exploration IN (0,1)),
+                    deadline_aware INTEGER NOT NULL CHECK(deadline_aware IN (0,1)),
                     impulses_json TEXT NOT NULL,
                     initial_energy INTEGER NOT NULL, initial_resources INTEGER NOT NULL);
                 CREATE TABLE proto_state(
@@ -330,9 +363,9 @@ class IsolatedI2:
                     cognition_head TEXT NOT NULL UNIQUE);
             """)
             db.execute("BEGIN IMMEDIATE")
-            db.execute("INSERT INTO proto_meta VALUES(1,?,?,?,?,?,?,?)", (
+            db.execute("INSERT INTO proto_meta VALUES(1,?,?,?,?,?,?,?,?)", (
                 obj.life_ref, obj.genesis_ref, int(learning),
-                int(last_resort_exploration), _json(impulses),
+                int(last_resort_exploration), int(deadline_aware), _json(impulses),
                 initial_energy, resources))
             db.execute("INSERT INTO proto_state VALUES(1,0,?,0,?,0,0)",
                        (initial_energy, resources))
@@ -527,6 +560,9 @@ class IsolatedI2:
                     claim, LocalEnergySurvivalReflex(claim, energy)).priority()
                     if meta["last_resort_exploration"] else None)
                 priority_applied = False
+                if meta["deadline_aware"] and COLLECT in mapped.values() and (
+                        energy - 2 - WORLD_COGNITIVE_PERIOD <= 0):
+                    scores[COLLECT] = 0
                 if priority in mapped.values():
                     competing = [scores[k] for k in mapped.values() if k != priority]
                     if competing and scores[priority] <= max(competing):
@@ -541,6 +577,10 @@ class IsolatedI2:
                         or (v["evidence_ref"].endswith(":last-resort-energy") !=
                             (priority_applied and
                              mapped[v["candidate_ref"]] == priority))
+                        or (v["evidence_ref"].endswith(":deadline-infeasible") !=
+                            (bool(meta["deadline_aware"]) and
+                             mapped[v["candidate_ref"]] == COLLECT and
+                             energy - 2 - WORLD_COGNITIVE_PERIOD <= 0))
                         for v in values)):
                     raise PrototypeRefusal("unobserved or unbound priority influenced paid score")
             before = energy
@@ -682,6 +722,10 @@ class IsolatedI2:
                     if meta["learning"] else ()
                 ),
                 "candidate_scores": dict(sorted(values.items())),
+                "deadline_infeasible_collect_suppressed": any(
+                    v["evidence_ref"].endswith(":deadline-infeasible")
+                    for v in (advice["values"] if advice is not None else ())
+                ),
                 "last_resort_priority_applied": any(
                     v["evidence_ref"].endswith(":last-resort-energy")
                     for v in (advice["values"] if advice is not None else ())
@@ -991,6 +1035,7 @@ class IsolatedI2:
         self.safety.energy_reflex = LocalEnergySurvivalReflex(claim, state["energy"])
         past = self._history(records) if meta["learning"] else ()
         evaluator = (_LastResortValuation if meta["last_resort_exploration"]
+                     else _DeadlineAwareValuation if meta["deadline_aware"]
                      else ChosenOutcomeValuationStudy)
         valuation_args = dict(
             claim=claim, results=past, source=_PreviousResults(past),
