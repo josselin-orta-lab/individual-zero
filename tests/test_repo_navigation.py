@@ -127,6 +127,17 @@ class NavigationSanity(unittest.TestCase):
         self.assertNotIn("  push:", events)
         self.assertNotIn("  pull_request:", events)
 
+    def test_manual_i0_and_i1_validation_never_share_the_frozen_lab(self):
+        i1 = (ROOT / ".github/workflows/i1-isolation.yml").read_text(encoding="utf-8")
+        i0 = (ROOT / ".github/workflows/i0-archive-manual.yml").read_text(encoding="utf-8")
+        self.assertIn("  workflow_dispatch:", i1)
+        self.assertNotIn("run: python -m unittest discover -s archive/i0/tests", i1)
+        self.assertNotIn("cp -a archive/i0/lab src/lab", i1)
+        self.assertIn("  workflow_dispatch:", i0)
+        self.assertIn("cp -a archive/i0/lab src/lab", i0)
+        self.assertIn("find tests -maxdepth 1 -type f -name 'test_*.py'", i0)
+        self.assertNotIn("mv tests/test_i1_*.py tests/test_engine_repository.py", i0)
+
     def test_docs_only_i2_updates_use_lightweight_navigation_ci(self):
         heavy = (ROOT / ".github/workflows/i2-proposal-safety.yml").read_text(encoding="utf-8")
         light = (ROOT / ".github/workflows/agent-context-static.yml").read_text(encoding="utf-8")

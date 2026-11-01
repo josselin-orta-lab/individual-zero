@@ -39,5 +39,5 @@ jobs:
           python -m unittest discover -s tests/i1 -p 'test_i1_natural_m11_cold_recovery.py' -v
           python -m unittest discover -s tests/i1 -p 'test_i1_m11_cold_recovery.py' -v
           python -m unittest discover -s tests/research/i1-historical -p 'test_i1_decision_witness.py' -v
-      - name: Verify historical I0 planning
-        run: python -m unittest discover -s archive/i0/tests -p 'test_stage6_planning.py' -q
+      # Frozen I0 planning needs archive/i0/lab and original source-relative paths.
+      # Validate it separately through i0-archive-manual.yml, never in an I1 run.

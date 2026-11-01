@@ -17,10 +17,17 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: python -m pip install -e . pytest
-      - name: Run archived tests with original repository-relative paths
+      - name: Run only frozen I0 tests with original repository-relative paths
+        shell: bash
         run: |
+          set -euo pipefail
+          # This checkout is disposable. Never commit or install src/lab as a runtime.
+          test ! -e src/lab
           cp -a archive/i0/lab src/lab
+          trap 'rm -rf src/lab' EXIT
           mkdir -p .archive-i0-manual-hold
-          mv tests/test_i1_*.py tests/test_engine_repository.py .archive-i0-manual-hold/
+          # All current root test_*.py files are infrastructure, not I0 tests.
+          # Do not rely on the removed tests/test_i1_*.py glob.
+          find tests -maxdepth 1 -type f -name 'test_*.py' -exec mv -- {} .archive-i0-manual-hold/ \;
           cp archive/i0/tests/test_*.py tests/
           PYTHONPATH="$PWD/src:$PWD" python -m unittest discover -s tests -p 'test_*.py' -q
