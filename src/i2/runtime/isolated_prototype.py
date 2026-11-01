@@ -257,6 +257,42 @@ class _DeadlineAwareValuation(ChosenOutcomeValuationStudy):
                      if v.candidate_ref in selected else v for v in values)
 
 
+class _ComposedSurvivalValuation(_DeadlineAwareValuation):
+    """Pay each candidate once, then prioritize only available emergency food.
+
+    Deadline assessment eliminates futile COLLECT before the emergency
+    preference is applied. The resulting food effect remains unknown.
+    """
+
+    def __init__(self, *, reflex: LocalEnergySurvivalReflex, **kwargs: object):
+        super().__init__(**kwargs)
+        if reflex.claim != self.claim:
+            raise PrototypeRefusal("foreign emergency evidence")
+        self.reflex = reflex
+
+    def evaluate_batch(self, *, frame: object, receipts: tuple) -> tuple:
+        values = super().evaluate_batch(frame=frame, receipts=receipts)
+        target = _ToyPlanSource(self.claim, self.reflex).priority()
+        if target is None:
+            return values
+        offered = {c.candidate_ref: c.semantic_ref for c in frame.candidates}
+        chosen = [v for v in values if offered[v.candidate_ref] == target]
+        if len(chosen) != 1:
+            raise PrototypeRefusal("emergency food not in paid batch")
+        other = [v.value for v in values
+                 if v.candidate_ref != chosen[0].candidate_ref]
+        if not other or chosen[0].value > max(other):
+            return values
+        peak = max(v.value for v in values)
+        if peak >= MAX_VALUE_MAGNITUDE:
+            raise PrototypeRefusal("cannot encode bounded emergency priority")
+        return tuple(
+            replace(v, value=peak + 1,
+                    evidence_ref=v.evidence_ref + ":last-resort-energy")
+            if v is chosen[0] else v for v in values
+        )
+
+
 class _PreviousResults:
     def __init__(self, records: tuple[ObservedChosenResult, ...]):
         self.known = frozenset(records)
@@ -305,7 +341,6 @@ class IsolatedI2:
         if (type(learning) is not bool or
                 type(last_resort_exploration) is not bool or
                 type(deadline_aware) is not bool or
-                (deadline_aware and last_resort_exploration) or
                 type(impulses) is not tuple or
                 not 1 <= len(impulses) <= MAX_STEPS or
                 any(type(n) is not int or not -8 <= n <= 8 for n in impulses)
@@ -1034,7 +1069,9 @@ class IsolatedI2:
         self.safety.veto = veto
         self.safety.energy_reflex = LocalEnergySurvivalReflex(claim, state["energy"])
         past = self._history(records) if meta["learning"] else ()
-        evaluator = (_LastResortValuation if meta["last_resort_exploration"]
+        evaluator = (_ComposedSurvivalValuation
+                     if meta["last_resort_exploration"] and meta["deadline_aware"]
+                     else _LastResortValuation if meta["last_resort_exploration"]
                      else _DeadlineAwareValuation if meta["deadline_aware"]
                      else ChosenOutcomeValuationStudy)
         valuation_args = dict(
