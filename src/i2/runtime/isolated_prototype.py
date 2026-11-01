@@ -21,6 +21,7 @@ import tempfile
 from uuid import uuid4
 
 from i2.modules.local_survival_reflex import LocalEnergySurvivalReflex
+from i2.modules.two_step_survival_plan import assess_collect_then_eat
 from i2.modules.survival_plan_viability import PlanAssessment, assess_last_resort
 from i2.modules.action_control_boundary import SafetyFinding
 from i2.modules.chosen_outcome_study import (
@@ -638,7 +639,23 @@ class IsolatedI2:
             reflex = LocalEnergySurvivalReflex(claim, row["before_energy"])
             if event["claim_digest"] != claim.digest():
                 raise PrototypeRefusal("reflex capture diverges from committed event")
+            # Public, audited clock-only feasibility under the known fixed
+            # two-tick cognition cadence. This remains a researcher readout.
+            delay = WORLD_COGNITIVE_PERIOD
+            plan = assess_collect_then_eat(
+                claim=claim, energy=row["before_energy"],
+                inventory=inventory, resources=resources,
+                ticks_before_second_action=delay,
+            )
             output.append({
+                "two_step_collect_eat": {
+                    "status": plan.status,
+                    "ticks_before_second_action": delay,
+                    "pre_food_energy": plan.guaranteed_pre_food_energy,
+                    "food_outcome": plan.food_outcome,
+                    "motor_authority": plan.motor_authority,
+                    "researcher_only": True,
+                },
                 "survival_reflex": {
                     "state": reflex.state,
                     "evidence_ref": reflex.evidence_ref,
