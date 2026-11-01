@@ -2,9 +2,9 @@
 
 These are **software contract tests**, not scientific evidence or authorization for a living cohort. The test implementations live with the test hierarchy, while their source analysis tools remain in `tools/` and `tools/research/`.
 
-- `a1c/`: targeted A1-C mechanism isolation and statistical criterion contracts.
+- `a1c/`: targeted A1-C mechanism isolation, reward shadow, TD replay, wait gate and statistical criterion contracts (six tests).
 - `a2r/`: A2-R launch/one-shot custody guards and a narrowly scoped reward-birth contract.
-- Other experiment-specific fixtures under `tools/research/tests/` are not yet moved because many workflows cite their exact paths and import context.
+- Other experiment-specific fixtures under `tools/research/tests/` remain in place pending direct workflow and dependency review.
 
 Run focused checks, from the repository root, only with the corresponding source dependencies installed:
 

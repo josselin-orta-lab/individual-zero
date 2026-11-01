@@ -7,7 +7,7 @@
 | Living I1 engineering contracts and mechanisms | [`tests/i1/`](i1/README.md) | `python -m unittest discover -s tests/i1 -p 'test_*.py'` |
 | I2 proposal-only synthetic fixtures | [`tests/i2/`](i2/) | `python -m unittest discover -s tests/i2 -p 'test_*.py'` |
 | Shared infrastructure and legacy root tests | `tests/test_*.py` | Run a focused pattern with `python -m unittest discover -s tests -p 'test_repo_navigation.py'` |
-| Research analysis tooling tests | `tools/research/tests/`, `tests/research/a1c/`, `tests/research/a2r/` | Inspect the matching scientific tooling and its named CI contract before running |
+| Research analysis tooling tests | `tests/research/a1c/`, `tests/research/a2r/`, remaining `tools/research/tests/` | Inspect the matching scientific tooling and its named CI contract before running |
 | Frozen I0 historical tests | [`archive/i0/tests/`](../archive/i0/tests/) | Isolated historical verification only; not a natural-I1 acceptance oracle |
 
 Sixteen older I1 tests still live at the test root. They are **legacy placements**, not examples to follow. Do not rename or relocate them until their imports, direct invocations, workflow globs and published references have been independently checked.

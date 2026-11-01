@@ -4,7 +4,7 @@ on:
     paths:
       - 'tools/research/i1_a1c_td_full.py'
       - 'tools/research/i1_a1c_td_full_audit.py'
-      - 'tools/research/tests/test_i1_a1c_td_full.py'
+      - 'tests/research/a1c/test_i1_a1c_td_full.py'
       - 'docs/research/audits/I1_ECO_A1C_FULL_VECTOR_M11_Q_REPLAY_2026-10-29.md'
       - '.github/workflows/i1-a1c-full-vector-observer.yml'
   workflow_dispatch:
@@ -34,6 +34,6 @@ jobs:
           python -m py_compile tools/research/i1_a1c_td_full.py tools/research/i1_a1c_td_full_audit.py
       - name: Positive and adversarial replay contracts only
         run: |
-          python -m unittest discover -s tools/research/tests -p test_i1_a1c_td_full.py -v
+          python -m unittest discover -s tests/research/a1c -p test_i1_a1c_td_full.py -v
       - name: Never rerun A1-C newborn cohort as a CI
         run: test ! -d reports/i1-eco-a1c-cohort

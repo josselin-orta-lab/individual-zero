@@ -5,7 +5,7 @@ import unittest
 import tempfile
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "tools" / "research"))
 from i1_a1c_td_full import FROZEN_TD_VERSION, p32_features, replay_life, numeric
 from i1_a1c_td_full_audit import audit, one
 

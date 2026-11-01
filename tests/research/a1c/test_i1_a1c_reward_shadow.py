@@ -6,7 +6,7 @@ import tempfile
 import unittest
 import sys
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "tools" / "research"))
 
 from i1_a1c_reward_shadow import (
     DualFrozenTD, config_from_birth, discounted, reward_between,

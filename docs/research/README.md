@@ -4,6 +4,10 @@ This directory contains research methods and explanatory documents broader than 
 
 Formal EXP records may live in `../../experiments/EXP-####/`, while substantial dated historical investigations are also preserved in this directory and under generation-owned documentation. This page is not a comprehensive current evidence index. For active I1 claims use [its evidence matrix](../../src/i1/docs/EVIDENCE_MATRIX.md); for I2 see [proposal status](../../src/i2/docs/STATUS.md).
 
+## New research record placement
+
+New studies should use an explicitly named English subdirectory such as `docs/research/studies/<study-id>/` with an index linking its protocol, observations, results, limitations and independent review. Existing source-pinned records must stay at their original paths until their provenance and references have been audited. New audit reports belong under `docs/research/audits/`, while active generation mechanism documentation belongs with `src/iN/docs/`. Do not treat directory placement as scientific approval.
+
 ## Locating historical studies
 
 Hundreds of dated Markdown reports remain directly in this directory because historical references, citation paths and source pins may depend on their locations. This is a **path-compatibility backlog**, not a count of active scientific verdicts. Do not bulk-move studies by filename alone. Use `python tools/repository_layout.py inventory --kind docs --match stage12 --limit 20` or `python tools/repository_layout.py audit --json` to navigate the repository without changing evidence. New work should have an explicitly named study owner and linked protocol, results and review. [Tests](../../tests/README.md) and [archives](../../archive/README.md) have separate custody rules.

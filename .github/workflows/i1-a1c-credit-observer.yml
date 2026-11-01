@@ -3,7 +3,7 @@ on:
   pull_request:
     paths:
       - 'tools/research/i1_a1c_td_bias.py'
-      - 'tools/research/tests/test_i1_a1c_td_bias.py'
+      - 'tests/research/a1c/test_i1_a1c_td_bias.py'
       - '.github/workflows/i1-a1c-credit-observer.yml'
       - 'docs/research/audits/I1_ECO_A1C_TEMPORAL_CREDIT_DIAGNOSTIC_2026-10-29.md'
   workflow_dispatch:
@@ -28,4 +28,4 @@ jobs:
       - name: Execute targeted post hoc contracts, no births
         run: |
           python -m py_compile tools/research/i1_a1c_td_bias.py
-          python -m unittest discover -s tools/research/tests -p test_i1_a1c_td_bias.py -v
+          python -m unittest discover -s tests/research/a1c -p test_i1_a1c_td_bias.py -v
