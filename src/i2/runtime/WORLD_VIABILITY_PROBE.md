@@ -28,3 +28,23 @@ physical laws and a researcher-written chosen-outcome heuristic. It does
 new environments, real-world longevity or authenticated M11. No I1 state,
 active registry, motor actuator, original v1-r1 parameter-lock or heavy
 scientific cohort is changed.
+
+## Source-pinned readout and full-window energy accounting
+
+The unchanged locked seven-case battery additionally records each pair's
+**per-physical-tick, post-action energy difference** and its cumulative sum
+over the entire observed window. This is a model-specific descriptive
+*energy tick-integral*, not a biological fitness measure or causal survival
+estimate. It is defined only when both individuals have the **same** observed
+tick sequence and remain nonterminal through the horizon. Otherwise the
+integral is `null` and no postmortem energy is imputed. Even where an
+integral is reported, policies can produce different later physical states:
+do not call it matched pre-choice or a natural-learning GO.
+
+The I2 test suite emits exactly one `I2_LOCKED_VIABILITY_V1_RESULTS=` line
+per CI Python environment using the cached result already computed by the
+four locked-battery unit tests. It does **not** execute the battery again.
+Archive the exact PR source SHA, the two CI conclusions, the seven output
+rows (including negative and censored cases) and all limitations. Python
+3.11 and 3.12 jobs on the same source are **software reproducibility checks**,
+not statistically independent samples or separate confirmatory studies.
