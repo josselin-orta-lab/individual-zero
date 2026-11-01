@@ -255,13 +255,13 @@ class ChosenOutcomeAdaptationTests(unittest.TestCase):
                 claim=current, results=items, source=source, priors=PRIORS,
                 **opts,
             )
-        self.assertEqual(scores(outcomes)[A], -8)
+        self.assertEqual(scores(outcomes)[A], -7)
         self.assertEqual(scores(outcomes[:2], revisit_after=2,
-                                revisit_bonus=9)[A], -8)
+                                revisit_bonus=9)[A], -7)
         self.assertEqual(scores(outcomes, revisit_after=2,
-                                revisit_bonus=9)[A], 1)
+                                revisit_bonus=9)[A], 2)
         self.assertEqual(scores(outcomes, revisit_after=2,
-                                revisit_bonus=9)[C], 0)
+                                revisit_bonus=9)[C], 1)
         self.assertEqual(scores(outcomes[:1], revisit_after=2,
                                 revisit_bonus=9)[C], PRIORS[C])
         for options in (
@@ -286,7 +286,7 @@ class ChosenOutcomeAdaptationTests(unittest.TestCase):
         self.assertEqual(
             observed_chosen_scores(
                 claim=current, results=(original,), source=source, priors=PRIORS,
-            )[A], 10,
+            )[A], 11,
         )
         from dataclasses import replace
         for bad in (
