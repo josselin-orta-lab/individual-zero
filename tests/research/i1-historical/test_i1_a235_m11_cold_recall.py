@@ -5,7 +5,7 @@ import subprocess
 import sys
 import unittest
 
-sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
+sys.path.insert(0,str(Path(__file__).resolve().parents[3]/"scripts"))
 from build_i1_fork import generate
 
 
@@ -110,7 +110,7 @@ print("I1_A235_M11_COLD_RECALL_OK")
             proc=subprocess.run(
                 [sys.executable,"-c",code],
                 env={"PYTHONPATH":str(output)+":"+str(
-                    Path(__file__).resolve().parents[1]/"src")},
+                    Path(__file__).resolve().parents[3]/"src")},
                 capture_output=True,text=True,check=False,
             )
             self.assertEqual(proc.returncode,0,proc.stderr)

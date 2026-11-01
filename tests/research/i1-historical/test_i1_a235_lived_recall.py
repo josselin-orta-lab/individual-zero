@@ -4,7 +4,7 @@ from pathlib import Path
 import sys
 import unittest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src" / "i1_overlays"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "src" / "i1_overlays"))
 from i1_lived_recall import matched_collection_recall
 
 

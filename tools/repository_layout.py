@@ -11,8 +11,8 @@ SKIP_DIRS = {".git", ".venv", "venv", "__pycache__", ".pytest_cache", ".mypy_cac
 # These root-level I1 tests predate generation-owned test directories. A new
 # I1/I2 test belongs under tests/i1/ or tests/i2/, not alongside infra tests.
 LEGACY_ROOT_GENERATION_TESTS = frozenset({
-    "test_i1_a235_lived_recall.py", "test_i1_a235_m11_cold_recall.py",
-    "test_i1_a235_m11_recall_contract.py", "test_i1_a235_physical_witness.py",
+"test_i1_a235_m11_cold_recall.py",
+"test_i1_a235_physical_witness.py",
     "test_i1_a235_runtime_birth.py", "test_i1_a236_combined_m11_cold.py",
     "test_i1_a236_combined_m11_water.py", "test_i1_a237_d2_no_geography.py",
     "test_i1_a238_factorial_smoke.py", "test_i1_active_birth.py",
@@ -73,6 +73,7 @@ def bucket(kind: str, path: str) -> str | None:
             ("archive/i0/tests/", "i0-frozen"),
             ("tests/i1/", "i1"), ("tests/i2/", "i2"),
             ("tests/infra/", "infrastructure"),
+            ("tests/research/i1-historical/", "i1-historical"),
             ("tests/research/a1p/", "a1p-tooling"),
             ("tests/research/a1c/", "a1c-tooling"),
             ("tests/research/a2r/", "a2r-tooling"),
