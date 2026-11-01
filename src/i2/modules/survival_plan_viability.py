@@ -106,5 +106,5 @@ def assess_last_resort(
         status = "LAST_RESORT_RISK_RECONSIDERATION"
     return LastResortAssessment(
         status, food_semantic_ref, tuple(sorted(alternatives)),
-        tuple(sorted(unresolved)), tuple(sorted(set(evidence)),
+        tuple(sorted(unresolved)), tuple(sorted(set(evidence))),
     )
