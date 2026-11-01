@@ -9,7 +9,7 @@ import subprocess
 import sys
 import unittest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "scripts"))
 from build_i1_fork import generate
 
 
@@ -141,7 +141,7 @@ with TemporaryDirectory() as d:
 """
             result=subprocess.run([sys.executable,"-c",source],
                 env={"PYTHONPATH":str(output)+":"+str(
-                    Path(__file__).resolve().parents[1]/"src")},
+                    Path(__file__).resolve().parents[3]/"src")},
                 text=True,capture_output=True,check=False)
             self.assertEqual(result.returncode,0,result.stderr + "\n" + result.stdout)
             self.assertIn("I1_DECISION_WITNESS_SOFTWARE:",result.stdout)
