@@ -116,3 +116,36 @@ in-process and researcher-triggered to start**, not a separate background
 thread, autonomous wall-clock metabolism, authenticated M11 or living I2
 engine. No settings or coefficients were tuned from this comparison; the
 previous one-shot v1-r1 experiment remains closed.
+
+## Resource scarcity and bounded endpoint interpretation (issue #664)
+
+A zero-resource genesis must **not** open a scripted collect intention absent
+from the individual's first-person affordances. The initial intention now
+uses COLLECT only when personally offered; otherwise it uses the available
+DRINK option. This is a deterministic *researcher-specified initialization*,
+not discovered exploration or a new motivational system. Competition, actual
+UC debit, veto and action admission remain unchanged. A resource-empty
+world is a negative control for food acquisition.
+
+The existing `world_demo` reports a descriptive `endpoint` for each arm
+alongside `world_endpoint_contrast`. Preselected endpoints are actual
+physical ticks observed, modeled death tick, right-censoring, end energy,
+actual UC spent, paid decisions, admitted actions and unfunded windows.
+The paired energy delta is only reported when **both** arms have the same
+nonterminal tick endpoint. Different death times and unequal exposure
+remain separate observed events; no generalized survival advantage or
+natural-learning GO can be inferred. Stable/neutral/adverse/reversal retain
+their original scripted laws and unchanged policy. No favorable scenario
+selection, estimator tuning or repeat of the closed v1-r1 factorial.
+
+For a no-food control or zero-UC terminal demonstration, use the existing
+bounded world command with the optional initial resource parameter:
+
+```bash
+PYTHONPATH=src python -m i2.runtime.isolated_prototype --world --scenario adverse --ticks 8 --resources 0
+PYTHONPATH=src python -m i2.runtime.isolated_prototype --world --scenario neutral --ticks 12 --initial-uc 0 --initial-energy 4
+```
+
+This remains an explicitly started, internal synchronous toy world. Local
+SQLite replay is not authenticated M11, and nondeath at a bounded horizon
+is censored observation, not proof of longevity.
