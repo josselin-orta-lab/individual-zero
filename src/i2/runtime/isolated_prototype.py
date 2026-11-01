@@ -793,8 +793,15 @@ class IsolatedI2:
         fixture = self._fixture(valuation)
         try:
             if index == 0:
+                # The initial *intention*, never a motor action, must be
+                # grounded in the currently observed affordance set. A
+                # resource-empty world cannot open "collect" by fiat.
+                initial_semantic = (
+                    COLLECT if COLLECT in claim.capture.accessible_semantics
+                    else claim.capture.accessible_semantics[0]
+                )
                 receipt = fixture.open(
-                    claim=claim, semantic_ref=COLLECT,
+                    claim=claim, semantic_ref=initial_semantic,
                     evidence_ref=f"evidence:i2:capture:{index}", ttl_steps=64,
                     _fault_at=fault, _g1_lab_hook=self._apply)
             else:
@@ -926,13 +933,77 @@ def demo(scenario: str, *, steps: int = 6) -> dict:
             "m11_authenticated": False, "active_engine": False}
 
 
+def world_endpoint(execution: dict) -> dict:
+    """Descriptive observed endpoint, never generalized survival evidence.
+
+    Caller supplies the same owner-audited single-run report. No new state
+    owner, alternative body physics, hidden payoff, or policy update.
+    """
+    trace = execution["trace"]
+    audit = execution["audit"]
+    terminal = audit["terminal"]
+    return {
+        "observed_physical_ticks": len(trace),
+        "ending_physical_tick": audit["physical_ticks"],
+        "modeled_terminal_observed": terminal,
+        "modeled_death_tick": (
+            trace[-1]["physical_tick"] if terminal else None
+        ),
+        "right_censored": not terminal,
+        "ending_energy": audit["energy"],
+        "ending_inventory": audit["inventory"],
+        "remaining_uc": audit["remaining_uc"],
+        "actual_uc_spent": audit["actual_uc_spent"],
+        "paid_decisions": audit["revision"],
+        "admitted_internal_actions": sum(
+            row["internal_admission"] is not None for row in trace
+        ),
+        "unfunded_cognitive_windows": sum(
+            row["reason"] == "COGNITION_UNFUNDED" for row in trace
+        ),
+        "world_status": execution["status"],
+        "real_world_survival": "NOT_ESTABLISHED",
+    }
+
+
+def paired_world_endpoints(observed: dict, fixed: dict) -> dict:
+    """Do not turn unequal terminal observations into a fitness claim."""
+    o, f = observed, fixed
+    same_window = o["ending_physical_tick"] == f["ending_physical_tick"]
+    both_observed_alive = (
+        not o["modeled_terminal_observed"] and
+        not f["modeled_terminal_observed"]
+    )
+    if o["paid_decisions"] == f["paid_decisions"] == 0:
+        interpretation = "NO_PAID_COGNITIVE_EXPOSURE"
+    elif same_window and both_observed_alive:
+        interpretation = "COMMON_WINDOW_NONTERMINAL_DESCRIPTIVE_ONLY"
+    else:
+        interpretation = "TERMINAL_OR_UNEQUAL_EXPOSURE_NO_COMMON_END_ENERGY"
+    return {
+        "classification": interpretation,
+        "learned_modeled_death_tick": o["modeled_death_tick"],
+        "fixed_modeled_death_tick": f["modeled_death_tick"],
+        "observed_at_same_tick": same_window,
+        "ending_energy_difference": (
+            o["ending_energy"] - f["ending_energy"]
+            if same_window and both_observed_alive else None
+        ),
+        "ending_energy_is_not_survival_evidence": True,
+        "generalized_survival_benefit": "NOT_ESTABLISHED",
+        "natural_autonomous_learning": "NOT_ESTABLISHED",
+    }
+
+
 def world_demo(scenario: str, *, ticks: int = 12,
-               initial_uc: int = 60, initial_energy: int = 40) -> dict:
+               initial_uc: int = 60, initial_energy: int = 40,
+               resources: int = 8) -> dict:
     """Disposable paired engineering smoke for the world-owned cadence."""
     if (scenario not in SCENARIOS or type(ticks) is not int or
             not 1 <= ticks <= WORLD_TICK_LIMIT or
             type(initial_uc) is not int or not 0 <= initial_uc <= 1000 or
-            type(initial_energy) is not int or not 1 <= initial_energy <= 100):
+            type(initial_energy) is not int or not 1 <= initial_energy <= 100 or
+            type(resources) is not int or not 0 <= resources <= 32):
         raise PrototypeRefusal("invalid bounded world smoke")
     with tempfile.TemporaryDirectory(prefix="i2-world-schedule-") as root:
         arms = {}
@@ -940,10 +1011,11 @@ def world_demo(scenario: str, *, ticks: int = 12,
             individual = IsolatedI2.create(
                 Path(root) / (label + ".sqlite"), learning=learning,
                 impulses=SCENARIOS[scenario], initial_uc=initial_uc,
-                initial_energy=initial_energy)
+                initial_energy=initial_energy, resources=resources)
             execution = individual.run_world(ticks=ticks)
             arms[label] = {
                 "execution": execution,
+                "endpoint": world_endpoint(execution),
                 "decisions": individual.decision_evidence(),
                 "audit": individual.audit(),
             }
@@ -954,6 +1026,10 @@ def world_demo(scenario: str, *, ticks: int = 12,
         "first_choice_contrast": paired_decision_contrast(
             arms["observed_chosen"]["decisions"],
             arms["fixed"]["decisions"],
+        ),
+        "world_endpoint_contrast": paired_world_endpoints(
+            arms["observed_chosen"]["endpoint"],
+            arms["fixed"]["endpoint"],
         ),
         "scientific_verdict": "NOT_ESTABLISHED",
         "m11_authenticated": False,
@@ -970,11 +1046,13 @@ def main() -> None:
     parser.add_argument("--ticks", type=int, default=12)
     parser.add_argument("--initial-uc", type=int, default=60)
     parser.add_argument("--initial-energy", type=int, default=40)
+    parser.add_argument("--resources", type=int, default=8)
     args = parser.parse_args()
     if args.world:
         print(_json(world_demo(args.scenario, ticks=args.ticks,
                                initial_uc=args.initial_uc,
-                               initial_energy=args.initial_energy)))
+                               initial_energy=args.initial_energy,
+                               resources=args.resources)))
     else:
         print(_json(demo(args.scenario, steps=args.steps)))
 

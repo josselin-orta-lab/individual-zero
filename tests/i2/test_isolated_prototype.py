@@ -10,7 +10,8 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 from i2.runtime.isolated_prototype import (
     IsolatedI2, PrototypeRefusal, COLLECT, EAT, SCENARIOS, demo,
-    paired_decision_contrast, world_demo, WORLD_TICK_LIMIT,
+    paired_decision_contrast, world_demo, world_endpoint,
+    paired_world_endpoints, DRINK, WORLD_TICK_LIMIT,
 )
 from i2.modules.cognitive_cycle_fixture import (
     FaultInjected, CommitAcknowledgmentLost,
@@ -335,6 +336,101 @@ class IsolatedPrototypeTests(unittest.TestCase):
             self.assertEqual(arm["audit"]["physical_ticks"], 8)
             self.assertEqual(arm["audit"]["revision"], 4)
             self.assertFalse(arm["audit"]["m11_authenticated"])
+
+
+    def test_no_resources_genesis_uses_only_observed_affordance(self):
+        subject = self.create(resources=0, initial_energy=12)
+        first = subject.step()
+        self.assertEqual(first.visible, (DRINK,))
+        self.assertEqual(first.chosen, DRINK)
+        self.assertIsNotNone(first.admission_ref)
+        self.assertEqual((first.inventory, first.resources), (0, 0))
+        self.assertEqual(first.actual_uc_spent, 3)
+        decisions = subject.decision_evidence()
+        self.assertEqual(decisions[0]["candidate_scores"], {DRINK: 1})
+        self.assertEqual(decisions[0]["subjective_outcomes_available"], ())
+        self.assertEqual(subject.audit()["revision"], 1)
+
+    def test_resource_empty_world_runs_without_forced_collect(self):
+        report = world_demo("adverse", ticks=4, resources=0,
+                            initial_energy=12)
+        self.assertEqual(report["scientific_verdict"], "NOT_ESTABLISHED")
+        for arm in report["arms"].values():
+            self.assertEqual([d["chosen"] for d in arm["decisions"]],
+                             [DRINK, DRINK])
+            self.assertEqual(arm["audit"]["resources"], 0)
+            self.assertEqual(arm["audit"]["inventory"], 0)
+            self.assertEqual(arm["audit"]["actual_uc_spent"], 6)
+            self.assertTrue(all(d["visible"] == (DRINK,)
+                                for d in arm["decisions"]))
+        self.assertEqual(
+            report["first_choice_contrast"]["classification"],
+            "NO_ACTION_DIVERGENCE_IN_OBSERVED_HORIZON",
+        )
+
+    def test_endpoints_preserve_null_and_censoring_at_zero_uc(self):
+        report = world_demo("adverse", ticks=8, initial_uc=0,
+                            initial_energy=20)
+        for arm in report["arms"].values():
+            endpoint = arm["endpoint"]
+            self.assertEqual(endpoint["observed_physical_ticks"], 8)
+            self.assertEqual(endpoint["ending_energy"], 12)
+            self.assertEqual(endpoint["actual_uc_spent"], 0)
+            self.assertEqual(endpoint["paid_decisions"], 0)
+            self.assertEqual(endpoint["unfunded_cognitive_windows"], 4)
+            self.assertTrue(endpoint["right_censored"])
+            self.assertIsNone(endpoint["modeled_death_tick"])
+        self.assertEqual(
+            report["world_endpoint_contrast"]["classification"],
+            "NO_PAID_COGNITIVE_EXPOSURE",
+        )
+        self.assertIsNone(report["world_endpoint_contrast"][
+            "learned_modeled_death_tick"])
+        self.assertEqual(report["world_endpoint_contrast"][
+            "generalized_survival_benefit"], "NOT_ESTABLISHED")
+
+    def test_endpoint_terminal_is_not_treated_as_survival_success(self):
+        report = world_demo("neutral", ticks=12, initial_uc=0,
+                            initial_energy=4)
+        for arm in report["arms"].values():
+            endpoint = arm["endpoint"]
+            self.assertTrue(endpoint["modeled_terminal_observed"])
+            self.assertEqual(endpoint["modeled_death_tick"], 4)
+            self.assertFalse(endpoint["right_censored"])
+            self.assertEqual(endpoint["ending_energy"], 0)
+            self.assertEqual(endpoint["observed_physical_ticks"], 4)
+        self.assertIsNone(report["world_endpoint_contrast"][
+            "ending_energy_difference"])
+        self.assertTrue(report["world_endpoint_contrast"][
+            "ending_energy_is_not_survival_evidence"])
+
+    def test_world_endpoint_is_descriptive_even_when_policies_diverge(self):
+        report = world_demo("adverse", ticks=8)
+        self.assertEqual(
+            report["first_choice_contrast"]["first_divergence_seq"], 4)
+        self.assertEqual(
+            report["world_endpoint_contrast"]["classification"],
+            "COMMON_WINDOW_NONTERMINAL_DESCRIPTIVE_ONLY")
+        self.assertIsInstance(
+            report["world_endpoint_contrast"]["ending_energy_difference"],
+            int)
+        self.assertEqual(report["world_endpoint_contrast"][
+            "natural_autonomous_learning"], "NOT_ESTABLISHED")
+        self.assertEqual(report["arms"]["observed_chosen"]["endpoint"][
+            "ending_physical_tick"], 8)
+
+    def test_terminal_or_unequal_exposure_rejects_false_energy_comparison(self):
+        a = {"ending_physical_tick": 4, "modeled_terminal_observed": True,
+             "modeled_death_tick": 4, "ending_energy": 0,
+             "paid_decisions": 1}
+        b = {"ending_physical_tick": 8, "modeled_terminal_observed": False,
+             "modeled_death_tick": None, "ending_energy": 5,
+             "paid_decisions": 1}
+        contrast = paired_world_endpoints(a, b)
+        self.assertEqual(contrast["classification"],
+                         "TERMINAL_OR_UNEQUAL_EXPOSURE_NO_COMMON_END_ENERGY")
+        self.assertIsNone(contrast["ending_energy_difference"])
+        self.assertFalse(contrast["observed_at_same_tick"])
 
 
 
