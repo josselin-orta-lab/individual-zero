@@ -11,6 +11,8 @@ from urllib.parse import unquote, urlsplit
 ROOT = Path(__file__).resolve().parents[1]
 PORTALS = (
     "docs/research/studies/README.md",
+    "docs/research/studies/stage-11/README.md",
+    "docs/research/studies/stage-12/README.md",
     "tests/research/README.md",
     "tests/research/a2r/README.md",
     "archive/README.md",

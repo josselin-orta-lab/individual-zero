@@ -44,6 +44,8 @@ on:
       - 'tools/check_navigation_portals.py'
       - 'tests/test_navigation_portals.py'
       - 'docs/research/studies/README.md'
+      - 'docs/research/studies/stage-11/README.md'
+      - 'docs/research/studies/stage-12/README.md'
       - 'tests/TEST_LAYOUT.md'
       - 'archive/README.md'
       - 'docs/README.md'

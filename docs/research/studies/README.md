@@ -14,6 +14,13 @@ This is a **current navigation index**, not a new scientific evidence store or a
 
 The [global research coordinator](../../engineering/RESEARCH_COORDINATOR.md) provides candidate priorities and exact source references. It cannot authorize experiments or turn a test PASS into a scientific GO. For a broad historical catalog, use the [research corpus](../../engineering/RESEARCH_CORPUS.md).
 
+## Historical Stage directories
+
+- [Stage 11 research routing](stage-11/README.md): original report locations, grouped with the filename catalog.
+- [Stage 12 research routing](stage-12/README.md): original report locations, preserving all existing links and Git blob identities.
+
+These are navigation-only indexes: they never change the scientific status of a record.
+
 ## New study layout (English directory and file names)
 
 Create new records within `docs/research/studies/<study-id>/` only when a **new** study has a clearly identified owner. Link its protocol, measurements/results, negative evidence, limitations and independent review from a local `README.md`. Do not duplicate an existing document to create an appearance of independent evidence.
