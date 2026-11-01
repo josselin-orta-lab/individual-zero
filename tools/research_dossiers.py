@@ -401,7 +401,7 @@ def dossier_view(dossier: dict, source_by_id: dict, audit: dict) -> dict:
         primary_status = "PRIMARY_ORIGINAL_RESULT_NOT_LINKED"
     elif dossier["kind"] == "preregistered_unexecuted":
         primary_status = "NO_RESULTS_EXPECTED_NOT_EXECUTED"
-    elif dossier["kind"] == "architecture_review_pending":
+    elif dossier["kind"] in ("architecture_review_pending", "architecture_review_retired"):
         primary_status = "REVIEW_PROPOSALS_ONLY"
     elif dossier["kind"] == "archive_custody_pending":
         primary_status = "PROVIDER_METADATA_ONLY_INDEPENDENT_CUSTODY_NOT_ATTESTED"
