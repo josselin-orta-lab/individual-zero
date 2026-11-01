@@ -24,21 +24,32 @@ ALLOWED_KINDS = {
     "preregistered_unexecuted": "NOT_EXECUTED",
     "historical_inconclusive": "INCONCLUSIVE",
     "architecture_review_pending": "REVIEW_REQUIRED",
+    "archive_custody_pending": "PARTIAL",
 }
 ALLOWED_ROLES = {
     "preregistration", "reported_result", "posthoc_diagnostic",
     "current_status", "architecture_proposal", "review_proposal",
+    "g0_transition", "artifact_inventory", "custody_review",
+    "offline_reproduction",
 }
 ALLOWED_GAP_STATES = {
     "EXTERNAL_NOT_VERIFIED", "INDEPENDENT_REVIEW_REQUIRED",
     "NOT_EXECUTED", "UNVERIFIED", "NOT_OBSERVED", "NOT_ESTABLISHED",
+    "PROVIDER_RETENTION_RISK", "SOURCE_REF_UNPROTECTED",
 }
 ALLOWED_AUTHORITIES = {
     "original_preregistration", "dated_posthoc_diagnostic",
     "dated_reported_result", "current_status_snapshot",
     "architecture_proposal", "pending_review_proposal",
+    "dated_transition_decision", "dated_offline_reproduction",
+    "dated_provider_metadata_snapshot", "dated_custody_review",
 }
 FIELDS_OF_SCOPE = ("study_key", "cohort_key", "endpoint_key", "contrast_key")
+G0_INVENTORY = "config/research-g0-artifacts.json"
+DIGEST_SHA256 = re.compile(r"^sha256:[0-9a-f]{64}$")
+G0_SOURCE_ARCHIVE_SHA = "1e19f02db14b64a35f8bb014d69cc061f311002c"
+G0_I1_TREE_SHA = "cf7968d3ee94a5792d37d76241a55d4c8406a3fb"
+
 
 
 def load_json(root: Path, relative: str) -> dict:
@@ -82,6 +93,114 @@ def source_integrity(root: Path, src: dict) -> dict:
     return result
 
 
+
+def audit_g0_inventory(root: Path = ROOT) -> dict:
+    """Validate dated GitHub metadata, never the M11 ZIP bytes or independent custody."""
+    errors: list[str] = []
+    try:
+        data = load_json(root, G0_INVENTORY)
+    except (OSError, ValueError, TypeError) as exc:
+        return {"status": "FAIL", "errors": [str(exc)],
+                "scientific_verdict": "NOT_EVALUATED",
+                "custody_status": "NOT_ATTESTED"}
+    if (data.get("schema") != "individual-zero-g0-provider-artifact-inventory/v1"
+            or data.get("repository") != "josselin-orta-lab/individual-zero"
+            or data.get("observed_on") != "2026-11-01"
+            or data.get("provider_metadata_only") is not True):
+        errors.append("G0 inventory schema/date/provider scope mismatch")
+    for field in ("provider_download_verified", "original_m11_zip_sha256_verified_in_this_audit",
+                  "original_m11_archives_retrieved_in_this_audit",
+                  "independent_durable_custody_attested",
+                  "independent_reviewer_access_attested"):
+        if data.get(field) is not False:
+            errors.append("G0 metadata cannot claim independent original-data custody: " + field)
+    for field in ("no_auto_scientific_go", "no_archive_mutation",
+                  "no_cohort_execution", "provider_digest_not_original_m11_digest"):
+        if data.get("policy", {}).get(field) is not True:
+            errors.append("missing G0 metadata-only safety declaration: " + field)
+    if data.get("scientific_verdict") != "NOT_EVALUATED":
+        errors.append("G0 metadata may not approve science")
+    archive = data.get("source_archive", {})
+    if not isinstance(archive, dict) or any((
+            archive.get("branch") != "archive/i1-reference-2026-10-31",
+            archive.get("commit_sha") != G0_SOURCE_ARCHIVE_SHA,
+            archive.get("src_i1_tree_sha") != G0_I1_TREE_SHA,
+            archive.get("protected") is not False)):
+        errors.append("G0 historical archive pin/protection mismatch")
+
+    campaigns = data.get("campaigns", {})
+    expected = {
+        "A1P": (40938021102, "012ece9eb0b4531f714bd69af439eeb38d7bf701", 1, 2, 8, "failure", "a1"),
+        "A1C": (40944104333, "26f7929b6db43f68e78b0cc0d9c67e7444f924c6", 101, 112, 48, "success", "a1c"),
+    }
+    if not isinstance(campaigns, dict) or set(campaigns) != set(expected):
+        errors.append("G0 must retain exactly the two historical A1 campaigns")
+        campaigns = {}
+    seen_ids: set[int] = set()
+    artifact_count = 0
+    earliest_expiry = None
+    for label, (run_id, head_sha, seed_lo, seed_hi, n, outcome, prefix) in expected.items():
+        run = campaigns.get(label)
+        if not isinstance(run, dict):
+            errors.append("missing G0 historical campaign: " + label)
+            continue
+        if any((run.get("run_id") != run_id, run.get("run_head_sha") != head_sha,
+                run.get("run_status") != "completed", run.get("run_attempt") != 1,
+                run.get("run_conclusion") != outcome,
+                run.get("aggregate_job_conclusion") != outcome,
+                run.get("individual_artifact_count") != n,
+                run.get("reported_individual_lives") != n,
+                run.get("provider_artifact_count") != n + 1,
+                run.get("individual_job_total") != n,
+                run.get("individual_job_pass_count") != n)):
+            errors.append(label + ": original source/job outcome/count mismatch")
+        expected_names = {
+            f"{prefix}-{role}-s{s}-{arm}"
+            for role in ("native", "reversed")
+            for s in range(seed_lo, seed_hi + 1)
+            for arm in ("canonical", "td_read_masked")
+        }
+        expected_names.add(f"{prefix}-aggregate-{run_id}")
+        records = run.get("artifact_provider_snapshot", [])
+        if not isinstance(records, list) or len(records) != len(expected_names):
+            errors.append(label + ": incomplete provider artifact inventory")
+            continue
+        names: list[str] = []
+        for item in records:
+            if not isinstance(item, dict):
+                errors.append(label + ": malformed artifact entry")
+                continue
+            names.append(item.get("name"))
+            ident = item.get("id")
+            if type(ident) is not int or ident <= 0 or ident in seen_ids:
+                errors.append(label + ": duplicate/invalid provider artifact id")
+            else:
+                seen_ids.add(ident)
+            if not isinstance(item.get("provider_artifact_digest"), str) or not DIGEST_SHA256.fullmatch(item["provider_artifact_digest"]):
+                errors.append(label + ": missing provider SHA-256 digest")
+            if type(item.get("size_bytes")) is not int or item["size_bytes"] <= 0:
+                errors.append(label + ": invalid artifact byte count")
+            if item.get("expired") is not False:
+                errors.append(label + ": provider snapshot did not report the artifact available")
+            expires = item.get("expires_at", "")
+            if not isinstance(expires, str) or not re.fullmatch(
+                    r"2026-11-28T\d{2}:\d{2}:\d{2}Z", expires):
+                errors.append(label + ": unexpected retention/expiry metadata")
+            else:
+                earliest_expiry = min(earliest_expiry, expires) if earliest_expiry else expires
+        if set(names) != expected_names or len(set(names)) != len(names):
+            errors.append(label + ": missing/duplicate original slots or aggregate")
+        artifact_count += len(records)
+    return {"status": "FAIL" if errors else "PASS", "errors": sorted(set(errors)),
+            "provider_records": artifact_count,
+            "original_lives_metadata_count": 56 if not errors else None,
+            "scheduled_earliest_expiry": earliest_expiry,
+            "metadata_observed_on": data.get("observed_on"),
+            "custody_status": "NOT_ATTESTED",
+            "scientific_verdict": "NOT_EVALUATED",
+            "warning": "Provider upload digests are not original M11 ZIP proofs. Historical availability is not current availability, and neither external custody nor scientific G0 is approved."}
+
+
 def validate(root: Path = ROOT, *, strict_sources: bool = True) -> dict:
     """Validate structure; optionally report source drift without failing structural CI.
 
@@ -90,6 +209,10 @@ def validate(root: Path = ROOT, *, strict_sources: bool = True) -> dict:
     """
     errors: list[str] = []
     source_drift: list[str] = []
+    inventory_result = audit_g0_inventory(root)
+    if inventory_result["status"] != "PASS":
+        errors.extend("G0 artifact inventory: " + error
+                      for error in inventory_result["errors"])
     try:
         manifest = load_json(root, MANIFEST)
         registry = load_json(root, REGISTRY)
@@ -207,6 +330,15 @@ def validate(root: Path = ROOT, *, strict_sources: bool = True) -> dict:
                     errors.append(name + ": preregistration role does not cite a preregistration")
                 if role == "reported_result" and source["authority"] != "dated_reported_result":
                     errors.append(name + ": result role does not cite original dated result")
+                special_roles = {
+                    "g0_transition": "dated_transition_decision",
+                    "artifact_inventory": "dated_provider_metadata_snapshot",
+                    "custody_review": "dated_custody_review",
+                    "offline_reproduction": "dated_offline_reproduction",
+                    "posthoc_diagnostic": "dated_posthoc_diagnostic",
+                }
+                if role in special_roles and source["authority"] != special_roles[role]:
+                    errors.append(name + ": mismatched source authority for " + role)
         if kind in ("historical_confirmatory", "historical_inconclusive",
                     "preregistered_unexecuted") and "preregistration" not in roles:
             errors.append(name + ": preregistration not linked")
@@ -216,6 +348,13 @@ def validate(root: Path = ROOT, *, strict_sources: bool = True) -> dict:
             errors.append(name + ": unexecuted protocol cannot have claimed results")
         if kind == "architecture_review_pending" and not {"architecture_proposal", "review_proposal"} <= set(roles):
             errors.append(name + ": missing independent review inputs")
+        if kind == "archive_custody_pending":
+            required_roles = {"g0_transition", "artifact_inventory", "custody_review",
+                              "offline_reproduction", "posthoc_diagnostic", "preregistration"}
+            if not required_roles <= set(roles):
+                errors.append(name + ": missing G0 archive provenance roles")
+            if dossier.get("id") != "I1-G0-CUSTODY" or dossier.get("generation") != "I1":
+                errors.append(name + ": G0 dossier owner mismatch")
         gaps = dossier.get("review_gaps", [])
         if not isinstance(gaps, list) or not gaps:
             errors.append(name + ": must disclose at least one open review gap")
@@ -233,6 +372,7 @@ def validate(root: Path = ROOT, *, strict_sources: bool = True) -> dict:
                 errors.append(name + ": duplicate review gap IDs")
     return {"status": "FAIL" if errors else "PASS", "errors": sorted(set(errors)),
             "sources": len(source_by_id), "dossiers": len(dossiers),
+            "g0_provider_metadata": inventory_result,
             "source_integrity": source_results,
             "source_review_required": sorted(source_drift),
             "source_status": "SOURCE_REVIEW_REQUIRED" if source_drift else "PIN_MATCH",
@@ -262,6 +402,8 @@ def dossier_view(dossier: dict, source_by_id: dict, audit: dict) -> dict:
         primary_status = "NO_RESULTS_EXPECTED_NOT_EXECUTED"
     elif dossier["kind"] == "architecture_review_pending":
         primary_status = "REVIEW_PROPOSALS_ONLY"
+    elif dossier["kind"] == "archive_custody_pending":
+        primary_status = "PROVIDER_METADATA_ONLY_INDEPENDENT_CUSTODY_NOT_ATTESTED"
     else:
         primary_status = "RESULT_REPORT_LINKED_NOT_INDEPENDENTLY_ATTESTED"
     return {
@@ -324,9 +466,10 @@ def gaps_report(views: list[dict]) -> dict:
                          **item,
                          "source_integrity": d["source_integrity"],
                          "scientific_gate": "NOT_EVALUATED"})
-    priority = {"INDEPENDENT_REVIEW_REQUIRED": 0, "EXTERNAL_NOT_VERIFIED": 1,
-                "UNVERIFIED": 2, "NOT_ESTABLISHED": 3,
-                "NOT_OBSERVED": 4, "NOT_EXECUTED": 5}
+    priority = {"PROVIDER_RETENTION_RISK": 0, "INDEPENDENT_REVIEW_REQUIRED": 1,
+                "SOURCE_REF_UNPROTECTED": 2, "EXTERNAL_NOT_VERIFIED": 3,
+                "UNVERIFIED": 4, "NOT_ESTABLISHED": 5,
+                "NOT_OBSERVED": 6, "NOT_EXECUTED": 7}
     gaps.sort(key=lambda g: (g["source_integrity"] != "PIN_MATCH",
                              priority[g["state"]], g["dossier"], g["id"]))
     return {"status": "REVIEW_QUEUE_ONLY", "open_gaps": gaps,
@@ -340,6 +483,7 @@ def main(argv: list[str] | None = None, root: Path = ROOT) -> int:
     audit_parser = cmd.add_parser("audit")
     audit_parser.add_argument("--structure-only", action="store_true",
                               help="Keep source drift visible without blocking structure-only checks")
+    cmd.add_parser("g0-provider-inventory")
     cmd.add_parser("list")
     cmd.add_parser("gaps")
     pshow = cmd.add_parser("show")
@@ -354,6 +498,8 @@ def main(argv: list[str] | None = None, root: Path = ROOT) -> int:
                                      and getattr(args, "structure_only", False)))
         if args.command == "audit":
             result = audit
+        elif args.command == "g0-provider-inventory":
+            result = audit["g0_provider_metadata"]
         elif args.command == "list":
             result = {"status": "NAVIGATION_ONLY", "dossiers": [
                 {"id": v["id"], "kind": v["kind"], "reported_assessment": v["reported_assessment"],

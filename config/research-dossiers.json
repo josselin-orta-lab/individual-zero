@@ -73,9 +73,118 @@
       "blob_sha": "6c9dec0566634d021723be7c7542f575d52b3bf3",
       "anchor": "A1-C confirmatory result was a targeted **NO_GO**",
       "authority": "current_status_snapshot"
+    },
+    {
+      "id": "g0-transition",
+      "path": "docs/architecture/proposals/i2-transition-and-scientific-gates-2026-10-31.md",
+      "blob_sha": "e83b07c33ab54b2b964ffb96a23e6591811cbc78",
+      "anchor": "G0 PARTIAL",
+      "authority": "dated_transition_decision"
+    },
+    {
+      "id": "g0-a1p-reproduction",
+      "path": "docs/research/audits/I1_A1P_H48_OFFLINE_REPRODUCTION_2026-10-31.md",
+      "blob_sha": "120584e7bd9b73dc23b9cf76dc9a5593720043c6",
+      "anchor": "Les ZIP originaux et le capsule ne sont PAS importés",
+      "authority": "dated_offline_reproduction"
+    },
+    {
+      "id": "g0-a1c-replay",
+      "path": "docs/research/audits/I1_ECO_A1C_FIXED_TAPE_REWARD_SENSITIVITY_2026-10-30.md",
+      "blob_sha": "3d4a38c26864fbc0526121d5a683e7a81ee8b827",
+      "anchor": "I1_ECO_A1C_EVIDENCE_MANIFEST.json",
+      "authority": "dated_posthoc_diagnostic"
+    },
+    {
+      "id": "g0-inventory",
+      "path": "config/research-g0-artifacts.json",
+      "blob_sha": "f9e3319b67d4e9ae7cc5c8fb9d08271d68ecbe32",
+      "anchor": "\"provider_metadata_only\": true",
+      "authority": "dated_provider_metadata_snapshot"
+    },
+    {
+      "id": "g0-custody-review",
+      "path": "docs/research/audits/I1_G0_PROVIDER_ARTIFACT_CUSTODY_2026-11-01.md",
+      "blob_sha": "260f5e9a807acc86cbf56d09158507cc3df3550b",
+      "anchor": "Before 28 November 2026",
+      "authority": "dated_custody_review"
     }
   ],
   "dossiers": [
+    {
+      "id": "I1-G0-CUSTODY",
+      "generation": "I1",
+      "kind": "archive_custody_pending",
+      "title": "G0 independent preservation of 8 A1-P and 48 A1-C original M11 archives",
+      "question_id": "I1-L3",
+      "related_issues": [
+        661
+      ],
+      "scope": {
+        "study_key": "I1-G0-ARCHIVE",
+        "cohort_key": "A1P-8_A1C-48_ORIGINAL_ARCHIVES",
+        "endpoint_key": "source_and_original_M11_custody",
+        "contrast_key": "provider_metadata_vs_independent_verified_immutable_custody"
+      },
+      "reported_assessment": "PARTIAL",
+      "source_roles": [
+        {
+          "source_id": "g0-transition",
+          "role": "g0_transition"
+        },
+        {
+          "source_id": "g0-inventory",
+          "role": "artifact_inventory"
+        },
+        {
+          "source_id": "g0-custody-review",
+          "role": "custody_review"
+        },
+        {
+          "source_id": "g0-a1p-reproduction",
+          "role": "offline_reproduction"
+        },
+        {
+          "source_id": "g0-a1c-replay",
+          "role": "posthoc_diagnostic"
+        },
+        {
+          "source_id": "a1c-prereg",
+          "role": "preregistration"
+        }
+      ],
+      "review_gaps": [
+        {
+          "id": "provider-expiry",
+          "state": "PROVIDER_RETENTION_RISK",
+          "question": "58 original/cohort provider artifacts were scheduled to expire on 28 Nov 2026; independent durable copies have not been attested."
+        },
+        {
+          "id": "independent-custody",
+          "state": "EXTERNAL_NOT_VERIFIED",
+          "question": "Obtain sealed original inner ZIPs, compare original SHA-256, attest two independent durable copy domains and authorized reviewer retrieval."
+        },
+        {
+          "id": "archive-ref-protection",
+          "state": "SOURCE_REF_UNPROTECTED",
+          "question": "GitHub archive source ref currently reports protected=false; document enforceable anti-deletion/non-force-push rule or independent verifiable anchor."
+        },
+        {
+          "id": "independent-reproduction",
+          "state": "INDEPENDENT_REVIEW_REQUIRED",
+          "question": "Have an independent reviewer verify 8+48 original M11 births, aggregate outputs and negative A1-C outcome against frozen protocols."
+        },
+        {
+          "id": "a1p-aggregate-failure",
+          "state": "UNVERIFIED",
+          "question": "Preserve and explain A1-P aggregate job failure separately from the eight successful individual births and dated local reproduction."
+        }
+      ],
+      "scope_limit": "Provider artifact IDs and upload SHA digests are NOT original M11 inner ZIP hashes, independently verified archiving or an accepted G0 scientific outcome.",
+      "next_review": "Prioritize authorized preservation of the expiring Actions artifacts, independent original-byte SHA comparison, archive ref protection and external scientific custody review.",
+      "authority": "CURATED_SOURCE_NAVIGATION_ONLY",
+      "scientific_gate": "NOT_EVALUATED"
+    },
     {
       "id": "I1-A1C-TARGETED",
       "generation": "I1",

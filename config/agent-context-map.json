@@ -341,7 +341,9 @@
         "config/research-dossiers.json",
         "tools/research_dossiers.py",
         "tests/test_research_dossiers.py",
-        "docs/engineering/RESEARCH_DOSSIERS.md"
+        "docs/engineering/RESEARCH_DOSSIERS.md",
+        "config/research-g0-artifacts.json",
+        "docs/research/audits/I1_G0_PROVIDER_ARTIFACT_CUSTODY_2026-11-01.md"
       ],
       "keywords": [
         "global research",
@@ -353,7 +355,9 @@
         "experiment relation",
         "research dossier",
         "protocol outcome",
-        "independent evidence review"
+        "independent evidence review",
+        "G0 source and archive custody",
+        "expiring scientific artifacts"
       ],
       "documents": [
         "docs/engineering/RESEARCH_COORDINATOR.md",
@@ -362,13 +366,15 @@
         "src/i2/docs/STATUS.md",
         "docs/architecture/proposals/i2-transition-and-scientific-gates-2026-10-31.md",
         "docs/engineering/RESEARCH_CORPUS.md",
-        "docs/engineering/RESEARCH_DOSSIERS.md"
+        "docs/engineering/RESEARCH_DOSSIERS.md",
+        "docs/research/audits/I1_G0_PROVIDER_ARTIFACT_CUSTODY_2026-11-01.md"
       ],
       "owners": [
         "config/research-program.json",
         "config/engine-registry.json",
         "tools/research_corpus.py",
-        "config/research-dossiers.json"
+        "config/research-dossiers.json",
+        "config/research-g0-artifacts.json"
       ],
       "tests": [
         "tests/test_research_coordinator.py",
@@ -387,7 +393,8 @@
         "python -m unittest discover -s tests -p test_research_knowledge.py -v",
         "python -m unittest discover -s tests -p test_research_corpus.py -v",
         "python tools/research_dossiers.py audit",
-        "python -m unittest discover -s tests -p test_research_dossiers.py -v"
+        "python -m unittest discover -s tests -p test_research_dossiers.py -v",
+        "python tools/research_dossiers.py g0-provider-inventory"
       ]
     }
   },

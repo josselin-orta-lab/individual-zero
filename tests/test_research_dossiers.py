@@ -44,8 +44,11 @@ class ResearchDossierTests(unittest.TestCase):
         for path, markers in by_path.items():
             target = self.root / path
             target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_text("# Synthetic source\n" + "\n".join(markers) +
-                              "\nCI PASS refers only to tests.\n", encoding="utf-8")
+            if path == dossier.G0_INVENTORY:
+                target.write_bytes((ROOT / dossier.G0_INVENTORY).read_bytes())
+            else:
+                target.write_text("# Synthetic source\n" + "\n".join(markers) +
+                                  "\nCI PASS refers only to tests.\n", encoding="utf-8")
         for src in manifest["sources"]:
             src["blob_sha"] = self.hash_file(src["path"])
         self.persist()
@@ -66,7 +69,7 @@ class ResearchDossierTests(unittest.TestCase):
         result = dossier.validate(self.root)
         self.assertEqual(result["status"], "PASS", result["errors"])
         self.assertEqual(result["sources"], len(self.manifest["sources"]))
-        self.assertEqual(result["dossiers"], 4)
+        self.assertEqual(result["dossiers"], 5)
         self.assertEqual(result["scientific_verdict"], "NOT_EVALUATED")
         self.assertTrue(all(s["status"] == "PIN_MATCH"
                             for s in result["source_integrity"].values()))
@@ -130,7 +133,8 @@ class ResearchDossierTests(unittest.TestCase):
 
     def test_a1c_and_a2r_have_distinct_scopes(self):
         _, _, views = self.views()
-        left, right = views[0], views[1]
+        left = next(x for x in views if x["id"] == "I1-A1C-TARGETED")
+        right = next(x for x in views if x["id"] == "I1-A2R-REWARD")
         compared = dossier.compare_views(left, right)
         self.assertFalse(compared["same_explicit_scope"])
         self.assertEqual(compared["status"], "DIFFERENT_EXPERIMENT_OR_ENDPOINT_NO_CONTRADICTION_INFERRED")
@@ -138,8 +142,8 @@ class ResearchDossierTests(unittest.TestCase):
 
     def test_same_scope_different_reported_assessments_are_review_leads(self):
         _, _, views = self.views()
-        left = views[0]
-        modified = deepcopy(views[1])
+        left = next(x for x in views if x["id"] == "I1-A1C-TARGETED")
+        modified = deepcopy(next(x for x in views if x["id"] == "I1-A2R-REWARD"))
         modified["scope"] = left["scope"].copy()
         compared = dossier.compare_views(left, modified)
         self.assertEqual(compared["status"], "POSSIBLE_SAME_SCOPE_REPORTED_ASSESSMENT_DISAGREEMENT_REVIEW")
@@ -161,10 +165,71 @@ class ResearchDossierTests(unittest.TestCase):
         self.persist()
         self.assertEqual(dossier.validate(self.root)["status"], "FAIL")
         self.manifest["sources"][0]["path"] = "docs/research/I1_ECO_A1C_PREREGISTRATION_2026-10-29.md"
-        self.manifest["dossiers"][0]["source_roles"][0]["source_id"] = "a235b-results"
+        a1c = next(x for x in self.manifest["dossiers"] if x["id"] == "I1-A1C-TARGETED")
+        a1c["source_roles"][0]["source_id"] = "a235b-results"
         self.persist()
         errors = dossier.validate(self.root)["errors"]
         self.assertTrue(any("preregistration role" in e for e in errors))
+
+    def test_g0_artifact_metadata_and_expiring_archives_never_claim_custody(self):
+        result = dossier.audit_g0_inventory(self.root)
+        self.assertEqual(result["status"], "PASS", result["errors"])
+        self.assertEqual(result["provider_records"], 58)
+        self.assertEqual(result["original_lives_metadata_count"], 56)
+        self.assertEqual(result["scheduled_earliest_expiry"], "2026-11-28T19:13:23Z")
+        self.assertEqual(result["custody_status"], "NOT_ATTESTED")
+        self.assertEqual(result["scientific_verdict"], "NOT_EVALUATED")
+        _, audit, views = self.views()
+        self.assertEqual(audit["status"], "PASS")
+        g0 = next(x for x in views if x["id"] == "I1-G0-CUSTODY")
+        self.assertEqual(g0["reported_assessment"], "PARTIAL")
+        self.assertEqual(g0["primary_record"],
+                         "PROVIDER_METADATA_ONLY_INDEPENDENT_CUSTODY_NOT_ATTESTED")
+        self.assertEqual(g0["approval"], "NOT_GRANTED")
+        self.assertIn("PROVIDER_RETENTION_RISK",
+                      {g["state"] for g in g0["review_gaps"]})
+        gaps = dossier.gaps_report(views)
+        self.assertEqual(gaps["open_gaps"][0]["state"], "PROVIDER_RETENTION_RISK")
+        self.assertEqual(gaps["open_gaps"][0]["dossier"], "I1-G0-CUSTODY")
+        with redirect_stdout(io.StringIO()) as output:
+            self.assertEqual(dossier.main(["g0-provider-inventory"], self.root), 0)
+        self.assertEqual(json.loads(output.getvalue())["custody_status"], "NOT_ATTESTED")
+
+    def test_g0_provider_snapshot_may_not_mint_original_m11_evidence(self):
+        path = self.root / dossier.G0_INVENTORY
+        snapshot = json.loads(path.read_text(encoding="utf-8"))
+        snapshot["independent_durable_custody_attested"] = True
+        path.write_text(json.dumps(snapshot), encoding="utf-8")
+        bad = dossier.audit_g0_inventory(self.root)
+        self.assertEqual(bad["status"], "FAIL")
+        self.assertTrue(any("cannot claim" in e for e in bad["errors"]))
+        self.assertEqual(dossier.validate(self.root, strict_sources=False)["status"], "FAIL")
+
+    def test_g0_missing_slot_or_provider_digest_is_not_counted_as_original(self):
+        path = self.root / dossier.G0_INVENTORY
+        snapshot = json.loads(path.read_text(encoding="utf-8"))
+        snapshot["campaigns"]["A1C"]["artifact_provider_snapshot"][0]["name"] = "a1c-fake"
+        snapshot["campaigns"]["A1C"]["artifact_provider_snapshot"][1]["provider_artifact_digest"] = "sha256:" + "0" * 20
+        path.write_text(json.dumps(snapshot), encoding="utf-8")
+        report = dossier.audit_g0_inventory(self.root)
+        self.assertEqual(report["status"], "FAIL")
+        self.assertTrue(any("missing/duplicate original slots" in e for e in report["errors"]))
+        self.assertTrue(any("missing provider SHA-256" in e for e in report["errors"]))
+        self.assertEqual(report["scientific_verdict"], "NOT_EVALUATED")
+
+    def test_g0_run_failure_and_unprotected_source_are_preserved(self):
+        path = self.root / dossier.G0_INVENTORY
+        snapshot = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(snapshot["campaigns"]["A1P"]["run_conclusion"], "failure")
+        self.assertEqual(snapshot["campaigns"]["A1P"]["aggregate_job_conclusion"], "failure")
+        self.assertIs(snapshot["source_archive"]["protected"], False)
+        snapshot["campaigns"]["A1P"]["run_conclusion"] = "success"
+        snapshot["source_archive"]["protected"] = True
+        path.write_text(json.dumps(snapshot), encoding="utf-8")
+        report = dossier.audit_g0_inventory(self.root)
+        self.assertEqual(report["status"], "FAIL")
+        self.assertTrue(any("original source/job" in e for e in report["errors"]))
+        self.assertTrue(any("archive pin/protection" in e for e in report["errors"]))
 
     def test_compact_gap_report_and_cli(self):
         _, _, views = self.views()
