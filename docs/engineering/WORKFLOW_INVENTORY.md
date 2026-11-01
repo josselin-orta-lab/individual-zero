@@ -21,6 +21,7 @@ This is a **routing and review guide**, not an authorization to run old experime
 | [I0 archive](../../.github/workflows/i0-archive-manual.yml) | `workflow_dispatch` | Historical test recreation, not a current I1 acceptance gate. |
 | [I1 A2.38 confirmatory](../../.github/workflows/i1-a238-confirmatory.yml) | `workflow_dispatch` | Prior large cohort; preserve protocol and artifacts; do not rerun for repository maintenance. |
 | [I1 A2.31 pairs](../../.github/workflows/i1-a231-science.yml) | `workflow_dispatch` | Historical prospective cohort; not ordinary code CI. |
+| [I1 A0 six-world pilot](../../.github/workflows/i1-eco-a0.yml) | `workflow_dispatch` only, after the 1 November 2026 maintenance correction | Preserves operator-invoked six-world evidence, but never runs a birth as a side effect of changing the tool or workflow. |
 | [I1 A1-C one-shot](../../.github/workflows/i1-eco-a1c-one-shot.yml) | `push` to `main` with workflow-path filter **and** a commit-marker job guard | Historical expensive one-shot protocol. Changing or relocating its YAML requires a separate explicit source/custody and trigger review. |
 | [I1 S1 72-life](../../.github/workflows/i1-s1-main-72-life.yml) | Narrow historical-branch `push` and `workflow_dispatch` | Prior 72-life experiment; do not assume an old branch is dead or trigger it while tidying. |
 | [I1 A2-R reward birth L1](../../.github/workflows/i1-a2r-reward-birth-l1.yml) | Focused `pull_request` paths plus `workflow_dispatch` | Research tooling regression contract, not a confirmatory cohort or I1 scientific result. |
