@@ -128,3 +128,4 @@ jobs:
           python -m unittest discover -s tests -p test_agent_context.py -v
           python -m unittest discover -s tests -p test_repo_navigation.py -v
           python tools/check_repo_navigation.py --scope entrypoints
+          python tools/check_repo_navigation.py --scope current
