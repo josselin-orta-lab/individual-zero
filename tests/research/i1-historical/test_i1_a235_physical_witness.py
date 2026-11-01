@@ -7,7 +7,7 @@ import subprocess
 import sys
 import unittest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "scripts"))
 from build_i1_fork import generate
 
 
@@ -105,7 +105,7 @@ with TemporaryDirectory() as root:
  print("A235_WITNESS:"+json.dumps(results,sort_keys=True))
 """
             env=os.environ.copy()
-            env["PYTHONPATH"]=str(out)+os.pathsep+str(Path(__file__).resolve().parents[1]/"src")
+            env["PYTHONPATH"]=str(out)+os.pathsep+str(Path(__file__).resolve().parents[3]/"src")
             result=subprocess.run([sys.executable,"-c",program],
                                   env=env,capture_output=True,text=True)
             self.assertEqual(result.returncode,0,result.stderr+"\n"+result.stdout)

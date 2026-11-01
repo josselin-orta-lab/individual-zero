@@ -54,6 +54,7 @@ on:
       - 'docs/research/studies/stage-10/README.md'
       - 'docs/research/studies/cross-cutting/README.md'
       - 'tests/TEST_LAYOUT.md'
+      - 'tests/research/i1-historical/README.md'
       - 'archive/README.md'
       - 'docs/README.md'
       - 'docs/research/README.md'

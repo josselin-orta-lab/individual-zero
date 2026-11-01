@@ -2,6 +2,7 @@
 
 These are **software contract tests**, not scientific evidence or authorization for a living cohort. The test implementations live with the test hierarchy, while their source analysis tools remain in `tools/` and `tools/research/`.
 
+- `i1-historical/`: obsolete experimental A2.35 software witnesses (manual-only, never natural-I1 acceptance).
 - `a1p/`: offline A1-P historical replay gate (pure software, no original downloads).
 - `a1c/`: targeted A1-C mechanism isolation, reward shadow, TD replay, wait gate and statistical criterion contracts (six tests).
 - [`a2r/`](a2r/README.md): A2-R launch/one-shot custody guards, pure archive/pair-witness contracts and a narrowly scoped reward-birth contract.
