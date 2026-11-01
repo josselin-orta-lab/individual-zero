@@ -6,7 +6,7 @@ Formal EXP records may live in `../../experiments/EXP-####/`, while substantial 
 
 ## New research record placement
 
-New studies should use an explicitly named English subdirectory such as `docs/research/studies/<study-id>/` with an index linking its protocol, observations, results, limitations and independent review. Existing source-pinned records must stay at their original paths until their provenance and references have been audited. New audit reports belong under `docs/research/audits/`, while active generation mechanism documentation belongs with `src/iN/docs/`. Do not treat directory placement as scientific approval.
+New studies should follow the [English study directory conventions](studies/README.md) in `docs/research/studies/<study-id>/` with an index linking its protocol, observations, results, limitations and independent review. Existing source-pinned records must stay at their original paths until their provenance and references have been audited. New audit reports belong under `docs/research/audits/`, while active generation mechanism documentation belongs with `src/iN/docs/`. Do not treat directory placement as scientific approval.
 
 ## Locating historical studies
 

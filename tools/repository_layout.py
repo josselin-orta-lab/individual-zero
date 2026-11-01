@@ -66,6 +66,7 @@ def bucket(kind: str, path: str) -> str | None:
         for prefix, role in (
             ("src/i1/docs/", "i1-owned"), ("src/i2/docs/", "i2-owned"),
             ("docs/research/audits/", "research-audits"),
+            ("docs/research/studies/", "research-studies"),
             ("docs/research/archive/", "research-historical"),
             ("docs/research/", "research-records-and-methods"),
             ("docs/architecture/reference/", "architecture-versioned"),

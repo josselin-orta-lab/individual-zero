@@ -16,6 +16,7 @@ class RepositoryLayoutTests(unittest.TestCase):
         self.assertEqual(module.bucket("tests", "tests/i2/test_fixture.py"), "i2")
         self.assertEqual(module.bucket("tests", "archive/i0/tests/test_historical.py"), "i0-frozen")
         self.assertEqual(module.bucket("docs", "src/i2/docs/STATUS.md"), "i2-owned")
+        self.assertEqual(module.bucket("docs", "docs/research/studies/README.md"), "research-studies")
         self.assertEqual(module.bucket("archives", "docs/research/archive/old.md"), "research-historical")
         self.assertIsNone(module.bucket("tests", "docs/experiments-vs-tests.md"))
 
