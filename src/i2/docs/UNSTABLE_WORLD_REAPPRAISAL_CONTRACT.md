@@ -124,3 +124,25 @@ seven-case batteries remain unchanged.
 
 Focused software regression:
 `PYTHONPATH=src python -m unittest discover -s tests/i2 -p 'test_paid_reflex_veto.py' -v`.
+
+## Negative control: protective veto can kill (source-locked software example)
+
+The new targeted test `test_reflex_veto_counterexample.py` deliberately
+uses favorable, **hidden** food with low starting energy. After a personally
+chosen COLLECT and two independent physical ticks, the body has energy=4
+and inventory=1. The paid reflex CONSTRAIN veto prevents EAT, costs its
+ordinary cognitive UC, and the still-active physical clock eventually
+reaches terminal zero at tick 5. The researcher can calculate that eating
+the same favorable food at that tick would have yielded energy=8 (rather
+than the vetoed decision's energy=3), but **this is only an analytic,
+unchosen counterfactual**, not a second experienced arm or a causal
+survival-effect estimate. No oracle is exposed to cognition.
+
+This is a concrete **DRIFT DETECTED** warning about optimizing defensive
+rules instead of integrated viability: hard-coded low-energy prohibitions
+can contradict survival needs. Do not tune the cutoff post hoc to hide
+the failure. The next separately specified falsifier should compare a
+survival-relevant, energy-sensitive *nonmotor* risk appraisal with a genuine
+paid control ablation in matched favorable and harmful worlds. It must
+preserve actual motor/UC authority, hidden-world uncertainty and negative
+outcomes; no scientific GO follows from a local unit test.
