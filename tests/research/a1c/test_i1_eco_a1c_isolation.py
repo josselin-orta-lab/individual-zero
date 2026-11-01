@@ -2,7 +2,7 @@
 import sys
 from pathlib import Path
 import unittest
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'tools'))
 from run_i1_eco_a1c import IDENTITIES, MATRIX, SEEDS, SCHEMA, _PROGRAM
 from i1_eco_a1c_mechanism import verify_mechanism
 

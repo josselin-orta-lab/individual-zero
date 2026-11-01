@@ -2,7 +2,7 @@
 import unittest
 from pathlib import Path
 import sys
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'tools'))
 from i1_eco_a1c_statistics import assess_a1c, ROLES, SEEDS
 
 
