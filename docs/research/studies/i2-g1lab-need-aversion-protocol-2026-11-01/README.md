@@ -10,6 +10,11 @@ require explicit, separate, prior-to-code parameter approval.
 This remains a bounded **prospective exploratory design**, NOT confirmatory
 preregistration, evidence of natural motivation, or permission to run.
 
+**Candidate numerical/stop-rule lock for separate approval:**
+[parameter-lock-candidate.md](parameter-lock-candidate.md) (v1,
+**NOT APPROVED / NOT EXECUTION AUTHORIZED**). No new behavioral code or
+results are authorized by adding this link.
+
 ## 1. Frozen context and why a new model would be necessary
 
 Reference source: `main=49bd5b339c6abbfeecfaddc52f3f1b9eeec8a44e`,
