@@ -23,6 +23,12 @@ class PortalTests(unittest.TestCase):
             self.assertEqual(report["local_links_checked"], 1)
             self.assertEqual(report["scientific_verdict"], "NOT_EVALUATED")
 
+    def test_stage_indexes_are_navigation_only_and_links_are_valid(self):
+        root = Path(__file__).resolve().parents[1]
+        result = mod.audit(root)
+        self.assertEqual(result["status"], "PASS", result["problems"])
+        self.assertGreater(result["local_links_checked"], 0)
+
     def test_missing_link_is_rejected_without_mutation(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
