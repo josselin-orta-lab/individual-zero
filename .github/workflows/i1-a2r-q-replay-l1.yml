@@ -3,7 +3,7 @@ on:
   pull_request:
     paths:
       - 'tools/research/i1_a2r_q_replay.py'
-      - 'tools/research/tests/test_i1_a2r_q_replay.py'
+      - 'tests/research/a2r/test_i1_a2r_q_replay.py'
       - 'docs/research/audits/I1_ECO_A2R_Q_REPLAY_CONTRACT_2026-10-30.md'
       - '.github/workflows/i1-a2r-q-replay-l1.yml'
   workflow_dispatch:
@@ -33,6 +33,6 @@ jobs:
       - name: Pure twelve-feature TD/Q contracts only
         run: |
           python -m py_compile tools/research/i1_a2r_q_replay.py
-          python -m unittest discover -s tools/research/tests -p test_i1_a2r_q_replay.py -v
+          python -m unittest discover -s tests/research/a2r -p test_i1_a2r_q_replay.py -v
       - name: Prevent accidental natural cohort work
         run: test ! -d reports/i1-eco-a2r-cohort
