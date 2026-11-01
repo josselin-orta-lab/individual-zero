@@ -18,3 +18,7 @@ Commande locale : `python -m unittest discover -s tests/i2 -p 'test_*.py' -v`.
 ## Programme scientifique encore NON EXÉCUTÉ
 
 Authentification M11 indépendante, débit du Scheduler vivant, action et conséquence WorldBody réellement appliquées, mortalité irréversible, protections anti-rollback, continuité H2 atomique, études confirmatoires préenregistrées avec contrôles et comparaison sans réutiliser les résultats d'I1. Ces étapes nécessitent une revue G1/G3 distincte. **Aucune naissance, cohorte ni GO scientifique I2 n'est établie.**
+
+## Science-first offline vertical slice (not a born life)
+
+`tests/i2/test_science_first_behavioral_slice.py` couples an experimenter-controlled miniature world to **existing** H2 contrast, paid Competition and the v5 single cognitive SQLite owner. Three hidden consequence regimes (positive, neutral, negative), both training orders, a no-H2 ablation, synthetic UC, veto and omitted-outcome negative checks must be reported. A proposed decision is evaluated only by a research-controller shadow function: **I2 never actuates WorldBody**, cannot see hidden outcomes before learning, and the synthetic evidence port is not M11. Success means a coherent G2 vertical diagnostic, **not** a scientifically valid comparison of autonomous individuals or proof of real causal learning. See [ADR-0002](../../../docs/decisions/ADR-0002-scientific-prototype-first.md).

@@ -9,3 +9,7 @@ Keep [`docs/STATUS.md`](docs/STATUS.md) a **short current gate/ownership/limitat
 No import or fallback to `i1lab`, I1 cognition or mutable state. No obsolete compatibility modes, silent migrations or inherited individual memories. I2 must eventually own its own Lab/WorldBody, UC Scheduler, contracts, M11 and genuine provenance **before** a separate, explicitly approved activation.
 
 For synthetic changes, use `python -m unittest discover -s tests/i2 -p 'test_*.py' -v` and the structural/proposal checks specified in `docs/TEST_PLAN.md`; record the exact SHA. Preserve negative tests and report G2 synthetic validation separately from G3/G4 scientific gates. Never start living cohorts as part of this campaign.
+
+## Current research-direction decision
+
+[ADR-0002](../../docs/decisions/ADR-0002-scientific-prototype-first.md) requires **science-first, minimum integrated** offline I2 prototypes. Initial H2 slice: controlled experience -> claimed subjective evidence -> past-only credit -> paid Competition advice -> separately labelled offline shadow outcome, with no-H2 ablation and negative cases. Do not create another living state owner or confuse software tests with a valid H1/H2/H3 study. Signal **DRIFT DETECTED** if the next change adds complexity without helping a falsifiable end-to-end question. G1/G3 remain blocked.
