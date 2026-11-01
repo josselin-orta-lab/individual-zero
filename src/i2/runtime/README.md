@@ -223,3 +223,24 @@ independent statistical replication, open-ended G2 tuning, living I2 or
 authenticated M11. As with the reversal, the direct no-clock
 `demo("restoration")` is refused. The original one-shot G1-LAB remains
 closed and unchanged.
+
+
+## Optional survival last-resort experiment (separate policy, #832)
+
+For the new emergency survival priority, explicitly pass `--last-resort`
+in an isolated `--world` run. The current SQLite owner stores the
+selection at genesis and its replay recomputes which paid candidate
+valuations were overridden. The original source-locked blind-restoration
+and seven-case probes keep this switch off so their historical claims
+do not change through retroactive policy substitution.
+
+```bash
+PYTHONPATH=src python -m i2.runtime.isolated_prototype --world --scenario restoration --ticks 16 --last-resort
+PYTHONPATH=src python -m i2.runtime.isolated_prototype --world --scenario adverse --ticks 16 --last-resort
+```
+
+No second WorldBody, external motor, real M11 attestation, source-oracle,
+free UC, or scientific promotion is implied. If a safer known plan is
+added in future, the current fixed toy affordance classifier must be
+replaced by an explicit source-bound viability comparison before claiming
+the berry is genuinely the last resort.

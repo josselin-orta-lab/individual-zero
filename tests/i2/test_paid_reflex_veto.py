@@ -18,7 +18,8 @@ class LastResortSurvivalTests(unittest.TestCase):
         path = Path(tmp.name) / "life.sqlite"
         return IsolatedI2.create(
             path, learning=learning, impulses=impulses or SCENARIOS["stable"],
-            initial_energy=energy), path
+            initial_energy=energy,
+            last_resort_exploration=True), path
 
     def test_low_energy_favorable_food_is_chosen_through_paid_control(self):
         life, _ = self.make(8)
@@ -46,6 +47,39 @@ class LastResortSurvivalTests(unittest.TestCase):
         self.assertEqual(second.energy, 0)
         self.assertEqual(second.actual_uc_spent, 5)
         self.assertFalse(life.audit()["m11_authenticated"])
+
+    def test_personally_harmful_food_is_retried_when_starving(self):
+        life, _ = self.make(16, learning=True, impulses=SCENARIOS["adverse"])
+        self.assertEqual(life.step().chosen, COLLECT)
+        self.assertEqual(life.step().chosen, EAT)
+        self.assertEqual(life.audit()["energy"], 4)
+        self.assertEqual(life.step().chosen, COLLECT)
+        self.assertEqual(life.audit()["energy"], 2)
+        last = life.step()
+        self.assertEqual(last.chosen, EAT)
+        self.assertTrue(last.terminal)
+        self.assertEqual(last.actual_uc_spent, 5)
+        # An earlier personal adverse result remains the only observed
+        # food consequence, not advance knowledge of the next outcome.
+        decision = life.decision_evidence()[3]
+        self.assertEqual(decision["survival_reflex"]["state"], "PREEMPT")
+        self.assertEqual(
+            [x["observed_net"] for x in decision["outcomes_used_by_valuation"]
+             if x["action"] == EAT], [-10])
+        self.assertTrue(decision["last_resort_priority_applied"])
+        self.assertGreater(decision["candidate_scores"][EAT],
+                           decision["candidate_scores"][COLLECT])
+
+    def test_opt_out_preserves_history_in_previously_harmful_food(self):
+        life, path = self.make(16, learning=True, impulses=SCENARIOS["adverse"])
+        with sqlite3.connect(path) as db:
+            db.execute("UPDATE proto_meta SET last_resort_exploration=0")
+        self.assertEqual(life.step().chosen, COLLECT)
+        self.assertEqual(life.step().chosen, EAT)
+        self.assertEqual(life.step().chosen, COLLECT)
+        fourth = life.step()
+        self.assertNotEqual(fourth.chosen, EAT)
+        self.assertFalse(life.decision_evidence()[3]["last_resort_priority_applied"])
 
     def test_explicit_safety_veto_still_blocks_last_resort(self):
         life, _ = self.make(8)

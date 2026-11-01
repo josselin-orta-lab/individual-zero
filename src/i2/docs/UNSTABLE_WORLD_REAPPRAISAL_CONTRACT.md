@@ -134,3 +134,39 @@ must retain their previous numerical evidence as historical results, not be
 silently reinterpreted as results of the new reflex-capable runtime. Any
 change to their software test expectations must be reported as a new
 behavioral policy version, never historical source equivalence.
+
+
+## Source-pinned science versus explicitly enabled survival risk (follow-up #832)
+
+The **existing historic seven-case and blind-restoration fixtures run their
+original observational/no-learning policies**, with
+`last_resort_exploration=False` at fresh genesis. This is a controlled
+research ablation, not an old-engine compatibility fallback or migration.
+The new I2-only survival policy must be *explicitly enabled* per separate
+disposable study; the flag lives in the same canonical SQLite `proto_meta`
+record and its exact score/evidence are recomputed by the normal journal
+audit. No existing prior results are rewritten. This generation does not
+accept an old SQLite schema or revive an old identity.
+
+Run the new behavior in the same existing world (separate disposable lives):
+`PYTHONPATH=src python -m i2.runtime.isolated_prototype --world --scenario restoration --ticks 16 --last-resort`.
+Omit `--last-resort` to reproduce the unchanged historical research
+control. Passing this option is a *new explicitly declared experimental
+policy*, never a hidden default or permission to claim general adaptation.
+
+A local priority is applied only if the current energy is <=4, EAT is
+actually offered, all offered affordances have explicit semantics, and
+EAT is **not already the uniquely highest evaluated option**. It then
+becomes the uniquely highest within the original paid batch. This is
+categorical decision precedence rather than predicting a positive payoff.
+Explicit Action Control veto, unavailable UC, death and unknown affordances
+remain respected. If EAT is already preferred, no synthetic extra score
+or fake priority evidence is added. Audit derives the same condition
+from the predecision owner state and rejects mismatched value provenance.
+
+The mechanistic counterfactuals must include *both* hidden restoration and
+persistently toxic food, matching initial resources, energy, UC and
+physical-tick schedule. Report personally observed adverse EAT results,
+last-resort attempts, terminal ticks, censoring and costs, even when the
+new reflex causes fatal poisoning. These results remain exploratory
+engineered-world observations, not real survival or learning evidence.
