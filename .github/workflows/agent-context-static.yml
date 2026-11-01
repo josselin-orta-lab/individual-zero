@@ -41,6 +41,8 @@ on:
       - 'tests/test_research_location_index.py'
       - 'tools/research_link_audit.py'
       - 'tests/test_research_link_audit.py'
+      - 'tools/check_navigation_portals.py'
+      - 'tests/test_navigation_portals.py'
       - 'docs/research/studies/README.md'
       - 'tests/TEST_LAYOUT.md'
       - 'archive/README.md'
@@ -180,5 +182,7 @@ jobs:
           python -m unittest discover -s tests -p test_repository_layout.py -v
           python -m unittest discover -s tests -p test_research_location_index.py -v
           python -m unittest discover -s tests -p test_research_link_audit.py -v
+          python -m unittest discover -s tests -p test_navigation_portals.py -v
+          python tools/check_navigation_portals.py --json > /tmp/iz-current-portals.json
           python tools/research_link_audit.py --limit 10 --json > /tmp/iz-research-links.json
           python tools/research_location_index.py --family stage-12 --limit 3 --json > /tmp/iz-stage12-location.json
