@@ -24,8 +24,17 @@ class EngineToolingTests(unittest.TestCase):
         active = "i1-current-ci.yml"
         workflows = [Path(".github/workflows/" + name) for name in
                      ("i1-current-ci.yml", "i2-proposal-safety.yml",
-                      "engine-structural.yml", "stage9-historical.yml")]
+                      "engine-structural.yml", "agent-context-static.yml",
+                      "stage9-historical.yml")]
         self.assertEqual(unexpected_workflows(workflows, active_ci=active),
+                         ["stage9-historical.yml"])
+
+    def test_static_agent_navigation_is_not_historical_runtime_ci(self):
+        from scripts.check_engine_repository import unexpected_workflows
+        paths = [Path(".github/workflows/agent-context-static.yml"),
+                 Path(".github/workflows/i2-proposal-safety.yml"),
+                 Path(".github/workflows/stage9-historical.yml")]
+        self.assertEqual(unexpected_workflows(paths, active_ci="i1-current-ci.yml"),
                          ["stage9-historical.yml"])
 
     def test_documentation_does_not_trigger_heavy_i1_ci(self):

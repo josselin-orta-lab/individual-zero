@@ -23,6 +23,7 @@ def unexpected_workflows(paths, *, active_ci: str) -> list[str]:
     allowed = {
         active_ci, "i0-archive-manual.yml", "engine-structural.yml",
         "i1-preset-worlds.yml", "i2-proposal-safety.yml",
+        "agent-context-static.yml",
     }
     return sorted(path.name for path in paths
                   if not path.name.startswith("i1-") and path.name not in allowed)
