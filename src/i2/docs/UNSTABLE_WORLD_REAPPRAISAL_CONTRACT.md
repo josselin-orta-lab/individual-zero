@@ -216,3 +216,21 @@ This is a minimal integration seam, not a general plan search. Evidence
 reference reuse is only an owner-local, source-verified engineering boundary,
 not independent M11 provenance. Targeted regression:
 `PYTHONPATH=src python -m unittest discover -s tests/i2 -p 'test_owner_plan_assessment.py' -v`.
+
+
+## Two-step survival planning hypothesis
+
+`src/i2/modules/two_step_survival_plan.py` provides a **pure, bounded,
+nonmotor** feasibility analysis for the sequence COLLECT then EAT. It checks
+observed energy, resource availability, currently accessible COLLECT, known
+action costs and whether the first action would cause terminal energy. It
+distinguishes a feasible sequence from an attempt whose food outcome could
+still be terminal. The food payoff is ALWAYS UNKNOWN. This is not a
+beneficial-food prediction, learned planning, a committed intention, an UC
+reservation, an alternative energy source, or authorization to perform either
+action. Every physical effect still needs the real paid owner cycle.
+
+This scoped contract cannot yet compete with another executable two-step
+plan. The next integration must evaluate alternative *sequences* from the
+same current captured evidence and explicitly report costs, uncertain
+consequences and deadlines before taking a risk.
