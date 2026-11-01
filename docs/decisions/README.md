@@ -67,3 +67,5 @@ A filled illustrative example is available in [../../examples/adr-example.md](..
 - [ADR-0005: authorized non-living integrated G1-LAB, G1-LIVE unchanged](ADR-0005-authorize-nonliving-integrated-g1-lab.md) (1 November 2026).
 
 - [ADR-0006: evidence-grounded aversion reappraisal](ADR-0006-evidence-grounded-aversion-reappraisal.md) (1 November 2026). A hidden payoff change is not learnable from an unchanged chosen-outcome history; stale +9 remains an artificial comparator.
+
+- [ADR-0007: separate physiological need, nutrition and aversion](ADR-0007-need-nutrition-aversion-scientific-design.md) (1 November 2026). Owner accepts the scientific model and four-arm research design in principle, NOT an executed or parameter-frozen study; G1-LIVE/M11 unchanged.
