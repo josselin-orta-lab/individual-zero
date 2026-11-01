@@ -4,7 +4,7 @@
 
 ## Reading order for a new agent
 
-1. [Current status and blocked gates](STATUS.md): **short, maintained summary only**; [append-only development ledger](STATUS_HISTORY.md) retains dated iterations and the complete pre-rationalization status snapshot. Prefer adding new G2 implementation notes to the ledger or owner-specific mechanism guide instead of growing this entrypoint. A change to current STATUS requires explicit review of its scientific source pins.
+1. [Current status and remaining evidence gaps](STATUS.md): **short, maintained summary only**; [append-only development ledger](STATUS_HISTORY.md) retains dated iterations and the complete pre-rationalization status snapshot. Prefer adding new G2 implementation notes to the ledger or owner-specific mechanism guide instead of growing this entrypoint. A change to current STATUS requires explicit review of its scientific source pins.
 2. [Architecture and boundaries](ARCHITECTURE.md): generation autonomy, ownership and permissions.
 3. [Unified synthetic cognitive control v5](COGNITIVE_CONTROL_UNIFIED.md): one SQLite test owner, UC test charges, Competition opinions, H2 transition and local replay.
 4. [Intention continuity](INTENTION_CONTINUITY.md) and [option reconstruction](OPTION_RECONSTRUCTION.md): semantics without carried motor rights.
@@ -22,8 +22,10 @@
 - [Research contract / falsification](../../../docs/architecture/proposals/i2-continuity-and-learning-contract-2026-10-31.md).
 - [Transition gates and I1 evidence limits](../../../docs/architecture/proposals/i2-transition-and-scientific-gates-2026-10-31.md).
 - [Proposed G1 publication/crash review](../../../docs/architecture/proposals/i2-publication-boundaries-g1-review-2026-10-31.md), not yet an approved living-system contract.
-- [Minimal living-loop G1 review brief](../../../docs/architecture/proposals/i2-g1-minimal-living-loop-review-brief-2026-11-01.md): concise independent-review handoff and minimal post-G1 integrated target under ADR-0004, **not approval**.
+- [Historical minimal living-loop G1 review brief](../../../docs/architecture/proposals/i2-g1-minimal-living-loop-review-brief-2026-11-01.md): concise independent-review handoff and minimal post-G1 integrated target under ADR-0004, **not approval**.
 - [Current-source G1 review delta and counterexample matrix](../../../docs/architecture/proposals/i2-g1-current-review-delta-2026-11-01.md): corrects dated G1 ownership diagrams to unified v5 and requests independent R1-R8 decisions. **Review packet only, not gate approval.**
 - [Independent-generation requirement](../../../docs/decisions/ADR-0001-strict-generation-autonomy.md).
 
 The `parent` field means comparative lineage, never live code or state inheritance. Validate synthetic software with `python -m unittest discover -s tests/i2 -p 'test_*.py' -v`. A passing test never registers I2 or establishes adaptive autonomous learning.
+
+**Current owner routing:** [ADR-0008](../../../docs/decisions/ADR-0008-remove-obsolete-i2-external-g1-review-gate.md) retires the mandatory external G1 reviewer hold. Implement and test an isolated I2-only prototype for #664 now, without claiming M11/scientific GO or registering I2. Earlier review packets remain as historical contract/falsifier references.

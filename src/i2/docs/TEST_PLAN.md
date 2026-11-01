@@ -22,8 +22,10 @@ authorization. If an unrelated future code change affects this feature,
 the narrow regression command is
 `python -m unittest discover -s tests/i2 -p 'test_g1_lab_need_aversion_v1r1.py' -v`;
 such a software retest does **not** count as a fresh experimental run.
-Independent G1 architecture/science reviewers remain outstanding (#662),
-and the I2 engine stays unregistered and unexecutable.
+ADR-0008 retires the mandatory external G1 reviewer requirement (#662).
+The I2 engine remains unregistered and currently unexecutable; implement
+an isolated research-only integrated prototype under #664 without claiming
+authenticated M11, scientific GO or automatic activation.
 
 ## Invariants logiciels G2 à conserver
 
