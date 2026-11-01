@@ -24,6 +24,53 @@ LOCKED_CASES = (
 LOCK_ID = "i2-world-viability-exploratory-v1"
 
 
+def paired_tick_energy_time_course(observed: dict, fixed: dict) -> dict:
+    """Audit-only paired energy trajectory, never a general survival estimate.
+
+    A complete integral is meaningful as a *descriptive* toy-world number
+    only if both arms are still alive at the same observed physical horizon.
+    Any terminal event, unequal duration or misaligned physical tick makes
+    the full-window integral unavailable. Never impute postmortem energy.
+    """
+    a = observed["execution"]["trace"]
+    b = fixed["execution"]["trace"]
+    prefix = min(len(a), len(b))
+    aligned = all(
+        a[i]["physical_tick"] == b[i]["physical_tick"] for i in range(prefix)
+    )
+    if not aligned:
+        classification = "MISALIGNED_PHYSICAL_TICKS_NO_COMPARISON"
+    elif (not a or len(a) != len(b) or
+          any(x["terminal"] for x in a) or
+          any(x["terminal"] for x in b)):
+        classification = "TERMINAL_OR_UNEQUAL_WINDOW_NO_ENERGY_INTEGRAL"
+    else:
+        classification = "COMMON_NONTERMINAL_WINDOW_DESCRIPTIVE_ONLY"
+    deltas = [
+        a[i]["physical_end_energy"] - b[i]["physical_end_energy"]
+        for i in range(prefix)
+    ] if aligned else []
+    integral_allowed = classification == "COMMON_NONTERMINAL_WINDOW_DESCRIPTIVE_ONLY"
+    first_separation_tick = next(
+        (a[i]["physical_tick"] for i, delta in enumerate(deltas) if delta != 0),
+        None,
+    )
+    return {
+        "classification": classification,
+        "common_observed_tick_count": prefix if aligned else 0,
+        "first_observed_energy_separation_tick": first_separation_tick,
+        "complete_common_window_energy_delta_integral": (
+            sum(deltas) if integral_allowed else None
+        ),
+        "observed_world_tick_deltas": [
+            {"tick": a[i]["physical_tick"], "energy_delta": delta}
+            for i, delta in enumerate(deltas)
+        ] if integral_allowed else [],
+        "generalized_survival_benefit": "NOT_ESTABLISHED",
+        "natural_autonomous_learning": "NOT_ESTABLISHED",
+    }
+
+
 def run_locked_battery() -> dict:
     rows = []
     for name, scenario, ticks, uc, energy, resources in LOCKED_CASES:
@@ -35,6 +82,7 @@ def run_locked_battery() -> dict:
         fixed = result["arms"]["fixed"]
         oe, fe = observed["endpoint"], fixed["endpoint"]
         comparator = result["world_endpoint_contrast"]
+        time_course = paired_tick_energy_time_course(observed, fixed)
         rows.append({
             "case": name,
             "environment": scenario,
@@ -52,6 +100,7 @@ def run_locked_battery() -> dict:
             "no_learning": fe,
             "endpoint_classification": comparator["classification"],
             "common_window_energy_delta": comparator["ending_energy_difference"],
+            "time_course": time_course,
             "observed_terminal_tick": oe["modeled_death_tick"],
             "fixed_terminal_tick": fe["modeled_death_tick"],
             "limits": "SCRIPTED_DETERMINISTIC_TOY;NO_NATURAL_LEARNING_GO",
