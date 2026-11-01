@@ -28,7 +28,7 @@ from i2.modules.chosen_outcome_study import (
     observed_chosen_scores,
 )
 
-CAPTURES = (10, 30, 50, 70, 90, 110)
+CAPTURES = (10, 20, 30, 40, 50, 60)
 STABLE = (8, 8, 8, 8, 8, 8)
 REVERSAL = (8, -8, -8, -8, -8, -8)
 ADVERSE = (-8, -8, -8, -8, -8, -8)
