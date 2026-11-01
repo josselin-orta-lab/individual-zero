@@ -39,6 +39,8 @@ on:
       - 'tests/test_repository_layout.py'
       - 'tools/research_location_index.py'
       - 'tests/test_research_location_index.py'
+      - 'tools/research_link_audit.py'
+      - 'tests/test_research_link_audit.py'
       - 'docs/research/studies/README.md'
       - 'tests/README.md'
       - 'archive/README.md'
@@ -176,4 +178,6 @@ jobs:
           python tools/repository_layout.py check
           python -m unittest discover -s tests -p test_repository_layout.py -v
           python -m unittest discover -s tests -p test_research_location_index.py -v
+          python -m unittest discover -s tests -p test_research_link_audit.py -v
+          python tools/research_link_audit.py --limit 10 --json > /tmp/iz-research-links.json
           python tools/research_location_index.py --family stage-12 --limit 3 --json > /tmp/iz-stage12-location.json
