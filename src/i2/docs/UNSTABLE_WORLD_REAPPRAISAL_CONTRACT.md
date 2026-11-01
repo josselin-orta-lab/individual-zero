@@ -198,3 +198,21 @@ opt-in reflex is still a narrow toy-world heuristic for its fixed three
 known affordances; it must not be promoted as a generic agentic planner.
 The standalone contract provides a falsifiable next integration criterion,
 not a new alternate SQLite owner, legacy compatibility path or safety GO.
+
+
+## First in-owner composition: bounded alternative-plan gate
+
+The opt-in emergency policy now evaluates its complete known alternative
+affordance set with `assess_last_resort`, rather than using only an energy
+threshold. `_ToyPlanSource` is an exact-capture, local test source for the
+existing WorldBody: in this limited physical model COLLECT and DRINK cannot
+restore energy *immediately*, while unknown semantics must be classified
+UNKNOWN and therefore block the "only plan" conclusion. This says nothing
+about unknown multistep strategies, future affordances or unseen nutrition.
+The existing paid Competition still determines the action, safety retains
+veto, and the same local owner audit recomputes the decision.
+
+This is a minimal integration seam, not a general plan search. Evidence
+reference reuse is only an owner-local, source-verified engineering boundary,
+not independent M11 provenance. Targeted regression:
+`PYTHONPATH=src python -m unittest discover -s tests/i2 -p 'test_owner_plan_assessment.py' -v`.
