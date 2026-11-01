@@ -154,7 +154,7 @@ class IsolatedI2:
         if (type(learning) is not bool or type(impulses) is not tuple or
                 not 1 <= len(impulses) <= MAX_STEPS or
                 any(type(n) is not int or not -8 <= n <= 8 for n in impulses)
-                or type(initial_uc) is not int or not 1 <= initial_uc <= 1000
+                or type(initial_uc) is not int or not 0 <= initial_uc <= 1000
                 or type(initial_energy) is not int or not 1 <= initial_energy <= 100
                 or type(resources) is not int or not 0 <= resources <= 32):
             raise PrototypeRefusal("invalid bounded isolated prototype configuration")
