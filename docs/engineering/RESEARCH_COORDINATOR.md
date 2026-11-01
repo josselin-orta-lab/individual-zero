@@ -73,6 +73,12 @@ A developer must reconcile source changes against their exact SHAs before updati
 
 A concrete [1 November 2026 reconciliation record](../research/audits/RESEARCH_SOURCE_RECONCILIATION_2026-11-01.md) documents why the I2 G2 status page was shortened, which historical snapshot was preserved and why its G1/G3 scientific gates remain unchanged. The research-program audit now also rejects inconsistent exact source SHA pins shared with the dossier register, even under `--structure-only`.
 
+## G0 custody blocker: expiring source artifacts
+
+The [dated 1 November G0 audit](../research/audits/I1_G0_PROVIDER_ARTIFACT_CUSTODY_2026-11-01.md) records 8 A1-P and 48 A1-C GitHub Actions original-life *provider wrappers* plus two aggregates, scheduled for expiry **28 November 2026**. GitHub reports the archive branch `protected=false`. Neither downloaded inner M11 ZIPs nor independently durable accessible custody was reverified. G0 remains **PARTIAL**.
+
+Use `python tools/research_dossiers.py show --id I1-G0-CUSTODY` and `python tools/research_dossiers.py g0-provider-inventory` to identify the immediate preservation dependency before proposing living G3 work. Metadata validation does not authorize a study, change the scientific verdict, or prove the artifacts are still available after the dated observation.
+
 ## Agent decision cycle
 
 1. Re-read HEAD, registry, engine contracts, current statuses, evidence matrix and this program. Flag contradictions.

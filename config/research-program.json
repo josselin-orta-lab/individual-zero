@@ -94,6 +94,20 @@
       "marker": "**H3 (arbitrage cohérent)**",
       "authority": "proposal",
       "blob_sha": "fcf924b73763a7c5da283480b2d6ee0da8cbfd68"
+    },
+    {
+      "id": "g0-provider-inventory",
+      "path": "config/research-g0-artifacts.json",
+      "marker": "\"provider_metadata_only\": true",
+      "blob_sha": "f9e3319b67d4e9ae7cc5c8fb9d08271d68ecbe32",
+      "authority": "dated_provider_metadata_snapshot"
+    },
+    {
+      "id": "g0-custody-risk",
+      "path": "docs/research/audits/I1_G0_PROVIDER_ARTIFACT_CUSTODY_2026-11-01.md",
+      "marker": "Before 28 November 2026",
+      "blob_sha": "260f5e9a807acc86cbf56d09158507cc3df3550b",
+      "authority": "dated_custody_review"
     }
   ],
   "questions": [
@@ -161,7 +175,9 @@
       "source_checks": [
         "g0",
         "i1-a1c",
-        "i1-a2r"
+        "i1-a2r",
+        "g0-provider-inventory",
+        "g0-custody-risk"
       ],
       "prerequisites": []
     },
@@ -280,13 +296,15 @@
       ],
       "issue": 661,
       "agent_route": "research-evidence",
-      "title": "Verify independently reproducible I1 scientific baseline",
-      "action": "Check source protection, 8 A1-P / 48 A1-C archives, hashes, M11 provenance, negative results and independent access.",
-      "expected_knowledge": "Identify what evidence is permanently reproducible and what remains unavailable.",
-      "disconfirming_result": "Missing third-party custody or missing original traces keeps G0 PARTIAL.",
+      "title": "Secure original I1 G0 evidence before provider expiry, then independently verify custody",
+      "action": "Before the scheduled 28 Nov 2026 Actions artifact expiry, arrange authorized preservation of 8 A1-P and 48 A1-C original-life artifacts and both aggregates. Compare downloaded inner originals to frozen hashes; attest independently durable copies and protect the archive Git ref.",
+      "expected_knowledge": "Resolve which original bytes and exact-source archives are independently retrievable, what negative results remain and what trust/custody gaps block G0.",
+      "disconfirming_result": "Provider metadata alone, a failed A1-P aggregate, missing originals, non-protected Git refs or inaccessible external copies keep G0 PARTIAL.",
       "deliverables": [
-        "Hash manifest",
-        "External custody audit"
+        "Operator export receipts for 58 provider artifacts",
+        "Original M11 inner-ZIP SHA checks",
+        "Independent durable custody and reviewer access attestation",
+        "Git archive ref protection proof"
       ],
       "priority_class": "blocking",
       "information_gain": 3,
@@ -564,6 +582,24 @@
         "i2-proposal"
       ],
       "scope_limit": "Independent physics, authority and persistence require separate reviewed evidence."
+    },
+    {
+      "id": "I1-G0-EXPIRING-ARTIFACTS",
+      "kind": "open_evidence_gap",
+      "reported_assessment": "PARTIAL",
+      "summary": "On 1 Nov, 58 GitHub Actions artifacts existed (8+48 original-life wrappers, two aggregates) with scheduled expiry on 28 Nov; source archive branch was not protected. No durable independent custody was attested.",
+      "questions": [
+        "I1-L3"
+      ],
+      "gates": [
+        "I2-G0"
+      ],
+      "source_checks": [
+        "g0-provider-inventory",
+        "g0-custody-risk",
+        "g0"
+      ],
+      "scope_limit": "Dated provider upload metadata is neither original inner M11 ZIP SHA verification, independent custody nor a new scientific outcome. A1-P eight life jobs succeeded while its aggregate job failed."
     }
   ],
   "catalog_roots": [

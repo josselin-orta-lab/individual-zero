@@ -6,10 +6,11 @@ The machine-readable seed is [`config/research-dossiers.json`](../../config/rese
 
 ## Research questions with named records
 
-The initial seed covers four distinct cases:
+The seed now covers five distinct cases, including a distinct G0 custody risk:
 
 | Dossier | Reported assessment | What is actually linked | Key gap to verify |
 | --- | --- | --- | --- |
+| `I1-G0-CUSTODY` | `PARTIAL` | Verified historical source ref/tree, 58 dated GitHub Actions artifact metadata records and A1-P/A1-C audits | **Original M11 ZIPs and independent durable copies not reverified**; retention expires 28 Nov 2026; source ref `protected=false` |
 | `I1-A1C-TARGETED` | `NO_GO` | Original A1-C preregistration, a later post-hoc diagnostic, a dated I1 status summary | Original primary outcome record, independent M11 archive custody and replication |
 | `I1-A2R-REWARD` | `NOT_EXECUTED` | Frozen prospective protocol and I1 status summary | No 96-life cohort exists; **do not invent a result or run it to fill the dossier** |
 | `I1-A235B-COMPETITION` | `INCONCLUSIVE` | Original prospective preregistration and reported results | The intended natural contested-opportunity condition was not met; **software CI PASS is not scientific confirmation** |
@@ -24,12 +25,16 @@ From a complete local repository checkout:
 ```bash
 python tools/research_dossiers.py audit
 python tools/research_dossiers.py list
+python tools/research_dossiers.py g0-provider-inventory
+python tools/research_dossiers.py show --id I1-G0-CUSTODY
 python tools/research_dossiers.py show --id I1-A1C-TARGETED
 python tools/research_dossiers.py gaps
 python tools/research_dossiers.py compare --left I1-A1C-TARGETED --right I1-A2R-REWARD
 ```
 
-All commands are read-only. The audit checks structure and source byte identity using the exact **Git blob SHA** and an in-file quotation marker. Any modification to a pinned source, even when the quoted words survive, requires source reconciliation. The source-level result `PIN_MATCH` proves only document identity, **not correct scientific interpretation**.
+All commands are read-only. **Retention risk:** [G0 artifact custody audit](../research/audits/I1_G0_PROVIDER_ARTIFACT_CUSTODY_2026-11-01.md) and [dated metadata](../../config/research-g0-artifacts.json) enumerate the provider artifacts, IDs, upload SHA digests and 28 Nov 2026 expiration. **These digests do not certify the original M11 inner ZIPs.** The G0 metadata guard checks all historical cohort slots and refuses a fabricated archive protection flag or a fabricated A1-P aggregate success. It cannot authenticate the archived bytes or approve G0.
+
+The audit checks structure and source byte identity using the exact **Git blob SHA** and an in-file quotation marker. Any modification to a pinned source, even when the quoted words survive, requires source reconciliation. The source-level result `PIN_MATCH` proves only document identity, **not correct scientific interpretation**.
 
 Each dossier has an explicit protocol/cohort/endpoint/contrast identity to prevent comparisons of superficially related studies. A1-C and A2-R cannot contradict each other merely because both concern I1 and L3: they have different protocols and populations, and A2-R has not been executed. Even identical identities and differing reported assessments yield only a **potential disagreement to review**, not a proven contradiction.
 

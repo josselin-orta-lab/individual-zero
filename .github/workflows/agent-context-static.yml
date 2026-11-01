@@ -7,6 +7,7 @@ on:
       - 'config/agent-context-map.json'
       - 'config/research-program.json'
       - 'config/research-dossiers.json'
+      - 'config/research-g0-artifacts.json'
       - 'tools/agent_context.py'
       - 'tools/research_coordinator.py'
       - 'tools/research_corpus.py'
@@ -36,6 +37,7 @@ on:
       - 'src/i2/docs/README.md'
       - 'src/i2/AGENTS.md'
       - 'docs/research/audits/RESEARCH_SOURCE_RECONCILIATION_2026-11-01.md'
+      - 'docs/research/audits/I1_G0_PROVIDER_ARTIFACT_CUSTODY_2026-11-01.md'
       - '.github/workflows/i2-proposal-safety.yml'
       - '.github/workflows/agent-context-static.yml'
 
@@ -61,7 +63,8 @@ jobs:
           python -m unittest discover -s tests -p test_research_coordinator.py -v
           python -m unittest discover -s tests -p test_research_knowledge.py -v
           python -m unittest discover -s tests -p test_research_corpus.py -v
-          python tools/research_dossiers.py audit --structure-only > /tmp/iz-dossier-audit.json
+          python tools/research_dossiers.py audit --structure-only > /tmp/iz-dossier-audit.json || { cat /tmp/iz-dossier-audit.json; exit 1; }
+          python tools/research_dossiers.py g0-provider-inventory > /tmp/iz-g0-provider.json
           python -m unittest discover -s tests -p test_research_dossiers.py -v
           python tools/research_dossiers.py show --id I1-A1C-TARGETED > /tmp/iz-a1c-dossier.json || test "$?" -eq 2
           python tools/research_dossiers.py gaps > /tmp/iz-dossier-gaps.json || test "$?" -eq 2
@@ -84,6 +87,12 @@ jobs:
                      (item['status'] == 'SOURCE_BLOB_DRIFT'
                       and psources[sid]['authority'] == 'status')
                      for sid, item in research_audit['source_integrity'].items())
+          provider = json.loads(Path('/tmp/iz-g0-provider.json').read_text())
+          assert provider['status'] == 'PASS'
+          assert provider['provider_records'] == 58
+          assert provider['scheduled_earliest_expiry'].startswith('2026-11-28')
+          assert provider['custody_status'] == 'NOT_ATTESTED'
+          assert provider['scientific_verdict'] == 'NOT_EVALUATED'
           assert audit['status'] == 'PASS'
           assert audit['audit_mode'] == 'STRUCTURE_ONLY'
           assert all(item['status'] == 'PIN_MATCH' or
