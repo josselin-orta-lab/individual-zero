@@ -18,14 +18,14 @@ HISTORICAL_RESEARCH_MANIFEST = "docs/research/studies/HISTORICAL_ROOT_FILES.md"
 
 
 GA08_ARCHIVE = "docs/research/archive/issue110-ga08-legacy"
-GA08_ENTRY_RE = re.compile(r"^\\| \\[\\x60([^\\x60]+)\\x60\\]\\([^)]*\\) \\| \\x60([0-9a-f]{40})\\x60 \\|$")
+GA08_ENTRY_RE = re.compile(r"^\| \[\x60([^\x60]+)\x60\]\(([^)]+)\) \| \x60([0-9a-f]{40})\x60 \|$")
 
 
 def check_ga08_archive_custody(root: Path) -> list[str]:
     """Check frozen file bytes against indexed blobs; never execute old sources."""
     folder = root / GA08_ARCHIVE
     index = folder / "README.md"
-    if not index.is_file() or index.is_symlink():
+    if folder.is_symlink() or not index.is_file() or index.is_symlink():
         return ["GA08 archive inventory missing or unsafe"]
     records = {}
     errors = []
@@ -33,9 +33,9 @@ def check_ga08_archive_custody(root: Path) -> list[str]:
         match = GA08_ENTRY_RE.fullmatch(line)
         if not match:
             continue
-        path, expected = match.groups()
+        label, path, expected = match.groups()
         relative = Path(path)
-        if relative.is_absolute() or ".." in relative.parts or len(relative.parts) < 2:
+        if label != path or relative.is_absolute() or ".." in relative.parts or len(relative.parts) < 2:
             errors.append("unsafe GA08 archive inventory path: " + path)
             continue
         if path in records:
@@ -44,7 +44,7 @@ def check_ga08_archive_custody(root: Path) -> list[str]:
     if len(records) != 12:
         errors.append(f"GA08 archive inventory expected 12 files, found {len(records)}")
     observed = {p.relative_to(folder).as_posix() for p in folder.rglob("*")
-                if p.is_file() and p != index}
+                if (p.is_file() or p.is_symlink()) and p != index}
     errors += ["unindexed GA08 archive file: " + p for p in sorted(observed - records.keys())]
     errors += ["missing GA08 archive file: " + p for p in sorted(records.keys() - observed)]
     for relative in sorted(observed & records.keys()):
@@ -53,7 +53,7 @@ def check_ga08_archive_custody(root: Path) -> list[str]:
             errors.append("unsafe GA08 archive symlink: " + relative)
             continue
         raw = path.read_bytes()
-        sha = hashlib.sha1(b"blob " + str(len(raw)).encode("ascii") + b"\\0" + raw).hexdigest()
+        sha = hashlib.sha1(b"blob " + str(len(raw)).encode("ascii") + b"\0" + raw).hexdigest()
         if sha != records[relative]:
             errors.append("GA08 archive Git blob mismatch: " + relative)
     return errors
@@ -187,7 +187,7 @@ def check(root: Path = ROOT) -> dict:
     errors = [f"missing navigation entrypoint: {path}" for path in ENTRYPOINTS
               if not (root / path).is_file()]
     errors.extend(check_research_root_placement(root))
-    if (root / GA08_ARCHIVE).exists():
+    if (root / "docs/research/archive/README.md").is_file() or (root / GA08_ARCHIVE).exists():
         errors.extend(check_ga08_archive_custody(root))
     for deprecated in ("tools/research/tests", "tools/a1c_tests", "tools/a2r_tests"):
         folder = root / deprecated

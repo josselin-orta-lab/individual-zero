@@ -31,11 +31,11 @@ class RepositoryLayoutTests(unittest.TestCase):
             entries = []
             for index in range(12):
                 rel = f"tests/fixture_{index}.py"
-                raw = f"old fixture {index}\\n".encode()
+                raw = f"old fixture {index}\n".encode()
                 (archive / rel).write_bytes(raw)
-                digest = hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\\0" + raw).hexdigest()
+                digest = hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest()
                 entries.append(f"| [`{rel}`]({rel}) | `{digest}` |")
-            (archive / "README.md").write_text("\\n".join(entries) + "\\n", encoding="utf-8")
+            (archive / "README.md").write_text("\n".join(entries) + "\n", encoding="utf-8")
             self.assertEqual(module.check_ga08_archive_custody(root), [])
             (archive / "tests/fixture_0.py").write_text("changed")
             self.assertTrue(any("blob mismatch" in e for e in module.check_ga08_archive_custody(root)))
@@ -43,6 +43,12 @@ class RepositoryLayoutTests(unittest.TestCase):
             self.assertTrue(any("missing GA08" in e for e in module.check_ga08_archive_custody(root)))
             (archive / "tests/unindexed.py").write_text("added")
             self.assertTrue(any("unindexed GA08" in e for e in module.check_ga08_archive_custody(root)))
+            (archive / "tests/unindexed.py").unlink()
+            (archive / "tests/fixture_0.py").write_text("old fixture 0\n")
+            index_file = archive / "README.md"
+            index_file.write_text(index_file.read_text().replace(
+                "](tests/fixture_0.py)", "](tests/renamed.py)", 1))
+            self.assertTrue(any("unsafe GA08" in e for e in module.check_ga08_archive_custody(root)))
 
     def test_generation_owned_routes_and_nonpromotion(self):
         self.assertEqual(module.bucket("tests", "tests/i1/test_memory.py"), "i1")
