@@ -6,7 +6,7 @@ import subprocess
 import sys
 import unittest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "scripts"))
 from build_i1_fork import generate
 
 
@@ -122,7 +122,7 @@ print("I1_A238_FACTORIAL_SMOKE_OK")
 """
             env = os.environ.copy()
             env["PYTHONPATH"] = str(generated)+os.pathsep+str(
-                Path(__file__).resolve().parents[1]/"src")
+                Path(__file__).resolve().parents[3]/"src")
             proc = subprocess.run([sys.executable,"-c",code],env=env,
                                   text=True,capture_output=True)
             self.assertEqual(proc.returncode,0,proc.stdout+"\n"+proc.stderr)

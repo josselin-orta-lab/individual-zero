@@ -33,7 +33,7 @@ jobs:
       - name: Existing I1 fork/first-person and original I0 planning regressions
         run: |
           python -m unittest discover -s tests -p 'test_i1_generated_isolation.py' -q
-          python -m unittest discover -s tests -p 'test_i1_model_m11_contract.py' -q
+          python -m unittest discover -s tests/research/i1-historical -p 'test_i1_model_m11_contract.py' -q
           python -m unittest discover -s tests -p 'test_stage6_planning.py' -q
       - name: Execute pre-registered D1 mortal cohort if available
         if: hashFiles('scripts/run_i1_issue136_water_d1.py') != ''

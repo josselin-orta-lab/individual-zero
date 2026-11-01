@@ -33,7 +33,7 @@ jobs:
       - name: Prerequisite smoke
         run: |
           python -m compileall -q scripts/i1_a238_preflight.py scripts/i1_a238_model.py scripts/i1_a238_fixtures.py scripts/run_i1_a238_factorial.py scripts/audit_i1_a238_factorial.py
-          python -m unittest discover -s tests -p 'test_i1_a238_factorial_smoke.py' -v
+          python -m unittest discover -s tests/research/i1-historical -p 'test_i1_a238_factorial_smoke.py' -v
       - name: Run 160 independent mortal I1 births
         run: python scripts/run_i1_a238_factorial.py --output artifacts/a238-confirmatory --source-sha "${{ steps.pin.outputs.source_sha }}"
       - name: Separate WAL and journal audit
