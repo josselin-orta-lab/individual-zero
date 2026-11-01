@@ -144,5 +144,39 @@ class ResearchCoordinatorTests(unittest.TestCase):
         self.assertTrue(all(not gate["gate_approved"] for gate in state["gates"]))
 
 
+    def test_cross_manifest_source_pins_must_agree_even_for_structural_ci(self):
+        referenced = next(s for s in self.program["source_checks"]
+                          if s["id"] == "i2-proposal")
+        dossier_path = self.root / "config/research-dossiers.json"
+        dossier_path.write_text(json.dumps({"sources": [{
+            "id": "i2-status", "path": referenced["path"],
+            "blob_sha": "b" * 40}]}), encoding="utf-8")
+        outcome = rc.audit(self.root)
+        self.assertEqual(outcome["status"], "FAIL")
+        self.assertTrue(any("source pins diverge" in error
+                            for error in outcome["errors"]))
+        with redirect_stdout(io.StringIO()) as stream:
+            self.assertEqual(rc.main(["audit", "--structure-only"], self.root), 1)
+        self.assertEqual(json.loads(stream.getvalue())["status"], "FAIL")
+
+        dossier_path.write_text(json.dumps({"sources": [{
+            "id": "i2-status", "path": referenced["path"],
+            "blob_sha": referenced["blob_sha"]}]}), encoding="utf-8")
+        self.assertEqual(rc.audit(self.root)["status"], "PASS")
+
+    def test_duplicate_dossier_pins_for_same_path_are_rejected(self):
+        referenced = next(s for s in self.program["source_checks"]
+                          if s["id"] == "i2-proposal")
+        dossier_path = self.root / "config/research-dossiers.json"
+        dossier_path.write_text(json.dumps({"sources": [
+            {"id": "a", "path": referenced["path"], "blob_sha": referenced["blob_sha"]},
+            {"id": "b", "path": referenced["path"], "blob_sha": "b" * 40}
+        ]}), encoding="utf-8")
+        outcome = rc.audit(self.root)
+        self.assertEqual(outcome["status"], "FAIL")
+        self.assertTrue(any("inconsistent dossier source pins" in e
+                            for e in outcome["errors"]))
+
+
 if __name__ == "__main__":
     unittest.main()

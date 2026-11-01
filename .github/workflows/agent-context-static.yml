@@ -31,6 +31,12 @@ on:
       - 'docs/engineering/AGENT_NAVIGATION.md'
       - 'tools/check_repo_navigation.py'
       - 'tests/test_repo_navigation.py'
+      - 'src/i2/docs/STATUS.md'
+      - 'src/i2/docs/STATUS_HISTORY.md'
+      - 'src/i2/docs/README.md'
+      - 'src/i2/AGENTS.md'
+      - 'docs/research/audits/RESEARCH_SOURCE_RECONCILIATION_2026-11-01.md'
+      - '.github/workflows/i2-proposal-safety.yml'
       - '.github/workflows/agent-context-static.yml'
 
 permissions:

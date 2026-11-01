@@ -37,7 +37,7 @@
       "path": "src/i2/docs/STATUS.md",
       "marker": "PROPOSAL_ONLY / NOT_REGISTERED / NOT_EXECUTABLE / NOT_BORN",
       "authority": "status",
-      "blob_sha": "6d32486607ec95bea012096aa3cafb15bb71c811"
+      "blob_sha": "1db211caadbbd7a5ea164f64c29bdece17d1f965"
     },
     {
       "id": "g0",
@@ -51,28 +51,28 @@
       "path": "src/i2/docs/STATUS.md",
       "marker": "Architectural and scientific review still required",
       "authority": "status",
-      "blob_sha": "6d32486607ec95bea012096aa3cafb15bb71c811"
+      "blob_sha": "1db211caadbbd7a5ea164f64c29bdece17d1f965"
     },
     {
       "id": "g2",
       "path": "src/i2/docs/STATUS.md",
       "marker": "Independent **synthetic** research fixtures",
       "authority": "status",
-      "blob_sha": "6d32486607ec95bea012096aa3cafb15bb71c811"
+      "blob_sha": "1db211caadbbd7a5ea164f64c29bdece17d1f965"
     },
     {
       "id": "g3",
       "path": "src/i2/docs/STATUS.md",
       "marker": "no independently authenticated living M11",
       "authority": "status",
-      "blob_sha": "6d32486607ec95bea012096aa3cafb15bb71c811"
+      "blob_sha": "1db211caadbbd7a5ea164f64c29bdece17d1f965"
     },
     {
       "id": "g4",
       "path": "src/i2/docs/STATUS.md",
       "marker": "no I2 confirmatory study",
       "authority": "status",
-      "blob_sha": "6d32486607ec95bea012096aa3cafb15bb71c811"
+      "blob_sha": "1db211caadbbd7a5ea164f64c29bdece17d1f965"
     },
     {
       "id": "h1",

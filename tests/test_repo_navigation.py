@@ -106,5 +106,19 @@ class NavigationSanity(unittest.TestCase):
             self.assertEqual(module.inspect(root)["status"], "PASS")
 
 
+    def test_docs_only_i2_updates_use_lightweight_navigation_ci(self):
+        heavy = (ROOT / ".github/workflows/i2-proposal-safety.yml").read_text(encoding="utf-8")
+        light = (ROOT / ".github/workflows/agent-context-static.yml").read_text(encoding="utf-8")
+        self.assertIn("'src/i2/**'", heavy)
+        self.assertIn("'!src/i2/docs/**'", heavy)
+        self.assertIn("'!src/i2/AGENTS.md'", heavy)
+        self.assertIn("'tests/i2/**'", heavy)
+        self.assertIn("'.github/workflows/i2-proposal-safety.yml'", heavy)
+        for path in ("src/i2/docs/STATUS.md", "src/i2/docs/STATUS_HISTORY.md",
+                     "src/i2/docs/README.md", "src/i2/AGENTS.md"):
+            self.assertIn("'" + path + "'", light)
+        self.assertIn("check_repo_navigation.py --scope current", light)
+
+
 if __name__ == "__main__":
     unittest.main()

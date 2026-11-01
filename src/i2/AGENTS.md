@@ -4,6 +4,8 @@ Scope: `src/i2/`. Follow [root agent rules](../../AGENTS.md) and [ADR-0001](../.
 
 **I2 is NOT_REGISTERED, NOT_EXECUTABLE and NOT_BORN.** `engine.json` declares no birth/runtime entrypoints. The synthetic SQLite cognitive cycle and H2 memory studies are controlled tests only. Test UC, synthetic terminal seals, simulated observation ports, external witnesses and Competition opinions cannot authorize a real action, physiological death/recovery, an M11 claim or scientific promotion.
 
+Keep [`docs/STATUS.md`](docs/STATUS.md) a **short current gate/ownership/limitations summary**. Add dated G2 implementation notes to [`docs/STATUS_HISTORY.md`](docs/STATUS_HISTORY.md) or the owning mechanism guide, not as successive diary sections in STATUS. The previous full-status snapshot is preserved there with its exact Git blob. Any change to STATUS requires review of its source quotations and consistent pins in both `config/research-program.json` and `config/research-dossiers.json`; the navigation CI's structural PASS is not scientific acceptance.
+
 No import or fallback to `i1lab`, I1 cognition or mutable state. No obsolete compatibility modes, silent migrations or inherited individual memories. I2 must eventually own its own Lab/WorldBody, UC Scheduler, contracts, M11 and genuine provenance **before** a separate, explicitly approved activation.
 
 For synthetic changes, use `python -m unittest discover -s tests/i2 -p 'test_*.py' -v` and the structural/proposal checks specified in `docs/TEST_PLAN.md`; record the exact SHA. Preserve negative tests and report G2 synthetic validation separately from G3/G4 scientific gates. Never start living cohorts as part of this campaign.

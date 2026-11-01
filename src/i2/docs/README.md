@@ -4,7 +4,7 @@
 
 ## Reading order for a new agent
 
-1. [Current status and blocked gates](STATUS.md): fast overview; [past development ledger](STATUS_HISTORY.md) contains superseded iteration records.
+1. [Current status and blocked gates](STATUS.md): **short, maintained summary only**; [append-only development ledger](STATUS_HISTORY.md) retains dated iterations and the complete pre-rationalization status snapshot. Prefer adding new G2 implementation notes to the ledger or owner-specific mechanism guide instead of growing this entrypoint. A change to current STATUS requires explicit review of its scientific source pins.
 2. [Architecture and boundaries](ARCHITECTURE.md): generation autonomy, ownership and permissions.
 3. [Unified synthetic cognitive control v5](COGNITIVE_CONTROL_UNIFIED.md): one SQLite test owner, UC test charges, Competition opinions, H2 transition and local replay.
 4. [Intention continuity](INTENTION_CONTINUITY.md) and [option reconstruction](OPTION_RECONSTRUCTION.md): semantics without carried motor rights.
