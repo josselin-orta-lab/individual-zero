@@ -109,7 +109,7 @@ class ResearchDossierTests(unittest.TestCase):
     def test_i2_proposal_never_approved(self):
         _, _, views = self.views()
         g1 = next(x for x in views if x["generation"] == "I2")
-        self.assertEqual(g1["reported_assessment"], "REVIEW_REQUIRED")
+        self.assertEqual(g1["reported_assessment"], "RETIRED_PROCEDURAL_GATE")
         self.assertEqual(g1["primary_record"], "REVIEW_PROPOSALS_ONLY")
         self.assertEqual(g1["decision"], "REVIEW_ONLY_NO_AUTOMATIC_DECISION")
         self.assertFalse(any(s["role"] == "reported_result" for s in g1["sources"]))

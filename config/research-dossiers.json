@@ -63,8 +63,8 @@
     {
       "id": "i2-status",
       "path": "src/i2/docs/STATUS.md",
-      "blob_sha": "1db211caadbbd7a5ea164f64c29bdece17d1f965",
-      "anchor": "Architectural and scientific review still required",
+      "blob_sha": "1848fb5bbcfb4a17d35832a03ca80080c4dd73b8",
+      "anchor": "EXTERNAL_REVIEW_GATE_RETIRED",
       "authority": "current_status_snapshot"
     },
     {
@@ -329,8 +329,8 @@
     {
       "id": "I2-G1-INDEPENDENT-REVIEW",
       "generation": "I2",
-      "kind": "architecture_review_pending",
-      "title": "I2 G1 architecture, motor admission and independent M11 review",
+      "kind": "architecture_review_retired",
+      "title": "Historical G1 external review, superseded by ADR-0008",
       "question_id": "I2-H1",
       "related_issues": [
         662,
@@ -342,7 +342,7 @@
         "endpoint_key": "independent_architecture_review",
         "contrast_key": "non_motoring_proposal_vs_required_living_guards"
       },
-      "reported_assessment": "REVIEW_REQUIRED",
+      "reported_assessment": "RETIRED_PROCEDURAL_GATE",
       "source_roles": [
         {
           "source_id": "i2-contract",
@@ -359,18 +359,13 @@
       ],
       "review_gaps": [
         {
-          "id": "independent-review",
-          "state": "INDEPENDENT_REVIEW_REQUIRED",
-          "question": "Have architecture and scientific reviewers accepted the crash/fencing/M11 ownership model?"
-        },
-        {
           "id": "living-m11",
           "state": "NOT_ESTABLISHED",
           "question": "Independent living M11, UC, WorldBody and birth remain outside synthetic G2."
         }
       ],
-      "scope_limit": "A proposed G1 document and green G2 fixtures cannot authorize G3, birth, physical action, recovery or promotion. I1 remains active.",
-      "next_review": "Review G1 threat model and all negative controls without changing I2 activation or registry.",
+      "scope_limit": "External G1 reviewer signatures are no longer a precondition for #664 isolated prototype engineering. M11, UC, internal motor, irreversible terminal and scientific proof remain NOT_ESTABLISHED; I1 active.",
+      "next_review": "Develop and falsify integrated I2 prototype #664, not external reviewer nominations.",
       "authority": "CURATED_SOURCE_NAVIGATION_ONLY",
       "scientific_gate": "NOT_EVALUATED"
     }
