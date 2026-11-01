@@ -41,4 +41,4 @@ python tools/research_corpus.py report --top 8
 python tools/research_dossiers.py gaps
 ```
 
-The inventory is an address book, not a scientific conclusion.
+The inventory is an address book, not a scientific conclusion. Historical records must not be bulk moved: preserve source paths until each original link, experiment manifest, SHA and CI reference is audited.
