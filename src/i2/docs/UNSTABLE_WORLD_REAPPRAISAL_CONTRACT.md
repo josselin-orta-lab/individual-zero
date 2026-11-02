@@ -712,3 +712,30 @@ population survival advantage, independent ecological sampling or
 general natural learning; no hypothesis is selected post hoc from the
 outcomes. The panel is separate from all locked studies, and its
 engine remains inactive.
+
+
+## New known-safe restorative water alternative, fresh genesis only
+
+A separate experimental `restorative_water_study=True` genesis
+discloses a *known*, fixed restorative-water affordance, providing +6
+world energy impulse after the ordinary DRINK action cost. The prior
+historical worlds have no such impulse, and the food payoff remains
+hidden. The water fact is bound to each first-person observation by a
+specific genesis-backed evidence reference. Existing `_ToyPlanSource`
+marks DRINK as a viable immediate energy restoration alternative so
+the last-resort risky EAT priority is **not** asserted when safe water
+is offered. The same sole SQLite state owner checks both actual effect
+and independent audit replay; UC and motor clearance remain unchanged.
+
+A low-energy matched four-policy regression with initially six energy
+tests a meaningful alternative: at tick 2, reflex-only chooses a
+COLLECT that cannot become food before a second two-tick cognitive
+window; deadline-only and composed policy instead choose restorative
+DRINK and finish with eight energy instead of two. This is a newly
+specified experimental world, not a retroactive claim about prior DRINK
+or the historic hidden-world cohorts. It demonstrates the deadline
+mechanism's local value, **not** incremental benefit of composition:
+deadline-only and combined still tie. A real incremental interaction
+study must keep accessible viable alternatives and their source bound
+to the actual organism rather than defining a known rescue after the
+fact.

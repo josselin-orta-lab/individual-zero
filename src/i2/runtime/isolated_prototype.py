@@ -38,6 +38,9 @@ from i2.modules.action_control_boundary import CONTROL_UC
 COLLECT = "affordance:collect:berry_a"
 EAT = "affordance:eat:berry_a"
 DRINK = "affordance:drink:water"
+# New fresh-genesis experimental body only. Historical worlds still get 0.
+RESTORATIVE_WATER_EVIDENCE = "evidence:i2:known:restorative-water-v1"
+RESTORATIVE_WATER_IMPULSE = 6
 # Existing I2 study comparator, NOT an endogenous discovered value function.
 PRIORS = {COLLECT: 3, EAT: 4, DRINK: 1}
 MAX_STEPS = 8
@@ -167,17 +170,23 @@ class _ToyPlanSource:
         return (claim == self.claim and life_ref == claim.life_ref
                 and digest == claim.digest())
 
+    def _alternative_state(self, semantic_ref: str) -> str:
+        # The new known restorative-water world is explicitly disclosed
+        # at genesis, unlike its hidden future berry payoff.
+        if (semantic_ref == DRINK and RESTORATIVE_WATER_EVIDENCE
+                in self.claim.subjective_evidence_refs):
+            return "VIABLE"
+        return "NOT_VIABLE" if semantic_ref in (COLLECT, DRINK) else "UNKNOWN"
+
     def verify_plan(self, *, claim: ObservationClaim, plan: PlanAssessment) -> bool:
         return (claim == self.claim and plan.evidence_ref == self.reflex.evidence_ref
-                and plan.state == ("NOT_VIABLE" if plan.semantic_ref in
-                    (COLLECT, DRINK) else "UNKNOWN"))
+                and plan.state == self._alternative_state(plan.semantic_ref))
 
     def priority(self) -> str | None:
         if EAT not in self.claim.capture.accessible_semantics:
             return None
         plans = tuple(PlanAssessment(
-            ref, "NOT_VIABLE" if ref in (COLLECT, DRINK) else "UNKNOWN",
-            self.reflex.evidence_ref)
+            ref, self._alternative_state(ref), self.reflex.evidence_ref)
             for ref in self.claim.capture.accessible_semantics if ref != EAT)
         decision = assess_last_resort(
             claim=self.claim, reflex=self.reflex.snapshot(),
@@ -339,11 +348,13 @@ class IsolatedI2:
                resources: int = 8,
                last_resort_exploration: bool = False,
                deadline_aware: bool = False,
-               extended_postcontact_study: bool = False) -> IsolatedI2:
+               extended_postcontact_study: bool = False,
+               restorative_water_study: bool = False) -> IsolatedI2:
         if (type(learning) is not bool or
                 type(last_resort_exploration) is not bool or
                 type(deadline_aware) is not bool or
                 type(extended_postcontact_study) is not bool or
+                type(restorative_water_study) is not bool or
                 type(impulses) is not tuple or
                 not 1 <= len(impulses) <= (EXTENDED_STUDY_STEPS if
                     extended_postcontact_study else MAX_STEPS) or
@@ -379,6 +390,8 @@ class IsolatedI2:
                     deadline_aware INTEGER NOT NULL CHECK(deadline_aware IN (0,1)),
                     extended_postcontact_study INTEGER NOT NULL
                         CHECK(extended_postcontact_study IN (0,1)),
+                    restorative_water_study INTEGER NOT NULL
+                        CHECK(restorative_water_study IN (0,1)),
                     impulses_json TEXT NOT NULL,
                     initial_energy INTEGER NOT NULL, initial_resources INTEGER NOT NULL);
                 CREATE TABLE proto_state(
@@ -406,11 +419,11 @@ class IsolatedI2:
                     cognition_head TEXT NOT NULL UNIQUE);
             """)
             db.execute("BEGIN IMMEDIATE")
-            db.execute("INSERT INTO proto_meta VALUES(1,?,?,?,?,?,?,?,?,?)", (
+            db.execute("INSERT INTO proto_meta VALUES(1,?,?,?,?,?,?,?,?,?,?)", (
                 obj.life_ref, obj.genesis_ref, int(learning),
                 int(last_resort_exploration), int(deadline_aware),
-                int(extended_postcontact_study), _json(impulses),
-                initial_energy, resources))
+                int(extended_postcontact_study), int(restorative_water_study),
+                _json(impulses), initial_energy, resources))
             db.execute("INSERT INTO proto_state VALUES(1,0,?,0,?,0,0)",
                        (initial_energy, resources))
             db.commit()
@@ -464,9 +477,12 @@ class IsolatedI2:
 
     def _claim(self, index: int, energy: int, inventory: int,
                resources: int, records: tuple[dict, ...], *,
-               physical_ticks: int) -> ObservationClaim:
+               physical_ticks: int,
+               restorative_water_study: bool = False) -> ObservationClaim:
         offered = _offers(inventory, resources)
         refs = [f"evidence:i2:capture:{index}", f"evidence:i2:energy:{energy}"]
+        if restorative_water_study:
+            refs.append(RESTORATIVE_WATER_EVIDENCE)
         refs.extend(f"evidence:i2:outcome:{r['seq']}" for r in records
                     if r["action_ref"] is not None)
         return ObservationClaim(
@@ -538,7 +554,9 @@ class IsolatedI2:
             if terminal or row["seq"] != i + 1 or saved[0] != i + 1:
                 raise PrototypeRefusal("post-terminal or nonsequential transition")
             claim = self._claim(i, energy, inventory, resources, tuple(earlier),
-                                physical_ticks=tick_cursor)
+                                physical_ticks=tick_cursor,
+                                restorative_water_study=bool(
+                                    meta["restorative_water_study"]))
             event = json.loads(saved[4])
             if (row["capture_ref"] != claim.capture.ref or
                     row["capture_step"] != claim.capture.step or
@@ -643,7 +661,10 @@ class IsolatedI2:
                     raise PrototypeRefusal("ate absent inventory")
                 inventory -= 1
                 impulse = _exogenous_food_impulse(impulses, tick_cursor)
-            elif action not in (None, DRINK):
+            elif action == DRINK:
+                if meta["restorative_water_study"]:
+                    impulse = RESTORATIVE_WATER_IMPULSE
+            elif action is not None:
                 raise PrototypeRefusal("unknown physical action")
             energy = max(0, min(100, energy - cost + impulse))
             terminal = energy == 0
@@ -722,6 +743,7 @@ class IsolatedI2:
                 seq - 1, row["before_energy"], inventory, resources,
                 tuple(rows[:seq - 1]),
                 physical_ticks=sum(1 for revision in tick_revisions if revision < seq),
+                restorative_water_study=bool(meta["restorative_water_study"]),
             )
             reflex = LocalEnergySurvivalReflex(claim, row["before_energy"])
             if event["claim_digest"] != claim.digest():
@@ -807,7 +829,8 @@ class IsolatedI2:
         if not conn.in_transaction:
             raise PrototypeRefusal("physical effect outside owner transaction")
         meta = conn.execute(
-            "SELECT life_ref,genesis_ref,impulses_json FROM proto_meta WHERE id=1"
+            "SELECT life_ref,genesis_ref,impulses_json,restorative_water_study "
+            "FROM proto_meta WHERE id=1"
         ).fetchone()
         state = conn.execute(
             "SELECT revision,energy,inventory,resources,terminal,tick_count "
@@ -821,7 +844,8 @@ class IsolatedI2:
                 "SELECT seq,capture_ref,action_ref,observed_step,net "
                 "FROM proto_steps ORDER BY seq"))
         expected = self._claim(state[0], state[1], state[2], state[3], prior,
-                               physical_ticks=state[5])
+                               physical_ticks=state[5],
+                               restorative_water_study=bool(meta[3]))
         if claim != expected:
             raise PrototypeRefusal("capture not issued from previous committed world")
         event_row = conn.execute(
@@ -867,7 +891,10 @@ class IsolatedI2:
             # food payoff despite different numbers of earlier decisions.
             impulse = _exogenous_food_impulse(
                 tuple(json.loads(meta[2])), state[5])
-        elif action not in (None, DRINK):
+        elif action == DRINK:
+            if meta[3]:
+                impulse = RESTORATIVE_WATER_IMPULSE
+        elif action is not None:
             raise PrototypeRefusal("invalid physical action")
         if inventory < 0 or resources < 0:
             raise PrototypeRefusal("physical resource underflow")
@@ -1075,7 +1102,9 @@ class IsolatedI2:
         index = state["revision"]
         claim = self._claim(index, state["energy"], state["inventory"],
                             state["resources"], records,
-                            physical_ticks=state["tick_count"])
+                            physical_ticks=state["tick_count"],
+                            restorative_water_study=bool(
+                                meta["restorative_water_study"]))
         self.observations.digest = claim.digest()
         self.current.capture_ref = claim.capture.ref
         self.safety.veto = veto
