@@ -416,3 +416,23 @@ motor/UC authority aligned. Do not adjust energy thresholds,
 hidden switching times or priors post hoc to manufacture success,
 and do not count censoring as survival success. An explicitly
 new protocol must be distinguished from the original #844 cohort.
+
+
+## Separate personally experienced aversion / hidden-restoration experiment
+
+The new `restoration_reexposure_composition.py` uses the original frozen
+40-energy restoration and persistently adverse scripted physics, with
+three independently initialized paid policies: observational, last-resort
+and combined. It reports food contacts after physical tick 7, the earlier
+personally observed food results available at each contact, delayed
+availability of the new result, terminal/censor outcomes, UC debits and
+the first matched-prechoice policy divergence. The next outcome is never
+a subjective prior: the research-only report reads it after the paid
+physical action. Neither environment is selected by the individual.
+
+This study is deliberately separate from the 8/16-energy negative
+scarcity cohorts and the original locked blind-identifiability study.
+One positive restored contact cannot prove a general survival advantage,
+especially if it causes different later experiences. A continuously
+toxic food exposure remains a mandatory adverse falsifier; no tuned
+threshold or injected hidden-world cue is permitted.
