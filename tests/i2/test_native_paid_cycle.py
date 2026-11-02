@@ -158,6 +158,43 @@ class NativePaidCycleTests(unittest.TestCase):
                          third["claim"]["subjective_evidence_refs"])
         self.assertFalse(actor.audit()["m11_authenticated"])
 
+    def test_native_intention_is_retired_without_falsely_hiding_action(self):
+        import json
+        actor = self.birth(body=Body(80, 60, 3, 100),
+                           learning=True, food_stock=0,
+                           drink_water_gain=0.0)
+        for _ in range(3):
+            actor.step()
+        with sqlite3.connect(self.path) as db:
+            event = json.loads(db.execute(
+                "SELECT event_json FROM events WHERE seq=3").fetchone()[0])
+        self.assertEqual(event["intention_kind"], "goal_changed")
+        self.assertEqual(event["claim"]["capture"]["goal_ref"],
+                         "goal:physical-last-resort")
+        self.assertIn("boire", event["claim"]["capture"]["accessible_semantics"])
+        self.assertEqual(actor.audit()["revision"], 3)
+
+    def test_restoration_and_no_learning_do_not_revise_goal(self):
+        import json
+        for name, learning, gain in (
+            ("restoring", True, 25.0),
+            ("fixed", False, 0.0)):
+            with self.subTest(name=name):
+                path = Path(self.tmp.name) / (name + "-goal.sqlite")
+                actor = NativePaidI2.create(
+                    path, body=Body(80, 60, 3, 100),
+                    temperament=self.traits, food_stock=0,
+                    learning=learning, drink_water_gain=gain)
+                for _ in range(3):
+                    actor.step()
+                with sqlite3.connect(path) as db:
+                    event = json.loads(db.execute(
+                        "SELECT event_json FROM events WHERE seq=3").fetchone()[0])
+                self.assertEqual(event["claim"]["capture"]["goal_ref"],
+                                 "goal:physical-needs")
+                self.assertNotEqual(event["intention_kind"], "goal_changed")
+                self.assertEqual(actor.audit()["revision"], 3)
+
     def test_no_learning_retains_innate_reflex_but_not_lived_reassessment(self):
         actor = self.birth(body=Body(80, 60, 3, 100),
                            learning=False, food_stock=0,

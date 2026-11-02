@@ -314,12 +314,25 @@ class NativePaidI2:
         evidence = list(snapshot["current_evidence"])
         evidence.extend("evidence:i2:native:outcome:" + str(r[0])
                         for r in rows if r[2] != NO_ACTION)
-        return ObservationClaim(
-            self.life_ref, FirstPersonCapture(
-                10 + 8 * seq, "capture:i2:native:" + str(seq),
-                "goal:physical-needs", tuple(sorted(offered))),
-            "source:i2:native:committed:" + str(seq),
-            tuple(sorted(evidence)))
+        def observed_claim(goal):
+            return ObservationClaim(
+                self.life_ref, FirstPersonCapture(
+                    10 + 8 * seq, "capture:i2:native:" + str(seq),
+                    goal, tuple(sorted(offered))),
+                "source:i2:native:committed:" + str(seq),
+                tuple(sorted(evidence)))
+        # The existing intention owner consumes this subjective goal change.
+        # A failed affordance remains physically accessible. Only a personally
+        # observed, urgent repeated nonrestoration can revise the goal.
+        ordinary = observed_claim("goal:physical-needs")
+        body, traits = snapshot["body"], snapshot["traits"]
+        if bool(meta["learning"]) and "boire" in offered:
+            _, discouraged = personally_nonrestoring_scores(
+                {"boire": 1}, claim=ordinary, body=body,
+                traits=traits, previous=rows, learning=True)
+            if "boire" in discouraged:
+                return observed_claim("goal:physical-last-resort")
+        return ordinary
 
     def _history(self, rows):
         return tuple(ObservedChosenResult(
@@ -423,7 +436,7 @@ class NativePaidI2:
                     linked_head != cognition_hash):
                 raise NativeRefusal("post-terminal or unbound native transition")
             claim = self._claim(
-                {"revision": index,
+                {"revision": index, "body": body, "traits": traits,
                  "current_evidence": current_evidence(body, traits)},
                 meta, previous)
             event = json.loads(event_json)
