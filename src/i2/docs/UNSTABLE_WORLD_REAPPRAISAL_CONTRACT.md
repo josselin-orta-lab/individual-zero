@@ -501,17 +501,32 @@ control stays terminal before ninth capture, and the original 8-phase
 protocol remains separate and immutable.
 
 
-## Ninth-decision memory ablation: value change versus motor choice
+## Ninth-decision memory ablation: matched evidence versus unmatched lives
 
-A separate extended restoration control compares learning-enabled and
-fixed-prior fresh lives with the same hidden food schedule and reflex
-policy. The learned ninth-decision food valuation uses personally
-experienced net +4 (score 9), whereas the fixed-prior comparator
-retains food score 4. Both can still select EAT, so one chosen action
-does not itself prove that the new memory changed behavior. Their
-earlier food exposures and resulting body states can differ, therefore
-the comparison is *not* a matched-prechoice causal estimate. If the
-software test confirms both actions are identical, record a **score
-update without demonstrated choice dependence**. Do not claim that
-relearning is behaviorally necessary on this evidence alone, and do
-not adjust existing priors to manufacture a difference.
+The first extended restoration ablation attempted to compare learning-enabled
+and fixed-prior ninth decisions as if they offered the same EAT candidate.
+Its initial CI failed on both Python versions: the fixed-prior subject has
+**no EAT affordance at its ninth decision** because its *earlier*
+independently paid food choices changed inventory. A fixed EAT score of 4
+is therefore a mathematical prior, **not an observed ninth paid candidate
+score**. The independent lives diverged before the ninth decision, and
+their ninth actions cannot identify a causal effect of the new memory.
+
+A corrected, researcher-only **same-capture score omission** uses the
+learned subject's exact audited ninth predecision observation and verifies
+the same earlier chosen results. With the newly personally observed +4
+food result, the raw EAT score is 9. Omitting *only* that final positive
+chosen result in a pure analytic comparison leaves the prior personally
+experienced -10 and yields an EAT score of -5. Thus the observed recovery
+changes the raw learned ranking relative to COLLECT, but it does not
+prove that the memory was **necessary** for the ninth motor action:
+the urgent-energy survival reflex could independently prioritize an
+available EAT. The real ninth action still goes through normal paid
+Competition and Action Control; the analytic omission neither writes
+SQLite nor grants an action, and cannot see hidden food payoff.
+
+Results are model-specific and do not demonstrate generalized learning
+or a causally isolated memory-dependent choice. A subsequent source-
+declared experiment must disentangle the survival reflex and memory
+with matched predecision affordances and identical action history,
+without altering old locked experiments or selecting favorable runs.
