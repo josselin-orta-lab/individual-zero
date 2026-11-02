@@ -5,7 +5,10 @@ survival threshold, or independent M11 claim. Uses the existing owner.
 """
 import tempfile
 import unittest
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from i2.runtime.isolated_prototype import IsolatedI2, SCENARIOS, DRINK, EAT
 
@@ -30,8 +33,8 @@ class DepletedAlternativeLastResortTests(unittest.TestCase):
                     arms[label] = (life.decision_evidence(), life.audit(), execution)
                 baseline, baseline_audit, _ = arms["deadline"]
                 chosen, chosen_audit, _ = arms["combined"]
-                self.assertEqual(len(chosen) >= 9, True)
-                self.assertEqual(len(baseline) >= 9, True)
+                self.assertGreaterEqual(len(chosen), 9)
+                self.assertGreaterEqual(len(baseline), 9)
                 # Actual same lived history, not a researcher-matched fantasy.
                 for earlier, comparison in zip(chosen[:8], baseline[:8]):
                     for field in (
@@ -49,7 +52,7 @@ class DepletedAlternativeLastResortTests(unittest.TestCase):
                 self.assertEqual(chosen[8]["subjective_outcomes_available"],
                                  baseline[8]["subjective_outcomes_available"])
                 self.assertEqual(chosen[8]["uc_before"], baseline[8]["uc_before"])
-                self.assertEqual(chosen[8]["candidate_scores"][EAT] > 0, True)
+                self.assertGreater(chosen[8]["candidate_scores"][EAT], 0)
                 # Last resort overrides a negative past food result only after
                 # finite water was physically consumed and no longer offered.
                 self.assertEqual([e["observed_net"] for e in chosen[8][
