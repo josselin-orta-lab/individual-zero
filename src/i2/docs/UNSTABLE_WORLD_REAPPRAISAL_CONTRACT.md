@@ -589,3 +589,19 @@ priority. It remains a single scripted toy-world first-decision
 contrast, not independent replication or proof of survival gains. The
 researcher-only comparison must not relabel subsequent diverged world
 trajectories as matched counterfactuals.
+
+
+## Within-life emergency-to-nonurgent transition (separate ten-phase probe)
+
+A new focused regression runs the existing explicit ten-phase restored-food
+study through physical tick 20, without changing the hidden food schedule
+or energy threshold. It tests the sequence: eighth chosen EAT under
+emergency last-resort priority, ninth chosen EAT with the earlier positive
+net +4 now available in valuation (without a synthetic emergency boost),
+and tenth paid decision at recovered energy above the critical threshold
+with reflex state NO_PREEMPTION. All steps use ordinary paid Competition,
+Action Control and owner audit. This is **behavioral integration in one
+model-specific life**, not proof that the individual learned the reflex
+policy, that postcontact memory caused the ninth action, or that survival
+is sustained beyond the observed horizon. Persistent adverse and
+historical 8-decision controls remain untouched.
