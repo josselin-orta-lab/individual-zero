@@ -963,3 +963,19 @@ affordance, the last personally observed -10 food consequence, the
 paid motor admission, reflex signal and the opposing terminal
 results. This does not establish independent M11 authentication,
 animal-like natural learning or a general planning mechanism.
+
+
+## Hidden food restoration timing after finite water exhaustion
+
+An independent three-world fresh-genesis control fixes one restorative
+water use and the same initial food aversion. After the safe water is
+consumed at tick 16, the combined policy may reconsider EAT at tick 18
+in all three hidden regimes: persistent toxicity, favorable restoration
+before contact, and restoration only *after* contact. The first nine
+audited predecision observations, paid scores, selected actions, UC,
+known water stock and reflex priority must agree exactly. Only the
+food payoff when the committed ninth EAT occurs can separate the
+outcomes: a too-late hidden restoration does not save an individual
+who dies at tick 18. This is a timing falsifier for future-oracle
+leakage, not a prediction or a general-survival claim. Prior locked
+protocols and parameter choices remain unchanged.
