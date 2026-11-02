@@ -62,7 +62,7 @@ class PostContactDecisionTests(unittest.TestCase):
         self.assertEqual(ninth["candidate_scores"][EAT],9)
         self.assertFalse(ninth["last_resort_priority_applied"])
         self.assertEqual(ninth["chosen"],EAT)
-        self.assertIsNotNone(ninth["admission_ref"])
+        self.assertTrue(ninth["internal_admission"])
         self.assertEqual(ninth["uc_spent"],5)
         self.assertEqual(life.audit()["revision"],9)
         # This is one model-specific paid response after recovery,
