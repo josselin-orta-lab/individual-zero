@@ -892,3 +892,25 @@ Do not tune the water capacity, initial energy, or world change time
 after reading this panel merely to claim completion of a survival
 reflex cycle. Explicitly record a negative or unreachable sequence
 and only then design a new preregistered independent falsifier.
+
+
+## Predeclared 20-tick finite-water follow-up
+
+The initial finite-water two-world/four-policy cohort (merged #866,
+run 41424477880) ended at tick 16 before the safe stock of two
+could be exhausted. Deadline-only and combined drank once, finishing
+nonterminal with energy 6 and water remaining 1. Observational and
+reflex-only subjects died after collecting. No between-world berry
+difference was available in the actual chosen food history by tick 16.
+
+A separate, **explicit ten-phase fresh-genesis** cohort now extends
+the observation horizon to tick 20 without changing initial energy
+40, UC 60, resources 8, safe water stock 2 or learning/reflex/deadline
+logic. It repeats the last adverse/restored hidden phase twice as
+required to define a new, distinct 10-phase experiment. The full
+audit records depleted water, available affordances, motor decisions,
+paid UC, and terminal/censored outcomes. Do **not** assume that a
+second drink, a depleted third decision, or any risky berry recontact
+must occur. Record the actual behavior and preserve negative results.
+This does not retroactively revise the eight-decision source-locked
+cohort, and does not claim natural learning or general survival.
