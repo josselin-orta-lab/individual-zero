@@ -1,8 +1,8 @@
-"""A paid nonemergency first-choice divergence with matched past experience.
+"""First matched nonurgent paid decisions, including a no-action control.
 
-This intentionally reuses the established neutral world, but separates a
-focused behavioral test from the seven-case locked scientific publication.
-No researcher-forced motor action, threshold tuning or hidden world oracle.
+Neutral may produce a paid *abstention* rather than a motor admission.
+The separately source-locked adverse world tests a divergence between two
+actually admitted actions. Neither study reroutes the physical controller.
 """
 import sys
 import unittest
@@ -10,7 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 from i2.runtime.isolated_prototype import (
-    COLLECT, DRINK, EAT, world_demo,
+    world_demo,
 )
 
 
@@ -19,6 +19,8 @@ class NonurgentMemoryPaidChoiceTests(unittest.TestCase):
     def setUpClass(cls):
         cls.result = world_demo("neutral", ticks=12, initial_energy=40,
                                 last_resort_exploration=False)
+        cls.adverse = world_demo("adverse", ticks=12, initial_energy=40,
+                                 last_resort_exploration=False)
 
     def test_first_divergence_has_same_prechoice_history_and_no_reflex(self):
         contrast = self.result["first_choice_contrast"]
@@ -47,9 +49,43 @@ class NonurgentMemoryPaidChoiceTests(unittest.TestCase):
         self.assertFalse(fixed["deadline_infeasible_collect_suppressed"])
         self.assertGreater(observed["uc_spent"], 0)
         self.assertGreater(fixed["uc_spent"], 0)
-        self.assertTrue(observed["internal_admission"])
-        self.assertTrue(fixed["internal_admission"])
+        self.assertEqual(observed["internal_admission"],
+                         observed["chosen"] is not None)
+        self.assertEqual(fixed["internal_admission"],
+                         fixed["chosen"] is not None)
+        # A neutral paid valuation difference is not necessarily a
+        # difference between two *executed* motor actions.
+        self.assertFalse(observed["internal_admission"])
         self.assertTrue(contrast["candidate_score_differences"])
+
+    def test_adverse_first_divergence_has_two_admitted_actions(self):
+        result = self.adverse
+        contrast = result["first_choice_contrast"]
+        self.assertEqual(contrast["classification"],
+                         "MATCHED_PRECHOICE_PROGRAMMED_VALUATION_CONTRAST")
+        self.assertTrue(contrast["matched_prechoice"])
+        self.assertIsNotNone(contrast["first_divergence_seq"])
+        index = contrast["first_divergence_seq"] - 1
+        learned = result["arms"]["observed_chosen"]["decisions"][index]
+        fixed = result["arms"]["fixed"]["decisions"][index]
+        for field in ("before_energy", "before_inventory", "before_resources",
+                      "visible", "physical_ticks_before", "uc_before",
+                      "subjective_outcomes_available"):
+            self.assertEqual(learned[field], fixed[field], field)
+        self.assertGreater(learned["before_energy"], 4)
+        self.assertEqual(learned["survival_reflex"]["state"], "NO_PREEMPTION")
+        self.assertEqual(fixed["survival_reflex"]["state"], "NO_PREEMPTION")
+        self.assertFalse(learned["last_resort_priority_applied"])
+        self.assertFalse(fixed["last_resort_priority_applied"])
+        self.assertFalse(learned["deadline_infeasible_collect_suppressed"])
+        self.assertFalse(fixed["deadline_infeasible_collect_suppressed"])
+        self.assertTrue(learned["internal_admission"])
+        self.assertTrue(fixed["internal_admission"])
+        self.assertNotEqual(learned["chosen"], fixed["chosen"])
+        self.assertGreater(learned["uc_spent"], 0)
+        self.assertGreater(fixed["uc_spent"], 0)
+        self.assertTrue(contrast["candidate_score_differences"])
+        self.assertTrue(contrast["not_a_natural_learning_or_survival_verdict"])
 
     def test_different_outcomes_after_divergence_are_not_causal_learning_proof(self):
         self.assertFalse(self.result["m11_authenticated"])
