@@ -663,3 +663,19 @@ cause modeled terminal energy at tick 18. Reversal after contact
 must not change the ninth energy outcome. This checks the boundary
 between observed evidence and hidden future state, without a new
 policy, food oracle, motor pathway or a general fitness claim.
+
+
+## Seeded schedule-order robustness panel
+
+A focused new test predeclares five fixed researcher seeds (11, 23, 37,
+51, 79) to shuffle the execution order of three already specified
+hidden reversal schedules, each with an independent fresh paid owner.
+This randomizes only the **order of researcher trials**, never a sensory
+input, candidate score, neural reward, or world change known to I2.
+Every arm records all nine paid predecision choices, current body and
+subjective evidence, actual UC, terminal and energy endpoint. The
+comparison requires exact identity of results across seed orderings
+and no prechoice distinction between different hidden futures.
+This is a deterministic reproducibility and order-invariance smoke,
+NOT multiple statistically independent world samples or proof of
+natural learning. The old source-locked cohorts remain unchanged.
