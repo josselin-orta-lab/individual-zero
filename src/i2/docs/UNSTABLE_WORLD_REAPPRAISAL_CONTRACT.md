@@ -870,3 +870,25 @@ successful learned-aversion -> known water -> renewed risky recontact
 trajectory. The next separate preregistered cohort must explicitly
 test that full behavioral sequence against persistent toxic controls,
 without changing these genesis parameters after reading outcomes.
+
+
+## Finite safe-water depletion panel, results deliberately unspecified
+
+After #865 validated and merged, a separate source-declared panel
+compares four normal paid policies in persistent adversity and hidden
+restoration, each with initial water stock 2, energy 40, resources 8,
+UC 60 and sixteen physical ticks. The subject may independently
+choose safe DRINK, and it must lose that accessible affordance once
+the last use is consumed. The report exposes the actual water stock,
+selected actions, predecision energy, priority and deadline events,
+death/censoring and paid UC, with no assumption a risky food recontact
+will even occur before observation ends.
+
+The two worlds share initial conditions but future berry outcomes
+remain hidden; post-divergence trajectories cannot be treated as
+matched. This protocol only establishes whether the hypothesized
+sequence is *reachable* under the currently fixed learner and physics.
+Do not tune the water capacity, initial energy, or world change time
+after reading this panel merely to claim completion of a survival
+reflex cycle. Explicitly record a negative or unreachable sequence
+and only then design a new preregistered independent falsifier.
