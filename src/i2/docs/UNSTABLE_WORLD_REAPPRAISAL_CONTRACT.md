@@ -739,3 +739,35 @@ deadline-only and combined still tie. A real incremental interaction
 study must keep accessible viable alternatives and their source bound
 to the actual organism rather than defining a known rescue after the
 fact.
+
+
+## Safe-water alternative versus last-resort priority at critical energy
+
+The separately initialized adverse-berry comparison follows the
+**same first seven paid actions and harmful berry contact** before a
+critical eighth decision at physical tick 16. The first revised CI
+(run 41414056276, both Python versions) exposed incorrect numerical
+expectations: all four arms actually reach **energy 2, PREEMPT** rather
+than energy 4, CONSTRAIN, and a final COLLECT costs the last two energy
+units. The experimental numbers are corrected in the test, not the
+world, policies or hidden reward.
+
+Both a berry (previously experienced as net -10) and DRINK remain
+accessible. Under the historical inert-water physics, last-resort
+priority selects risky EAT and the subject dies. In the opt-in known
+restorative-water world, DRINK is verified as an immediately **viable
+energy-restoring plan**, which prevents extra last-resort EAT priority.
+But **reflex-only still chooses an infeasible COLLECT** from its ordinary
+learned scores and dies at tick 16. Deadline-only and combined instead
+suppress that COLLECT, choose the restorative DRINK, and end energy 6
+nonterminal at the bounded horizon. All spend equal UC, with the same
+personally observed history and physical state immediately before the
+different paid choice. This is a local contribution of deadline
+evaluation, not proof of a distinct benefit from composing two
+policies: deadline-only and combined still choose the same rescue.
+
+Crucially, suppressing an unsafe *priority boost* does not remove
+ordinary risky EAT from Competition or guarantee survival. This
+explicitly preserves the negative alternative-availability result,
+without retrofitting the older nonrestorative-water experiments or
+claiming any generalized survival advantage.
