@@ -633,3 +633,19 @@ estimate or claim general survival improvement. This explicit negative
 control is not part of the historical eight-decision experiments and
 does not modify the prior ten-window restored study. No policy tuning
 or new actuator has been introduced.
+
+
+## Paired hidden-reversal timing identifiability control
+
+An additional fixed, independent 18-tick control compares two worlds
+where the food was restored at the same historical time and previously
+experienced as beneficial. In one world the favorable payoff persists
+through the ninth decision; in the other, an unannounced toxic reversal
+happens just before it. All nine paid prechoice readouts must agree on
+accessible actions, personal history, energy, UC, candidate scores and
+selected motor actions. The re-toxified body's terminal event at tick 18
+is preserved, while the still-restored arm remains nonterminal at the
+same observed horizon. This is an **identifiability negative control**,
+not a survival improvement or a claim that an I2 individual can know
+unobserved future hidden world phases. No motor or learning policy is
+changed, and no previous study is edited.
