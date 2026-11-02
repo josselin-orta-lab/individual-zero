@@ -499,3 +499,19 @@ cannot establish generalization, robust planning or statistical
 survival advantage from one fixed sequence. The persistently adverse
 control stays terminal before ninth capture, and the original 8-phase
 protocol remains separate and immutable.
+
+
+## Ninth-decision memory ablation: value change versus motor choice
+
+A separate extended restoration control compares learning-enabled and
+fixed-prior fresh lives with the same hidden food schedule and reflex
+policy. The learned ninth-decision food valuation uses personally
+experienced net +4 (score 9), whereas the fixed-prior comparator
+retains food score 4. Both can still select EAT, so one chosen action
+does not itself prove that the new memory changed behavior. Their
+earlier food exposures and resulting body states can differ, therefore
+the comparison is *not* a matched-prechoice causal estimate. If the
+software test confirms both actions are identical, record a **score
+update without demonstrated choice dependence**. Do not claim that
+relearning is behaviorally necessary on this evidence alone, and do
+not adjust existing priors to manufacture a difference.
