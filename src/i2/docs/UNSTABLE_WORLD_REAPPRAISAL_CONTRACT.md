@@ -712,3 +712,36 @@ population survival advantage, independent ecological sampling or
 general natural learning; no hypothesis is selected post hoc from the
 outcomes. The panel is separate from all locked studies, and its
 engine remains inactive.
+
+
+## Actual seeded varying-world outcomes and negative integration verdict
+
+After #859 passed Python 3.11/3.12 CI, the reviewable tagged report
+`I2_SEEDED_VARYING_PANEL_RESULTS` showed that seeds 211 and 307 yield
+**the same hidden world**. There are five fresh lives per policy but
+only four distinct sampled environment schedules. All four policies
+spend 38 real UC per seed and reach the tick-16 observation/death boundary.
+
+| Unique seed/world | Observational | Deadline-only | Reflex-only | Combined |
+|---|---|---|---|---|
+| 101 | terminal at tick 16 | terminal | terminal | terminal |
+| 211=307 | terminal at tick 16 | terminal | right-censored, energy 6 | right-censored, energy 6 |
+| 401 | terminal at tick 16 | terminal | terminal | terminal |
+| 503 | terminal at tick 16 | terminal | terminal | terminal |
+
+The reflex triggers one valuation priority in every seed and the
+combined arm makes exactly the same chosen actions as reflex-only;
+its deadline suppression fires once but adds **no observed behavior
+or survival improvement**. Thus the panel contains one world-specific
+short-horizon advantage of the reflex but **zero observed incremental
+gain from policy composition**. A living endpoint at tick 16 is right-
+censored, not an indefinite survival success. Four unique schedules
+cannot support a population or statistical generalization.
+
+The next scientific intervention should test whether the deadline
+constraint ever produces a *genuinely viable alternative* to futile
+plans and whether its independent contribution remains absent when
+the urgent reflex is active. Avoid adding another planning abstraction
+or tuning the seeds merely to produce a positive contrast. The locked
+source studies, prior seeds, UC accounting and prototype inactivity
+remain unchanged.
