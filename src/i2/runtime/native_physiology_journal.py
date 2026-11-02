@@ -125,10 +125,10 @@ def commit_admitted_physics(conn: sqlite3.Connection, *,
 
 
 def audit_native_body(conn: sqlite3.Connection) -> dict:
-    """Recompute physical before/after bindings and validate the native chain.
+    """Validate physical chain and raw record bindings, NOT physics replay.
 
-    This local audit detects mutations, not coordinated replacement of the
-    whole SQLite file; it is not an independent M11 attestation.
+    NativePaidI2.audit independently recomputes physiology from its genesis.
+    Both remain local checks, not external M11 anti-rollback attestation.
     """
     current = native_snapshot(conn)
     rows = conn.execute(
@@ -162,3 +162,67 @@ def audit_native_body(conn: sqlite3.Connection) -> dict:
             "chain_head": current["head"],
             "m11_authenticated": False,
             "native_cognition_integration": "HOOK_READY_NOT_YET_WIRED"}
+
+
+ 
+NO_ACTION = "NO_ACTION"
+ 
+def passive_body_tick(body: Body) -> Body:
+    """Time passes with no admitted action: decay only, never hidden rest."""
+    if type(body) is not Body:
+        raise ValueError("invalid observed body for passive physical time")
+    return Body(body.energy, max(0.0, body.food - 0.2),
+                max(0.0, body.water - 0.4), body.integrity)
+ 
+ 
+def commit_unadmitted_tick(conn: sqlite3.Connection, *,
+                          cognition_hash: str) -> dict:
+    """Record a paid abstention/veto and physical time in the SAME COMMIT.
+ 
+    This creates NO motor admission. It neither impersonates a chosen WAIT
+    action nor pauses metabolism while the individual lacks a positive choice.
+    """
+    if not conn.in_transaction:
+        raise ValueError("native no-action time requires owner transaction")
+    saved = conn.execute(
+        "SELECT seq,event_json FROM events WHERE event_hash=?",
+        (cognition_hash,)).fetchone()
+    if saved is None:
+        raise ValueError("no committed cognition for physical abstention")
+    seq, event_json = saved
+    event = json.loads(event_json)
+    review = event["control_review"]
+    if (review is not None and
+            (review["status"] == "REVIEWED_NOT_ADMITTED" or
+             review["suggested_candidate_ref"] is not None)):
+        raise ValueError("admitted or suggested action cannot be silently dropped")
+    if event["frame"] is not None and event["advice"] is None:
+        raise ValueError("unpaid native candidate frame cannot advance")
+    snapshot = native_snapshot(conn)
+    if seq != snapshot["revision"] + 1:
+        raise ValueError("stale or repeated unadmitted native tick")
+    body, traits = snapshot["body"], snapshot["traits"]
+    if min(body.food, body.water, body.integrity) <= 0:
+        raise ValueError("terminal body cannot advance without an action")
+    after = passive_body_tick(body)
+    before_json, after_json = _json(body.as_dict()), _json(after.as_dict())
+    from i2.modules.native_physiological_needs import assess_needs
+    prior = assess_needs(body, traits)
+    updated = assess_needs(after, traits)
+    relief = sum(prior.pressures.values()) - sum(updated.pressures.values())
+    terminal = min(after.food, after.water, after.integrity) <= 0
+    # A no-action trace marker is *not* a controller or motor receipt.
+    marker = "no-motor:i2:physical-time:" + sha256(
+        _json([seq, cognition_hash]).encode("ascii")).hexdigest()
+    payload = _json([SCHEMA, seq, NO_ACTION, marker, cognition_hash,
+                     before_json, after_json, relief, terminal,
+                     snapshot["head"]])
+    head = sha256(payload.encode("ascii")).hexdigest()
+    conn.execute("INSERT INTO native_physical_events VALUES(?,?,?,?,?,?,?,?,?,?)",
+                 (seq, NO_ACTION, marker, cognition_hash, before_json,
+                  after_json, relief, int(terminal), snapshot["head"], head))
+    conn.execute("UPDATE native_physiology SET revision=?,body_json=?,head=? "
+                 "WHERE id=1", (seq, after_json, head))
+    return {"revision": seq, "body": after.as_dict(),
+            "terminal": terminal, "no_motor_admission": True,
+            "physical_hash": head, "m11_authenticated": False}
