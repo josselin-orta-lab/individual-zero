@@ -1021,3 +1021,25 @@ re-toxified arm terminates at energy 0 at tick 20. Identical
 subjective inputs forbid anticipating an unobserved toxic switch.
 The comparison does not prove that memory was necessary for tenth
 motor choice or that learned survival generalizes.
+
+
+## Source-declared blind-water behavioral reachability census
+
+A separate, untuned exploratory census samples all 64 combinations:
+2 hidden food worlds (adverse/restoration), 4 initial energy states
+(6, 12, 20, 40), 2 finite safe-water stock counts (1, 2) and
+4 existing policies (observational, reflex-only, deadline-only,
+combined). Each life is a fresh SQLite owner using ordinary paid
+Competition and Action Control over 20 physical ticks with 60 UC
+and eight initial berries. The water is physically restorative,
+but its effect is blind until personally experienced. All
+outcomes, including deaths and failure to sample water, are printed
+without selection. The report distinguishes first water discovery,
+actual exhaustion and risky EAT after the last water use.
+
+The grid is *not* 64 independently randomized ecosystems and no
+population inference or confirmed full behavioral cycle is declared.
+Do not change energy values, policy thresholds or stock counts after
+seeing the output to manufacture a successful integrated trajectory.
+A later causal comparison must match actual prechoice histories and
+use separate new source-declared cohorts.
