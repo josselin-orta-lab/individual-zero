@@ -37,9 +37,9 @@ from i2.runtime.native_physiology_journal import (
     audit_native_body, commit_unadmitted_tick, passive_body_tick, NO_ACTION,
 )
 
-PRIORS = {"boire": 1, "manger": 4, "dormir": 2, "attendre": 1, "collecter": 2}
+PRIORS = {"boire": 1, "manger": 4, "dormir": 2, "attendre": 1, "collecter": 2, "boire_decouverte": 1}
 HORIZON = 8
-GENESIS_SCHEMA = "i2-native-paid-local-life-v2-sleep"
+GENESIS_SCHEMA = "i2-native-paid-local-life-v3-discovery-sleep"
 
 
 class NativeRefusal(ValueError):
@@ -108,6 +108,12 @@ def innate_adjustment(values, body, traits):
     needs = assess_needs(body, traits)
     scores["dormir"] += round(8 * needs.pressures["energy"] +
                             4 * needs.pressures["integrity"])
+    # An actually discovered and presently accessible water affordance
+    # answers the SAME innate thirst as ordinary drinking. This supplies
+    # no predicted payoff: the source was observed in a PREVIOUS commit,
+    # and whether to use it remains a fully paid Competition decision.
+    if "boire_decouverte" in scores:
+        scores["boire_decouverte"] += round(8 * needs.pressures["water"])
     return scores
 
 
@@ -245,7 +251,7 @@ def genesis_digest(meta):
         meta["genesis_ref"], meta["body_json"], meta["traits_json"],
         meta["food_stock"], meta["water_stock"], meta["learning"],
         meta["berry_food_gain"], meta["berry_integrity_delta"],
-        meta["drink_water_gain"], meta["sleep_consolidation"]]).encode("ascii")).hexdigest()
+        meta["drink_water_gain"], meta["discovered_water_gain"], meta["sleep_consolidation"]]).encode("ascii")).hexdigest()
 
 
 class NativePaidI2:
@@ -279,7 +285,7 @@ class NativePaidI2:
                learning=True, sleep_consolidation=True,
                food_stock=4, water_stock=4, uc=80,
                berry_food_gain=20.0, berry_integrity_delta=-8.0,
-               drink_water_gain=25.0):
+               drink_water_gain=25.0, discovered_water_gain=0.0):
         if (type(body) is not Body or
                 type(temperament) is not BirthTemperament or
                 min(body.food, body.water, body.integrity) <= 0 or
@@ -287,7 +293,9 @@ class NativePaidI2:
                 type(sleep_consolidation) is not bool or
                 type(food_stock) is not int or not 0 <= food_stock <= 8 or
                 type(water_stock) is not int or not 0 <= water_stock <= 8 or
-                type(uc) is not int or not 0 <= uc <= 1000):
+                type(uc) is not int or not 0 <= uc <= 1000 or
+                type(discovered_water_gain) not in (int, float) or
+                not 0 <= discovered_water_gain <= 100):
             raise NativeRefusal("invalid independent bounded native birth")
         from i2.modules.native_body_contract import transition
         transition(body, "manger", berry_food_gain=berry_food_gain,
@@ -313,8 +321,13 @@ class NativePaidI2:
                 learning INTEGER NOT NULL, berry_food_gain REAL NOT NULL,
                 berry_integrity_delta REAL NOT NULL,
                 drink_water_gain REAL NOT NULL,
+                discovered_water_gain REAL NOT NULL,
                 sleep_consolidation INTEGER NOT NULL,
                 digest TEXT NOT NULL)""")
+            db.execute("""CREATE TABLE native_discoveries (
+                seq INTEGER PRIMARY KEY,
+                physical_hash TEXT NOT NULL UNIQUE,
+                found INTEGER NOT NULL CHECK(found IN (0,1)))""")
             meta = dict(life_ref=obj.life_ref, genesis_ref=obj.genesis_ref,
                         body_json=_json(body.as_dict()),
                         traits_json=_json(temperament.as_dict()),
@@ -322,8 +335,9 @@ class NativePaidI2:
                         learning=int(learning), berry_food_gain=berry_food_gain,
                         berry_integrity_delta=berry_integrity_delta,
                         drink_water_gain=drink_water_gain,
+                        discovered_water_gain=discovered_water_gain,
                         sleep_consolidation=int(sleep_consolidation))
-            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?)",
+            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                        (*meta.values(), genesis_digest(meta)))
             db.commit()
         obj.audit()
@@ -362,9 +376,10 @@ class NativePaidI2:
     def _rows(self, conn):
         return tuple(conn.execute(
             "SELECT e.seq, e.capture_ref, p.admitted_action, "
-            "p.net_physiological_relief, p.before_json, p.after_json "
-            "FROM native_physical_events p "
-            "JOIN events e ON e.seq=p.seq ORDER BY p.seq"))
+            "p.net_physiological_relief, p.before_json, p.after_json, "
+            "COALESCE(d.found,0) FROM native_physical_events p "
+            "JOIN events e ON e.seq=p.seq "
+            "LEFT JOIN native_discoveries d ON d.seq=p.seq ORDER BY p.seq"))
 
     def _claim(self, snapshot, meta, rows):
         seq = len(rows)
@@ -376,9 +391,13 @@ class NativePaidI2:
             offered.append("manger")
         if chosen.count("boire") < meta["water_stock"]:
             offered.append("boire")
+        if sum(r[6] for r in rows) > chosen.count("boire_decouverte"):
+            offered.append("boire_decouverte")
         evidence = list(snapshot["current_evidence"])
         evidence.extend("evidence:i2:native:outcome:" + str(r[0])
                         for r in rows if r[2] != NO_ACTION)
+        evidence.extend("evidence:i2:native:water-found:" + str(r[0])
+                        for r in rows if r[6])
         def observed_claim(goal):
             return ObservationClaim(
                 self.life_ref, FirstPersonCapture(
@@ -403,14 +422,17 @@ class NativePaidI2:
             # chosen. The known physical collect action currently costs energy
             # and yields no nutrition or hydration in this bounded world.
             # Only paid competition and safety can select it.
-            offered.append("collecter")
+            # This bounded world has exactly one local search site. After
+            # observing a probe (found or empty) there is no second site to
+            # explore; do not invent renewed physical accessibility.
+            if "collecter" not in chosen:
+                offered.append("collecter")
             return ObservationClaim(
                 self.life_ref, FirstPersonCapture(
                     10 + 8 * seq, "capture:i2:native:" + str(seq),
                     "goal:physical-last-resort", tuple(sorted(offered))),
                 "source:i2:native:committed:" + str(seq),
                 tuple(sorted(evidence)))
-        return ordinary
         return ordinary
 
     def _history(self, rows):
@@ -451,6 +473,8 @@ class NativePaidI2:
         admission = "internal:i2:native-admission:" + sha256(
             _json([seq, event_head, action]).encode()).hexdigest()
         if (action not in claim.capture.accessible_semantics or
+                (action == "boire_decouverte" and
+                 sum(r[2] == action for r in rows) >= sum(r[6] for r in rows)) or
                 (action == "boire" and
                  sum(r[2] == action for r in rows) >= meta["water_stock"]) or
                 (action == "manger" and
@@ -459,12 +483,19 @@ class NativePaidI2:
         effect = {}
         if action == "boire":
             effect["drink_water_gain"] = meta["drink_water_gain"]
+        elif action == "boire_decouverte":
+            effect["drink_water_gain"] = meta["discovered_water_gain"]
         elif action == "manger":
             effect["berry_food_gain"] = meta["berry_food_gain"]
             effect["berry_integrity_delta"] = meta["berry_integrity_delta"]
         result = commit_admitted_physics(
             conn, action=action, admission_ref=admission,
             cognition_hash=event_head, **effect)
+        if action == "collecter":
+            found = int(meta["discovered_water_gain"] > 0 and
+                        not any(r[6] for r in rows))
+            conn.execute("INSERT INTO native_discoveries VALUES(?,?,?)",
+                         (seq, result["physical_hash"], found))
         if conn.execute("SELECT remaining_uc FROM account WHERE id=1").fetchone()[0] != remaining_uc:
             raise NativeRefusal("native physiological step lacks paid UC")
         return result
@@ -486,8 +517,10 @@ class NativePaidI2:
                 "FROM events ORDER BY seq"))
             effects = tuple(db.execute(
                 "SELECT seq,admitted_action,admission_ref,cognition_hash,"
-                "before_json,after_json,net_physiological_relief,terminal "
-                "FROM native_physical_events ORDER BY seq"))
+                "before_json,after_json,net_physiological_relief,terminal, "
+                "event_hash FROM native_physical_events ORDER BY seq"))
+            discoveries = tuple(db.execute(
+                "SELECT seq,physical_hash,found FROM native_discoveries ORDER BY seq"))
             capacity, remaining = db.execute(
                 "SELECT capacity,remaining_uc FROM identity JOIN account ON "
                 "identity.id=account.id WHERE identity.id=1").fetchone()
@@ -506,11 +539,15 @@ class NativePaidI2:
                 min(body.food, body.water, body.integrity) <= 0):
             raise NativeRefusal("mutated native birth traits or terminal genesis")
         previous = []
+        discoveries_by_seq = {r[0]: (r[1], r[2]) for r in discoveries}
+        if len(discoveries_by_seq) != len(discoveries):
+            raise NativeRefusal("duplicate discovery")
         total_uc, terminal = 0, False
         for index, (source, effect) in enumerate(zip(recorded, effects)):
             seq, capture, event_json, cognition_hash = source
             (phy_seq, action, admission_ref, linked_head,
-             before_json, after_json, saved_relief, saved_terminal) = effect
+             before_json, after_json, saved_relief, saved_terminal,
+             physical_hash) = effect
             if (terminal or seq != index + 1 or phy_seq != seq or
                     linked_head != cognition_hash):
                 raise NativeRefusal("post-terminal or unbound native transition")
@@ -594,18 +631,25 @@ class NativePaidI2:
                 if action == "boire" and sum(
                         prior[2] == action for prior in previous) >= meta["water_stock"]:
                     raise NativeRefusal("native drank unavailable water")
+                if action == "boire_decouverte" and sum(
+                        prior[2] == action for prior in previous) >= sum(
+                            prior[6] for prior in previous):
+                    raise NativeRefusal("drank new source before discovered")
                 if action == "manger" and sum(
                         prior[2] == action for prior in previous) >= meta["food_stock"]:
                     raise NativeRefusal("native ate unavailable food")
                 changes = {}
                 if action == "boire":
                     changes["drink_water_gain"] = meta["drink_water_gain"]
+                elif action == "boire_decouverte":
+                    changes["drink_water_gain"] = meta["discovered_water_gain"]
                 elif action == "manger":
                     changes["berry_food_gain"] = meta["berry_food_gain"]
                     changes["berry_integrity_delta"] = meta["berry_integrity_delta"]
                 outcome = admitted_consequence(
                     before=body, temperament=traits,
-                    action=action, admitted=True, applied=True, **changes)
+                    action=("boire" if action == "boire_decouverte" else action),
+                    admitted=True, applied=True, **changes)
                 next_body = outcome.after
                 terminal = outcome.terminal
             else:
@@ -630,12 +674,21 @@ class NativePaidI2:
                     not isclose(saved_relief, relief, rel_tol=0, abs_tol=1e-12) or
                     saved_terminal != int(terminal)):
                 raise NativeRefusal("native physiology disagrees with birth replay")
+            found = int(action == "collecter" and
+                        meta["discovered_water_gain"] > 0 and
+                        not any(prior[6] for prior in previous))
+            if action == "collecter":
+                if discoveries_by_seq.get(seq) != (physical_hash, found):
+                    raise NativeRefusal("native discovery record forged")
+            elif seq in discoveries_by_seq:
+                raise NativeRefusal("unearned discovery event")
             total_uc += (event["intake_uc"] + event["competition_uc"] +
                          event["control_uc"])
             previous.append((seq, capture, action, relief,
-                             before_json, after_json))
+                             before_json, after_json, found))
             body = next_body
-        if (body != snapshot["body"] or
+        if (len(discoveries) != sum(r[2] == "collecter" for r in previous) or
+                body != snapshot["body"] or
                 body.as_dict() != physical["body"] or
                 total_uc != capacity - remaining or
                 remaining != cognition["remaining_synthetic_uc"]):
