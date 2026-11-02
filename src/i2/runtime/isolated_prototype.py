@@ -41,6 +41,7 @@ DRINK = "affordance:drink:water"
 # Existing I2 study comparator, NOT an endogenous discovered value function.
 PRIORS = {COLLECT: 3, EAT: 4, DRINK: 1}
 MAX_STEPS = 8
+EXTENDED_STUDY_STEPS = 10  # explicit new genesis; historical eight remain fixed
 # In-process research-world cadence; not calibrated biology or real time.
 WORLD_COGNITIVE_PERIOD = 2
 WORLD_TICK_LIMIT = 32
@@ -337,12 +338,17 @@ class IsolatedI2:
                initial_uc: int = 60, initial_energy: int = 40,
                resources: int = 8,
                last_resort_exploration: bool = False,
-               deadline_aware: bool = False) -> IsolatedI2:
+               deadline_aware: bool = False,
+               extended_postcontact_study: bool = False) -> IsolatedI2:
         if (type(learning) is not bool or
                 type(last_resort_exploration) is not bool or
                 type(deadline_aware) is not bool or
+                type(extended_postcontact_study) is not bool or
                 type(impulses) is not tuple or
-                not 1 <= len(impulses) <= MAX_STEPS or
+                not 1 <= len(impulses) <= (EXTENDED_STUDY_STEPS if
+                    extended_postcontact_study else MAX_STEPS) or
+                (extended_postcontact_study and len(impulses) !=
+                    EXTENDED_STUDY_STEPS) or
                 any(type(n) is not int or not -8 <= n <= 8 for n in impulses)
                 or type(initial_uc) is not int or not 0 <= initial_uc <= 1000
                 or type(initial_energy) is not int or not 1 <= initial_energy <= 100
@@ -371,6 +377,8 @@ class IsolatedI2:
                     last_resort_exploration INTEGER NOT NULL
                         CHECK(last_resort_exploration IN (0,1)),
                     deadline_aware INTEGER NOT NULL CHECK(deadline_aware IN (0,1)),
+                    extended_postcontact_study INTEGER NOT NULL
+                        CHECK(extended_postcontact_study IN (0,1)),
                     impulses_json TEXT NOT NULL,
                     initial_energy INTEGER NOT NULL, initial_resources INTEGER NOT NULL);
                 CREATE TABLE proto_state(
@@ -398,9 +406,10 @@ class IsolatedI2:
                     cognition_head TEXT NOT NULL UNIQUE);
             """)
             db.execute("BEGIN IMMEDIATE")
-            db.execute("INSERT INTO proto_meta VALUES(1,?,?,?,?,?,?,?,?)", (
+            db.execute("INSERT INTO proto_meta VALUES(1,?,?,?,?,?,?,?,?,?)", (
                 obj.life_ref, obj.genesis_ref, int(learning),
-                int(last_resort_exploration), int(deadline_aware), _json(impulses),
+                int(last_resort_exploration), int(deadline_aware),
+                int(extended_postcontact_study), _json(impulses),
                 initial_energy, resources))
             db.execute("INSERT INTO proto_state VALUES(1,0,?,0,?,0,0)",
                        (initial_energy, resources))
@@ -486,6 +495,9 @@ class IsolatedI2:
                 or cognition["synthetic_terminal"]):
             raise PrototypeRefusal("world and paid cognition revisions diverge")
         impulses = tuple(json.loads(meta["impulses_json"]))
+        if (bool(meta["extended_postcontact_study"]) !=
+                (len(impulses) == EXTENDED_STUDY_STEPS)):
+            raise PrototypeRefusal("extended study genesis/horizon mismatch")
         with self._connect() as db:
             capacity = db.execute("SELECT capacity FROM identity WHERE id=1").fetchone()[0]
             events = db.execute(
