@@ -19,7 +19,7 @@ class FourPolicySurvivalTests(unittest.TestCase):
         self.assertEqual(report["general_survival_benefit"], "NOT_ESTABLISHED")
         self.assertFalse(report["m11_authenticated"])
         for env in ENVIRONMENTS:
-            variants = report["results"][env]
+            variants = report["results"][env]["arms"]
             self.assertEqual(tuple(variants), tuple(name for name, *_ in POLICIES))
             for data in variants.values():
                 endpoint = data["endpoint"]
@@ -33,9 +33,24 @@ class FourPolicySurvivalTests(unittest.TestCase):
                 self.assertGreaterEqual(data["deadline_suppressions"], 0)
                 self.assertGreaterEqual(data["last_resort_raises"], 0)
 
+    def test_contrasts_report_first_divergence_without_causal_fitness_claim(self):
+        for env in ENVIRONMENTS:
+            report = self.report["results"][env]
+            self.assertEqual(set(report["contrasts_vs_observational"]),
+                             {"last_resort", "deadline", "combined"})
+            for contrast in report["contrasts_vs_observational"].values():
+                self.assertTrue(contrast["no_causal_survival_attribution"])
+                if contrast["first_divergent_decision_index"] is None:
+                    self.assertIsNone(contrast["control_action"])
+                    self.assertIsNone(contrast["intervention_action"])
+                if (contrast["control_death_tick"] is not None or
+                        contrast["intervention_death_tick"] is not None):
+                    self.assertIsNone(
+                        contrast["energy_difference_only_common_nonterminal_window"])
+
     def test_control_policies_remain_distinguishable_and_traceable(self):
         for env in ENVIRONMENTS:
-            variants = self.report["results"][env]
+            variants = self.report["results"][env]["arms"]
             self.assertEqual(variants["observational"]["deadline_suppressions"], 0)
             self.assertEqual(variants["observational"]["last_resort_raises"], 0)
             self.assertEqual(variants["last_resort"]["deadline_suppressions"], 0)
