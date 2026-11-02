@@ -40,6 +40,7 @@ EAT = "affordance:eat:berry_a"
 DRINK = "affordance:drink:water"
 # New fresh-genesis experimental body only. Historical worlds still get 0.
 RESTORATIVE_WATER_EVIDENCE = "evidence:i2:known:restorative-water-v1"
+BLIND_WATER_EVIDENCE = "evidence:i2:water-effect:unverified"
 RESTORATIVE_WATER_IMPULSE = 6
 # Existing I2 study comparator, NOT an endogenous discovered value function.
 PRIORS = {COLLECT: 3, EAT: 4, DRINK: 1}
@@ -159,36 +160,67 @@ class _UnusedValuation:
 
 
 class _ToyPlanSource:
-    """Only energy-local facts: COLLECT and DRINK never restore energy now.
+    """Offered-plan feasibility from current body and previously lived results.
 
-    A new, unrecognized affordance is never labeled not viable. This is
-    fixed toy body semantics, not a learned multi-step planner or oracle.
+    Historic disclosed water physics is retained. In the opt-in blind-water
+    study, only a previously paid and later observed outcome can support
+    viability; an adverse observation does not certify permanent impossibility.
+    This owner-local check is NOT independent M11 provenance.
     """
-    def __init__(self, claim: ObservationClaim, reflex: LocalEnergySurvivalReflex):
-        self.claim, self.reflex = claim, reflex
+
+    def __init__(self, claim: ObservationClaim, reflex: LocalEnergySurvivalReflex,
+                 results: tuple[ObservedChosenResult, ...] = ()):
+        if type(results) is not tuple:
+            raise PrototypeRefusal("plan history must be exact")
+        seen: set[str] = set()
+        previous_step = -1
+        for item in results:
+            if type(item) is not ObservedChosenResult:
+                raise PrototypeRefusal("invalid plan history result")
+            item.validate()
+            if (item.life_ref != claim.life_ref or
+                    item.observed_step <= previous_step or
+                    item.observed_step >= claim.capture.step or
+                    item.evidence_ref not in claim.subjective_evidence_refs or
+                    item.evidence_ref in seen):
+                raise PrototypeRefusal("foreign, duplicate or future plan evidence")
+            seen.add(item.evidence_ref)
+            previous_step = item.observed_step
+        self.claim, self.reflex, self.results = claim, reflex, results
 
     def verify(self, *, life_ref: str, claim: ObservationClaim, digest: str) -> bool:
         return (claim == self.claim and life_ref == claim.life_ref
                 and digest == claim.digest())
 
+    def _alternative_plan(self, semantic_ref: str) -> PlanAssessment:
+        if semantic_ref == DRINK:
+            if RESTORATIVE_WATER_EVIDENCE in self.claim.subjective_evidence_refs:
+                return PlanAssessment(DRINK, "VIABLE", RESTORATIVE_WATER_EVIDENCE)
+            if BLIND_WATER_EVIDENCE in self.claim.subjective_evidence_refs:
+                last = next((result for result in reversed(self.results)
+                             if result.chosen_action_ref == DRINK), None)
+                if last is None:
+                    return PlanAssessment(DRINK, "UNKNOWN", BLIND_WATER_EVIDENCE)
+                # This positive *observed net* is evidence, not future truth.
+                # Negative/zero feedback leaves future viability unresolved.
+                state = "VIABLE" if last.observed_net > 0 else "UNKNOWN"
+                return PlanAssessment(DRINK, state, last.evidence_ref)
+            return PlanAssessment(DRINK, "NOT_VIABLE", self.reflex.evidence_ref)
+        if semantic_ref == COLLECT:
+            return PlanAssessment(COLLECT, "NOT_VIABLE", self.reflex.evidence_ref)
+        return PlanAssessment(semantic_ref, "UNKNOWN", self.reflex.evidence_ref)
+
     def _alternative_state(self, semantic_ref: str) -> str:
-        # The new known restorative-water world is explicitly disclosed
-        # at genesis, unlike its hidden future berry payoff.
-        if (semantic_ref == DRINK and RESTORATIVE_WATER_EVIDENCE
-                in self.claim.subjective_evidence_refs):
-            return "VIABLE"
-        return "NOT_VIABLE" if semantic_ref in (COLLECT, DRINK) else "UNKNOWN"
+        return self._alternative_plan(semantic_ref).state
 
     def verify_plan(self, *, claim: ObservationClaim, plan: PlanAssessment) -> bool:
-        return (claim == self.claim and plan.evidence_ref == self.reflex.evidence_ref
-                and plan.state == self._alternative_state(plan.semantic_ref))
+        return claim == self.claim and plan == self._alternative_plan(plan.semantic_ref)
 
     def priority(self) -> str | None:
         if EAT not in self.claim.capture.accessible_semantics:
             return None
-        plans = tuple(PlanAssessment(
-            ref, self._alternative_state(ref), self.reflex.evidence_ref)
-            for ref in self.claim.capture.accessible_semantics if ref != EAT)
+        plans = tuple(self._alternative_plan(ref)
+                      for ref in self.claim.capture.accessible_semantics if ref != EAT)
         decision = assess_last_resort(
             claim=self.claim, reflex=self.reflex.snapshot(),
             reflex_source=self.reflex, observation_source=self,
@@ -213,7 +245,7 @@ class _LastResortValuation(ChosenOutcomeValuationStudy):
 
     def evaluate_batch(self, *, frame: object, receipts: tuple) -> tuple:
         values = super().evaluate_batch(frame=frame, receipts=receipts)
-        priority = _ToyPlanSource(self.claim, self.reflex).priority()
+        priority = _ToyPlanSource(self.claim, self.reflex, self.results).priority()
         if priority is None:
             return values
         by_semantic = {
@@ -283,7 +315,7 @@ class _ComposedSurvivalValuation(_DeadlineAwareValuation):
 
     def evaluate_batch(self, *, frame: object, receipts: tuple) -> tuple:
         values = super().evaluate_batch(frame=frame, receipts=receipts)
-        target = _ToyPlanSource(self.claim, self.reflex).priority()
+        target = _ToyPlanSource(self.claim, self.reflex, self.results).priority()
         if target is None:
             return values
         offered = {c.candidate_ref: c.semantic_ref for c in frame.candidates}
@@ -351,15 +383,19 @@ class IsolatedI2:
                deadline_aware: bool = False,
                extended_postcontact_study: bool = False,
                restorative_water_study: bool = False,
-               finite_water_capacity: int = 0) -> IsolatedI2:
+               finite_water_capacity: int = 0,
+               water_effect_blind: bool = False) -> IsolatedI2:
         if (type(learning) is not bool or
                 type(last_resort_exploration) is not bool or
                 type(deadline_aware) is not bool or
                 type(extended_postcontact_study) is not bool or
                 type(restorative_water_study) is not bool or
+                type(water_effect_blind) is not bool or
                 type(finite_water_capacity) is not int or
                 not 0 <= finite_water_capacity <= 8 or
-                (finite_water_capacity > 0 and not restorative_water_study) or
+                (finite_water_capacity > 0 and not (
+                    restorative_water_study or water_effect_blind)) or
+                (water_effect_blind and finite_water_capacity == 0) or
                 type(impulses) is not tuple or
                 not 1 <= len(impulses) <= (EXTENDED_STUDY_STEPS if
                     extended_postcontact_study else MAX_STEPS) or
@@ -400,7 +436,9 @@ class IsolatedI2:
                     finite_water_capacity INTEGER NOT NULL
                         CHECK(finite_water_capacity BETWEEN 0 AND 8),
                     impulses_json TEXT NOT NULL,
-                    initial_energy INTEGER NOT NULL, initial_resources INTEGER NOT NULL);
+                    initial_energy INTEGER NOT NULL, initial_resources INTEGER NOT NULL,
+                    water_effect_blind INTEGER NOT NULL
+                        CHECK(water_effect_blind IN (0,1)));
                 CREATE TABLE proto_state(
                     id INTEGER PRIMARY KEY CHECK(id=1),
                     revision INTEGER NOT NULL, energy INTEGER NOT NULL,
@@ -426,11 +464,12 @@ class IsolatedI2:
                     cognition_head TEXT NOT NULL UNIQUE);
             """)
             db.execute("BEGIN IMMEDIATE")
-            db.execute("INSERT INTO proto_meta VALUES(1,?,?,?,?,?,?,?,?,?,?,?)", (
+            db.execute("INSERT INTO proto_meta VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?)", (
                 obj.life_ref, obj.genesis_ref, int(learning),
                 int(last_resort_exploration), int(deadline_aware),
                 int(extended_postcontact_study), int(restorative_water_study),
-                finite_water_capacity, _json(impulses), initial_energy, resources))
+                finite_water_capacity, _json(impulses), initial_energy,
+                resources, int(water_effect_blind)))
             db.execute("INSERT INTO proto_state VALUES(1,0,?,0,?,0,0)",
                        (initial_energy, resources))
             db.commit()
@@ -486,7 +525,8 @@ class IsolatedI2:
                resources: int, records: tuple[dict, ...], *,
                physical_ticks: int,
                restorative_water_study: bool = False,
-               finite_water_capacity: int = 0) -> ObservationClaim:
+               finite_water_capacity: int = 0,
+               water_effect_blind: bool = False) -> ObservationClaim:
         water_used = sum(r["action_ref"] == DRINK for r in records)
         water_remaining = (max(0, finite_water_capacity - water_used)
                            if finite_water_capacity else None)
@@ -494,8 +534,11 @@ class IsolatedI2:
                           drink_available=(water_remaining is None or
                                            water_remaining > 0))
         refs = [f"evidence:i2:capture:{index}", f"evidence:i2:energy:{energy}"]
-        if restorative_water_study and (water_remaining is None or water_remaining > 0):
-            refs.append(RESTORATIVE_WATER_EVIDENCE)
+        if DRINK in offered:
+            if water_effect_blind:
+                refs.append(BLIND_WATER_EVIDENCE)
+            elif restorative_water_study:
+                refs.append(RESTORATIVE_WATER_EVIDENCE)
         if water_remaining is not None:
             refs.append(f"evidence:i2:water_remaining:{water_remaining}")
         refs.extend(f"evidence:i2:outcome:{r['seq']}" for r in records
@@ -527,7 +570,8 @@ class IsolatedI2:
             raise PrototypeRefusal("world and paid cognition revisions diverge")
         impulses = tuple(json.loads(meta["impulses_json"]))
         if ((meta["finite_water_capacity"] > 0 and
-             not meta["restorative_water_study"]) or
+             not (meta["restorative_water_study"] or meta["water_effect_blind"])) or
+            (meta["water_effect_blind"] and not meta["finite_water_capacity"]) or
             bool(meta["extended_postcontact_study"]) !=
                 (len(impulses) == EXTENDED_STUDY_STEPS)):
             raise PrototypeRefusal("extended study genesis/horizon mismatch")
@@ -574,7 +618,8 @@ class IsolatedI2:
                                 physical_ticks=tick_cursor,
                                 restorative_water_study=bool(
                                     meta["restorative_water_study"]),
-                                finite_water_capacity=meta["finite_water_capacity"])
+                                finite_water_capacity=meta["finite_water_capacity"],
+                                water_effect_blind=bool(meta["water_effect_blind"]))
             event = json.loads(saved[4])
             if (row["capture_ref"] != claim.capture.ref or
                     row["capture_step"] != claim.capture.step or
@@ -640,7 +685,8 @@ class IsolatedI2:
                           for c in frame["candidates"]}
                 values = event["advice"]["values"]
                 priority = (_ToyPlanSource(
-                    claim, LocalEnergySurvivalReflex(claim, energy)).priority()
+                    claim, LocalEnergySurvivalReflex(claim, energy),
+                    history).priority()
                     if meta["last_resort_exploration"] else None)
                 priority_applied = False
                 if meta["deadline_aware"] and COLLECT in mapped.values() and (
@@ -770,6 +816,7 @@ class IsolatedI2:
                 physical_ticks=sum(1 for revision in tick_revisions if revision < seq),
                 restorative_water_study=bool(meta["restorative_water_study"]),
                 finite_water_capacity=meta["finite_water_capacity"],
+                water_effect_blind=bool(meta["water_effect_blind"]),
             )
             reflex = LocalEnergySurvivalReflex(claim, row["before_energy"])
             if event["claim_digest"] != claim.digest():
@@ -856,7 +903,7 @@ class IsolatedI2:
             raise PrototypeRefusal("physical effect outside owner transaction")
         meta = conn.execute(
             "SELECT life_ref,genesis_ref,impulses_json,restorative_water_study,"
-            "finite_water_capacity FROM proto_meta WHERE id=1"
+            "finite_water_capacity,water_effect_blind FROM proto_meta WHERE id=1"
         ).fetchone()
         state = conn.execute(
             "SELECT revision,energy,inventory,resources,terminal,tick_count "
@@ -872,7 +919,8 @@ class IsolatedI2:
         expected = self._claim(state[0], state[1], state[2], state[3], prior,
                                physical_ticks=state[5],
                                restorative_water_study=bool(meta[3]),
-                               finite_water_capacity=meta[4])
+                               finite_water_capacity=meta[4],
+                               water_effect_blind=bool(meta[5]))
         if claim != expected:
             raise PrototypeRefusal("capture not issued from previous committed world")
         event_row = conn.execute(
@@ -1067,6 +1115,7 @@ class IsolatedI2:
                         physical_ticks=body["tick_count"],
                         restorative_water_study=bool(meta["restorative_water_study"]),
                         finite_water_capacity=meta["finite_water_capacity"],
+                        water_effect_blind=bool(meta["water_effect_blind"]),
                     ).capture.accessible_semantics
                     required_uc = (
                         INTAKE_UC + len(available) * UC_PER_CANDIDATE +
@@ -1141,7 +1190,8 @@ class IsolatedI2:
                             physical_ticks=state["tick_count"],
                             restorative_water_study=bool(
                                 meta["restorative_water_study"]),
-                            finite_water_capacity=meta["finite_water_capacity"])
+                            finite_water_capacity=meta["finite_water_capacity"],
+                            water_effect_blind=bool(meta["water_effect_blind"]))
         self.observations.digest = claim.digest()
         self.current.capture_ref = claim.capture.ref
         self.safety.veto = veto
