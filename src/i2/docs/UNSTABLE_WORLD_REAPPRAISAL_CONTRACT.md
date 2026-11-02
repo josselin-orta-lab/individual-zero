@@ -339,3 +339,17 @@ energy in the stable world but can cause terminal energy in the adverse
 world. This is not evidence of generalized survival benefit, a learned
 planner or reliable toxic-food detection. It is the smallest practical
 behavioral composition and is separately falsifiable.
+
+## Four-policy exploratory ablation after #841
+
+`src/i2/runtime/four_policy_survival_ablation.py` separately initializes
+observational, last-resort-only, deadline-only and combined policies for
+the same stable, adverse and hidden-restoration world schedules. It
+collects their actual audited paid choices, physical ticks, food contacts,
+UC cost, death/censoring, and separately marked priority/feasibility
+events. All outcomes are **descriptive single-run model evidence**.
+Changing actions changes experienced evidence and future state; unequal
+exposure must not be summarized as a causal fitness improvement.
+Historic source-locked probes are not altered. No hidden world information
+is provided to any individual's decisions. This is a bounded science
+probe of integration, not proof of natural autonomous learning.
