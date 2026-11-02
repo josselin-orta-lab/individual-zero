@@ -979,3 +979,26 @@ outcomes: a too-late hidden restoration does not save an individual
 who dies at tick 18. This is a timing falsifier for future-oracle
 leakage, not a prediction or a general-survival claim. Prior locked
 protocols and parameter choices remain unchanged.
+
+
+## Postdepletion chosen-result reappraisal, tenth paid decision
+
+A focused fresh-genesis regression follows the source-declared one-use
+safe-water, secretly restored-food world through ten paid decisions.
+The eighth chosen DRINK consumes the last water. At ninth choice, the
+only personal EAT memory is the earlier net -10; the urgent last-resort
+reflex boosts EAT, which is paid and actually executes. The newly
+experienced positive EAT net +4 becomes available only at the **tenth**
+predecision capture, where raw learned EAT score is 9 and emergency
+priority is no longer applied at recovered energy. The tenth EAT is
+also genuinely paid and admitted. The source cannot read the hidden
+food phase to select the ninth action, and the late observation cannot
+retroactively alter that earlier action.
+
+This demonstrates sequential integration of physical depletion,
+last-resort action, consequent memory update and ordinary subsequent
+valuation in one model-specific life. It does **not** establish that
+memory was necessary for tenth EAT: the ordinary candidate ordering
+and current affordances also matter. Neither generalized natural
+learning nor sustained survival is established by a tick-20
+right-censored endpoint.
