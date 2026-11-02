@@ -605,3 +605,17 @@ model-specific life**, not proof that the individual learned the reflex
 policy, that postcontact memory caused the ninth action, or that survival
 is sustained beyond the observed horizon. Persistent adverse and
 historical 8-decision controls remain untouched.
+
+
+## Hidden re-toxification after recovered contact: new negative control
+
+This independently source-declared tenth-decision study compares the
+already tested stable restoration schedule with an otherwise identical
+world in which the food payoff becomes adverse again *after* the
+positive eighth food contact. Through the ninth decision the available
+first-person observations, candidate valuations and actions remain
+identical; there is no perceptual cue about the future reversal. The
+world imposes different food consequences after the ninth action.
+Any energy or terminal difference is retrospective model-specific
+evidence, not predictive knowledge or robust protection. Older
+eight-decision worlds and original ten-window results are unchanged.
