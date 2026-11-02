@@ -116,6 +116,14 @@ def innate_adjustment(values, body, traits):
 NONRESTORING_ATTEMPTS = 2
 NONRESTORING_EVIDENCE = ":personal-nonrestoration"
 
+# The target is an ordinary innate action affordance, not a hidden prediction.
+# Rest/wait can repair integrity when resources permit, but neither drinks
+# calories nor promises a rescue from thirst or hunger.
+DIRECT_RESTORATION_RESERVE = {
+    "boire": "water", "manger": "food",
+    "dormir": "integrity", "attendre": "integrity",
+}
+
 
 def personally_nonrestoring_action(*, body, previous, action):
     """Past evidence of failure, independent of *current* availability.
@@ -127,17 +135,17 @@ def personally_nonrestoring_action(*, body, previous, action):
     """
     if type(body) is not Body or type(action) is not str or not action:
         raise NativeRefusal("native body and prior action required")
-    critical = tuple(k for k in ("food", "water", "integrity")
-                     if getattr(body, k) <= 10)
-    if not critical:
+    # Physically meaningful affordance-to-reserve mapping. A drink is not a
+    # failed meal just because hunger continues to grow during drinking.
+    targeted_reserve = DIRECT_RESTORATION_RESERVE.get(action)
+    if targeted_reserve is None or getattr(body, targeted_reserve) > 10:
         return False
-    threatened = min(critical, key=lambda k: (getattr(body, k), k))
     attempts = [r for r in previous if r[2] == action]
     if len(attempts) < NONRESTORING_ATTEMPTS:
         return False
     return all(
-        getattr(saved_body(row[5]), threatened) <=
-        getattr(saved_body(row[4]), threatened)
+        getattr(saved_body(row[5]), targeted_reserve) <=
+        getattr(saved_body(row[4]), targeted_reserve)
         for row in attempts[-NONRESTORING_ATTEMPTS:]
     )
 
@@ -342,9 +350,11 @@ class NativePaidI2:
         # A spent resource is absent from affordances, but two personally
         # lived nonrestorations remain evidence for revising the intention.
         # This claims no permanent environmental impossibility.
-        if (bool(meta["learning"]) and personally_nonrestoring_action(
-            body=body, previous=rows, action="boire"
-        )):
+        if bool(meta["learning"]) and any(
+            personally_nonrestoring_action(
+                body=body, previous=rows, action=action
+            ) for action in DIRECT_RESTORATION_RESERVE
+        ):
             return observed_claim("goal:physical-last-resort")
         return ordinary
 
@@ -605,8 +615,9 @@ class NativePaidI2:
         fixture = self._fixture(valuation)
         try:
             if not rows:
-                choice = ("boire" if "boire" in claim.capture.accessible_semantics
-                          else claim.capture.accessible_semantics[0])
+                choice = next((action for action in ("boire", "manger")
+                               if action in claim.capture.accessible_semantics),
+                              claim.capture.accessible_semantics[0])
                 fixture.open(
                     claim=claim, semantic_ref=choice,
                     evidence_ref=current_evidence(body, traits)[0],

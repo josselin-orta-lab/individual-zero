@@ -271,6 +271,63 @@ class NativePaidCycleTests(unittest.TestCase):
                     for v in event["advice"]["values"]))
                 self.assertEqual(actor.audit()["revision"], 3)
 
+
+    def test_failed_nutrition_critical_food_changes_goal_not_just_water(self):
+        import json
+        actor = self.birth(
+            body=Body(80, 3, 60, 100), food_stock=2, water_stock=0,
+            berry_food_gain=0.0, learning=True)
+        for _ in range(3):
+            actor.step()
+        with sqlite3.connect(self.path) as db:
+            actions = [row[0] for row in db.execute(
+                "SELECT admitted_action FROM native_physical_events ORDER BY seq")]
+            event = json.loads(db.execute(
+                "SELECT event_json FROM events WHERE seq=3").fetchone()[0])
+        self.assertEqual(actions[:2], ["manger", "manger"])
+        self.assertEqual(event["intention_kind"], "goal_changed")
+        self.assertEqual(event["claim"]["capture"]["goal_ref"],
+                         "goal:physical-last-resort")
+        self.assertNotIn("manger",
+                         event["claim"]["capture"]["accessible_semantics"])
+        self.assertEqual(actor.audit()["revision"], 3)
+
+    def test_hunger_during_drinking_is_not_a_failed_drink(self):
+        import json
+        actor = self.birth(
+            body=Body(80, 3, 50, 100), food_stock=0, water_stock=2,
+            drink_water_gain=0.0, learning=True)
+        for _ in range(3):
+            actor.step()
+        with sqlite3.connect(self.path) as db:
+            actions = [row[0] for row in db.execute(
+                "SELECT admitted_action FROM native_physical_events ORDER BY seq")]
+            event = json.loads(db.execute(
+                "SELECT event_json FROM events WHERE seq=3").fetchone()[0])
+        self.assertEqual(actions[:2], ["boire", "boire"])
+        self.assertEqual(event["claim"]["capture"]["goal_ref"],
+                         "goal:physical-needs")
+        self.assertNotEqual(event["intention_kind"], "goal_changed")
+        self.assertEqual(actor.audit()["revision"], 3)
+
+    def test_eating_while_thirsty_is_not_falsely_labelled_hydration_failure(self):
+        import json
+        actor = self.birth(
+            body=Body(80, 60, 3, 100), food_stock=2, water_stock=0,
+            berry_food_gain=20.0, learning=True)
+        for _ in range(3):
+            actor.step()
+        with sqlite3.connect(self.path) as db:
+            actions = [row[0] for row in db.execute(
+                "SELECT admitted_action FROM native_physical_events ORDER BY seq")]
+            event = json.loads(db.execute(
+                "SELECT event_json FROM events WHERE seq=3").fetchone()[0])
+        self.assertEqual(actions[:2], ["manger", "manger"])
+        self.assertEqual(event["claim"]["capture"]["goal_ref"],
+                         "goal:physical-needs")
+        self.assertNotEqual(event["intention_kind"], "goal_changed")
+        self.assertEqual(actor.audit()["revision"], 3)
+
     def test_native_body_journal_tamper_rejected(self):
         actor = self.birth()
         actor.step()
