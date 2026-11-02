@@ -548,3 +548,25 @@ the actual motor action. The specific next experimental challenge is
 to hold the reflex below urgency with matched predecision affordances
 so that the changed ranking can lead to a genuinely different paid
 choice without a hidden world oracle.
+
+
+## Matched first paid choice in a nonurgent world
+
+The already established neutral WorldBody protocol offers a useful
+falsifier without inventing new priors or changing the historical
+seven-case battery. At the **first** divergence between fresh learned
+and fixed-prior subjects, all earlier actual actions and outcomes are
+identical; the predecision body energy, inventory, resources, visible
+affordances, world tick, available personal results and UC are also
+equal. Both subjects use the same paid Competition and Action Control.
+At energy above the reflex emergency threshold, the survival reflex
+is NO_PREEMPTION and neither the deadline policy nor a survival-priority
+override is enabled. The test checks that a change to subjective
+valuation coincides with an actual paid *different selected action*.
+
+This is a precise toy-world first-decision contrast against fixed
+priors; after divergence, experience streams differ and later endpoints
+cannot be attributed to memory alone. It does NOT establish natural
+learning generalization, authenticated M11 witness or an externally
+actuating agent. The test is a new focused behavioral regression, not
+an alteration or reclassification of the source-locked historic data.
