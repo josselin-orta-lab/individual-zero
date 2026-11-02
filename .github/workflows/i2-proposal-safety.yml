@@ -28,7 +28,9 @@ jobs:
   inert-proposal:
     name: I2 inactive proposal (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    # Full source-locked I2 science suite now exceeds five minutes on 3.12.
+    # No test filtering, policy or experimental changes.
+    timeout-minutes: 12
     strategy:
       fail-fast: false
       matrix:
