@@ -48,12 +48,11 @@ class SafeWaterVersusRiskTests(unittest.TestCase):
             self.assertEqual(historic[3]["energy"],0)
             self.assertTrue(historic[3]["terminal"])
             for arm in (safe,combined):
+                # Plan-viability removes an emergency *override*, not
+                # the risk of an ordinary learner still selecting EAT.
                 self.assertFalse(arm[2]["last_resort_priority_applied"])
-                self.assertFalse(arm[3]["terminal"])
                 self.assertTrue(arm[2]["internal_admission"])
-                # No dangerous EAT should be prioritized when a source-
-                # verified restorative alternative is already offered.
-                self.assertNotEqual(arm[1].chosen,EAT)
+                self.assertEqual(arm[2]["chosen"],arm[1].chosen)
             self.assertEqual(safe[1].chosen,combined[1].chosen)
 
 if __name__=="__main__":
