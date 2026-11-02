@@ -369,6 +369,56 @@ class NativePaidCycleTests(unittest.TestCase):
         self.assertNotEqual(event["intention_kind"], "goal_changed")
         self.assertEqual(actor.audit()["revision"], 3)
 
+    def test_sleep_consolidates_only_personally_observed_repetition(self):
+        from i2.runtime.native_paid_cycle import sleep_consolidated_scores
+        rows = (
+            (1, "c1", "boire", -0.20, "before1", "after1"),
+            (2, "c2", "boire", -0.40, "before2", "after2"),
+            (3, "c3", "dormir", 0.10, "before3", "after3"),
+        )
+        learned, proven = sleep_consolidated_scores(
+            {"boire": 1, "dormir": 2}, previous=rows,
+            learning=True, enabled=True)
+        # Mean observed net is -6; fixed valuation offset is +5.
+        self.assertEqual(learned["boire"], -1)
+        self.assertEqual(proven, frozenset({"boire"}))
+        for learning, enabled in ((False, True), (True, False)):
+            same, markers = sleep_consolidated_scores(
+                {"boire": 1, "dormir": 2}, previous=rows,
+                learning=learning, enabled=enabled)
+            self.assertEqual(same["boire"], 1)
+            self.assertEqual(markers, frozenset())
+        premature, _ = sleep_consolidated_scores(
+            {"boire": 1}, previous=rows[:2], learning=True, enabled=True)
+        self.assertEqual(premature["boire"], 1)
+        # A later lived consequence overrides the older sleep summary.
+        renewed, _ = sleep_consolidated_scores(
+            {"boire": 7}, previous=rows + (
+                (4, "c4", "boire", 0.1, "before4", "after4"),),
+            learning=True, enabled=True)
+        self.assertEqual(renewed["boire"], 7)
+
+    def test_sleep_ablations_share_birth_and_physical_sleep_cost(self):
+        import json
+        traces = []
+        for enabled in (True, False):
+            path = Path(self.tmp.name) / ("sleep-" + str(enabled) + ".sqlite")
+            actor = NativePaidI2.create(
+                path, body=Body(50, 40, 50, 90),
+                temperament=self.traits, learning=True,
+                sleep_consolidation=enabled, food_stock=0, water_stock=0)
+            before = actor.audit()
+            actor.step()
+            after = actor.audit()
+            self.assertEqual(after["revision"], 1)
+            self.assertEqual(after["body"], actor.audit()["body"])
+            with sqlite3.connect(path) as db:
+                event = json.loads(db.execute(
+                    "SELECT event_json FROM events WHERE seq=1").fetchone()[0])
+            self.assertIn("dormir", event["claim"]["capture"]["accessible_semantics"])
+            traces.append((before["body"], before["temperament"]))
+        self.assertEqual(traces[0], traces[1])
+
     def test_native_body_journal_tamper_rejected(self):
         actor = self.birth()
         actor.step()

@@ -39,7 +39,7 @@ from i2.runtime.native_physiology_journal import (
 
 PRIORS = {"boire": 1, "manger": 4, "dormir": 2, "attendre": 1, "collecter": 2}
 HORIZON = 8
-GENESIS_SCHEMA = "i2-native-paid-local-life-v1"
+GENESIS_SCHEMA = "i2-native-paid-local-life-v2-sleep"
 
 
 class NativeRefusal(ValueError):
@@ -115,6 +115,7 @@ def innate_adjustment(values, body, traits):
 # Declared evidence sufficiency: do not call one unsuccessful attempt impossible.
 NONRESTORING_ATTEMPTS = 2
 NONRESTORING_EVIDENCE = ":personal-nonrestoration"
+SLEEP_EVIDENCE = ":sleep-consolidated"
 
 # The target is an ordinary innate action affordance, not a hidden prediction.
 # Rest/wait can repair integrity when resources permit, but neither drinks
@@ -179,23 +180,61 @@ def personally_nonrestoring_scores(
     return adjusted, frozenset(discouraged)
 
 
+def sleep_consolidated_scores(scores, *, previous, learning, enabled):
+    """Stabilize ONLY repeatedly lived outcomes before a committed sleep.
+
+    A recent non-sleep result overrides old sleep consolidation. No inferred
+    rewards, imagined outcomes, extra state owner or free physical effects.
+    The normal paid sleep action supplies its own real metabolic cost.
+    """
+    adjusted = dict(scores)
+    if not (learning and enabled):
+        return adjusted, frozenset()
+    sleeping = [i for i, row in enumerate(previous) if row[2] == "dormir"]
+    if not sleeping:
+        return adjusted, frozenset()
+    boundary = sleeping[-1]
+    if boundary == 0:
+        return adjusted, frozenset()
+    changed = set()
+    for action in adjusted:
+        prior = [row for row in previous[:boundary] if row[2] == action]
+        later = [row for row in previous[boundary + 1:] if row[2] == action]
+        if len(prior) < 2 or later:
+            continue
+        # Net relief is already an observed, birth-replayable consequence.
+        mean = round(sum(int(round(20 * row[3])) for row in prior) /
+                     len(prior))
+        new_value = mean + 5
+        if new_value != adjusted[action]:
+            adjusted[action] = new_value
+            changed.add(action)
+    return adjusted, frozenset(changed)
+
+
 class _Valuation(ChosenOutcomeValuationStudy):
-    def __init__(self, *, body, traits, previous=(), learning=False, **kwargs):
+    def __init__(self, *, body, traits, previous=(), learning=False,
+                 sleep_consolidation=True, **kwargs):
         super().__init__(**kwargs)
         self.body, self.traits = body, traits
         self.previous, self.learning = tuple(previous), learning
+        self.sleep_consolidation = sleep_consolidation
 
     def evaluate_batch(self, *, frame, receipts):
         evaluated = super().evaluate_batch(frame=frame, receipts=receipts)
         named = {c.candidate_ref: c.semantic_ref for c in frame.candidates}
         original = {named[v.candidate_ref]: v.value for v in evaluated}
-        initial = innate_adjustment(original, self.body, self.traits)
+        stabilized, consolidated = sleep_consolidated_scores(
+            original, previous=self.previous, learning=self.learning,
+            enabled=self.sleep_consolidation)
+        initial = innate_adjustment(stabilized, self.body, self.traits)
         updated, discouraged = personally_nonrestoring_scores(
             initial, claim=self.claim, body=self.body, traits=self.traits,
             previous=self.previous, learning=self.learning)
         return tuple(replace(
             v, value=updated[named[v.candidate_ref]],
             evidence_ref=v.evidence_ref + ":native-body" +
+            (SLEEP_EVIDENCE if named[v.candidate_ref] in consolidated else "") +
             (NONRESTORING_EVIDENCE if
              named[v.candidate_ref] in discouraged else ""))
             for v in evaluated)
@@ -206,7 +245,7 @@ def genesis_digest(meta):
         meta["genesis_ref"], meta["body_json"], meta["traits_json"],
         meta["food_stock"], meta["water_stock"], meta["learning"],
         meta["berry_food_gain"], meta["berry_integrity_delta"],
-        meta["drink_water_gain"]]).encode("ascii")).hexdigest()
+        meta["drink_water_gain"], meta["sleep_consolidation"]]).encode("ascii")).hexdigest()
 
 
 class NativePaidI2:
@@ -237,13 +276,15 @@ class NativePaidI2:
 
     @classmethod
     def create(cls, path, *, body: Body, temperament: BirthTemperament,
-               learning=True, food_stock=4, water_stock=4, uc=80,
+               learning=True, sleep_consolidation=True,
+               food_stock=4, water_stock=4, uc=80,
                berry_food_gain=20.0, berry_integrity_delta=-8.0,
                drink_water_gain=25.0):
         if (type(body) is not Body or
                 type(temperament) is not BirthTemperament or
                 min(body.food, body.water, body.integrity) <= 0 or
                 type(learning) is not bool or
+                type(sleep_consolidation) is not bool or
                 type(food_stock) is not int or not 0 <= food_stock <= 8 or
                 type(water_stock) is not int or not 0 <= water_stock <= 8 or
                 type(uc) is not int or not 0 <= uc <= 1000):
@@ -271,15 +312,18 @@ class NativePaidI2:
                 food_stock INTEGER NOT NULL, water_stock INTEGER NOT NULL,
                 learning INTEGER NOT NULL, berry_food_gain REAL NOT NULL,
                 berry_integrity_delta REAL NOT NULL,
-                drink_water_gain REAL NOT NULL, digest TEXT NOT NULL)""")
+                drink_water_gain REAL NOT NULL,
+                sleep_consolidation INTEGER NOT NULL,
+                digest TEXT NOT NULL)""")
             meta = dict(life_ref=obj.life_ref, genesis_ref=obj.genesis_ref,
                         body_json=_json(body.as_dict()),
                         traits_json=_json(temperament.as_dict()),
                         food_stock=food_stock, water_stock=water_stock,
                         learning=int(learning), berry_food_gain=berry_food_gain,
                         berry_integrity_delta=berry_integrity_delta,
-                        drink_water_gain=drink_water_gain)
-            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?)",
+                        drink_water_gain=drink_water_gain,
+                        sleep_consolidation=int(sleep_consolidation))
+            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?)",
                        (*meta.values(), genesis_digest(meta)))
             db.commit()
         obj.audit()
@@ -503,7 +547,10 @@ class NativePaidI2:
                 priors = observed_chosen_scores(
                     claim=claim, results=past,
                     source=_HistorySource(past), priors=PRIORS)
-                initial = innate_adjustment(priors, body, traits)
+                stabilized, consolidated = sleep_consolidated_scores(
+                    priors, previous=previous, learning=bool(meta["learning"]),
+                    enabled=bool(meta["sleep_consolidation"]))
+                initial = innate_adjustment(stabilized, body, traits)
                 scores, discouraged = personally_nonrestoring_scores(
                     initial, claim=claim, body=body, traits=traits,
                     previous=previous, learning=bool(meta["learning"]))
@@ -517,6 +564,8 @@ class NativePaidI2:
                             value["value"] != scores[candidates[c]] or
                             not value["evidence_ref"].endswith(
                                 ":native-body" +
+                                (SLEEP_EVIDENCE if
+                                 candidates[c] in consolidated else "") +
                                 (NONRESTORING_EVIDENCE if
                                  candidates[c] in discouraged else ""))
                             for value in values
@@ -622,7 +671,8 @@ class NativePaidI2:
         valuation = _Valuation(
             claim=claim, results=outcomes, source=_HistorySource(outcomes),
             priors=PRIORS, body=body, traits=traits,
-            previous=rows, learning=bool(meta["learning"]))
+            previous=rows, learning=bool(meta["learning"]),
+            sleep_consolidation=bool(meta["sleep_consolidation"]))
         fixture = self._fixture(valuation)
         try:
             if not rows:
