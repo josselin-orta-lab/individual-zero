@@ -845,3 +845,28 @@ thresholds to manufacture success. Require matched predecision state
 and subjective history before assigning a causal policy contrast.
 No existing eight-, ten-, or twenty-tick protocol, historical
 water semantics, I1, M11 or active engine registry may be rewritten.
+
+
+## Fresh-genesis finite restorative water implementation
+
+The optional `finite_water_capacity` accepts 1..8 only alongside
+`restorative_water_study=True`. Zero retains the previous unlimited
+restorative water behavior (and historical inert water when restorative
+water is false). Its immutable genesis-bound capacity and the number
+of already committed DRINK motor actions define a single-owner
+replayable remaining stock. Every DRINK with stock uses the normal
+paid action and yields the fixed +6 gross impulse. At exhaustion the
+next first-person capture exposes the source-verified
+`evidence:i2:water_remaining:0` and **does not offer DRINK**.
+The shared `_claim` construction is used by the active paid step,
+the researcher readout, the action transaction and the cold
+independent replay. An extra DRINK is refused even if the
+transactional action path is bypassed; no second stock owner or
+researcher-injected replenishment exists.
+
+This first implementation establishes physical resource consistency
+and an ordinary autonomous choice after depletion, not yet a
+successful learned-aversion -> known water -> renewed risky recontact
+trajectory. The next separate preregistered cohort must explicitly
+test that full behavioral sequence against persistent toxic controls,
+without changing these genesis parameters after reading outcomes.
