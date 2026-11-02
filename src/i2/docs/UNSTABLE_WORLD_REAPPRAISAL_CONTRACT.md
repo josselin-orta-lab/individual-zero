@@ -771,3 +771,24 @@ ordinary risky EAT from Competition or guarantee survival. This
 explicitly preserves the negative alternative-availability result,
 without retrofitting the older nonrestorative-water experiments or
 claiming any generalized survival advantage.
+
+
+## Longitudinal known-water versus inert-water comparison
+
+A separate 20-physical-tick, ten-phase cohort compares four fixed
+policies (observation, reflex, deadline, combined) with and without
+genesis-disclosed restorative water. All eight fresh lives share
+initial energy 40, UC 60, berries and persistently adverse hidden food.
+Only the water variant differs, and no policy is allowed to know a
+hidden berry payoff or receive a forced physical action. The new
+panel publishes paid action traces, predecision energy, deadline and
+reflex events, UC, modeled terminal events and right-censoring directly
+from the audited SQLite owner. It does **not** assume the rescue at a
+single critical decision grants sustained survival, and makes no
+population statistical or independent replication claim.
+
+The research decision after CI should use the *actual* tagged run
+output, especially whether combined differs from deadline alone.
+Do not change energy, priors, deadlines or exogenous food after viewing
+this output. The existing short-horizon and historic source-locked
+studies remain untouched.
