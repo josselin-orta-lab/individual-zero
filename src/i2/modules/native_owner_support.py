@@ -34,7 +34,7 @@ def saved_body(raw: str) -> Body:
             set(data) != {"energy", "food", "water", "integrity"}):
         raise ValueError("four exact current body channels required")
     body = Body(*(float(data[k]) for k in ("energy", "food", "water", "integrity")))
-    if raw != _json(body.as_dict()):
+    if raw != _json(data):
         raise ValueError("noncanonical committed body")
     return body
 
