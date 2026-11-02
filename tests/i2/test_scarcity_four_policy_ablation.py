@@ -43,6 +43,33 @@ class ScarcityFourPolicyTests(unittest.TestCase):
         print("I2_SCARCITY_FOUR_POLICY_RESULTS=" + json.dumps(
             self.reports, sort_keys=True, separators=(",", ":")), flush=True)
 
+    def test_negative_survival_evidence_is_preserved(self):
+        # These are descriptive results for the exact fixed toy worlds.
+        for energy in (8, 16):
+            for env in ("adverse", "restoration"):
+                case = self.reports[energy]["results"][env]
+                for label, arm in case["arms"].items():
+                    with self.subTest(energy=energy, env=env, policy=label):
+                        self.assertEqual(arm["endpoint"]["modeled_death_tick"], 4)
+                        self.assertEqual(arm["endpoint"]["ending_energy"], 0)
+                        self.assertEqual(arm["food_contact_ticks"], [4])
+                        self.assertEqual(arm["uc_spent"], 9)
+                        self.assertEqual(arm["last_resort_raises"], 0)
+        case = self.reports[8]["results"]["stable"]
+        for label, arm in case["arms"].items():
+            self.assertEqual(arm["endpoint"]["modeled_death_tick"], 8)
+            self.assertEqual(arm["endpoint"]["ending_energy"], 0)
+            self.assertEqual(arm["last_resort_raises"], 0)
+        self.assertEqual(case["arms"]["combined"]["chosen_actions"],
+                         case["arms"]["deadline"]["chosen_actions"])
+        self.assertNotEqual(case["arms"]["combined"]["chosen_actions"],
+                            case["arms"]["observational"]["chosen_actions"])
+        for label, arm in self.reports[16]["results"]["stable"]["arms"].items():
+            self.assertIsNone(arm["endpoint"]["modeled_death_tick"])
+            self.assertTrue(arm["endpoint"]["right_censored"])
+            self.assertEqual(arm["endpoint"]["ending_energy"], 8)
+            self.assertEqual(arm["last_resort_raises"], 0)
+
     def test_bad_energy_is_refused_not_clamped(self):
         for invalid in (True, 0, -1, 101, 4.5):
             with self.subTest(invalid=invalid), self.assertRaises(ValueError):
