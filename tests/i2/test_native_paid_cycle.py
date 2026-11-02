@@ -174,6 +174,49 @@ class NativePaidCycleTests(unittest.TestCase):
         self.assertIn("boire", event["claim"]["capture"]["accessible_semantics"])
         self.assertEqual(actor.audit()["revision"], 3)
 
+    def test_depleted_water_does_not_erase_failed_personal_strategy(self):
+        import json
+        actor = self.birth(body=Body(80, 60, 3, 100),
+                           learning=True, food_stock=0, water_stock=2,
+                           drink_water_gain=0.0)
+        for _ in range(3):
+            actor.step()
+        with sqlite3.connect(self.path) as db:
+            third = json.loads(db.execute(
+                "SELECT event_json FROM events WHERE seq=3").fetchone()[0])
+            actions = [r[0] for r in db.execute(
+                "SELECT admitted_action FROM native_physical_events ORDER BY seq")]
+        self.assertEqual(actions[:2], ["boire", "boire"])
+        self.assertEqual(third["intention_kind"], "goal_changed")
+        self.assertEqual(third["claim"]["capture"]["goal_ref"],
+                         "goal:physical-last-resort")
+        self.assertNotIn("boire",
+                         third["claim"]["capture"]["accessible_semantics"])
+        self.assertEqual(actor.audit()["revision"], 3)
+
+    def test_depleted_water_does_not_invent_failure_or_permanent_impossibility(self):
+        import json
+        for label, learning, gain, stock in (
+            ("fixed", False, 0.0, 2),
+            ("restored", True, 25.0, 2),
+            ("never-tried", True, 0.0, 0),
+        ):
+            with self.subTest(label=label):
+                path = Path(self.tmp.name) / (label + "-depleted.sqlite")
+                actor = NativePaidI2.create(
+                    path, body=Body(80, 60, 3, 100),
+                    temperament=self.traits, learning=learning,
+                    food_stock=0, water_stock=stock, drink_water_gain=gain)
+                for _ in range(3):
+                    actor.step()
+                with sqlite3.connect(path) as db:
+                    last = json.loads(db.execute(
+                        "SELECT event_json FROM events WHERE seq=3").fetchone()[0])
+                self.assertEqual(last["claim"]["capture"]["goal_ref"],
+                                 "goal:physical-needs")
+                self.assertNotEqual(last["intention_kind"], "goal_changed")
+                self.assertEqual(actor.audit()["revision"], 3)
+
     def test_restoration_and_no_learning_do_not_revise_goal(self):
         import json
         for name, learning, gain in (
