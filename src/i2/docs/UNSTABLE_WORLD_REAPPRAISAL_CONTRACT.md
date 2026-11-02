@@ -743,20 +743,31 @@ fact.
 
 ## Safe-water alternative versus last-resort priority at critical energy
 
-A focused fresh-genesis contrast holds the same adverse hidden berry
-physics and body state: after one paid COLLECT and two physical ticks,
-a berry and DRINK are simultaneously accessible at energy 4. The
-historic inert-water reflex may prioritize EAT after a learned negative
-outcome. In the disclosed restorative-water world, DRINK is
-source-verified as a viable energy-restoring alternative and the
-last-resort risk *override* must not be applied.
+The separately initialized adverse-berry comparison follows the
+**same first seven paid actions and harmful berry contact** before a
+critical eighth decision at physical tick 16. The first revised CI
+(run 41414056276, both Python versions) exposed incorrect numerical
+expectations: all four arms actually reach **energy 2, PREEMPT** rather
+than energy 4, CONSTRAIN, and a final COLLECT costs the last two energy
+units. The experimental numbers are corrected in the test, not the
+world, policies or hidden reward.
 
-Crucially, removing the emergency override does not remove risky
-food from the ordinary Competition candidate set: the existing
-learned/prior food score may still choose EAT, with possibly fatal
-consequences. The test therefore checks the source-bound refusal
-to apply the extra priority and actual paid motor authority, **not**
-an invented claim that safe water guarantees survival. A policy
-that should actually prefer safe water over risky food requires a
-separate explicit decision rule and scientific justification, not
-posthoc changing the results of this experiment.
+Both a berry (previously experienced as net -10) and DRINK remain
+accessible. Under the historical inert-water physics, last-resort
+priority selects risky EAT and the subject dies. In the opt-in known
+restorative-water world, DRINK is verified as an immediately **viable
+energy-restoring plan**, which prevents extra last-resort EAT priority.
+But **reflex-only still chooses an infeasible COLLECT** from its ordinary
+learned scores and dies at tick 16. Deadline-only and combined instead
+suppress that COLLECT, choose the restorative DRINK, and end energy 6
+nonterminal at the bounded horizon. All spend equal UC, with the same
+personally observed history and physical state immediately before the
+different paid choice. This is a local contribution of deadline
+evaluation, not proof of a distinct benefit from composing two
+policies: deadline-only and combined still choose the same rescue.
+
+Crucially, suppressing an unsafe *priority boost* does not remove
+ordinary risky EAT from Competition or guarantee survival. This
+explicitly preserves the negative alternative-availability result,
+without retrofitting the older nonrestorative-water experiments or
+claiming any generalized survival advantage.

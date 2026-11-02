@@ -58,8 +58,8 @@ class SafeWaterVersusRiskTests(unittest.TestCase):
                                   "physical_ticks_before",
                                   "subjective_outcomes_available"):
                         self.assertEqual(eighth[field], ref[field], field)
-                    self.assertEqual(eighth["before_energy"], 4)
-                    self.assertEqual(eighth["survival_reflex"]["state"], "CONSTRAIN")
+                    self.assertEqual(eighth["before_energy"], 2)
+                    self.assertEqual(eighth["survival_reflex"]["state"], "PREEMPT")
                     self.assertIn(EAT, eighth["visible"])
                     self.assertIn(DRINK, eighth["visible"])
                     self.assertIn(COLLECT, eighth["visible"])
@@ -78,7 +78,11 @@ class SafeWaterVersusRiskTests(unittest.TestCase):
             # priority. Without deadline planning, COLLECT still wins.
             self.assertFalse(safe["last_resort_priority_applied"])
             self.assertEqual(safe["chosen"], COLLECT)
-            self.assertEqual(arms["safe_reflex"][1]["energy"], 2)
+            self.assertEqual(arms["safe_reflex"][1]["energy"], 0)
+            self.assertTrue(arms["safe_reflex"][1]["terminal"])
+            self.assertEqual(safe["candidate_scores"][EAT], -5)
+            self.assertEqual(safe["candidate_scores"][COLLECT], 3)
+            self.assertEqual(safe["candidate_scores"][DRINK], 1)
             # Deadline suppression removes an infeasible COLLECT; DRINK
             # now wins the original unchanged paid Competition.
             for row, name in ((deadline, "safe_deadline"),
@@ -86,7 +90,9 @@ class SafeWaterVersusRiskTests(unittest.TestCase):
                 self.assertEqual(row["chosen"], DRINK)
                 self.assertFalse(row["last_resort_priority_applied"])
                 self.assertTrue(row["deadline_infeasible_collect_suppressed"])
-                self.assertEqual(arms[name][1]["energy"], 8)
+                self.assertEqual(arms[name][1]["energy"], 6)
+                self.assertEqual(row["candidate_scores"][COLLECT], 0)
+                self.assertEqual(row["candidate_scores"][DRINK], 1)
                 self.assertFalse(arms[name][1]["terminal"])
             self.assertEqual(deadline["uc_spent"], combined["uc_spent"])
             self.assertEqual(arms["safe_deadline"][1]["actual_uc_spent"],
