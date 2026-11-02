@@ -792,3 +792,56 @@ output, especially whether combined differs from deadline alone.
 Do not change energy, priors, deadlines or exogenous food after viewing
 this output. The existing short-horizon and historic source-locked
 studies remain untouched.
+
+
+## Observed twenty-tick water cohort: no independent composition gain
+
+The successful Python 3.11 and 3.12 CI for merged #863 (run
+41419185572) printed `I2_WATER_LONGITUDINAL_V1` with eight audited
+fresh lives. The researcher-declared adverse berry payoff persists
+through all phases, and the two water variants are separate
+experimental worlds.
+
+| Water physics | Observation | Reflex only | Deadline only | Combined |
+|---|---|---|---|---|
+| Historical inert water | modeled terminal tick 16 | modeled terminal tick 16 | modeled terminal tick 16 | modeled terminal tick 16 |
+| Known restorative water | modeled terminal tick 16 | modeled terminal tick 16 | nonterminal energy 10 at tick 20 | nonterminal energy 10 at tick 20 |
+
+Both nonterminal water arms choose DRINK at ticks 16, 18, and 20 and
+pay **48 UC**, versus **38 UC** spent by terminal arms that die at tick
+16. These are different exposure lengths, not evidence of superior
+cognitive efficiency. Both nonterminal arms are **right-censored**,
+not guaranteed to survive beyond tick 20. In both water worlds, the
+combined policy has **exactly the same selected actions, endpoint,
+and priority behavior** as deadline-only: zero evidence of a distinct
+composition gain. No policy is tuned in response to these results.
+
+## Next experiment specification: finite safe reserve, no free foreknowledge
+
+The current restorative DRINK affordance has unlimited availability.
+That makes the two policies practically equivalent whenever DRINK is
+known and restores energy. A **new separately identified fresh-genesis**
+toy world should introduce a finite, initially known, owner-audited
+stock of safe restorative water, with no replenishment or undocumented
+energy credit. Its depletion must be reflected in the *next* ordinary
+first-person observation, and the exhausted DRINK affordance must be
+unavailable rather than mysteriously becoming nonrestorative.
+
+The first scientific comparison should cover four independently
+initialized paid policies on identical stock/berry physics, including
+both viable-water availability and genuine exhaustion, with a
+personally experienced negative berry consequence before the
+critical final choice. At exhaustion, the last-resort reflex may
+reconsider uncertain food **only if EAT is truly accessible and no
+known viable rescue remains**. Under positive water stock, reflex
+priority may not override the known safe alternative. Every chosen
+action requires ordinary Competition, fresh Action Control and owner
+UC charge. The finite stock is a known current physical resource, but
+future toxic/recovered berry payoff stays hidden.
+
+A satisfactory negative outcome includes failure to reach exhaustion
+or modeled death before re-exposure; neither warrants changing prior
+thresholds to manufacture success. Require matched predecision state
+and subjective history before assigning a causal policy contrast.
+No existing eight-, ten-, or twenty-tick protocol, historical
+water semantics, I1, M11 or active engine registry may be rewritten.
