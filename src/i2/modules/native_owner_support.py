@@ -44,7 +44,7 @@ def saved_traits(raw: str) -> BirthTemperament:
         raise ValueError("immutable birth temperament required")
     data = json.loads(raw)
     traits = declared_temperament(data)
-    if raw != _json(traits.as_dict()):
+    if raw != _json(data):
         raise ValueError("noncanonical birth temperament")
     return traits
 
