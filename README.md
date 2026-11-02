@@ -1,164 +1,102 @@
 # Individual Zero
 
-**Open research in artificial intelligence, cognitive architectures, and autonomous learning for embodied artificial individuals.**
+**Open research into low-abstraction cognitive engines and emergent artificial individuality.**
 
-Individual Zero investigates whether an artificial individual in a simplified world and body can learn useful behavior from its own observations, needs, actions, and consequences, including in unfamiliar situations. The work explores perception, memory, learning, consolidation, motivation, action selection, and causal attribution without preloading a successful behavioral policy.
+> **At what point does a collection of mechanisms begin to behave as a single individual?**
 
-Human-inspired cognitive mechanisms are hypotheses to test, not assumptions to accept. The aim is an observable, falsifiable, and reproducible research architecture. A software test passing or an agent surviving a scenario is not, by itself, evidence of generalized autonomous learning.
+This question drives Individual Zero.
 
-## Start here
+Individual Zero is an open-source research initiative exploring how coherent, adaptive behavior might emerge from explicit mechanisms interacting within a unified artificial system.
 
-If this is your first visit:
+Rather than starting with the outward appearance of intelligence, the project investigates its possible underlying conditions: how perception, internal regulation, emotion, memory, learning, decision-making, and self-modeling might influence one another over time.
 
-1. Read the short [project overview](docs/presentation/01-project-overview.md) and [repository tour](docs/presentation/02-repository-tour.md).
-2. Explore the [current I1 engineering handbook](src/i1/docs/README.md) and [evidence matrix](src/i1/docs/EVIDENCE_MATRIX.md).
-3. Review the [I1-to-I2 scientific transition and gates](docs/architecture/proposals/i2-transition-and-scientific-gates-2026-10-31.md) before treating I2 as a running individual.
-4. See the [research workflow](docs/presentation/03-research-workflow.md), [contributor guide](docs/presentation/04-contributor-first-hour.md), and [worked examples](examples/README.md).
-5. For the historical I0 demonstration, see [Running the bootstrap](docs/presentation/06-running-the-bootstrap.md). That CLI is **not** the active natural-I1 engine.
+The objective is not merely to imitate intelligent behavior, but to understand the conditions under which it might arise.
 
-The documentation is layered. You do not need to understand the complete architecture to inspect an experiment or contribute a focused change.
+## The central hypothesis
 
-**For development agents:** understand the global research priorities through the [research coordinator](docs/engineering/RESEARCH_COORDINATOR.md), then inspect the [Architecture Atlas](docs/architecture/ATLAS.md), [AGENTS.md](AGENTS.md) and [two-minute navigation map](docs/engineering/AGENT_NAVIGATION.md) before editing. The registry, generation-owned contracts, code, software checks and scientific evidence answer different questions; historical reports do not override live HEAD.
+Intelligence may not require a single central mechanism. It could emerge from the organization and interaction of simpler processes.
 
-## Architectural generations
+Drawing from **neuroscience, psychology, physiology, and software architecture**, Individual Zero explores this possibility through mechanisms that can be inspected, challenged, and experimentally compared. Human cognition provides questions and hypotheses, not a blueprint assumed to be correct.
 
-I0, I1, and I2 are **architectural generations**, not ordinary software releases.
+The focus is on the whole system: not whether one module can remember, choose, or regulate, but whether their interactions can produce continuity, adaptation, and behavior that remains coherent across changing circumstances.
 
-| Generation | Status (31 October 2026) | Entry point |
-| --- | --- | --- |
-| **I0** | Frozen historical reference; not the active research engine | [I0 archive and engine map](docs/architecture/ENGINE_GENERATIONS.md) |
-| **I1** | **Active** artificial-individual research architecture with generation-owned Lab, runtime, tests, and evidence | [I1 handbook](src/i1/docs/README.md) |
-| **I2** | **Proposal only**, unregistered and not an executable living individual; current source includes inert research fixtures | [I2 research proposal](docs/architecture/proposals/i2-continuity-and-learning-contract-2026-10-31.md) |
+## Why low abstraction?
 
-Each generation must be autonomous: a historical parent is a research lineage, **not** a runtime dependency. No successor may rely on an obsolete engine's live state, memory, owner, fallback mode, or resurrection path. See [ADR-0001](docs/decisions/ADR-0001-strict-generation-autonomy.md) and the [engine registry](config/engine-registry.json).
+A low-abstraction cognitive engine exposes its mechanisms rather than concealing them behind a single claim of intelligence.
 
-## Guiding rule
+Internal state, inputs, decisions, costs, and consequences should be traceable. Researchers should be able to ask *what changed, why it changed, and whether that change mattered*.
 
-> **Each generation owns its own cognition and living-world boundary. Experiments provide evidence. Tests verify code.**
+This is a methodological choice, not an assertion that complex cognition can already be explained by the architecture. Making mechanisms explicit allows individual hypotheses to be tested and failures to be understood.
 
-Scientific observations are kept distinct from software correctness, and historical generations remain available for isolated comparisons without being imported into a successor's runtime.
+## Mechanisms under investigation
 
-## Research workflow
+- **Perception and embodiment:** how an artificial system encounters a world through its own observations and actions.
+- **Internal regulation and emotion:** how needs, physiological analogues, affect, and motivation may shape priorities.
+- **Memory and learning:** how experiences are retained, consolidated, and used to change later behavior.
+- **Decision-making and agency:** how competing possibilities lead to actions with consequences, and how those consequences can be attributed.
+- **Self-modeling and continuity:** how a system might maintain and update representations of its own state and history.
 
-Scientific contributions follow:
+These are **research directions, not claims of achieved capabilities**.
 
-**Question / hypothesis -> RAI -> minimal plan -> prototype -> test -> results -> decision**
+The interesting question lies in their interaction. Can an experience alter internal regulation, influence memory, change a future decision, and contribute to a persistent pattern of adaptive behavior? If so, under what conditions, and with what measurable limits?
 
-RAI means **Reuse, Adapt, Implement**.
+## Research before conclusions
 
-Possible decisions are:
+Individual Zero is designed as an observable, falsifiable, and reproducible research effort.
 
-- **retry**: the question remains useful, but the method or prototype needs revision;
-- **reject**: the tested mechanism or hypothesis is not supported under the tested conditions;
-- **integrate**: the result justifies a change to the current reference;
-- **candidate I(n+1)**: the result suggests a broader architectural rupture worth investigating.
+Hypotheses are translated into experiments. Implementations are tested against explicit constraints. Behavioral observations are separated from software correctness, and scientific conclusions must be supported by evidence rather than by a convincing demonstration.
 
-Negative and inconclusive results are kept when they provide reproducible information.
+Negative and inconclusive results are part of the record. A passing test does not establish general intelligence; successful behavior in one environment does not establish generalized autonomous learning.
 
-## Repository map
+**No claims of AGI. No claims of artificial consciousness. No definitive answers.**
 
-```text
-individual-zero/
-├── config/engine-registry.json
-├── src/
-│   ├── adapters/                 # external integration boundaries
-│   ├── i0/                       # frozen historical engine
-│   ├── i1/                       # active engine, Lab, runtime and handbook
-│   └── i2/                       # unregistered, non-living research proposal
-├── archive/i0/                   # preserved historical material
-├── docs/
-│   ├── presentation/             # onboarding
-│   ├── architecture/             # models and generation proposals
-│   ├── research/                 # protocols, results and limitations
-│   ├── decisions/                # architecture decisions
-│   └── engineering/              # technical operating procedures
-├── experiments/
-├── benchmarks/
-├── tests/
-└── tools/
-```
+Just hypotheses, experiments, and an architecture open to scrutiny.
 
-- [I1 research handbook](src/i1/docs/README.md) holds the active generation's mechanism descriptions and evidence limits.
-- [Architecture Atlas](docs/architecture/ATLAS.md) lets agents trace the I1 causal path, component owners, tests and scientific boundaries before editing.
-- [Generation map](docs/architecture/ENGINE_GENERATIONS.md) explains engine ownership and archive boundaries.
-- [Test placement](tests/TEST_LAYOUT.md), [archive custody](archive/README.md) and [research records](docs/research/README.md) provide physical navigation without promoting historical evidence.
-- [Research documentation](docs/research/README.md) and `experiments/` record hypotheses, protocols, observations, uncertainty, and negative outcomes.
-- [Engineering start guide](docs/engineering/START_HERE.md) explains current entrypoints. The older `individual-zero` CLI is a historical I0 bootstrap demo, not an I1 science run.
+Read the [research workflow](docs/presentation/03-research-workflow.md), [research map](RESEARCH_MAP.md), and [experiments versus software tests](docs/research/experiments-vs-tests.md) for the methodology.
 
-## When is an experiment required?
+## Where the project stands
 
-An EXP is not a development ticket.
+The repository contains distinct architectural generations. They are research generations, not conventional product versions.
 
-Create or join one when work is intended to produce measurable knowledge about the system, compare mechanisms, or justify a change in scientific reference behavior.
+| Generation | Role |
+| --- | --- |
+| **I0** | Preserved historical reference. |
+| **I1** | Currently registered active research engine, with its own runtime, laboratory, and evidence records. |
+| **I2** | Independent experimental proposal and non-living prototypes; not registered as an active or born engine. |
 
-Examples that normally require an EXP:
+The current implementation investigates embodied perception, internal regulation, memory, action, and continuity. It does **not** establish that a unified artificial individual has achieved generalized autonomous learning.
 
-- a new learning strategy;
-- a new memory or consolidation mechanism;
-- a change in action selection, internal regulation, affect, or motivation;
-- replacing a reference cognitive component with an external dependency;
-- changing reference parameters with an expected behavioral effect;
-- changing the global cycle or structural relationships between subsystems.
+For the authoritative technical and scientific boundaries, see the [engine registry](config/engine-registry.json), [I1 evidence matrix](src/i1/docs/EVIDENCE_MATRIX.md), and [I2 research status](src/i2/docs/STATUS.md). Architectural progress, software validation, and scientific evidence are assessed separately.
 
-Documentation, tooling, CI, compatible adapter updates, behavior-preserving refactoring, clearly identified bug fixes, and equivalent performance optimizations normally require software tests, not a scientific EXP.
+## Published research
 
-See [Experiments vs tests](docs/research/experiments-vs-tests.md) for concrete examples.
+The research is public and open to examination.
 
-## Research axes
+1. **Architecture of an Artificial Individual - Version 2, Informed by Human Psychology and Physiology**  
+   [https://doi.org/10.5281/zenodo.23070595](https://doi.org/10.5281/zenodo.23070595)
+2. **Artificial individual - technical specification**  
+   [https://doi.org/10.5281/zenodo.23091065](https://doi.org/10.5281/zenodo.23091065)
+3. **Artificial individual - implementation analysis of the specification**  
+   [https://doi.org/10.5281/zenodo.23224611](https://doi.org/10.5281/zenodo.23224611)
 
-- **AXIS-ARCH**: architecture, integration, and global dynamics
-- **AXIS-PERCEPTION**: perception, body, and world model
-- **AXIS-MEMORY**: memory, learning, and consolidation
-- **AXIS-REGULATION**: interoception, homeostasis, affect, and motivation
-- **AXIS-ACTION**: action selection, agency, and control
-- **AXIS-SELF**: self, metacognition, and continuity
+Repository citation metadata is available in [CITATION.cff](CITATION.cff).
 
-See [RESEARCH_MAP.md](RESEARCH_MAP.md).
+## Explore the project
 
-## Contributing
+For a first look, start with the [project overview](docs/presentation/01-project-overview.md) and [repository tour](docs/presentation/02-repository-tour.md).
 
-You do not need to understand the entire architecture before contributing.
+To understand the architecture and its limitations, read the [I1 research handbook](src/i1/docs/README.md), [Architecture Atlas](docs/architecture/ATLAS.md), and [generation map](docs/architecture/ENGINE_GENERATIONS.md).
 
-For contribution permissions and public-release governance, see [repository governance](docs/governance/README.md).
+To inspect or contribute to the research, use the [research workflow](docs/presentation/03-research-workflow.md), [experiment records](docs/research/README.md), [contribution guide](CONTRIBUTING.md), and [engineering start guide](docs/engineering/START_HERE.md).
 
-Start by identifying whether the change is:
+## Open research and contributions
 
-- **technical**: the software or infrastructure changes, but the scientific behavior is not expected to change;
-- **scientific**: a hypothesis or behavioral change must be measured;
-- **architectural**: experimental evidence supports a shared structural decision.
+Individual Zero welcomes critical examination, reproducible experiments, alternative hypotheses, and technically grounded contributions. Understanding the entire architecture is not a prerequisite for investigating a focused question.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) and the [contribution examples](examples/README.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md) and the [repository governance](docs/governance/README.md) before proposing changes.
 
-## Licensing
-
-Individual Zero uses a split licensing model:
-
-- **Source code and software scripts**: [Apache License 2.0](LICENSE)
-- **Original documentation, research text, diagrams, and written experimental reports**: [CC BY 4.0](LICENSE-DOCUMENTATION), unless stated otherwise
-- **Third-party components and datasets**: remain subject to their own licenses
-
-## Responsible development
-
-Openness supports independent review, but openness alone does not guarantee safety.
-
-The project should progress in stages, evaluate developed capabilities, keep responsibilities identifiable, and document deployment limits when they become relevant.
-
-See [SECURITY.md](SECURITY.md).
-
-## Research status (31 October 2026)
-
-**I1 is active; I0 is preserved; I2 is not activated.** I1 implements and tests mechanisms for first-person perception, bodily regulation, mortal world interaction, memory, learning, and authenticated persistence. Those implementation facts do **not** establish that the combined system learns naturally, efficiently, or autonomously across novel environments.
-
-The pre-registered A1-C confirmatory study was a targeted **NO_GO**. General adaptive improvement at the L3 scientific gate remains **NOT_ESTABLISHED**. The A2-R cohort was **NOT_EXECUTED** (0/96). I2 work is limited to proposals and isolated, non-living research fixtures; no I2 birth or scientific promotion is authorized.
-
-Start with the [I1 evidence matrix](src/i1/docs/EVIDENCE_MATRIX.md), the [I1-to-I2 decision and result limits](docs/architecture/proposals/i2-transition-and-scientific-gates-2026-10-31.md), and the [generation autonomy decision](docs/decisions/ADR-0001-strict-generation-autonomy.md). The project makes **no claim of AGI, consciousness, or demonstrated generalized autonomous learning**.
-
-Software progress, behavioral observation, and scientific validation are deliberately reported separately.
-
-## Citation
-
-Citation metadata is available in [CITATION.cff](CITATION.cff).
+**Licensing:** source code and scripts use [Apache 2.0](LICENSE); original documentation and research materials use [CC BY 4.0](LICENSE-DOCUMENTATION), unless otherwise stated. Third-party materials retain their own licenses.
 
 ---
 
-**Individual Zero** is not built by declaring one grand theory correct. It is built by asking small enough questions that experiments can answer them.
+**The mechanisms are visible. What might emerge from them remains an open question.**
