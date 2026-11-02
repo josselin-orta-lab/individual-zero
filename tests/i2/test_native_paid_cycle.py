@@ -147,7 +147,7 @@ class NativePaidCycleTests(unittest.TestCase):
                 "SELECT admitted_action FROM native_physical_events ORDER BY seq")]
             third = json.loads(db.execute(
                 "SELECT event_json FROM events WHERE seq=3").fetchone()[0])
-        self.assertEqual(actions, ["boire", "boire", "dormir"])
+        self.assertEqual(actions, ["boire", "boire", "collecter"])
         self.assertTrue(any(
             v["evidence_ref"].endswith(":native-body:personal-nonrestoration")
             for v in third["advice"]["values"]))
@@ -237,6 +237,47 @@ class NativePaidCycleTests(unittest.TestCase):
                                  "goal:physical-needs")
                 self.assertNotEqual(event["intention_kind"], "goal_changed")
                 self.assertEqual(actor.audit()["revision"], 3)
+
+    def test_last_resort_is_new_untested_action_not_a_predicted_reward(self):
+        import json
+        actor = self.birth(body=Body(80, 60, 3, 100),
+                           learning=True, food_stock=0,
+                           water_stock=4, drink_water_gain=0.0)
+        for _ in range(4):
+            actor.step()
+        with sqlite3.connect(self.path) as db:
+            events = [json.loads(v[0]) for v in db.execute(
+                "SELECT event_json FROM events ORDER BY seq")]
+            effects = [tuple(row) for row in db.execute(
+                "SELECT admitted_action,before_json,after_json "
+                "FROM native_physical_events ORDER BY seq")]
+        third, fourth = events[2], events[3]
+        self.assertEqual(effects[2][0], "collecter")
+        self.assertIn("collecter",
+                      third["claim"]["capture"]["accessible_semantics"])
+        self.assertNotIn("evidence:i2:native:outcome:3",
+                         third["claim"]["subjective_evidence_refs"])
+        self.assertIn("evidence:i2:native:outcome:3",
+                      fourth["claim"]["subjective_evidence_refs"])
+        before, after = json.loads(effects[2][1]), json.loads(effects[2][2])
+        self.assertLess(after["energy"], before["energy"])
+        self.assertLess(after["water"], before["water"])
+        self.assertFalse(actor.audit()["m11_authenticated"])
+
+    def test_no_unearned_exploration_before_lived_failure(self):
+        import json
+        actor = self.birth(body=Body(80, 60, 3, 100),
+                           learning=False, food_stock=0,
+                           drink_water_gain=0.0)
+        for _ in range(3):
+            actor.step()
+        with sqlite3.connect(self.path) as db:
+            events = [json.loads(v[0]) for v in db.execute(
+                "SELECT event_json FROM events ORDER BY seq")]
+        for event in events:
+            self.assertNotIn(
+                "collecter", event["claim"]["capture"]["accessible_semantics"])
+        self.assertEqual(actor.audit()["revision"], 3)
 
     def test_no_learning_retains_innate_reflex_but_not_lived_reassessment(self):
         actor = self.birth(body=Body(80, 60, 3, 100),
