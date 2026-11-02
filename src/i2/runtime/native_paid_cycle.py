@@ -37,7 +37,7 @@ from i2.runtime.native_physiology_journal import (
     audit_native_body, commit_unadmitted_tick, passive_body_tick, NO_ACTION,
 )
 
-PRIORS = {"boire": 1, "manger": 4, "dormir": 2, "attendre": 1}
+PRIORS = {"boire": 1, "manger": 4, "dormir": 2, "attendre": 1, "collecter": 2}
 HORIZON = 8
 GENESIS_SCHEMA = "i2-native-paid-local-life-v1"
 
@@ -355,7 +355,18 @@ class NativePaidI2:
                 body=body, previous=rows, action=action
             ) for action in DIRECT_RESTORATION_RESERVE
         ):
-            return observed_claim("goal:physical-last-resort")
+            # A new *unknown* probe is now perceivable, not automatically
+            # chosen. The known physical collect action currently costs energy
+            # and yields no nutrition or hydration in this bounded world.
+            # Only paid competition and safety can select it.
+            offered.append("collecter")
+            return ObservationClaim(
+                self.life_ref, FirstPersonCapture(
+                    10 + 8 * seq, "capture:i2:native:" + str(seq),
+                    "goal:physical-last-resort", tuple(sorted(offered))),
+                "source:i2:native:committed:" + str(seq),
+                tuple(sorted(evidence)))
+        return ordinary
         return ordinary
 
     def _history(self, rows):
