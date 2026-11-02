@@ -530,3 +530,21 @@ or a causally isolated memory-dependent choice. A subsequent source-
 declared experiment must disentangle the survival reflex and memory
 with matched predecision affordances and identical action history,
 without altering old locked experiments or selecting favorable runs.
+
+
+## Matched ninth-capture raw ranking falsifier
+
+A dedicated test now inspects the **exact predecision capture** at
+physical tick 18, after the individual's restored-food EAT net +4 at
+tick 16, before any ninth motor action is selected. The same verified
+chosen-result evidence yields raw EAT score 9 with the latest positive
+result, and -5 when that one result is analytically omitted. This
+reverses EAT's raw ordering relative to COLLECT without modifying the
+body, action inventory, UC, world phase, or fixed priors. It then
+executes the genuine ninth paid action and checks the reflex confound.
+The omission is a researcher-only score sensitivity analysis, **not**
+a second counterfactual individual and not proof that memory caused
+the actual motor action. The specific next experimental challenge is
+to hold the reflex below urgency with matched predecision affordances
+so that the changed ranking can lead to a genuinely different paid
+choice without a hidden world oracle.
