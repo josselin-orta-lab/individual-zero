@@ -380,3 +380,39 @@ the full readout for manual scientific review. Neither policy selection,
 UC, hidden food payoff, world cadence nor the original default 40-energy
 cohort is changed. No result is interpreted as an independent causal
 fitness benefit: censoring, death and unequal exposure remain explicit.
+
+
+## Observed scarcity result, fixed exploratory cohort (2 November 2026)
+
+The GitHub CI result for #844 (Python 3.11, run 41365702859)
+contains 24 fresh-life executions: two initial-energy levels (8, 16),
+three world regimes and four policies. The readout is source-bound
+to the fixed in-process WorldBody, **not** an independent scientific
+replication. Its actual negative observations:
+
+| Initial energy | World | Observed outcome across all four policies |
+|---|---|---|
+| 8 | adverse | terminal at physical tick 4; energy 0 |
+| 8 | restoration | terminal at physical tick 4; energy 0 |
+| 8 | stable | terminal at physical tick 8; energy 0 |
+| 16 | adverse | terminal at physical tick 4; energy 0 |
+| 16 | restoration | terminal at physical tick 4; energy 0 |
+| 16 | stable | nonterminal through tick 16; energy 8 (right-censored) |
+
+At initial energy 8 in stable food, deadline and combined policies
+choose DRINK rather than COLLECT at tick 6; *all* four policies still
+die at tick 8. The 16-energy stable policy traces have no action
+divergence. **No last-resort valuation increase was exercised** in
+any of these 24 traces. Thus the study supplies no evidence that the
+combined policy extends survival and insufficient behavioral exposure
+to evaluate emergency re-exploration. The restoration world kills
+before its hidden recovery can be personally encountered.
+
+The correct next targeted behavioral falsifier is a **reachable**
+personally harmful meal followed by a changed hidden regime and
+critical energy, comparing the same paid ordinary choice against
+survival re-exposure; it must keep pre-choice observations and
+motor/UC authority aligned. Do not adjust energy thresholds,
+hidden switching times or priors post hoc to manufacture success,
+and do not count censoring as survival success. An explicitly
+new protocol must be distinguished from the original #844 cohort.
