@@ -3,6 +3,50 @@
 **Status:** I2-only research contract proposal, not integrated into the running
 I2 toy world and not a natural-learning, reflex, M11 or motor implementation.
 
+## Architectural clarification: innate reflex and low-abstraction autonomy (owner, 2 November 2026)
+
+**The survival reflex is innate equipment of I2's low-abstraction regulation,
+not a learned policy and not an external experimenter action.** An autonomous
+system may possess built-in physiological safeguards and still autonomously
+perceive, arbitrate, adapt and act through its own mechanisms. Neither the
+presence nor activation of an innate reflex subtracts autonomy. Conversely,
+a hard-coded threshold alone does not demonstrate acquired learning,
+generalized adaptive competence or a validated living engine.
+
+Keep three different experimental factors distinct:
+
+1. **Innate reflex availability and state:** an endogenous, current-body
+   danger/urgency signal; it may constrain or prioritize reconsideration,
+   without knowing hidden food effects. Reflex-off runs are explicit
+   *mechanism-removal controls*, not a definition of an autonomous I2.
+2. **Experience-derived valuation:** the use of previously observed chosen
+   consequences to update action preferences.
+3. **Experience-derived plan viability:** the use of those same verified
+   past observations and current affordances to judge whether an alternative
+   remains possible; exhaustion is observed, not predicted from hidden physics.
+
+For a **no-learning** comparison, hold the innate reflex source, thresholds,
+activation and action-control path fixed. Disabling experiential valuation
+or viability must not silently disable the reflex. Conversely,
+`last_resort_exploration=False` in historical disposable I2 studies is a
+specific reflex-priority ablation, not an architectural claim that born I2
+would lack innate reflexes. The current `learning=False` owner switch
+excludes past chosen results from **both** preference valuation and
+blind-water plan-viability assessment, while leaving reflex activation
+independently controlled. Therefore its behavioral contrast cannot isolate
+either learned submechanism by itself; see
+[critical-path issue #883](https://github.com/josselin-orta-lab/individual-zero/issues/883).
+
+The desired integrated behavior is: the built-in reflex detects actual
+survival pressure; the low-abstraction system assesses accessible options
+using its real present body and lived consequences; and the normal paid
+Competition and fresh Action Control may select and admit a last-resort
+action when previously preferred plans are no longer viable. This is
+**internal autonomy**, not a researcher-forced rescue. The current toy
+categorical EAT priority and fixed energy thresholds remain explicitly
+researcher-designed approximations, not proof of general low-abstraction
+autonomy, learned safety or M11 authentication.
+
 ## Why this is a distinct contract
 
 The exact-head #827 blind-restoration falsifier shows identical subjective
