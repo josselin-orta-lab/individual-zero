@@ -914,3 +914,19 @@ second drink, a depleted third decision, or any risky berry recontact
 must occur. Record the actual behavior and preserve negative results.
 This does not retroactively revise the eight-decision source-locked
 cohort, and does not claim natural learning or general survival.
+
+
+## One-versus-two finite-water capacity contrast
+
+Merged #867 established that two safe uses are exhausted by tick 18,
+and a paid COLLECT occurs at tick 20 without an emergency EAT boost.
+The new, distinct fixed 20-tick cohort compares initially one or two
+known restorative DRINK uses at genesis, against unchanged adverse and
+restored hidden berry schedules, for deadline-only and composed
+policies. All outcomes are recorded: personally selected actions,
+current water availability, emergency priority, paid UC, modeled
+terminal and right-censored endings. No berry recontact or benefit
+is assumed. A one-use life may die before any rescue and must remain
+a legitimate negative observation. Never reinterpret differing
+prechoice states after capacity-dependent divergence as a matched
+causal policy contrast or modify stocks after inspecting results.
