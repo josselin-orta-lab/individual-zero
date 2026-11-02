@@ -649,3 +649,17 @@ same observed horizon. This is an **identifiability negative control**,
 not a survival improvement or a claim that an I2 individual can know
 unobserved future hidden world phases. No motor or learning policy is
 changed, and no previous study is edited.
+
+
+## Three-way hidden food reversal timing boundary
+
+A focused, separately specified experiment checks three external food
+schedules at physical tick 18: food remains restored, food reverses
+only *after* the ninth contact, or food reverses *before* that
+contact. The first nine audited paid prechoice observations, available
+chosen history, action scores, selected actions and UC costs must
+match across all three arms. Only the before-contact reversal may
+cause modeled terminal energy at tick 18. Reversal after contact
+must not change the ninth energy outcome. This checks the boundary
+between observed evidence and hidden future state, without a new
+policy, food oracle, motor pathway or a general fitness claim.
