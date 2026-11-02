@@ -26,15 +26,16 @@ class MatchedMemoryDecisionIsolation(unittest.TestCase):
                 initial_energy=40, initial_uc=60, resources=8,
                 last_resort_exploration=True, extended_postcontact_study=True,
             )
-            life.run_world(ticks=18)
-            observed = life.decision_evidence()[8]
+            life.run_world(ticks=16)
+            life.advance_physics()
+            life.advance_physics()
             _meta, body, rows = life._read()
             claim = life._claim(body["revision"], body["energy"],
                                 body["inventory"], body["resources"], rows,
                                 physical_ticks=body["tick_count"])
             # The same capture can be inspected analytically but no
             # speculative 'memory removal' is committed to the owner.
-            history = life._history(rows[:-1])
+            history = life._history(rows)
             self.assertEqual(history[-1].observed_net, 4)
             complete = observed_chosen_scores(
                 claim=claim, results=history,
@@ -46,6 +47,9 @@ class MatchedMemoryDecisionIsolation(unittest.TestCase):
             self.assertEqual(without_recovery[EAT], -5)
             self.assertGreater(complete[EAT], complete[COLLECT])
             self.assertLess(without_recovery[EAT], without_recovery[COLLECT])
+            actual = life.step()
+            observed = life.decision_evidence()[8]
+            self.assertEqual(actual.chosen, EAT)
             self.assertEqual(observed["chosen"], EAT)
             # The actual reflex alone can still rescue the risky choice.
             # The memory-dependent raw ranking does not isolate motor causality.
