@@ -353,3 +353,17 @@ exposure must not be summarized as a causal fitness improvement.
 Historic source-locked probes are not altered. No hidden world information
 is provided to any individual's decisions. This is a bounded science
 probe of integration, not proof of natural autonomous learning.
+
+
+## Four-policy contrast semantics (post-#842)
+
+The exploratory report now nests each environment's four audited arms
+under `arms` and reports `contrasts_vs_observational` for last-resort,
+deadline and combined policies. A contrast identifies the first observed
+action or tick divergence, differing exposure lengths, modeled death ticks
+and censoring. It only calculates an end-energy difference when **both
+subjects remain nonterminal through the same observed physical tick**.
+The first diverging action is a descriptive intervention marker, not proof
+of independent causal survival advantage; subsequent experiences can differ
+and no independent statistical replication has been conducted. No policy,
+world clock, UC, hidden outcome or source-locked historical battery changes.
