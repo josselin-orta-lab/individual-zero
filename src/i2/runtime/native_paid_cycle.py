@@ -117,6 +117,31 @@ NONRESTORING_ATTEMPTS = 2
 NONRESTORING_EVIDENCE = ":personal-nonrestoration"
 
 
+def personally_nonrestoring_action(*, body, previous, action):
+    """Past evidence of failure, independent of *current* availability.
+
+    Current unavailability is not proof of permanent impossibility. But if a
+    resource ran out AFTER two personally observed failures, those failures
+    are not erased merely because that affordance disappeared. Only the
+    owner-committed before/after states are accepted by the caller.
+    """
+    if type(body) is not Body or type(action) is not str or not action:
+        raise NativeRefusal("native body and prior action required")
+    critical = tuple(k for k in ("food", "water", "integrity")
+                     if getattr(body, k) <= 10)
+    if not critical:
+        return False
+    threatened = min(critical, key=lambda k: (getattr(body, k), k))
+    attempts = [r for r in previous if r[2] == action]
+    if len(attempts) < NONRESTORING_ATTEMPTS:
+        return False
+    return all(
+        getattr(saved_body(row[5]), threatened) <=
+        getattr(saved_body(row[4]), threatened)
+        for row in attempts[-NONRESTORING_ATTEMPTS:]
+    )
+
+
 def personally_nonrestoring_scores(
     scores, *, claim, body, traits, previous, learning,
 ):
@@ -136,22 +161,10 @@ def personally_nonrestoring_scores(
     reflex = NativeCaptureReflex(claim, body, traits)
     if reflex.state == "NO_PREEMPTION":
         return adjusted, frozenset()
-    critical = tuple(k for k in ("food", "water", "integrity")
-                     if getattr(body, k) <= 10)
-    if not critical:
-        return adjusted, frozenset()
-    threatened = min(critical, key=lambda k: (getattr(body, k), k))
     discouraged = set()
     for action in claim.capture.accessible_semantics:
-        if action not in adjusted:
-            continue
-        attempts = [r for r in previous if r[2] == action]
-        if len(attempts) < NONRESTORING_ATTEMPTS:
-            continue
-        if all(
-            getattr(saved_body(row[5]), threatened) <=
-            getattr(saved_body(row[4]), threatened)
-            for row in attempts[-NONRESTORING_ATTEMPTS:]
+        if action in adjusted and personally_nonrestoring_action(
+            body=body, previous=previous, action=action
         ):
             adjusted[action] = min(0, adjusted[action])
             discouraged.add(action)
@@ -326,12 +339,13 @@ class NativePaidI2:
         # observed, urgent repeated nonrestoration can revise the goal.
         ordinary = observed_claim("goal:physical-needs")
         body, traits = snapshot["body"], snapshot["traits"]
-        if bool(meta["learning"]) and "boire" in offered:
-            _, discouraged = personally_nonrestoring_scores(
-                {"boire": 1}, claim=ordinary, body=body,
-                traits=traits, previous=rows, learning=True)
-            if "boire" in discouraged:
-                return observed_claim("goal:physical-last-resort")
+        # A spent resource is absent from affordances, but two personally
+        # lived nonrestorations remain evidence for revising the intention.
+        # This claims no permanent environmental impossibility.
+        if (bool(meta["learning"]) and personally_nonrestoring_action(
+            body=body, previous=rows, action="boire"
+        )):
+            return observed_claim("goal:physical-last-resort")
         return ordinary
 
     def _history(self, rows):
