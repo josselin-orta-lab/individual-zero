@@ -463,3 +463,21 @@ A future **new** source-declared protocol with a longer, bounded,
 adequately funded cognition horizon must observe an additional paid
 decision *after* a successful recontact, assess the prior -10 and newly
 observed +4 together and retain the persistently adverse control.
+
+
+## Separate ten-window postcontact observation, not a historical edit
+
+An explicitly declared `extended_postcontact_study=True` fresh genesis
+permits exactly ten input impulse phases; the original eight-decision
+SCENARIOS remain unchanged and a longer sequence without this flag
+is refused. The new test duplicates each world's final external food
+payoff for two further phases **only in the new experiment**, with the
+same hidden regime and no new subjective cue. The ninth paid decision
+can now encounter the positive restored-food outcome from the eighth
+chosen EAT through the ordinary next capture. The persistently toxic
+control must retain modeled terminal status at tick 16 before a ninth
+decision can occur. This extends observation and tests memory access,
+not the individual's independent ability to learn the recovered payoff,
+predict it before contact, or improve life expectancy. The separate
+new cohort must not be combined numerically with #846's locked
+eight-window study. No real M11 authentication or I2 activation.
