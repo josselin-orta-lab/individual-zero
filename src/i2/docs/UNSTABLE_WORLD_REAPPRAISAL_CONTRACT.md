@@ -436,3 +436,30 @@ One positive restored contact cannot prove a general survival advantage,
 especially if it causes different later experiences. A continuously
 toxic food exposure remains a mandatory adverse falsifier; no tuned
 threshold or injected hidden-world cue is permitted.
+
+
+## Observed re-exposure is not yet learned recovery (#846 follow-up)
+
+Actual CI readout of the separately specified #846 protocol: with a
+personally experienced EAT net of -10, the learned observational policy
+does not re-expose and reaches modeled terminal energy at physical tick
+16. The reflex-only and reflex+deadline policies each independently
+choose EAT at the eighth paid decision, with prechoice observations
+matched to observational control. In hidden restoration the net is +4
+and the body remains nonterminal with energy 6 at tick 16 (right-
+censored); under persistent adversity the net is -2 and the body dies
+at tick 16. Each intervention spent 38 UC; combined and reflex-only
+have equal contacts and endpoints. No independent added deadline benefit
+is observed.
+
+Critically, that food contact occurs in the **last available paid
+cognitive window**. The new positive outcome is **not personally
+available in a later capture** in this experiment. Consequently, this
+supports risky *re-exposure under survival pressure*, not successful
+updating from the restored reward or sustained adaptive survival.
+Do not silently extend the locked #846 results, raise MAX_STEPS or
+reclassify a right-censored individual as having survived indefinitely.
+A future **new** source-declared protocol with a longer, bounded,
+adequately funded cognition horizon must observe an additional paid
+decision *after* a successful recontact, assess the prior -10 and newly
+observed +4 together and retain the persistently adverse control.
