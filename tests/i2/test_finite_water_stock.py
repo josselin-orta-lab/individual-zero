@@ -34,7 +34,7 @@ class FiniteWaterStockTests(unittest.TestCase):
             for water in (False,True):
                 life=IsolatedI2.create(
                     Path(directory)/(str(water)+".sqlite"),learning=True,
-                    impulses=SCENARIOS["adverse"],initial_energy=6,
+                    impulses=SCENARIOS["adverse"],initial_energy=20,
                     restorative_water_study=water,deadline_aware=True)
                 life.run_world(ticks=4)
                 self.assertIsNone(life.audit()["water_remaining"])
