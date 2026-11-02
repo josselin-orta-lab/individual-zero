@@ -1043,3 +1043,32 @@ Do not change energy values, policy thresholds or stock counts after
 seeing the output to manufacture a successful integrated trajectory.
 A later causal comparison must match actual prechoice histories and
 use separate new source-declared cohorts.
+
+
+## Observed unknown-water census and first matching last-resort contrast
+
+CI run 41471711803 validated a fixed 64-life matrix, now merged as
+#878: 24 lives chose water and exhausted their fixed stock; 12 later
+chose EAT after exhaustion; 59 modeled deaths and 5 right-censored
+survivors were recorded. These counts are across deliberately paired,
+non-independent environments, not rates for an ecosystem.
+
+At initially 40 energy, one water use, and blind-but-physically-
+restorative water, both deadline and combined policies share their
+initial actions, experience the positive water consequence, and
+exhaust the stock with a paid DRINK at tick 16. At tick 18, when DRINK
+is absent and personally experienced harmful EAT remains in history,
+deadline-only abstains, dying at tick 20, while the combined policy
+executes a paid last-resort EAT. If food stays toxic it dies at tick
+18; if food secretly recovers it ends at tick 20 right-censored
+with energy 10. The food worlds do not differ in the subjective
+predecision history of their ninth action.
+
+A new narrow regression checks the matched prior decisions,
+depletion, ordinary paid admission and the opposed terminal results.
+This establishes local *recontact after personally experienced
+water*, not a full proof that the learned water preference was
+necessary earlier. The latter remains a distinct causal question:
+fixed versus learned valuation in matching prechoice circumstances.
+No threshold, engine physics or previous experiment was altered
+after observing the 64-arm census.
