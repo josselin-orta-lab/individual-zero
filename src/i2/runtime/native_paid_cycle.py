@@ -111,19 +111,73 @@ def innate_adjustment(values, body, traits):
     return scores
 
 
+
+# Declared evidence sufficiency: do not call one unsuccessful attempt impossible.
+NONRESTORING_ATTEMPTS = 2
+NONRESTORING_EVIDENCE = ":personal-nonrestoration"
+
+
+def personally_nonrestoring_scores(
+    scores, *, claim, body, traits, previous, learning,
+):
+    """Reconsider a locally failing option using only personal body evidence.
+
+    Under current critical physiological need, two earlier attempts at an
+    action that did not restore the most depleted vital reserve can lower
+    its subjective value to at most zero. This is NOT proof that the world
+    cannot change. Competing alternatives remain unproven and must pass
+    normal paid Competition and fresh safety review.
+    """
+    if type(learning) is not bool:
+        raise NativeRefusal("native learning arm must be exact boolean")
+    adjusted = dict(scores)
+    if not learning:
+        return adjusted, frozenset()
+    reflex = NativeCaptureReflex(claim, body, traits)
+    if reflex.state == "NO_PREEMPTION":
+        return adjusted, frozenset()
+    critical = tuple(k for k in ("food", "water", "integrity")
+                     if getattr(body, k) <= 10)
+    if not critical:
+        return adjusted, frozenset()
+    threatened = min(critical, key=lambda k: (getattr(body, k), k))
+    discouraged = set()
+    for action in claim.capture.accessible_semantics:
+        if action not in adjusted:
+            continue
+        attempts = [r for r in previous if r[2] == action]
+        if len(attempts) < NONRESTORING_ATTEMPTS:
+            continue
+        if all(
+            getattr(saved_body(row[5]), threatened) <=
+            getattr(saved_body(row[4]), threatened)
+            for row in attempts[-NONRESTORING_ATTEMPTS:]
+        ):
+            adjusted[action] = min(0, adjusted[action])
+            discouraged.add(action)
+    return adjusted, frozenset(discouraged)
+
+
 class _Valuation(ChosenOutcomeValuationStudy):
-    def __init__(self, *, body, traits, **kwargs):
+    def __init__(self, *, body, traits, previous=(), learning=False, **kwargs):
         super().__init__(**kwargs)
         self.body, self.traits = body, traits
+        self.previous, self.learning = tuple(previous), learning
 
     def evaluate_batch(self, *, frame, receipts):
         evaluated = super().evaluate_batch(frame=frame, receipts=receipts)
         named = {c.candidate_ref: c.semantic_ref for c in frame.candidates}
         original = {named[v.candidate_ref]: v.value for v in evaluated}
-        updated = innate_adjustment(original, self.body, self.traits)
+        initial = innate_adjustment(original, self.body, self.traits)
+        updated, discouraged = personally_nonrestoring_scores(
+            initial, claim=self.claim, body=self.body, traits=self.traits,
+            previous=self.previous, learning=self.learning)
         return tuple(replace(
             v, value=updated[named[v.candidate_ref]],
-            evidence_ref=v.evidence_ref + ":native-body") for v in evaluated)
+            evidence_ref=v.evidence_ref + ":native-body" +
+            (NONRESTORING_EVIDENCE if
+             named[v.candidate_ref] in discouraged else ""))
+            for v in evaluated)
 
 
 def genesis_digest(meta):
@@ -243,7 +297,8 @@ class NativePaidI2:
     def _rows(self, conn):
         return tuple(conn.execute(
             "SELECT e.seq, e.capture_ref, p.admitted_action, "
-            "p.net_physiological_relief FROM native_physical_events p "
+            "p.net_physiological_relief, p.before_json, p.after_json "
+            "FROM native_physical_events p "
             "JOIN events e ON e.seq=p.seq ORDER BY p.seq"))
 
     def _claim(self, snapshot, meta, rows):
@@ -272,7 +327,7 @@ class NativePaidI2:
             11 + 8 * (seq - 1),
             "evidence:i2:native:outcome:" + str(seq),
             int(round(20 * relief)))
-            for seq, capture, action, relief in rows if action != NO_ACTION)
+            for seq, capture, action, relief, *_ in rows if action != NO_ACTION)
 
     def _apply(self, *, conn, seq, claim, frame, control_review,
                remaining_uc, event_head):
@@ -400,7 +455,10 @@ class NativePaidI2:
                 priors = observed_chosen_scores(
                     claim=claim, results=past,
                     source=_HistorySource(past), priors=PRIORS)
-                scores = innate_adjustment(priors, body, traits)
+                initial = innate_adjustment(priors, body, traits)
+                scores, discouraged = personally_nonrestoring_scores(
+                    initial, claim=claim, body=body, traits=traits,
+                    previous=previous, learning=bool(meta["learning"]))
                 candidates = {item["candidate_ref"]: item["semantic_ref"]
                               for item in frame["candidates"]}
                 values = advice["values"]
@@ -409,7 +467,10 @@ class NativePaidI2:
                         any(c not in candidates or
                             candidates[c] not in claim.capture.accessible_semantics or
                             value["value"] != scores[candidates[c]] or
-                            not value["evidence_ref"].endswith(":native-body")
+                            not value["evidence_ref"].endswith(
+                                ":native-body" +
+                                (NONRESTORING_EVIDENCE if
+                                 candidates[c] in discouraged else ""))
                             for value in values
                             for c in (value["candidate_ref"],))):
                     raise NativeRefusal("paid score not grounded in born needs or experience")
@@ -474,7 +535,8 @@ class NativePaidI2:
                 raise NativeRefusal("native physiology disagrees with birth replay")
             total_uc += (event["intake_uc"] + event["competition_uc"] +
                          event["control_uc"])
-            previous.append((seq, capture, action, relief))
+            previous.append((seq, capture, action, relief,
+                             before_json, after_json))
             body = next_body
         if (body != snapshot["body"] or
                 body.as_dict() != physical["body"] or
@@ -511,7 +573,8 @@ class NativePaidI2:
         outcomes = self._history(rows) if meta["learning"] else ()
         valuation = _Valuation(
             claim=claim, results=outcomes, source=_HistorySource(outcomes),
-            priors=PRIORS, body=body, traits=traits)
+            priors=PRIORS, body=body, traits=traits,
+            previous=rows, learning=bool(meta["learning"]))
         fixture = self._fixture(valuation)
         try:
             if not rows:

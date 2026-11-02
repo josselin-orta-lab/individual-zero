@@ -133,6 +133,64 @@ class NativePaidCycleTests(unittest.TestCase):
         with self.assertRaisesRegex(NativeRefusal, "physiology"):
             actor.audit()
 
+
+    def test_critical_personal_failure_prompts_a_paid_alternative(self):
+        """No oracle, no automatic actuation and no guaranteed benefit."""
+        import json
+        actor = self.birth(body=Body(80, 60, 3, 100),
+                           learning=True, food_stock=0,
+                           water_stock=4, drink_water_gain=0.0)
+        for _ in range(3):
+            actor.step()
+        with sqlite3.connect(self.path) as db:
+            actions = [r[0] for r in db.execute(
+                "SELECT admitted_action FROM native_physical_events ORDER BY seq")]
+            third = json.loads(db.execute(
+                "SELECT event_json FROM events WHERE seq=3").fetchone()[0])
+        self.assertEqual(actions, ["boire", "boire", "dormir"])
+        self.assertTrue(any(
+            v["evidence_ref"].endswith(":native-body:personal-nonrestoration")
+            for v in third["advice"]["values"]))
+        for seq in (1, 2):
+            self.assertIn("evidence:i2:native:outcome:" + str(seq),
+                          third["claim"]["subjective_evidence_refs"])
+        self.assertNotIn("evidence:i2:native:outcome:3",
+                         third["claim"]["subjective_evidence_refs"])
+        self.assertFalse(actor.audit()["m11_authenticated"])
+
+    def test_no_learning_retains_innate_reflex_but_not_lived_reassessment(self):
+        actor = self.birth(body=Body(80, 60, 3, 100),
+                           learning=False, food_stock=0,
+                           water_stock=4, drink_water_gain=0.0)
+        for _ in range(3):
+            actor.step()
+        with sqlite3.connect(self.path) as db:
+            actions = [r[0] for r in db.execute(
+                "SELECT admitted_action FROM native_physical_events ORDER BY seq")]
+        self.assertEqual(actions, ["boire", "boire", "boire"])
+        self.assertFalse(actor.audit()["engine_registered"])
+
+    def test_restore_or_noncritical_failed_action_is_not_discarded(self):
+        import json
+        for name, body, gain in (
+            ("restored", Body(80, 60, 3, 100), 25.0),
+            ("noncritical", Body(80, 60, 50, 100), 0.0),
+        ):
+            with self.subTest(name=name):
+                path = Path(self.tmp.name) / (name + ".sqlite")
+                actor = NativePaidI2.create(
+                    path, body=body, temperament=self.traits,
+                    learning=True, food_stock=0, drink_water_gain=gain)
+                for _ in range(3):
+                    actor.step()
+                with sqlite3.connect(path) as db:
+                    event = json.loads(db.execute(
+                        "SELECT event_json FROM events WHERE seq=3").fetchone()[0])
+                self.assertFalse(any(
+                    v["evidence_ref"].endswith(":personal-nonrestoration")
+                    for v in event["advice"]["values"]))
+                self.assertEqual(actor.audit()["revision"], 3)
+
     def test_native_body_journal_tamper_rejected(self):
         actor = self.birth()
         actor.step()
