@@ -67,7 +67,9 @@ def describe_pair(control: dict, intervention: dict) -> dict:
     }
 
 
-def run_four_policy_ablation() -> dict:
+def run_four_policy_ablation(*, initial_energy: int = INITIAL_ENERGY) -> dict:
+    if type(initial_energy) is not int or not 1 <= initial_energy <= 100:
+        raise ValueError("invalid bounded experimental energy")
     outcomes = {}
     with tempfile.TemporaryDirectory(prefix="i2-four-policy-") as root:
         for env in ENVIRONMENTS:
@@ -76,7 +78,7 @@ def run_four_policy_ablation() -> dict:
                 subject = IsolatedI2.create(
                     Path(root) / f"{env}-{name}.sqlite",
                     learning=True, impulses=SCENARIOS[env],
-                    initial_energy=INITIAL_ENERGY, initial_uc=INITIAL_UC,
+                    initial_energy=initial_energy, initial_uc=INITIAL_UC,
                     last_resort_exploration=last_resort,
                     deadline_aware=deadline,
                 )
@@ -110,7 +112,7 @@ def run_four_policy_ablation() -> dict:
         "protocol": "i2-four-policy-survival-ablation-exploratory-v1",
         "environments": list(ENVIRONMENTS),
         "policies": [name for name, *_ in POLICIES],
-        "initial_energy": INITIAL_ENERGY,
+        "initial_energy": initial_energy,
         "initial_uc": INITIAL_UC,
         "physical_tick_horizon": TICKS,
         "results": outcomes,
