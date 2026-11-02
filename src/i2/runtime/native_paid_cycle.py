@@ -615,8 +615,9 @@ class NativePaidI2:
         fixture = self._fixture(valuation)
         try:
             if not rows:
-                choice = ("boire" if "boire" in claim.capture.accessible_semantics
-                          else claim.capture.accessible_semantics[0])
+                choice = next((action for action in ("boire", "manger")
+                               if action in claim.capture.accessible_semantics),
+                              claim.capture.accessible_semantics[0])
                 fixture.open(
                     claim=claim, semantic_ref=choice,
                     evidence_ref=current_evidence(body, traits)[0],
