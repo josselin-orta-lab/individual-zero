@@ -575,3 +575,17 @@ cannot be attributed to memory alone. It does NOT establish natural
 learning generalization, authenticated M11 witness or an externally
 actuating agent. The test is a new focused behavioral regression, not
 an alteration or reclassification of the source-locked historic data.
+
+
+## First admitted nonurgent action divergence: provenance control
+
+After #852, a separate focused adverse-world check verifies that both
+subjects actually receive internal motor admission and pay their cognitive
+UC at the **first** divergent decision. Their predecision bodies,
+affordances, subjective histories and available UC match, while learned
+and fixed valuations select different actions. The reflex is
+NO_PREEMPTION, so this contrast is not attributable to emergency
+priority. It remains a single scripted toy-world first-decision
+contrast, not independent replication or proof of survival gains. The
+researcher-only comparison must not relabel subsequent diverged world
+trajectories as matched counterfactuals.
