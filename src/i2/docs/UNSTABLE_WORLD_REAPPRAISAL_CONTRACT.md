@@ -739,3 +739,24 @@ deadline-only and combined still tie. A real incremental interaction
 study must keep accessible viable alternatives and their source bound
 to the actual organism rather than defining a known rescue after the
 fact.
+
+
+## Safe-water alternative versus last-resort priority at critical energy
+
+A focused fresh-genesis contrast holds the same adverse hidden berry
+physics and body state: after one paid COLLECT and two physical ticks,
+a berry and DRINK are simultaneously accessible at energy 4. The
+historic inert-water reflex may prioritize EAT after a learned negative
+outcome. In the disclosed restorative-water world, DRINK is
+source-verified as a viable energy-restoring alternative and the
+last-resort risk *override* must not be applied.
+
+Crucially, removing the emergency override does not remove risky
+food from the ordinary Competition candidate set: the existing
+learned/prior food score may still choose EAT, with possibly fatal
+consequences. The test therefore checks the source-bound refusal
+to apply the extra priority and actual paid motor authority, **not**
+an invented claim that safe water guarantees survival. A policy
+that should actually prefer safe water over risky food requires a
+separate explicit decision rule and scientific justification, not
+posthoc changing the results of this experiment.
