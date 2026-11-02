@@ -1002,3 +1002,22 @@ memory was necessary for tenth EAT: the ordinary candidate ordering
 and current affordances also matter. Neither generalized natural
 learning nor sustained survival is established by a tick-20
 right-censored endpoint.
+
+
+## Silent tenth-phase re-toxification after learned postdepletion recovery
+
+A separate, predeclared negative-control study starts two one-use
+restorative-water lives with identical histories and +6 beneficial
+food at their ninth paid recontact. The only hidden future
+difference is the tenth food impulse: +6 again, or silently -8.
+Through all ten *predecision* captures, selected actions,
+source-verified personal outcomes, candidate scores, UC, physical
+state, and offered affordances must be identical. At the tenth
+capture the personally observed EAT outcomes are -10 and +4,
+yielding EAT score 9 without emergency priority. A normal paid
+tenth EAT proceeds in both worlds. The lasting-restoration arm
+finishes right-censored nonterminal energy 10 at tick 20; the
+re-toxified arm terminates at energy 0 at tick 20. Identical
+subjective inputs forbid anticipating an unobserved toxic switch.
+The comparison does not prove that memory was necessary for tenth
+motor choice or that learned survival generalizes.
