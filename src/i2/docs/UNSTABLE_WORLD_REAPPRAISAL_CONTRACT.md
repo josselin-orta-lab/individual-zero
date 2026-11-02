@@ -367,3 +367,16 @@ The first diverging action is a descriptive intervention marker, not proof
 of independent causal survival advantage; subsequent experiences can differ
 and no independent statistical replication has been conducted. No policy,
 world clock, UC, hidden outcome or source-locked historical battery changes.
+
+
+## Scarcity-specific ablation: 8 and 16 initial energy
+
+The same four-policy, three-environment exploratory comparison now
+accepts an explicitly validated `initial_energy` parameter. Separate
+fresh-genesis cohorts at 8 and 16 units stress survival decisions near
+the known 4-unit danger threshold. These cohorts are declared in the
+focused test source before inspecting their CI results, and CI publishes
+the full readout for manual scientific review. Neither policy selection,
+UC, hidden food payoff, world cadence nor the original default 40-energy
+cohort is changed. No result is interpreted as an independent causal
+fitness benefit: censoring, death and unequal exposure remain explicit.
