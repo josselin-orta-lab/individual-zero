@@ -930,3 +930,36 @@ is assumed. A one-use life may die before any rescue and must remain
 a legitimate negative observation. Never reinterpret differing
 prechoice states after capacity-dependent divergence as a matched
 causal policy contrast or modify stocks after inspecting results.
+
+
+## First observed finite-water last-resort recontact (merged #868)
+
+The successful Python 3.11/3.12 CI from #868 (run 41427065557)
+produced an important **source-specific** sequence under the
+predeclared one-use restorative-water genesis. Combined and
+deadline-only policies share initial energy 40, resources 8, UC 60,
+a personally experienced harmful EAT net -10, and the same safe-water
+DRINK at tick 16. Its stock is then zero, and the next first-person
+capture at tick 18 does not offer DRINK. The same observed history
+yields two diverging paid decisions: combined invokes last-resort
+priority and recontacts the previously harmful berry at tick 18;
+deadline-only makes a paid abstention, not a physical EAT.
+
+The two exogenous berry worlds are identical from the subject's
+perspective before recontact. Under persistent adverse nutrition,
+combined EAT causes modeled terminal at tick 18; deadline-only dies
+at tick 20. Under hidden food restoration, combined EAT survives and
+selects EAT again at tick 20, ending nonterminal energy 10; the
+deadline-only arm still dies at tick 20. The original two-water
+capacity controls both survive nonterminal to tick 20, energy 4,
+without a last-resort priority. **Do not** confuse survival to a
+right-censored horizon with indefinite survival. The restored-world
+difference establishes a bounded first-person behavioral interaction,
+NOT statistical ecological generalization.
+
+An independent regression checks exact prechoice matching across
+hidden worlds through the ninth paid decision, its absent DRINK
+affordance, the last personally observed -10 food consequence, the
+paid motor admission, reflex signal and the opposing terminal
+results. This does not establish independent M11 authentication,
+animal-like natural learning or a general planning mechanism.
