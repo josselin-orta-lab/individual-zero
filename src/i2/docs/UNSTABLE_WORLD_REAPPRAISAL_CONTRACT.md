@@ -607,15 +607,29 @@ is sustained beyond the observed horizon. Persistent adverse and
 historical 8-decision controls remain untouched.
 
 
-## Hidden re-toxification after recovered contact: new negative control
+## Hidden re-toxification after recovered contact: negative control
 
-This independently source-declared tenth-decision study compares the
-already tested stable restoration schedule with an otherwise identical
-world in which the food payoff becomes adverse again *after* the
-positive eighth food contact. Through the ninth decision the available
-first-person observations, candidate valuations and actions remain
-identical; there is no perceptual cue about the future reversal. The
-world imposes different food consequences after the ninth action.
-Any energy or terminal difference is retrospective model-specific
-evidence, not predictive knowledge or robust protection. Older
-eight-decision worlds and original ten-window results are unchanged.
+The new, independent ten-phase control keeps the same world and personally
+observed food consequences through the chosen EAT contact at physical tick
+16. Only the hidden future food payoff changes between the durable
+restoration arm and the re-toxified arm. No sensory cue announces the
+change at physical tick 18.
+
+**The initial #855 CI failed on both Python 3.11 and Python 3.12 because
+the re-toxified arm completes only nine paid decisions, not ten.**
+This is an important negative result rather than an invalid engine state:
+the ninth paid EAT uses the same source-verified predecision memory,
+energy, available affordances, UC and candidate scores in both arms.
+The previous EAT outcomes -10 and +4 have been personally observed; the
+ninth EAT score is 9 with no synthetic emergency priority. But the
+restored world remains nonterminal while the re-toxified world causes
+terminal energy 0 **at physical tick 18**. A tenth decision in the
+re-toxified world is therefore forbidden. All earlier decisions,
+predecision observations and outcomes agree until the newly changed
+physical food consequence; no hidden-world oracle is present.
+
+Do not interpret unequal final horizons as a valid energy-difference
+estimate or claim general survival improvement. This explicit negative
+control is not part of the historical eight-decision experiments and
+does not modify the prior ten-window restored study. No policy tuning
+or new actuator has been introduced.
