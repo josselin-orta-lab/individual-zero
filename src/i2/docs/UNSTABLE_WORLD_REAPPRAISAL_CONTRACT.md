@@ -481,3 +481,21 @@ not the individual's independent ability to learn the recovered payoff,
 predict it before contact, or improve life expectancy. The separate
 new cohort must not be combined numerically with #846's locked
 eight-window study. No real M11 authentication or I2 activation.
+
+
+## Post-contact paid action and valuation falsifier
+
+The fresh ten-phase study now asserts that the ninth decision consumes the
+actual newly observed EAT net +4 as *past-only* evidence, yielding the
+existing comparator's EAT score of 9 (net +4 plus fixed offset 5), with
+an ordinary paid EAT admission. This differs from the eighth decision's
+emergency priority over a personally observed -10. No fabricated
+restoration knowledge was available to the eighth decision. An EAT that
+already wins at ninth decision receives no extra emergency boost.
+
+This test distinguishes **new evidence availability**, **value updating**,
+and **subsequent paid action** within one bounded toy-world life. It
+cannot establish generalization, robust planning or statistical
+survival advantage from one fixed sequence. The persistently adverse
+control stays terminal before ninth capture, and the original 8-phase
+protocol remains separate and immutable.

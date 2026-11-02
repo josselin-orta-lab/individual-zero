@@ -47,6 +47,28 @@ class PostContactDecisionTests(unittest.TestCase):
         self.assertFalse(life.audit()["m11_authenticated"])
         self.assertGreater(life.audit()["actual_uc_spent"],38)
 
+    def test_restored_outcome_changes_paid_food_valuation_and_choice(self):
+        life=self.make(True)
+        life.run_world(ticks=18)
+        decisions=life.decision_evidence()
+        eighth,ninth=decisions[7],decisions[8]
+        self.assertEqual(eighth["chosen"],EAT)
+        # Critical reflex overcame a personally learned negative score
+        # at the prior decision, before the new outcome was known.
+        self.assertTrue(eighth["last_resort_priority_applied"])
+        self.assertEqual(
+            [x["observed_net"] for x in eighth["outcomes_used_by_valuation"]
+             if x["action"]==EAT],[-10])
+        self.assertEqual(ninth["candidate_scores"][EAT],9)
+        self.assertFalse(ninth["last_resort_priority_applied"])
+        self.assertEqual(ninth["chosen"],EAT)
+        self.assertTrue(ninth["internal_admission"])
+        self.assertEqual(ninth["uc_spent"],5)
+        self.assertEqual(life.audit()["revision"],9)
+        # This is one model-specific paid response after recovery,
+        # not proof of robust real-world adaptive learning.
+        self.assertEqual(life.audit()["science"],"NOT_ESTABLISHED")
+
     def test_continued_toxicity_is_not_reclassified_as_recovery(self):
         life=self.make(False)
         life.run_world(ticks=18)
