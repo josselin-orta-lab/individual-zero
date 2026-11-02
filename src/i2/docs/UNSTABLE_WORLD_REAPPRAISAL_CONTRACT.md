@@ -679,3 +679,23 @@ and no prechoice distinction between different hidden futures.
 This is a deterministic reproducibility and order-invariance smoke,
 NOT multiple statistically independent world samples or proof of
 natural learning. The old source-locked cohorts remain unchanged.
+
+
+## Predeclared genuinely varying hidden-world panel
+
+A **new** small exploratory panel in `seeded_varying_world_panel.py`
+uses five predeclared seeds (101, 211, 307, 401, 503) to generate
+hidden toxic-to-beneficial and possibly re-toxic 2-tick phases. Unlike
+the prior order-shuffle test, seed changes the actual physical food
+schedule. Every seed starts four independent fresh I2 SQLite lives
+using the **same** hidden schedule and initial body/UC, with observational,
+last-resort, deadline-only and composed policies. Each chosen motor
+action is admitted by normal paid Action Control, and physical metabolism
+still occurs even when cognition cannot act. The researcher records
+censoring, modeled death, actions, paid UC and priority events; the
+future schedule is **never** a subjective observation.
+
+This five-seed panel is too small to establish population survival
+advantage, independent ecological sampling or general natural learning;
+no hypothesis is selected post hoc from the outcomes. The panel is
+separate from all locked studies, and its engine remains inactive.
