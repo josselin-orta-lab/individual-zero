@@ -695,7 +695,20 @@ still occurs even when cognition cannot act. The researcher records
 censoring, modeled death, actions, paid UC and priority events; the
 future schedule is **never** a subjective observation.
 
-This five-seed panel is too small to establish population survival
-advantage, independent ecological sampling or general natural learning;
-no hypothesis is selected post hoc from the outcomes. The panel is
-separate from all locked studies, and its engine remains inactive.
+The first CI of this five-seed panel (run 41410073091) exposed a
+reproducible **collision**: five predeclared seeds produce **four
+distinct hidden schedules**, rather than five. This is an expected
+property of sampling a finite set of possible schedules with
+replacement, not a physics or learning failure. The correct scientific
+response is to **retain all five original seeds**, report their
+schedule equivalence groups and the distinct number of future-world
+prefixes exposed within the tick-16 horizon, and explicitly refuse to
+treat duplicate schedules as independent environmental evidence.
+The CI readout prints the complete audited exploratory panel for
+review. No new seed is selected post hoc.
+
+This five-seed/four-distinct-world panel is too small to establish
+population survival advantage, independent ecological sampling or
+general natural learning; no hypothesis is selected post hoc from the
+outcomes. The panel is separate from all locked studies, and its
+engine remains inactive.

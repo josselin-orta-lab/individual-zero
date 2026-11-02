@@ -61,8 +61,26 @@ def run_panel() -> dict:
                     "m11_authenticated": audit["m11_authenticated"],
                 }
             results[str(seed)] = {"hidden_impulses_researcher_only": phases, "arms": arms}
+    # Sampling with replacement can yield duplicate complete schedules.
+    # Keep all preregistered seeds and expose both raw and unique world
+    # counts, rather than selecting more favorable replacement seeds.
+    grouped = {}
+    for seed in SEEDS:
+        phases = results[str(seed)]["hidden_impulses_researcher_only"]
+        grouped.setdefault(phases, []).append(seed)
+    groups = tuple({
+        "hidden_impulses_researcher_only": phases,
+        "seeds": tuple(group_seeds),
+        "fresh_lives": len(group_seeds) * len(POLICIES),
+    } for phases, group_seeds in grouped.items())
+    exposed_phases = (HORIZON + 1) // 2
+    observed_prefixes = {s[:exposed_phases] for s in grouped}
     return {
         "protocol": "i2-seeded-varying-hidden-world-exploratory-v1",
+        "distinct_world_count": len(grouped),
+        "distinct_exposed_world_count": len(observed_prefixes),
+        "seeded_world_groups_researcher_only": groups,
+        "unique_worlds_not_independent_population_samples": True,
         "seeds": SEEDS,
         "physical_tick_horizon": HORIZON,
         "results": results,
