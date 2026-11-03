@@ -84,3 +84,36 @@ for two personally observed post-change failures. This explicitly
 amends the unexecuted design; it is **not** a retroactive scientific
 preregistration nor a post-outcome policy tuning. Retain the original
 CI failure as provenance rather than silently rewriting history.
+
+## Native longevity blocker and scoped correction (3 November 2026)
+
+Second CI run on #912: [run 41628207082](https://github.com/josselin-orta-lab/individual-zero/actions/runs/41628207082)
+on head `34664d08e3044be5a1759129621e8e0923b3b6e8`
+failed on the newly reachable long-life path. All four cells
+raised `ValueError: invalid canonical subjective evidence refs`
+inside `ObservationClaim.digest()`, whose intake contract caps the
+sorted subjective evidence tuple at 64. The native capture had been
+unboundedly appending every past physical refill and action event.
+This is an **engineering validity failure before completed longitudinal
+readouts**, not evidence of learned success, inability to learn,
+or quality-reversal behavior. The following missing-history KeyError
+was again only a derivative harness error.
+
+Correct the *source of the unbounded projection*, not the intake
+contract: preserve the mandatory current interoceptive signals and
+actually found source, then expose the latest committed refill/outcome
+references that fit within 64. Older personally lived outcomes remain
+in the **same owner SQLite journal** for cold audit and the independent
+existing chosen-result memory window (last 64 actual chosen actions).
+The hidden quality itself stays inaccessible until an admitted drink,
+the motor policy and source dynamics are untouched, and replay must
+recompute this projection verbatim. A separately versioned native
+genesis v7 declares the new projection semantics; do not silently
+migrate prior research identities. A small-life reference test requires
+the earlier capture contents unchanged; the long-case reference test
+proves strict bounds, provenance preservation and no future evidence.
+
+This correction does not alter the **predeclared** four-cell world,
+birth reserve, reversal timing, learning ablation or observable endpoints.
+The two failed CI executions are retained as negative engineering
+provenance and are not interpreted as scientific runs.

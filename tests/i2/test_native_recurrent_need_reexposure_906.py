@@ -15,7 +15,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from i2.modules.native_body_contract import Body
 from i2.modules.native_birth_temperament import BirthTemperament
-from i2.runtime.native_paid_cycle import NativePaidI2, actual_old_water_gain
+from i2.modules.native_owner_support import current_evidence
+from i2.runtime.native_physiology_journal import NO_ACTION
+from i2.runtime.native_paid_cycle import (
+    NativePaidI2, actual_old_water_gain, bounded_native_evidence,
+    MAX_NATIVE_CAPTURE_REFS,
+)
 
 
 class RecurrentNeedReexposure906(unittest.TestCase):
@@ -27,6 +32,45 @@ class RecurrentNeedReexposure906(unittest.TestCase):
         ("stable_useful", 0, 10.0),
         ("becomes_empty", CHANGE_AT, 0.0),
     )
+
+    def test_capture_projection_is_bounded_without_erasing_history(self):
+        current = current_evidence(self.BIRTH_BODY, self.TRAITS)
+        # Small-life behavior must be bit-for-bit identical to the earlier
+        # honest full-evidence projection; no learned outcome is injected.
+        short = tuple((
+            seq, None, "boire" if seq % 2 else NO_ACTION,
+            0, None, None, 0,
+        ) for seq in range(1, 21))
+        original = set(current)
+        original.update(
+            "evidence:i2:native:water-offer-refilled:" + str(seq)
+            for seq in range(2, 21, 2))
+        original.update(
+            "evidence:i2:native:outcome:" + str(seq)
+            for seq in range(1, 21, 2))
+        self.assertEqual(
+            bounded_native_evidence(current, short, water_restock_every=2),
+            tuple(sorted(original)))
+        # A genuinely committed discovery remains evidentially visible while
+        # oldest repetitive events expire from this *capture*, not the owner.
+        long = tuple((
+            seq, None, "collecter" if seq == 4
+            else ("boire" if seq % 2 else NO_ACTION),
+            0, None, None, int(seq == 4),
+        ) for seq in range(1, 96))
+        refs = bounded_native_evidence(
+            current, long, water_restock_every=2)
+        self.assertEqual(len(refs), MAX_NATIVE_CAPTURE_REFS)
+        self.assertEqual(refs, tuple(sorted(set(refs))))
+        self.assertTrue(set(current).issubset(refs))
+        self.assertIn("evidence:i2:native:water-found:4", refs)
+        self.assertIn("evidence:i2:native:outcome:95", refs)
+        self.assertIn(
+            "evidence:i2:native:water-offer-refilled:94", refs)
+        self.assertNotIn(
+            "evidence:i2:native:water-offer-refilled:2", refs)
+        self.assertNotIn("evidence:i2:native:outcome:96", refs)
+        self.assertEqual(len(long), 95)  # Full committed history stays owned.
 
     def test_natural_need_return_without_motor_script(self):
         # One lasting SQLite individual per cell, no copying/restarting
