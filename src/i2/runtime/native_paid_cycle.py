@@ -51,7 +51,7 @@ PRIORS = {"boire": 1, "manger": 4, "dormir": 2, "attendre": 1, "collecter": 2, "
 HORIZON = 8
 MAX_BORN_STEPS = 128
 # Capture is a bounded projection, not a deletion of an individual's journal.
-GENESIS_SCHEMA = "i2-native-paid-local-life-v17-exogenous-food-restock"
+GENESIS_SCHEMA = "i2-native-paid-local-life-v18-spatial-water-refill-evidence-boundary"
 MAX_NATIVE_CAPTURE_REFS = 64
 
 
@@ -553,7 +553,7 @@ def actual_old_water_gain(meta, elapsed_ticks):
     return meta["drink_water_gain"]
 
 
-def bounded_native_evidence(current, rows, *, water_restock_every):
+def bounded_native_evidence(current, rows, *, water_restock_every, spatial_world=False):
     """Bound current subjective refs without erasing actual lifelong evidence.
 
     Preserve body/interoception and observed discovery provenance. For other
@@ -568,7 +568,10 @@ def bounded_native_evidence(current, rows, *, water_restock_every):
     if len(fixed) > MAX_NATIVE_CAPTURE_REFS:
         raise NativeRefusal("mandatory first-person evidence overflow")
     timed = []
-    if water_restock_every:
+    # Spatial owners cannot personally observe historical replenishment
+    # at distant sites. Current local stock still controls the affordance.
+    # Nonspatial research births retain their global-offer event timeline.
+    if water_restock_every and not spatial_world:
         timed.extend(
             (epoch * water_restock_every,
              "evidence:i2:native:water-offer-refilled:" +
@@ -877,7 +880,8 @@ class NativePaidI2:
         if meta["spatial_world"]:
             current += local_evidence(site)
         evidence = bounded_native_evidence(
-            current, rows, water_restock_every=meta["water_restock_every"])
+            current, rows, water_restock_every=meta["water_restock_every"],
+            spatial_world=bool(meta["spatial_world"]))
         def observed_claim(goal):
             return ObservationClaim(
                 self.life_ref, FirstPersonCapture(
