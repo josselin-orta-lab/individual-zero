@@ -55,6 +55,20 @@ class ExogenousNativeFoodRestock944(unittest.TestCase):
         one_born = {**meta, "food_stock": 1}
         self.assertTrue(old_food_accessible(one_born, at_source))
         self.assertEqual(old_food_available(one_born, refilled), 2)
+        # Legal recurrence extremes have no "future" early offer.
+        rapid = {**meta, "food_restock_every": 1}
+        self.assertEqual(old_food_available(rapid, ()), 0)
+        self.assertEqual(old_food_available(rapid, (physical(1),)), 1)
+        slow = {**meta, "food_restock_every": 32}
+        early = tuple(physical(tick) for tick in range(1, 32))
+        boundary = (*early, physical(32))
+        self.assertEqual(old_food_available(slow, early), 0)
+        self.assertEqual(old_food_available(slow, boundary), 1)
+        self.assertFalse(old_food_accessible(slow, boundary))
+        source = (physical(1, "se_deplacer_vers_passage"),
+                  physical(2, "se_deplacer_vers_source"),
+                  *(physical(tick) for tick in range(3, 33)))
+        self.assertTrue(old_food_accessible(slow, source))
 
     def test_current_capture_never_offers_remote_or_future_food(self):
         # Pure prospective route probe, not a real paid/dispatched action.
