@@ -16,7 +16,9 @@ Offered `se_deplacer_vers_<neighbor>` actions are only to adjacent sites.
 If and only if the existing paid Competition selects one and fresh
 Action Control admits it, the same native SQLite owner commits a standard
 `se_deplacer` physical transition (2 body-energy units plus ordinary UC)
-and the next capture sees the newly reached site. The position is
+and the next capture sees the newly reached site. An edge move is
+not available with fewer than 2 physical energy units; native motor
+admission and independent cold audit reject unaffordable movement. The position is
 **reconstructed from the committed physical action chain** on replay,
 not held in a separate mutable map table/owner. Inaccessible or
 unborn-spatial moves are rejected on application and independently

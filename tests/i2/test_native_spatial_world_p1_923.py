@@ -56,6 +56,28 @@ class I2MinimalSpatialWorldP1(unittest.TestCase):
             ("evidence:i2:spatial:current:camp",
              "evidence:i2:spatial:neighbor:passage"))
 
+    def test_unaffordable_move_is_never_offered_or_executed(self):
+        # A move at energy 1 would otherwise clamp to zero and spend less
+        # than its declared two-energy physical price.
+        with tempfile.TemporaryDirectory() as directory:
+            life = NativePaidI2.create(
+                Path(directory) / "low-energy.db",
+                body=Body(1.0, 90, 70, 100),
+                temperament=self.TRAITS, spatial_world=True, max_steps=3,
+                uc=80, learning=False, food_stock=0, water_stock=0)
+            first = life.step()
+            self.assertEqual(first["site"], "camp")
+            with sqlite3.connect(life.path) as db:
+                event = json.loads(db.execute(
+                    "SELECT event_json FROM events WHERE seq=1").fetchone()[0])
+                self.assertFalse(set(event["claim"]["capture"][
+                    "accessible_semantics"]) & set(MOTIONS))
+                self.assertEqual(db.execute(
+                    "SELECT admitted_action FROM native_physical_events "
+                    "WHERE seq=1").fetchone()[0] in MOTIONS, False)
+            self.assertEqual(NativePaidI2.inspect(life.path).audit(),
+                             life.audit())
+
     def test_replayed_position_is_only_from_committed_movements(self):
         rows = (
             (1, "cap1", "attendre"),

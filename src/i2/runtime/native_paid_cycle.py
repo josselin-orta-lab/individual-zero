@@ -25,7 +25,7 @@ from i2.modules.chosen_outcome_study import (
 )
 from i2.modules.intention_continuity import FirstPersonCapture
 from i2.modules.intention_ingress import ObservationClaim
-from i2.modules.native_body_contract import Body
+from i2.modules.native_body_contract import Body, COSTS
 from i2.modules.native_birth_temperament import BirthTemperament
 from i2.modules.native_consequence_bridge import admitted_consequence
 from i2.modules.native_owner_support import (
@@ -624,7 +624,7 @@ class NativePaidI2:
         if sum(r[6] for r in rows) > chosen.count("boire_decouverte"):
             offered.append("boire_decouverte")
         site = replay_site(rows, enabled=bool(meta["spatial_world"]))
-        if meta["spatial_world"]:
+        if meta["spatial_world"] and snapshot["body"].energy >= COSTS["se_deplacer"]:
             offered.extend(offered_moves(site))
         current = tuple(snapshot["current_evidence"])
         if meta["spatial_world"]:
@@ -713,9 +713,11 @@ class NativePaidI2:
                  sum(r[2] == action for r in rows) >= meta["food_stock"])):
             raise NativeRefusal("unavailable or depleted native resource")
         if destination(action) is not None:
-            if not meta["spatial_world"] or destination(action) not in GRAPH[
-                    replay_site(rows, enabled=True)]:
-                raise NativeRefusal("physical move not adjacent to current site")
+            if (not meta["spatial_world"] or
+                    snapshot["body"].energy < COSTS["se_deplacer"] or
+                    destination(action) not in GRAPH[
+                        replay_site(rows, enabled=True)]):
+                raise NativeRefusal("physical move not adjacent or unaffordable")
         effect = {}
         if action == "boire":
             effect["drink_water_gain"] = actual_old_water_gain(meta, len(rows))
@@ -876,9 +878,10 @@ class NativePaidI2:
                     _json([seq, cognition_hash, action]).encode()).hexdigest())
                 if destination(action) is not None and (
                         not meta["spatial_world"] or
+                        body.energy < COSTS["se_deplacer"] or
                         destination(action) not in GRAPH[
                             replay_site(previous, enabled=True)]):
-                    raise NativeRefusal("replayed movement not adjacent")
+                    raise NativeRefusal("replayed movement not adjacent or affordable")
                 if action == "boire" and old_water_available(meta, previous) <= 0:
                     raise NativeRefusal("native drank unavailable water")
                 if action == "boire_decouverte" and sum(
