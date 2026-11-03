@@ -1,0 +1,23 @@
+# I2 P2 #940: isolate context-free movement-outcome credit
+
+**3 November 2026, prospective local engineering experiment.** Parent [#937](https://github.com/josselin-orta-lab/individual-zero/issues/937), [#924](https://github.com/josselin-orta-lab/individual-zero/issues/924), roadmap [#921](https://github.com/josselin-orta-lab/individual-zero/issues/921). The baseline source is main `fd73f11365bdcc4254c94f6dd756d65235b1b694` after #939; frozen #933, #936, #938 and #939 evidence must not be retuned.
+
+## Falsifiable reason
+
+The native research runtime obtains last-chosen G2 result scores for **all** action labels, including a directional movement, using `observed_net + FIXED_SCORE_OFFSET`. Since that result does not encode origin or the physiological purpose of travel, the global movement label can inherit an inappropriate outcome score at a **different** origin. At camp after personally evidenced return, #939's bodily-purpose handoff raises offered drink to 5, yet the competing move has score 6 and wins; no second real drinking or physiological benefit follows.
+
+One narrowly constrained hypothesis: the basic destination move should keep its **innate** prior and born exploratory inclination, while separate I2 personally observed site × current need association retains its own already existing opt-in place-tie mechanism. The generic after-step outcome must not act as a global learned reward for movement across arbitrary origins. This neither gives a resource a new bonus nor imposes an anti-movement penalty beyond discarding a misattributed *generic* score. Whether that helps or worsens a life is unknown until the separate prospectively born trials run.
+
+## Experimental birth contract
+
+Native genesis **v15** adds `contextual_movement_credit=False` by default. Enabling requires native `spatial_world=True` and `learning=True`. Legacy native v14 research identities are not migrated. The option is signed by the genesis digest. After the same observed chosen-result and previous-sleep projection as before, but before innate body/temperament and any learning/place tie, all offered fixed-graph movement candidates revert to their existing `PRIORS`; all resource, waiting, sleeping, collection and other scores remain unchanged. The actual movement still costs body energy and UC; the same Competition and Action Control may choose it, veto it or abstain. The optional remembered-site +1 tie and one-capture paid purpose handoff are unchanged. Valuations carry `:movement-result-not-generalized-across-sites` and the full cold auditor independently recomputes the choice and source marker.
+
+This is a **researcher-defined credit-attribution hypothesis**, not an assertion that travel has zero genuine value. In a richer future world, contextual action credit should itself condition on origin, destination and actually realized subsequent bodily effects; this slice strictly removes unsupported generalization and adds no planner, motor script, hidden stock oracle, fresh future reward, new owner or I1 dependency.
+
+## Pre-specified tests, without outcome selection
+
+[Source test](../../../tests/i2/test_native_context_free_movement_credit_940.py): native-born independent four cells, all 24 ticks maximum, `place_return_tie=True`, `purpose_followthrough=True`, water physically at camp with two born uses, body (85,90,35,100), temperament (0,.5,.3,0,0), 300 UC, no water refill, no food, learning ON, no sleep consolidation or exploratory tie. Cross only context-free movement projection OFF/ON with actual drinking gain **+40/0**. All actions are chosen by the paid native loop, never externally sequenced. The test records per-life actual actions, bodily water history, whether a second physically admitted drink occurs, first motor divergence, UC, terminal/censor, evidence and cold audit. Pure tests verify that both previously positive and negative generic movement outcomes are ignored only when the flag is ON; resource scores untouched. Illegal learning-OFF, nonspatial and nonboolean births are refused.
+
+**Falsification criteria:** If the experimental arm still shuttles, does not return, does not drink again, spends more UC, loses water or induces false return toward a zero-gain source, preserve the negative result. A conditional one-life second drink would not establish broad natural learning or survival value. Full scientific P2/P3/P4, active I2 G3, independently witnessed M11 and cross-generation generality stay **NOT_ESTABLISHED**. Do not reweight the candidate or change born parameters in response to test output.
+
+CI: one coherent exact-head Python 3.11 + 3.12 run, plus cold replay; no repeated heavy incremental reruns unless an actual implementation defect is shown.
