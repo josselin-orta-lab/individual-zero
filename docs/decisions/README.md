@@ -71,3 +71,7 @@ A filled illustrative example is available in [../../examples/adr-example.md](..
 - [ADR-0007: separate physiological need, nutrition and aversion](ADR-0007-need-nutrition-aversion-scientific-design.md) (1 November 2026). Owner accepts the scientific model and four-arm research design in principle, NOT an executed or parameter-frozen study; G1-LIVE/M11 unchanged.
 
 - [ADR-0008: retire obsolete mandatory external G1 review for I2 prototyping](ADR-0008-remove-obsolete-i2-external-g1-review-gate.md) (1 November 2026). Supersedes earlier two-reviewer and G0-before-coding holds; authorizes autonomous isolated I2 implementation #664, with real technical/scientific safeguards and no automatic active-engine promotion.
+
+- [ADR-0009: I2 physiology and temperament comparability](ADR-0009-i2-physiology-temperament-parity.md) (2 November 2026). Physical and birth-trait parity is required before claiming cross-generation adaptation, without runtime dependence on I1.
+
+- [ADR-0010: stable-world prior and evidence-based associative memory](ADR-0010-stable-world-evidence-based-association.md) (3 November 2026). Unobserved world changes cannot be inferred from time; real targeted experiences accumulate without instant erasure, and innate need is kept distinct from learned resource efficacy.
