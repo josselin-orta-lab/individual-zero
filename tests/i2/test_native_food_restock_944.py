@@ -137,6 +137,9 @@ class ExogenousNativeFoodRestock944(unittest.TestCase):
                     records = db.execute(
                         "SELECT admitted_action, before_json, after_json "
                         "FROM native_physical_events ORDER BY seq").fetchall()
+                    cognitive = [json.loads(record[0]) for record in db.execute(
+                        "SELECT event_json FROM events ORDER BY seq")]
+                self.assertEqual(len(cognitive), len(records))
                 site = BORN_SITE
                 visited_sites = [site]
                 food_sites = []
@@ -149,8 +152,34 @@ class ExogenousNativeFoodRestock944(unittest.TestCase):
                     visited_sites.append(site)
                 self.assertEqual(final["site"], site)
                 actions = [item[0] for item in records]
+                # Read-only diagnosis of a possible persistent positive tie.
+                # These are real previously paid frames, never new evaluations.
+                statuses = []
+                ambiguous = []
+                for tick, event in enumerate(cognitive, 1):
+                    advice = event.get("advice")
+                    statuses.append(advice.get("status") if advice else None)
+                    if not advice or not event.get("frame"):
+                        continue
+                    values = advice.get("values") or []
+                    if not values:
+                        continue
+                    top = max(value["value"] for value in values)
+                    if top <= 0:
+                        continue
+                    names = {candidate["candidate_ref"]: candidate["semantic_ref"]
+                             for candidate in event["frame"]["candidates"]}
+                    tied = sorted(names[value["candidate_ref"]]
+                                  for value in values if value["value"] == top)
+                    if len(tied) > 1:
+                        ambiguous.append({
+                            "tick": tick, "site": visited_sites[tick - 1],
+                            "top": top, "candidates": tied,
+                            "advice_status": advice.get("status")})
                 outcomes[key] = dict(
                     actions=actions, visited_sites=visited_sites,
+                    paid_advice_statuses=statuses,
+                    positive_top_ties=ambiguous,
                     food_use_sites=food_sites,
                     water_history=[round(json.loads(a)["water"], 3)
                                    for _, _, a in records],
