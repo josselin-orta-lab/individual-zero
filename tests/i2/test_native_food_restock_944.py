@@ -156,6 +156,10 @@ class ExogenousNativeFoodRestock944(unittest.TestCase):
                 # These are real previously paid frames, never new evaluations.
                 statuses = []
                 ambiguous = []
+                source_offers = []
+                source_best_solo = []
+                source_best_ties = []
+                source_below_best = []
                 for tick, event in enumerate(cognitive, 1):
                     advice = event.get("advice")
                     statuses.append(advice.get("status") if advice else None)
@@ -171,6 +175,20 @@ class ExogenousNativeFoodRestock944(unittest.TestCase):
                              for candidate in event["frame"]["candidates"]}
                     tied = sorted(names[value["candidate_ref"]]
                                   for value in values if value["value"] == top)
+                    # A source can be physically reachable yet never chosen:
+                    # report whether it was absent, dominated or tied.
+                    source_values = [
+                        value["value"] for value in values
+                        if names[value["candidate_ref"]] == "se_deplacer_vers_source"
+                    ]
+                    if source_values:
+                        source_offers.append(tick)
+                        if source_values[0] == top and len(tied) == 1:
+                            source_best_solo.append(tick)
+                        elif source_values[0] == top and len(tied) > 1:
+                            source_best_ties.append(tick)
+                        elif source_values[0] < top:
+                            source_below_best.append(tick)
                     if len(tied) > 1:
                         ambiguous.append({
                             "tick": tick, "site": visited_sites[tick - 1],
@@ -180,6 +198,10 @@ class ExogenousNativeFoodRestock944(unittest.TestCase):
                     actions=actions, visited_sites=visited_sites,
                     paid_advice_statuses=statuses,
                     positive_top_ties=ambiguous,
+                    source_offer_ticks=source_offers,
+                    source_unique_top_ticks=source_best_solo,
+                    source_tied_top_ticks=source_best_ties,
+                    source_below_top_ticks=source_below_best,
                     food_use_sites=food_sites,
                     water_history=[round(json.loads(a)["water"], 3)
                                    for _, _, a in records],
