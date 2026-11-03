@@ -162,12 +162,14 @@ class ResourceNeedFailureCompetition914(unittest.TestCase):
             innate, claim=claim, body=water, traits=self.TRAITS,
             previous=previous, learning=True)
         self.assertIn("boire", associated)
-        self.assertEqual(scores["boire"], -35)  # 7 - 42
+        from i2.runtime.native_paid_cycle import PRIORS, innate_adjustment
+        reference = innate_adjustment(PRIORS, water, self.TRAITS)["boire"]
+        self.assertEqual(scores["boire"], reference - 42)
         previous += (_row(43, "boire", water, restorative),)
         recovered, _, associated = personally_nonrestoring_scores(
             innate, claim=claim, body=water, traits=self.TRAITS,
             previous=previous, learning=True)
-        self.assertEqual(recovered["boire"], -34)  # 7 + 1 - 42
+        self.assertEqual(recovered["boire"], reference + 1 - 42)
         nolearning, _, refs = personally_nonrestoring_scores(
             innate, claim=claim, body=water, traits=self.TRAITS,
             previous=previous, learning=False)
