@@ -132,7 +132,27 @@ class LivedPlaceReturnCohort924(unittest.TestCase):
                             any(a=="boire" and json.loads(aft)["water"] >
                                 json.loads(bef)["water"]
                                 for a,bef,aft in phys[:initial_contact]))
+                        # Do not label an unexposed bodily/locomotion
+                        # prerequisite as a failed *learned decision*.
+                        if initial_contact is None:
+                            eligible="NO_PERSONAL_RESOURCE_CONTACT"
+                        elif gain > 0 and not any(
+                                a=="boire" and json.loads(aft)["water"] >
+                                json.loads(bef)["water"]
+                                for a,bef,aft in phys[:initial_contact]):
+                            eligible="NO_PERSONAL_RESTORATION"
+                        elif first_departure is None:
+                            eligible="NO_DEPARTURE_FROM_KNOWN_SITE"
+                        elif thirst_recurred_at is None:
+                            eligible="NEED_NOT_RECURRED_AT_HORIZON"
+                        elif first_return is None:
+                            eligible="RECURRED_NEED_NO_PHYSICAL_RETURN"
+                        elif genuine_return:
+                            eligible="PAID_RETURN_AFTER_RECURRENT_NEED"
+                        else:
+                            eligible="RETURN_WITHOUT_REQUIRED_NEED_ORDER"
                         results[key]={
+                            "exposure_class":eligible,
                             "genuine_need_return":genuine_return,
                             "ticks":final["revision"],
                             "censor":"TERMINAL" if final["terminal"] else
