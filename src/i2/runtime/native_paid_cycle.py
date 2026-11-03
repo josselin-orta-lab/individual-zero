@@ -42,7 +42,7 @@ PRIORS = {"boire": 1, "manger": 4, "dormir": 2, "attendre": 1, "collecter": 2, "
 HORIZON = 8
 MAX_BORN_STEPS = 128
 # Capture is a bounded projection, not a deletion of an individual's journal.
-GENESIS_SCHEMA = "i2-native-paid-local-life-v9-cumulative-target-outcomes"
+GENESIS_SCHEMA = "i2-native-paid-local-life-v10-opt-in-evidence-tie-exploration"
 MAX_NATIVE_CAPTURE_REFS = 64
 
 
@@ -126,6 +126,7 @@ def innate_adjustment(values, body, traits):
 NONRESTORING_ATTEMPTS = 2
 NONRESTORING_EVIDENCE = ":personal-nonrestoration"
 RESOURCE_OUTCOME_EVIDENCE = ":experienced-target-outcome"
+TIE_EXPLORATION_EVIDENCE = ":novel-under-lived-failure-tie"
 SLEEP_EVIDENCE = ":sleep-consolidated"
 
 # The target is an ordinary innate action affordance, not a hidden prediction.
@@ -236,6 +237,56 @@ def personally_nonrestoring_scores(
     return adjusted, frozenset(discouraged), frozenset(associated)
 
 
+def native_evidence_tie_exploration(
+    scores, *, claim, body, traits, previous, learning, enabled,
+):
+    """A born-locked, nonmotor experiment at a tied POSITIVE maximum.
+
+    Use only committed personal failures, current bodily need, the birth
+    exploration trait and whether each offered action was ever chosen.
+    The *sole* untried candidate gains +1 against one previously sampled
+    and predominantly ineffective consumption action at equal top rank.
+    No clock freshness, hidden payoff, global novel-action reward or
+    knowledge that the other resource will work. Regular paid Competition
+    and fresh Action Control still decide and admit any physical action.
+    """
+    if type(enabled) is not bool or type(learning) is not bool:
+        raise NativeRefusal("exact born tie experiment and learning flags required")
+    adjusted = dict(scores)
+    if not enabled or not learning or traits.exploration <= 0:
+        return adjusted, frozenset()
+    if NativeCaptureReflex(claim, body, traits).state != "NO_PREEMPTION":
+        return adjusted, frozenset()
+    offered = claim.capture.accessible_semantics
+    if not offered:
+        return adjusted, frozenset()
+    top = max((adjusted[a] for a in offered if a in adjusted), default=0)
+    if not 0 < top < 1024:
+        return adjusted, frozenset()
+    tied = [a for a in offered if adjusted.get(a) == top]
+    if len(tied) < 2:
+        return adjusted, frozenset()
+    chosen_before = {r[2] for r in previous if r[2] != NO_ACTION}
+    unseen = [a for a in tied if a not in chosen_before]
+    if len(unseen) != 1:
+        return adjusted, frozenset()
+    outcomes = personally_observed_resource_outcomes(
+        previous=previous, traits=traits)
+    failed_tied = [
+        a for a in tied if a != unseen[0] and a in outcomes
+        and outcomes[a][1] >= NONRESTORING_ATTEMPTS
+        and outcomes[a][1] > outcomes[a][0]
+        and assess_needs(body, traits).pressures[
+            CONSUMED_RESOURCE_NEED[a]] > 0
+    ]
+    # No multi-source invented ranking: when several personally failing
+    # alternatives are tied, this tiny experiment declines to arbitrate.
+    if len(failed_tied) != 1:
+        return adjusted, frozenset()
+    adjusted[unseen[0]] += 1
+    return adjusted, frozenset(unseen)
+
+
 def sleep_consolidated_scores(scores, *, previous, learning, enabled):
     """Stabilize ONLY repeatedly lived outcomes before a committed sleep.
 
@@ -270,11 +321,13 @@ def sleep_consolidated_scores(scores, *, previous, learning, enabled):
 
 class _Valuation(ChosenOutcomeValuationStudy):
     def __init__(self, *, body, traits, previous=(), learning=False,
-                 sleep_consolidation=True, **kwargs):
+                 sleep_consolidation=True, evidence_tie_exploration=False,
+                 **kwargs):
         super().__init__(**kwargs)
         self.body, self.traits = body, traits
         self.previous, self.learning = tuple(previous), learning
         self.sleep_consolidation = sleep_consolidation
+        self.evidence_tie_exploration = evidence_tie_exploration
 
     def evaluate_batch(self, *, frame, receipts):
         evaluated = super().evaluate_batch(frame=frame, receipts=receipts)
@@ -287,11 +340,17 @@ class _Valuation(ChosenOutcomeValuationStudy):
         updated, discouraged, associated = personally_nonrestoring_scores(
             initial, claim=self.claim, body=self.body, traits=self.traits,
             previous=self.previous, learning=self.learning)
+        updated, exploratory = native_evidence_tie_exploration(
+            updated, claim=self.claim, body=self.body, traits=self.traits,
+            previous=self.previous, learning=self.learning,
+            enabled=self.evidence_tie_exploration)
         return tuple(replace(
             v, value=updated[named[v.candidate_ref]],
             evidence_ref=v.evidence_ref +
             (RESOURCE_OUTCOME_EVIDENCE if
              named[v.candidate_ref] in associated else "") +
+            (TIE_EXPLORATION_EVIDENCE if
+             named[v.candidate_ref] in exploratory else "") +
             ":native-body" +
             (SLEEP_EVIDENCE if named[v.candidate_ref] in consolidated
              and named[v.candidate_ref] not in associated else "") +
@@ -372,7 +431,8 @@ def genesis_digest(meta):
         meta["berry_food_gain"], meta["berry_integrity_delta"],
         meta["drink_water_gain"], meta["discovered_water_gain"], meta["sleep_consolidation"],
         meta["max_steps"], meta["water_restock_every"],
-        meta["water_quality_change_at"], meta["water_quality_after_gain"]]).encode("ascii")).hexdigest()
+        meta["water_quality_change_at"], meta["water_quality_after_gain"],
+        meta["evidence_tie_exploration"]]).encode("ascii")).hexdigest()
 
 
 class NativePaidI2:
@@ -404,6 +464,7 @@ class NativePaidI2:
     @classmethod
     def create(cls, path, *, body: Body, temperament: BirthTemperament,
                learning=True, sleep_consolidation=True,
+               evidence_tie_exploration=False,
                max_steps=HORIZON, food_stock=4, water_stock=4,
                water_restock_every=0,
                water_quality_change_at=0, water_quality_after_gain=0.0,
@@ -415,6 +476,7 @@ class NativePaidI2:
                 min(body.food, body.water, body.integrity) <= 0 or
                 type(learning) is not bool or
                 type(sleep_consolidation) is not bool or
+                type(evidence_tie_exploration) is not bool or
                 type(max_steps) is not int or not 1 <= max_steps <= MAX_BORN_STEPS or
                 type(water_restock_every) is not int or
                 not 0 <= water_restock_every <= 32 or
@@ -469,6 +531,8 @@ class NativePaidI2:
                 water_quality_change_at INTEGER NOT NULL
                     CHECK(water_quality_change_at BETWEEN 0 AND 128),
                 water_quality_after_gain REAL NOT NULL,
+                evidence_tie_exploration INTEGER NOT NULL
+                    CHECK(evidence_tie_exploration IN (0,1)),
                 digest TEXT NOT NULL)""")
             db.execute("""CREATE TABLE native_discoveries (
                 seq INTEGER PRIMARY KEY,
@@ -486,8 +550,9 @@ class NativePaidI2:
                         max_steps=max_steps,
                         water_restock_every=water_restock_every,
                         water_quality_change_at=water_quality_change_at,
-                        water_quality_after_gain=water_quality_after_gain)
-            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                        water_quality_after_gain=water_quality_after_gain,
+                        evidence_tie_exploration=int(evidence_tie_exploration))
+            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                        (*meta.values(), genesis_digest(meta)))
             db.commit()
         obj.audit()
@@ -743,6 +808,10 @@ class NativePaidI2:
                 scores, discouraged, associated = personally_nonrestoring_scores(
                     initial, claim=claim, body=body, traits=traits,
                     previous=previous, learning=bool(meta["learning"]))
+                scores, exploratory = native_evidence_tie_exploration(
+                    scores, claim=claim, body=body, traits=traits,
+                    previous=previous, learning=bool(meta["learning"]),
+                    enabled=bool(meta["evidence_tie_exploration"]))
                 candidates = {item["candidate_ref"]: item["semantic_ref"]
                               for item in frame["candidates"]}
                 values = advice["values"]
@@ -754,6 +823,8 @@ class NativePaidI2:
                             not value["evidence_ref"].endswith(
                                 (RESOURCE_OUTCOME_EVIDENCE if
                                  candidates[c] in associated else "") +
+                                (TIE_EXPLORATION_EVIDENCE if
+                                 candidates[c] in exploratory else "") +
                                 ":native-body" +
                                 (SLEEP_EVIDENCE if
                                  candidates[c] in consolidated and
@@ -880,7 +951,8 @@ class NativePaidI2:
             claim=claim, results=outcomes, source=_HistorySource(outcomes),
             priors=PRIORS, body=body, traits=traits,
             previous=rows, learning=bool(meta["learning"]),
-            sleep_consolidation=bool(meta["sleep_consolidation"]))
+            sleep_consolidation=bool(meta["sleep_consolidation"]),
+            evidence_tie_exploration=bool(meta["evidence_tie_exploration"]))
         fixture = self._fixture(valuation)
         try:
             if not rows:
