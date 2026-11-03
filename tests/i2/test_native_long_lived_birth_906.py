@@ -62,6 +62,33 @@ class NativeLongLivedBirthTests(unittest.TestCase):
             with self.assertRaises(NativeRefusal):
                 NativePaidI2.inspect(path).step()
 
+    def test_chosen_working_window_does_not_delete_older_lived_history(self):
+        from i2.modules.chosen_outcome_study import MAX_RECORDED_CHOICES
+        self.assertLess(MAX_RECORDED_CHOICES, MAX_BORN_STEPS)
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "window.sqlite"
+            individual = NativePaidI2.create(
+                path, body=self.BIRTH, temperament=self.TRAITS,
+                max_steps=MAX_BORN_STEPS, uc=1000, food_stock=0,
+                water_stock=0, discovered_water_gain=0.0)
+            # This helper models the saved journal's actual tuple layout.
+            # It checks the bounded readout independently of action policy.
+            previous = tuple((
+                seq, "capture:i2:native:" + str(seq - 1),
+                "dormir", 0.0, "before", "after", 0)
+                for seq in range(1, MAX_RECORDED_CHOICES + 8))
+            window = individual._history(previous)
+            self.assertEqual(len(window), MAX_RECORDED_CHOICES)
+            self.assertEqual(
+                window[0].evidence_ref,
+                "evidence:i2:native:outcome:8")
+            self.assertEqual(
+                window[-1].evidence_ref,
+                "evidence:i2:native:outcome:" +
+                str(MAX_RECORDED_CHOICES + 7))
+            self.assertEqual(len(previous), MAX_RECORDED_CHOICES + 7)
+            self.assertEqual(individual.audit()["revision"], 0)
+
     def test_lifetime_limit_is_born_immutable_and_small_cohorts_unchanged(self):
         with tempfile.TemporaryDirectory() as folder:
             for invalid in (True, 0, -1, MAX_BORN_STEPS + 1, 3.0, "20"):
