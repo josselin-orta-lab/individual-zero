@@ -51,7 +51,7 @@ PRIORS = {"boire": 1, "manger": 4, "dormir": 2, "attendre": 1, "collecter": 2, "
 HORIZON = 8
 MAX_BORN_STEPS = 128
 # Capture is a bounded projection, not a deletion of an individual's journal.
-GENESIS_SCHEMA = "i2-native-paid-local-life-v16-site-bound-ordinary-food"
+GENESIS_SCHEMA = "i2-native-paid-local-life-v17-exogenous-food-restock"
 MAX_NATIVE_CAPTURE_REFS = 64
 
 
@@ -619,9 +619,18 @@ def old_water_accessible(meta, rows):
             replay_site(rows, enabled=True) == home)
 
 
+def old_food_available(meta, rows):
+    """Actual food units; exogenous clock is physical, never learned payoff."""
+    interval = meta["food_restock_every"]
+    elapsed = len(rows)
+    replenished = elapsed // interval if interval else 0
+    consumed = sum(row[2] == "manger" for row in rows)
+    return meta["food_stock"] + replenished - consumed
+
+
 def old_food_accessible(meta, rows):
     """Physically stocked and locally offered food, never hidden payoff."""
-    if sum(row[2] == "manger" for row in rows) >= meta["food_stock"]:
+    if old_food_available(meta, rows) <= 0:
         return False
     home = meta["ordinary_food_site"]
     if home is None:
@@ -642,7 +651,8 @@ def genesis_digest(meta):
         meta["ordinary_water_site"], meta["place_return_tie"],
         meta["purpose_followthrough"],
         meta["contextual_movement_credit"],
-        meta["ordinary_food_site"]]).encode("ascii")).hexdigest()
+        meta["ordinary_food_site"],
+        meta["food_restock_every"]]).encode("ascii")).hexdigest()
 
 
 class NativePaidI2:
@@ -678,7 +688,7 @@ class NativePaidI2:
                ordinary_water_site=None, place_return_tie=False,
                purpose_followthrough=False, contextual_movement_credit=False,
                ordinary_food_site=None, max_steps=HORIZON, food_stock=4, water_stock=4,
-               water_restock_every=0,
+               water_restock_every=0, food_restock_every=0,
                water_quality_change_at=0, water_quality_after_gain=0.0,
                uc=80,
                berry_food_gain=20.0, berry_integrity_delta=-8.0,
@@ -707,6 +717,8 @@ class NativePaidI2:
                 type(max_steps) is not int or not 1 <= max_steps <= MAX_BORN_STEPS or
                 type(water_restock_every) is not int or
                 not 0 <= water_restock_every <= 32 or
+                type(food_restock_every) is not int or
+                not 0 <= food_restock_every <= 32 or
                 type(water_quality_change_at) is not int or
                 not 0 <= water_quality_change_at <= MAX_BORN_STEPS or
                 (water_quality_change_at and not water_restock_every) or
@@ -768,6 +780,8 @@ class NativePaidI2:
                 contextual_movement_credit INTEGER NOT NULL
                     CHECK(contextual_movement_credit IN (0,1)),
                 ordinary_food_site TEXT,
+                food_restock_every INTEGER NOT NULL
+                    CHECK(food_restock_every BETWEEN 0 AND 32),
                 digest TEXT NOT NULL)""")
             db.execute("""CREATE TABLE native_discoveries (
                 seq INTEGER PRIMARY KEY,
@@ -792,8 +806,9 @@ class NativePaidI2:
                         place_return_tie=int(place_return_tie),
                         purpose_followthrough=int(purpose_followthrough),
                         contextual_movement_credit=int(contextual_movement_credit),
-                        ordinary_food_site=ordinary_food_site)
-            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                        ordinary_food_site=ordinary_food_site,
+                        food_restock_every=food_restock_every)
+            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                        (*meta.values(), genesis_digest(meta)))
             db.commit()
         obj.audit()
