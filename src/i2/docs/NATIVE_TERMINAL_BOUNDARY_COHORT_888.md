@@ -62,3 +62,24 @@ in this prototype. Later replicate across independently sampled world
 conditions and birth temperaments, with outcome criteria frozen in advance.
 
 Dream-like reorganization remains deferred in #902.
+
+
+## Post-execution falsification note (added after the initial CI)
+
+The first exact-head CI, run 41598904895, **FAILED** under Python 3.11
+and 3.12. The empty-world **no-learning** control physically chose
+`collecter` at tick 5 and committed `native_discoveries=(5,0)`.
+This directly falsifies the preregistered premise that the innate control
+would never explore. No-learning is not no-exploration: innate need and paid
+competition may choose the site after repeated thirst, even without learned
+revaluation. **Do not alter the decision engine to forbid it.**
+
+The original expectations above are intentionally retained as historical
+hypotheses, not rewritten as though confirmed. The revised engineering test
+checks both arms' *actual* opportunities and discoveries, first-person
+chronology, journal and state integrity, negative-source absence, and whether
+physical drinking alone explains any nonterminal state. It prints the four
+observed action/terminal traces under `I2_NATIVE_8_TICK_COHORT`; further
+scientific interpretation must cite those traces. A learner-only survival
+contrast is **not established** by the initial failed CI and cannot be
+asserted as an outcome after changing the expectation.
