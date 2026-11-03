@@ -478,7 +478,8 @@ class _Valuation(ChosenOutcomeValuationStudy):
     def __init__(self, *, body, traits, previous=(), learning=False,
                  sleep_consolidation=True, evidence_tie_exploration=False,
                  place_return_tie=False, purpose_followthrough=False,
-                 contextual_movement_credit=False, prior_event=None, **kwargs):
+                 contextual_movement_credit=False, spatial_world=False,
+                 prior_event=None, **kwargs):
         super().__init__(**kwargs)
         self.body, self.traits = body, traits
         self.previous, self.learning = tuple(previous), learning
@@ -487,6 +488,7 @@ class _Valuation(ChosenOutcomeValuationStudy):
         self.place_return_tie = place_return_tie
         self.purpose_followthrough = purpose_followthrough
         self.contextual_movement_credit = contextual_movement_credit
+        self.spatial_world = spatial_world
         self.prior_event = prior_event
 
     def evaluate_batch(self, *, frame, receipts):
@@ -498,7 +500,7 @@ class _Valuation(ChosenOutcomeValuationStudy):
             enabled=self.sleep_consolidation)
         contextual, isolated = isolate_context_free_movement_credit(
             stabilized, learning=self.learning,
-            spatial_world=self.place_return_tie,
+            spatial_world=self.spatial_world,
             enabled=self.contextual_movement_credit)
         initial = innate_adjustment(contextual, self.body, self.traits)
         updated, discouraged, associated = personally_nonrestoring_scores(
@@ -1225,6 +1227,7 @@ class NativePaidI2:
             place_return_tie=bool(meta["place_return_tie"]),
             purpose_followthrough=bool(meta["purpose_followthrough"]),
             contextual_movement_credit=bool(meta["contextual_movement_credit"]),
+            spatial_world=bool(meta["spatial_world"]),
             prior_event=prior_cognitive_event)
         fixture = self._fixture(valuation)
         try:
