@@ -446,6 +446,44 @@ class NativePaidCycleTests(unittest.TestCase):
             "boire_decouverte", fourth["claim"]["capture"]["accessible_semantics"])
         self.assertEqual(actor.audit()["revision"], 4)
 
+    def test_discovery_and_sleep_ablation_are_physically_matched_before_sleep(self):
+        """Neither sleep switch reveals water nor changes physics pre-sleep."""
+        import json
+        arms = []
+        for enabled in (True, False):
+            path = Path(self.tmp.name) / ("combined-" + str(enabled) + ".sqlite")
+            actor = NativePaidI2.create(
+                path, body=Body(80, 60, 3, 100),
+                temperament=self.traits, learning=True,
+                sleep_consolidation=enabled, food_stock=0, water_stock=4,
+                drink_water_gain=0.0, discovered_water_gain=30.0)
+            born = actor.audit()
+            for _ in range(4):
+                actor.step()
+            with sqlite3.connect(path) as db:
+                events = [json.loads(r[0]) for r in db.execute(
+                    "SELECT event_json FROM events ORDER BY seq")]
+                effects = [tuple(r) for r in db.execute(
+                    "SELECT admitted_action,before_json,after_json "
+                    "FROM native_physical_events ORDER BY seq")]
+                discoveries = db.execute(
+                    "SELECT seq,found FROM native_discoveries").fetchall()
+            self.assertEqual(discoveries, [(3, 1)])
+            self.assertEqual([e[0] for e in effects],
+                             ["boire", "boire", "collecter", "boire_decouverte"])
+            self.assertNotIn(
+                "boire_decouverte", events[2]["claim"]["capture"]["accessible_semantics"])
+            self.assertIn(
+                "boire_decouverte", events[3]["claim"]["capture"]["accessible_semantics"])
+            self.assertGreater(json.loads(effects[3][2])["water"],
+                               json.loads(effects[3][1])["water"])
+            self.assertNotIn("sleep-consolidated",
+                             " ".join(json.dumps(e) for e in events))
+            self.assertEqual(actor.audit()["revision"], 4)
+            arms.append((born["body"], born["temperament"],
+                         [e[0] for e in effects], actor.audit()["body"]))
+        self.assertEqual(arms[0], arms[1])
+
     def test_tampered_found_water_fails_native_cold_replay(self):
         actor = self.birth(body=Body(80, 60, 3, 100),
                            learning=True, food_stock=0, water_stock=4,
