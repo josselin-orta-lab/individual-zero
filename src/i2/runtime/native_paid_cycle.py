@@ -41,7 +41,9 @@ from i2.runtime.native_physiology_journal import (
 PRIORS = {"boire": 1, "manger": 4, "dormir": 2, "attendre": 1, "collecter": 2, "boire_decouverte": 1}
 HORIZON = 8
 MAX_BORN_STEPS = 128
-GENESIS_SCHEMA = "i2-native-paid-local-life-v6-hidden-water-outcome-reversal"
+# Capture is a bounded projection, not a deletion of an individual's journal.
+GENESIS_SCHEMA = "i2-native-paid-local-life-v7-bounded-evidence-projection"
+MAX_NATIVE_CAPTURE_REFS = 64
 
 
 class NativeRefusal(ValueError):
@@ -262,6 +264,42 @@ def actual_old_water_gain(meta, elapsed_ticks):
     return meta["drink_water_gain"]
 
 
+def bounded_native_evidence(current, rows, *, water_restock_every):
+    """Bound current subjective refs without erasing actual lifelong evidence.
+
+    Preserve body/interoception and observed discovery provenance. For other
+    factual events keep the latest committed physical-time refs across refills
+    and chosen outcomes. They remain intact in the sole SQLite owner, and the
+    independently replayed chosen-result window is unchanged (max 64).
+    Hidden quality, future events and learning flags never enter this view.
+    """
+    fixed = list(current)
+    fixed.extend("evidence:i2:native:water-found:" + str(row[0])
+                 for row in rows if row[6])
+    if len(fixed) > MAX_NATIVE_CAPTURE_REFS:
+        raise NativeRefusal("mandatory first-person evidence overflow")
+    timed = []
+    if water_restock_every:
+        timed.extend(
+            (epoch * water_restock_every,
+             "evidence:i2:native:water-offer-refilled:" +
+             str(epoch * water_restock_every))
+            for epoch in range(1, len(rows) // water_restock_every + 1)
+        )
+    timed.extend(
+        (row[0], "evidence:i2:native:outcome:" + str(row[0]))
+        for row in rows if row[2] != NO_ACTION
+    )
+    timed.sort(key=lambda item: (item[0], item[1]))
+    slots = MAX_NATIVE_CAPTURE_REFS - len(fixed)
+    recent = [ref for _, ref in timed[-slots:]] if slots else []
+    result = tuple(sorted(fixed + recent))
+    if (len(result) > MAX_NATIVE_CAPTURE_REFS or
+            len(result) != len(set(result))):
+        raise NativeRefusal("noncanonical bounded native evidence")
+    return result
+
+
 def old_water_available(meta, rows):
     """Present physical offers, never a prediction of water's actual effect.
 
@@ -459,19 +497,9 @@ class NativePaidI2:
             offered.append("boire")
         if sum(r[6] for r in rows) > chosen.count("boire_decouverte"):
             offered.append("boire_decouverte")
-        evidence = list(snapshot["current_evidence"])
-        # A naturally reappearing source is observed now, not forecast.
-        # Each refill is caused by elapsed committed physical time, not a
-        # learning flag and not a hidden prospective reward.
-        interval = meta["water_restock_every"]
-        if interval:
-            evidence.extend(
-                "evidence:i2:native:water-offer-refilled:" + str(epoch * interval)
-                for epoch in range(1, seq // interval + 1))
-        evidence.extend("evidence:i2:native:outcome:" + str(r[0])
-                        for r in rows if r[2] != NO_ACTION)
-        evidence.extend("evidence:i2:native:water-found:" + str(r[0])
-                        for r in rows if r[6])
+        evidence = bounded_native_evidence(
+            snapshot["current_evidence"], rows,
+            water_restock_every=meta["water_restock_every"])
         def observed_claim(goal):
             return ObservationClaim(
                 self.life_ref, FirstPersonCapture(
