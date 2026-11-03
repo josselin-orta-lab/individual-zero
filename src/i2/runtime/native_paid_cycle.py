@@ -33,6 +33,9 @@ from i2.modules.native_owner_support import (
     saved_body, saved_traits,
 )
 from i2.modules.native_physiological_needs import assess_needs
+from i2.modules.native_place_experience import (
+    lived_place_outcomes, current_need_site_relevance,
+)
 from i2.modules.native_spatial_world import (
     GRAPH, MOTIONS, offered_moves, destination, site_after,
     replay_site, local_evidence,
@@ -47,7 +50,7 @@ PRIORS = {"boire": 1, "manger": 4, "dormir": 2, "attendre": 1, "collecter": 2, "
 HORIZON = 8
 MAX_BORN_STEPS = 128
 # Capture is a bounded projection, not a deletion of an individual's journal.
-GENESIS_SCHEMA = "i2-native-paid-local-life-v12-born-localized-ordinary-water"
+GENESIS_SCHEMA = "i2-native-paid-local-life-v13-optional-place-return-tie"
 MAX_NATIVE_CAPTURE_REFS = 64
 
 
@@ -136,6 +139,7 @@ NONRESTORING_EVIDENCE = ":personal-nonrestoration"
 RESOURCE_OUTCOME_EVIDENCE = ":experienced-target-outcome"
 TIE_EXPLORATION_EVIDENCE = ":novel-under-lived-failure-tie"
 SLEEP_EVIDENCE = ":sleep-consolidated"
+PLACE_RETURN_EVIDENCE = ":personally-observed-reachable-place"
 
 # The target is an ordinary innate action affordance, not a hidden prediction.
 # Rest/wait can repair integrity when resources permit, but neither drinks
@@ -295,6 +299,54 @@ def native_evidence_tie_exploration(
     return adjusted, frozenset(unseen)
 
 
+def personally_observed_place_tie(
+    scores, *, claim, body, traits, previous, learning, enabled,
+):
+    """One bounded point to ONE evidenced, adjacent, tied-top move.
+
+    A human-designed tie-only research hypothesis, NOT place planning or
+    guaranteed future restoration. A previously visited site may be
+    depleted. Only an actual prior paid resource contact under need
+    provides a place-specific bodily association. Present need is read
+    independently of historical efficacy; time does not erase evidence.
+    """
+    if type(enabled) is not bool or type(learning) is not bool:
+        raise NativeRefusal("exact place tie and learning flags required")
+    updated = dict(scores)
+    if not enabled or not learning:
+        return updated, frozenset()
+    if not any(destination(a) is not None for a in claim.capture.accessible_semantics):
+        return updated, frozenset()
+    offered = claim.capture.accessible_semantics
+    top = max((updated[a] for a in offered if a in updated), default=0)
+    if not 0 < top < 1024:
+        return updated, frozenset()
+    tied = [a for a in offered if updated.get(a) == top]
+    if len(tied) < 2:
+        return updated, frozenset()
+    evidence = lived_place_outcomes(
+        previous, traits=traits, enabled=True)
+    relevance = current_need_site_relevance(
+        evidence, body=body, traits=traits)
+    possibilities = []
+    for action in tied:
+        site = destination(action)
+        if site is None:
+            continue
+        total = sum(value for (visited, target), value in relevance.items()
+                    if visited == site)
+        if total > 0:
+            possibilities.append((action, total))
+    if not possibilities:
+        return updated, frozenset()
+    high = max(value for _, value in possibilities)
+    favored = [action for action, value in possibilities if value == high]
+    if len(favored) != 1:
+        return updated, frozenset()
+    updated[favored[0]] += 1
+    return updated, frozenset(favored)
+
+
 def sleep_consolidated_scores(scores, *, previous, learning, enabled):
     """Stabilize ONLY repeatedly lived outcomes before a committed sleep.
 
@@ -330,12 +382,13 @@ def sleep_consolidated_scores(scores, *, previous, learning, enabled):
 class _Valuation(ChosenOutcomeValuationStudy):
     def __init__(self, *, body, traits, previous=(), learning=False,
                  sleep_consolidation=True, evidence_tie_exploration=False,
-                 **kwargs):
+                 place_return_tie=False, **kwargs):
         super().__init__(**kwargs)
         self.body, self.traits = body, traits
         self.previous, self.learning = tuple(previous), learning
         self.sleep_consolidation = sleep_consolidation
         self.evidence_tie_exploration = evidence_tie_exploration
+        self.place_return_tie = place_return_tie
 
     def evaluate_batch(self, *, frame, receipts):
         evaluated = super().evaluate_batch(frame=frame, receipts=receipts)
@@ -352,6 +405,10 @@ class _Valuation(ChosenOutcomeValuationStudy):
             updated, claim=self.claim, body=self.body, traits=self.traits,
             previous=self.previous, learning=self.learning,
             enabled=self.evidence_tie_exploration)
+        updated, remembered = personally_observed_place_tie(
+            updated, claim=self.claim, body=self.body, traits=self.traits,
+            previous=self.previous, learning=self.learning,
+            enabled=self.place_return_tie)
         return tuple(replace(
             v, value=updated[named[v.candidate_ref]],
             evidence_ref=v.evidence_ref +
@@ -359,6 +416,8 @@ class _Valuation(ChosenOutcomeValuationStudy):
              named[v.candidate_ref] in associated else "") +
             (TIE_EXPLORATION_EVIDENCE if
              named[v.candidate_ref] in exploratory else "") +
+            (PLACE_RETURN_EVIDENCE if
+             named[v.candidate_ref] in remembered else "") +
             ":native-body" +
             (SLEEP_EVIDENCE if named[v.candidate_ref] in consolidated
              and named[v.candidate_ref] not in associated else "") +
@@ -456,7 +515,7 @@ def genesis_digest(meta):
         meta["max_steps"], meta["water_restock_every"],
         meta["water_quality_change_at"], meta["water_quality_after_gain"],
         meta["evidence_tie_exploration"], meta["spatial_world"],
-        meta["ordinary_water_site"]]).encode("ascii")).hexdigest()
+        meta["ordinary_water_site"], meta["place_return_tie"]]).encode("ascii")).hexdigest()
 
 
 class NativePaidI2:
@@ -489,7 +548,8 @@ class NativePaidI2:
     def create(cls, path, *, body: Body, temperament: BirthTemperament,
                learning=True, sleep_consolidation=True,
                evidence_tie_exploration=False, spatial_world=False,
-               ordinary_water_site=None, max_steps=HORIZON, food_stock=4, water_stock=4,
+               ordinary_water_site=None, place_return_tie=False,
+               max_steps=HORIZON, food_stock=4, water_stock=4,
                water_restock_every=0,
                water_quality_change_at=0, water_quality_after_gain=0.0,
                uc=80,
@@ -502,6 +562,8 @@ class NativePaidI2:
                 type(sleep_consolidation) is not bool or
                 type(evidence_tie_exploration) is not bool or
                 type(spatial_world) is not bool or
+                type(place_return_tie) is not bool or
+                (place_return_tie and not spatial_world) or
                 (ordinary_water_site is not None and
                  (type(ordinary_water_site) is not str or
                   ordinary_water_site not in GRAPH or not spatial_world)) or
@@ -563,6 +625,7 @@ class NativePaidI2:
                     CHECK(evidence_tie_exploration IN (0,1)),
                 spatial_world INTEGER NOT NULL CHECK(spatial_world IN (0,1)),
                 ordinary_water_site TEXT,
+                place_return_tie INTEGER NOT NULL CHECK(place_return_tie IN (0,1)),
                 digest TEXT NOT NULL)""")
             db.execute("""CREATE TABLE native_discoveries (
                 seq INTEGER PRIMARY KEY,
@@ -583,8 +646,9 @@ class NativePaidI2:
                         water_quality_after_gain=water_quality_after_gain,
                         evidence_tie_exploration=int(evidence_tie_exploration),
                         spatial_world=int(spatial_world),
-                        ordinary_water_site=ordinary_water_site)
-            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                        ordinary_water_site=ordinary_water_site,
+                        place_return_tie=int(place_return_tie))
+            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                        (*meta.values(), genesis_digest(meta)))
             db.commit()
         obj.audit()
@@ -855,6 +919,10 @@ class NativePaidI2:
                     scores, claim=claim, body=body, traits=traits,
                     previous=previous, learning=bool(meta["learning"]),
                     enabled=bool(meta["evidence_tie_exploration"]))
+                scores, remembered = personally_observed_place_tie(
+                    scores, claim=claim, body=body, traits=traits,
+                    previous=previous, learning=bool(meta["learning"]),
+                    enabled=bool(meta["place_return_tie"]))
                 candidates = {item["candidate_ref"]: item["semantic_ref"]
                               for item in frame["candidates"]}
                 values = advice["values"]
@@ -868,6 +936,8 @@ class NativePaidI2:
                                  candidates[c] in associated else "") +
                                 (TIE_EXPLORATION_EVIDENCE if
                                  candidates[c] in exploratory else "") +
+                                (PLACE_RETURN_EVIDENCE if
+                                 candidates[c] in remembered else "") +
                                 ":native-body" +
                                 (SLEEP_EVIDENCE if
                                  candidates[c] in consolidated and
@@ -1005,7 +1075,8 @@ class NativePaidI2:
             priors=PRIORS, body=body, traits=traits,
             previous=rows, learning=bool(meta["learning"]),
             sleep_consolidation=bool(meta["sleep_consolidation"]),
-            evidence_tie_exploration=bool(meta["evidence_tie_exploration"]))
+            evidence_tie_exploration=bool(meta["evidence_tie_exploration"]),
+            place_return_tie=bool(meta["place_return_tie"]))
         fixture = self._fixture(valuation)
         try:
             if not rows:
