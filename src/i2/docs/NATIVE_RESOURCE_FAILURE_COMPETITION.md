@@ -1,70 +1,73 @@
-# Resource-specific personal failure in native paid Competition
+# Native I2: experience-grounded, persistent resource associations
 
-**Scientific validity correction (3 November 2026)** after the exact-head
-96-cycle #912 cohort, recorded unchanged in
-[NATIVE_RECURRENT_NEED_RESULTS_906.md](NATIVE_RECURRENT_NEED_RESULTS_906.md).
-The previous test found **42 genuinely ineffective post-change drinks**
-in both learning ON/OFF despite divergent exposure timing.
+**Design and research correction, 3 November 2026.** Scientific ruling:
+[ADR-0010](../../docs/decisions/ADR-0010-stable-world-evidence-based-association.md).
+Source-locked earlier negative evidence remains in
+[NATIVE_RECURRENT_NEED_RESULTS_906.md](NATIVE_RECURRENT_NEED_RESULTS_906.md):
+both arms in #912 drank degraded water ineffectively 42 times, and neither
+returned to critical thirst in 96 paid physical ticks.
 
-## Root cause, not a surprising absence of physiological crisis
+## Problem: wrong target and instantaneous belief reversal
 
-In the native I2 prototype, consumed actions were scored by
-`round(20 * global net physiological relief) + 5` from the earlier
-synthetic chosen-result study, **plus** innate need pressure. A drink
-that yields 0 water nevertheless incurs only natural decay (-0.4 water)
-and small metabolic costs; after global normalization and rounding,
-this often produces an observed-result score of **0**, then the
-fixed offset yields **+5**. Since `boire` has a born prior of +1,
-the experience can **increase** rather than decrease its competitive
-valuation. The separate critical last-resort rule requires water <=10
-and two observed failures, which the 96-cycle cohort never reached
-after early restoration. The absence of a critical emergency does not
-justify interpreting an ineffective resource as effective.
+The generic G2 chosen-result heuristic uses rounded GLOBAL physiological
+relief +5; drinking can produce no water gain yet obtain a positive learned
+evaluation. The previous draft of #914 proposed a special one-point
+penalty for each *consecutive* failure, but reset the entire penalty after
+a **single** later successful drink. That would make an otherwise stable
+environment artificially volatile and violate the intended low-abstraction
+memory. The initial #914 CI also exposed two *test contract errors*:
+a new test prescribed `boire` at water=50 even though Competition chose
+`NO_ACTION`; another broke a critical provenance suffix by adding a
+marker after it. The failures were real and are retained in Actions
+run [41633243029](https://github.com/josselin-orta-lab/individual-zero/actions/runs/41633243029).
 
-## Scoped engineering correction, NOT optimization of the frozen cohort
+## Corrected, falsifiable native research rule
 
-For resource-consumption actions `boire`, `boire_decouverte`, and
-`manger`, compare only their **intended physiological reserve**
-(water or food) before and after an actually admitted action in the
-same immutable individual's local journal. If the reserve had an
-actual unmet need before the action, and the chosen action did not
-raise it, that is one personally **observed failure**. If it later
-raises the same reserve, the consecutive failure streak resets.
+For `boire`, `boire_decouverte` and `manger`, use only physically
+committed BEFORE/AFTER states and the actual targeted reserve, **provided
+the corresponding need was measurably unmet before the chosen action**.
+Each restoration counts +1, each nonrestoration -1 in this simple
+exploratory unit-score association. Recompute the accumulated
+`successes - failures` from the **same immutable born SQLite owner**
+at every paid decision, adding it to the born prior and current innate
+need pressure. The journal is constrained by `MAX_BORN_STEPS=128` and
+cold replayed; the separate generic G2 chosen-outcome working window
+remains at 64. No second persistent H2 owner or speculative memory is
+created. Non-resource choices continue the previous generic G2 scoring
+path, with its known limitations.
 
-For each recent consecutive resource-specific failure, cap the
-native score to `born prior + fresh innate adjustment - count`,
-but never raise a score from this operation. This deliberately
-minimal, inspectable exploratory *one score point per failure* is
-not a calibrated neural learning law, a physiological guarantee,
-a proof of causal H2, or an after-the-fact reinterpretation of #912.
-It is a falsifiable construct-validity repair: a resource that fails
-the need it is selected for must receive negative experience credit,
-even when the body remains above the critical threshold.
+A single success after 42 failures changes -42 evidence to -41, **not
+zero**. A single failure after 10 successes changes +10 to +9, not an
+instant permanent rejection. Neither passage of time nor a hidden world
+reversal changes the association in the absence of personal evidence.
+This is **not calibrated natural learning**: the symmetric one-unit
+weight is a declared engineering hypothesis with failure/noise and
+action-selection falsifiers, and linear counts within the technical
+born horizon have known saturation/scale limitations.
 
-No-learning control always keeps its identical innate pressures.
-The critical two-attempt last-resort gate remains separate and
-unchanged. The resource remains physically offered whenever the
-actual world offers it; this rule cannot impose a different action,
-grant UC, forge a reward, read hidden future quality or bypass paid
-Competition and fresh action admission. Other needs are not labeled
-as failure of the resource, and drinking while already satiated
-produces no negative need claim. Only the last 64 actually chosen
-results are consulted, matching the existing cognitive window.
-The full physical journal is preserved for cold replay.
+The separate critical survival reflex and its evidence sufficiency
+remain unchanged. The resource remains available if physically offered,
+even when its subjective score is negative; there is no forced motor
+action, artificial re-exposure, free UC, hidden phase lookup or fixed
+staleness bonus. A personally lived success changes the evidence score
+but never certifies that all future source outcomes are safe.
+The evidence suffix for the original critical last-resort contract is
+retained, with new target-outcome provenance placed BEFORE `:native-body`.
+The independently replayed scores and provenance must match the paid
+event journal. The native genesis is versioned **v9** to avoid
+reinterpreting earlier research births.
 
-Version the native **genesis v8** to avoid silently changing the
-policy identity of earlier local research births. Preserve the
-original #912 report, exact code SHA and negative results. The
-new regression checks assess one personally failed drink with
-noncritical hydration against an identical innate-only life,
-food-vs-water attribution, retry after success, memory bounds,
-no future/synthetic reward and cold replay. Any new longitudinal
-run after this change is exploratory and must be separately
-source-locked, **not a confirmatory rerun of #912**.
+## Result boundary and next experiment
 
-Next question: does the correction decrease actual chosen drinks
-after resource-specific failure when other *physically available*
-actions compete, or can innate pressures still legitimately dominate?
-Do not demand abandonment where no viable alternative exists.
-G3, M11 authentication and general natural learning remain
-**NOT_ESTABLISHED**.
+Tests now cover first autonomous noncritical drinking in a matched
+learning ON/OFF birth, source-specific successes and failures, long
+history without time-based forgetting, one surprising success, no
+wrong-need credit, no-learning controls and cold replay. Neither the
+tests nor the source-locked 96-cycle #912 histories establish a superior
+survival result. Next, in a prospectively frozen **stable environment**
+with an actual alternative affordance, contrast *chosen actions* and
+paid physiological consequences after repeated stable failures against
+a no-learning comparator. Only afterward study gradual change with
+real cues; sudden uncued flips remain stress tests, not assumed
+knowledge. G3/H2, independent M11 and naturally learned competence
+remain **NOT_ESTABLISHED**.

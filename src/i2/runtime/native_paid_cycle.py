@@ -42,7 +42,7 @@ PRIORS = {"boire": 1, "manger": 4, "dormir": 2, "attendre": 1, "collecter": 2, "
 HORIZON = 8
 MAX_BORN_STEPS = 128
 # Capture is a bounded projection, not a deletion of an individual's journal.
-GENESIS_SCHEMA = "i2-native-paid-local-life-v8-experienced-resource-failure"
+GENESIS_SCHEMA = "i2-native-paid-local-life-v9-cumulative-target-outcomes"
 MAX_NATIVE_CAPTURE_REFS = 64
 
 
@@ -125,7 +125,7 @@ def innate_adjustment(values, body, traits):
 # Declared evidence sufficiency: do not call one unsuccessful attempt impossible.
 NONRESTORING_ATTEMPTS = 2
 NONRESTORING_EVIDENCE = ":personal-nonrestoration"
-RESOURCE_FAILURE_EVIDENCE = ":experienced-need-failure"
+RESOURCE_OUTCOME_EVIDENCE = ":experienced-target-outcome"
 SLEEP_EVIDENCE = ":sleep-consolidated"
 
 # The target is an ordinary innate action affordance, not a hidden prediction.
@@ -142,30 +142,29 @@ CONSUMED_RESOURCE_NEED = {
 }
 
 
-def consecutive_personal_need_failures(*, previous, action, traits):
-    """Count recent *chosen* attempts that failed to restore their own need.
+def personally_observed_resource_outcomes(*, previous, traits):
+    """Count actual target-need successes/failures across this born life.
 
-    The body before the attempt must have a measurable need for this reserve.
-    A successful subsequent use clears the failure streak, allowing a changed
-    world to be personally rediscovered. Unchosen counterfactuals, other
-    action outcomes, and hidden resource qualities never count as attempts.
-    Use exactly the existing chosen-outcome working window, not a new owner.
+    This conservative association never infers a world change from time,
+    never imputes unchosen outcomes, and cannot be reset by a single later
+    success. Recompute from the SAME owner's bounded (<=128 tick) physical
+    journal; the unrelated generic G2 chosen-outcome window remains 64.
+    An action while its target need was fully satisfied contributes nothing.
     """
-    target = CONSUMED_RESOURCE_NEED.get(action)
-    if target is None:
-        return 0
-    lived = [r for r in previous if r[2] != NO_ACTION][-MAX_RECORDED_CHOICES:]
-    count = 0
-    for row in reversed(lived):
-        if row[2] != action:
+    if type(traits) is not BirthTemperament:
+        raise NativeRefusal("native birth temperament required")
+    counts = {action: [0, 0] for action in CONSUMED_RESOURCE_NEED}
+    for row in previous:
+        target = CONSUMED_RESOURCE_NEED.get(row[2])
+        if target is None:
             continue
-        before, after = saved_body(row[4]), saved_body(row[5])
+        before = saved_body(row[4])
         if assess_needs(before, traits).pressures[target] <= 0:
-            break  # Full or satisfied reserve: not an observed failed need.
-        if getattr(after, target) > getattr(before, target):
-            break  # Actually restored: no persistent failure inference.
-        count += 1
-    return count
+            continue
+        after = saved_body(row[5])
+        slot = 0 if getattr(after, target) > getattr(before, target) else 1
+        counts[row[2]][slot] += 1
+    return {action: tuple(values) for action, values in counts.items()}
 
 
 def personally_nonrestoring_action(*, body, previous, action):
@@ -196,37 +195,35 @@ def personally_nonrestoring_action(*, body, previous, action):
 def personally_nonrestoring_scores(
     scores, *, claim, body, traits, previous, learning,
 ):
-    """Separate ordinary experience-based devaluation from critical reflex.
+    """Use persistent target-specific evidence before any critical reflex.
 
-    If the *actual target reserve* did not recover when it was needed, each
-    recent personally experienced consecutive failure lowers that resource's
-    score by one relative to its born prior + current innate drive. This
-    corrects the generic chosen-outcome '+5' offset, which could otherwise
-    turn an ineffective drink into positive evidence. It does not hide the
-    resource or forbid drinking, and is never applied to no-learning arms.
+    Each lived restoration (+1) or nonrestoration (-1) changes the
+    associative contribution. Past contradictions remain in the SAME
+    SQLite journal: one success does not erase many failures, and time
+    alone never gives a stale resource a bonus. These unit weights are
+    exploratory score units, not a claim of calibrated natural learning.
 
-    The pre-existing critical two-failure last-resort gate remains separate
-    and may further cap a failing action at zero, without controlling motor.
+    The distinct critical last-resort gate may still cap a repeatedly
+    failing action at zero and does not authorize a motor act.
     """
     if type(learning) is not bool:
         raise NativeRefusal("native learning arm must be exact boolean")
     adjusted = dict(scores)
     if not learning:
         return adjusted, frozenset(), frozenset()
-    # The actual born prior and innate pressures still participate. The
-    # generic last-result bonus cannot erase a personally measured failure.
     baseline = innate_adjustment(PRIORS, body, traits)
-    devalued = set()
+    outcomes = personally_observed_resource_outcomes(
+        previous=previous, traits=traits)
+    associated = set()
     for action in claim.capture.accessible_semantics:
-        if action not in adjusted or action not in CONSUMED_RESOURCE_NEED:
+        if action not in adjusted or action not in outcomes:
             continue
-        failures = consecutive_personal_need_failures(
-            previous=previous, action=action, traits=traits)
-        if failures:
-            revised = min(adjusted[action], baseline[action] - failures)
-            if revised < adjusted[action]:
-                adjusted[action] = revised
-                devalued.add(action)
+        successes, failures = outcomes[action]
+        if successes + failures:
+            # Resource effectiveness is NOT the previous global-relief +5.
+            # Evidence accumulates without any clock-driven forgiveness.
+            adjusted[action] = baseline[action] + successes - failures
+            associated.add(action)
     reflex = NativeCaptureReflex(claim, body, traits)
     discouraged = set()
     if reflex.state != "NO_PREEMPTION":
@@ -236,7 +233,7 @@ def personally_nonrestoring_scores(
             ):
                 adjusted[action] = min(0, adjusted[action])
                 discouraged.add(action)
-    return adjusted, frozenset(discouraged), frozenset(devalued)
+    return adjusted, frozenset(discouraged), frozenset(associated)
 
 
 def sleep_consolidated_scores(scores, *, previous, learning, enabled):
@@ -287,15 +284,17 @@ class _Valuation(ChosenOutcomeValuationStudy):
             original, previous=self.previous, learning=self.learning,
             enabled=self.sleep_consolidation)
         initial = innate_adjustment(stabilized, self.body, self.traits)
-        updated, discouraged, devalued = personally_nonrestoring_scores(
+        updated, discouraged, associated = personally_nonrestoring_scores(
             initial, claim=self.claim, body=self.body, traits=self.traits,
             previous=self.previous, learning=self.learning)
         return tuple(replace(
             v, value=updated[named[v.candidate_ref]],
-            evidence_ref=v.evidence_ref + ":native-body" +
-            (SLEEP_EVIDENCE if named[v.candidate_ref] in consolidated else "") +
-            (RESOURCE_FAILURE_EVIDENCE if
-             named[v.candidate_ref] in devalued else "") +
+            evidence_ref=v.evidence_ref +
+            (RESOURCE_OUTCOME_EVIDENCE if
+             named[v.candidate_ref] in associated else "") +
+            ":native-body" +
+            (SLEEP_EVIDENCE if named[v.candidate_ref] in consolidated
+             and named[v.candidate_ref] not in associated else "") +
             (NONRESTORING_EVIDENCE if
              named[v.candidate_ref] in discouraged else ""))
             for v in evaluated)
@@ -741,7 +740,7 @@ class NativePaidI2:
                     priors, previous=previous, learning=bool(meta["learning"]),
                     enabled=bool(meta["sleep_consolidation"]))
                 initial = innate_adjustment(stabilized, body, traits)
-                scores, discouraged, devalued = personally_nonrestoring_scores(
+                scores, discouraged, associated = personally_nonrestoring_scores(
                     initial, claim=claim, body=body, traits=traits,
                     previous=previous, learning=bool(meta["learning"]))
                 candidates = {item["candidate_ref"]: item["semantic_ref"]
@@ -753,11 +752,12 @@ class NativePaidI2:
                             candidates[c] not in claim.capture.accessible_semantics or
                             value["value"] != scores[candidates[c]] or
                             not value["evidence_ref"].endswith(
+                                (RESOURCE_OUTCOME_EVIDENCE if
+                                 candidates[c] in associated else "") +
                                 ":native-body" +
                                 (SLEEP_EVIDENCE if
-                                 candidates[c] in consolidated else "") +
-                                (RESOURCE_FAILURE_EVIDENCE if
-                                 candidates[c] in devalued else "") +
+                                 candidates[c] in consolidated and
+                                 candidates[c] not in associated else "") +
                                 (NONRESTORING_EVIDENCE if
                                  candidates[c] in discouraged else ""))
                             for value in values
