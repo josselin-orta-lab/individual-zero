@@ -304,6 +304,13 @@ class NativePaidI2:
         transition(body, "manger", berry_food_gain=berry_food_gain,
                    berry_integrity_delta=berry_integrity_delta)
         transition(body, "boire", drink_water_gain=drink_water_gain)
+        # SQLite REAL columns restore integers as floating-point values.
+        # Canonicalize physics inputs BEFORE hashing the immutable genesis,
+        # so valid 0 and 0.0 are the same born world (but tampering still fails).
+        berry_food_gain = float(berry_food_gain)
+        berry_integrity_delta = float(berry_integrity_delta)
+        drink_water_gain = float(drink_water_gain)
+        discovered_water_gain = float(discovered_water_gain)
         key = uuid4().hex
         obj = cls(path, "i2:prototype:native:" + key,
                   "genesis:i2:native:" + key)
