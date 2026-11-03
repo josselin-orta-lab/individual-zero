@@ -124,7 +124,9 @@ class LivedPlaceReturnCohort924(unittest.TestCase):
                             gain > 0 and initial_contact is not None and
                             first_departure is not None and
                             first_return is not None and
-                            initial_contact < first_departure < first_return and
+                            thirst_recurred_at is not None and
+                            initial_contact < first_departure <
+                            thirst_recurred_at <= first_return and
                             records[first_return-1]["site_before"]=="passage" and
                             records[first_return-1]["water_before"] < 70 and
                             any(a=="boire" and json.loads(aft)["water"] >
@@ -146,6 +148,17 @@ class LivedPlaceReturnCohort924(unittest.TestCase):
                             "place_memory_used":any(
                                 PLACE_RETURN_EVIDENCE in v["provenance"]
                                 for row in records for v in row["scores"].values()),
+                            "memory_provenance_events":[{
+                                "tick":row["tick"],
+                                "site":row["site_before"],
+                                "chosen":row["action"],
+                                "remembered_scores":{
+                                    name:value["value"]
+                                    for name,value in row["scores"].items()
+                                    if PLACE_RETURN_EVIDENCE in value["provenance"]}}
+                                for row in records if any(
+                                PLACE_RETURN_EVIDENCE in v["provenance"]
+                                for v in row["scores"].values())],
                             "cold_audit":"PASS"}
             for enabled in (False,True):
                 bad=histories[(0.0,enabled)]
