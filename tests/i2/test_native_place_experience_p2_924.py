@@ -14,7 +14,8 @@ from i2.modules.native_body_contract import Body
 from i2.modules.native_owner_support import _json
 from i2.modules.native_birth_temperament import BirthTemperament
 from i2.modules.native_place_experience import (
-    lived_place_outcomes, summarized_site_experience
+    lived_place_outcomes, summarized_site_experience,
+    ExperiencedPlaceOutcome, current_need_site_relevance
 )
 
 
@@ -77,6 +78,44 @@ class P2PersonalPlaceExperience924(unittest.TestCase):
                 traits=self.TRAITS,enabled=True)
         with self.assertRaises(ValueError):
             lived_place_outcomes(history,traits=self.TRAITS,enabled=1)
+
+    def test_identical_history_reweights_only_the_present_body_need(self):
+        evidence = (
+            ExperiencedPlaceOutcome("camp","boire","water",9.6,True,1),
+            ExperiencedPlaceOutcome("passage","boire","water",-0.4,False,4),
+            ExperiencedPlaceOutcome("source","manger","food",9.8,True,7))
+        thirsty = Body(85, 90, 35, 100)
+        hungry = Body(85, 35, 90, 100)
+        satisfied = Body(85, 90, 90, 100)
+        wet = current_need_site_relevance(
+            evidence, body=thirsty, traits=self.TRAITS)
+        fed = current_need_site_relevance(
+            evidence, body=hungry, traits=self.TRAITS)
+        neutral = current_need_site_relevance(
+            evidence, body=satisfied, traits=self.TRAITS)
+        self.assertGreater(wet[("camp","water")],0)
+        self.assertLess(wet[("passage","water")],0)
+        self.assertEqual(wet[("source","food")],0)
+        self.assertEqual(fed[("camp","water")],0)
+        self.assertGreater(fed[("source","food")],0)
+        self.assertTrue(all(v==0 for v in neutral.values()))
+        self.assertNotIn(("source","water"),wet)
+        self.assertNotIn(("passage","food"),fed)
+
+    def test_many_failures_survive_one_late_success(self):
+        history = tuple(
+            ExperiencedPlaceOutcome("camp","boire","water",-0.4,False,i)
+            for i in range(1,43)) + (
+            ExperiencedPlaceOutcome("camp","boire","water",9.6,True,43),)
+        thirsty = Body(85, 90, 35, 100)
+        scores = current_need_site_relevance(
+            history, body=thirsty, traits=self.TRAITS)
+        self.assertLess(scores[("camp","water")],0)
+        self.assertEqual(
+            summarized_site_experience(history)[("camp","water")][:2],(1,42))
+        # Simply recording many inactive ticks elsewhere cannot alter it.
+        self.assertEqual(scores,current_need_site_relevance(
+            history,body=thirsty,traits=self.TRAITS))
 
 
 if __name__ == "__main__":

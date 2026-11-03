@@ -24,3 +24,16 @@ paid return** with a matched no-learning counterexample. Do not
 promote this extraction-only substep to P2 complete. No I1 runtime,
 motor script, guessed site reward, automatic retry, external M11
 or active I2 authority.
+
+## P2 current-need projection (staged, not motor-integrated)
+
+The same observed (site, target need) history can carry different *current*
+relevance as current physiological deficits change. The experimental readout
+uses observed **mean signed target-reserve change per actual contact** times
+the current need pressure. Unknown/unvisited sites are absent, not falsely
+zero; a satiated need has zero current relevance but the historical association
+is retained. One success after 42 failures is just one additional observed
+sample, never a reset. This is an **engineering metric with body units**, not
+yet a calibrated paid Competition score, expected future gain, destination
+selector or proof of autonomous return. Do not convert it into a motor reward
+without prospectively frozen cost/risk controls and an actual local site offer.
