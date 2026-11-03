@@ -22,6 +22,22 @@ Within **one continuing born SQLite research identity**, an I2 individual must p
 
 **P0 -> P1 -> P2 -> P3 -> P4.** P5 can be researched in parallel without blocking the isolated local prototype; parity and external M11 are gates for cross-generation claims and public activation. Do not launch competing heavy campaigns.
 
+## Methodology checkpoints (ADR-0012, no new workstream)
+
+[ADR-0012](../../../docs/decisions/ADR-0012-i2-scientific-development-methodology.md) sets the decision; [SCIENTIFIC_DEVELOPMENT_METHOD.md](SCIENTIFIC_DEVELOPMENT_METHOD.md) is the single agent procedure. These checkpoints refine the existing P0-P5 sequence; they are **not** new gates for isolated prototyping or separate issues.
+
+- **After P2 behavioral observations:** retain frozen return/no-drink and later return/second-drink results as different source-locked trials. Challenge the unchanged integrated choice mechanism under alternate site and need configurations before adding another cognitive score offset. If a physical affordance is missing, build that minimal substrate under P3 without calling the absence a learning failure.
+- **During P3:** make competing food/water needs and depletion/renewal physically encounterable over one continuous identity. Report lack of food/site contact as NO_EXPOSURE. Avoid tuning the world after observing the motor sequence or treating a bundle of birth flags as one isolated learning mechanism.
+- **Before and during P4:** preregister independent births, matched physics, learning/no-learning and adverse/negative controls, explicit bodily/cost/death endpoints, and **held-out** environments not used for tuning. Include a real opportunity for abandonment of an ineffective strategy and a physically feasible alternative/last resort, without forcing its choice. Do not equate a 24/64/128-step technical horizon with full ecological life.
+- **At each meaningful milestone and before P4:** perform a small convergence review of redundant cognitive flags, extra owners, score sources and stale navigation text. Retire or consolidate only on evidence; preserve old genesis contracts, immutable negative reports and exact-source claims. Safety and validity fixes may proceed without a separate generalization campaign.
+- **Verdict:** distinguish software PASS, observed personally motivated paid action with measured body outcome, and independently supported general adaptation. Green CI or one favorable life is not scientific GO.
+
+
+## Scientific and architectural intent (ADR-0013)
+
+The owner has accepted [ADR-0013](../../../docs/decisions/ADR-0013-lived-autonomy-and-experimental-restraint.md): build conditions under which a fallible individual develops behavior through lived consequences, **not** a scripted survival policy. The [embodied-autonomy architecture/science plan](EMBODIED_AUTONOMY_RESEARCH_PLAN.md) specifies existing physical/cognitive boundaries and a **prospective P3/P4 integrated milestone**: one continuous identity may learn an initially helpful strategy, personally encounter its ineffectiveness, then voluntarily persist, reconsider, explore or attempt a physically feasible alternative/last resort. No successful switch is mandated. Separately study controlled personal-history divergence, distinguishing learned effects from innate traits and world access. Use the existing method [ADR-0012](../../../docs/decisions/ADR-0012-i2-scientific-development-methodology.md); this is a refinement of P3/P4, **not** another roadmap, authorization or engine gate.
+
+
 ## Strict invariants
 
 1. **Single I2 owner and generation autonomy.** The already existing native SQLite state owner contains physical position, body, temperament, UC, motor/admission, remembered consequences and terminal. No second world/memory database, no I1 code or lived memory inheritance, no backward-compatibility owner.

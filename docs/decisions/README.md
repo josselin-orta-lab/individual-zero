@@ -77,3 +77,7 @@ A filled illustrative example is available in [../../examples/adr-example.md](..
 - [ADR-0010: stable-world prior and evidence-based associative memory](ADR-0010-stable-world-evidence-based-association.md) (3 November 2026). Unobserved world changes cannot be inferred from time; real targeted experiences accumulate without instant erasure, and innate need is kept distinct from learned resource efficacy.
 
 - [ADR-0011: I2 integrated spatial life, experienced place value and longitudinal priorities](ADR-0011-i2-integrated-spatial-life-priorities.md) (3 November 2026). Owner-approved P0-P5 priority, source-locked same-life return falsifier and no-heuristic-drift requirement, without activation or scientific GO.
+
+- [ADR-0012: I2 scientific development through integrated behavior, generalization and convergence](ADR-0012-i2-scientific-development-methodology.md) (3 November 2026). Owner-approved development method, with a single [I2 operational protocol](../../src/i2/docs/SCIENTIFIC_DEVELOPMENT_METHOD.md); no new experimental or engine authorization.
+
+- [ADR-0013: lived autonomy and experimental restraint](ADR-0013-lived-autonomy-and-experimental-restraint.md) (3 November 2026). Owner-approved research and architecture direction: build the conditions for an individual's own fallible behavior, not a prescribed successful life. The [I2 architecture/science plan](../../src/i2/docs/EMBODIED_AUTONOMY_RESEARCH_PLAN.md) translates it into falsifiable observations; the existing roadmap and method remain canonical.
