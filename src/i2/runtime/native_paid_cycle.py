@@ -34,7 +34,8 @@ from i2.modules.native_owner_support import (
 )
 from i2.modules.native_physiological_needs import assess_needs
 from i2.modules.native_place_experience import (
-    lived_place_outcomes, current_need_site_relevance,
+    lived_place_outcomes, summarized_site_experience,
+    current_need_site_relevance,
 )
 from i2.modules.native_spatial_world import (
     GRAPH, MOTIONS, offered_moves, destination, site_after,
@@ -50,7 +51,7 @@ PRIORS = {"boire": 1, "manger": 4, "dormir": 2, "attendre": 1, "collecter": 2, "
 HORIZON = 8
 MAX_BORN_STEPS = 128
 # Capture is a bounded projection, not a deletion of an individual's journal.
-GENESIS_SCHEMA = "i2-native-paid-local-life-v13-optional-place-return-tie"
+GENESIS_SCHEMA = "i2-native-paid-local-life-v14-one-capture-purpose-handoff"
 MAX_NATIVE_CAPTURE_REFS = 64
 
 
@@ -140,6 +141,7 @@ RESOURCE_OUTCOME_EVIDENCE = ":experienced-target-outcome"
 TIE_EXPLORATION_EVIDENCE = ":novel-under-lived-failure-tie"
 SLEEP_EVIDENCE = ":sleep-consolidated"
 PLACE_RETURN_EVIDENCE = ":personally-observed-reachable-place"
+PURPOSE_HANDOFF_EVIDENCE = ":paid-purpose-carried-from-arrival"
 
 # The target is an ordinary innate action affordance, not a hidden prediction.
 # Rest/wait can repair integrity when resources permit, but neither drinks
@@ -351,6 +353,71 @@ def personally_observed_place_tie(
     return updated, frozenset(favored)
 
 
+def personally_paid_arrival_purpose(
+    scores, *, claim, body, traits, previous, prior_event, learning, enabled,
+):
+    """Carry an actually paid return's value into an observed LOCAL use.
+
+    One capture only; no new persistent owner, hidden payoff or motor script.
+    The previous *admitted* move must have a signed personal-place provenance
+    in its paid candidate valuation. The destination must physically equal
+    the currently reached site. The local resource must be offered and have
+    restored the corresponding bodily need here in this person's own past.
+    Transfer ONLY the already-paid previous score, not a fabricated +N.
+    """
+    updated = dict(scores)
+    if type(enabled) is not bool or type(learning) is not bool:
+        raise NativeRefusal("exact born purpose flag required")
+    if not enabled or not learning or not previous or prior_event is None:
+        return updated, frozenset()
+    last = previous[-1]
+    arrived = destination(last[2])
+    if arrived is None or replay_site(previous, enabled=True) != arrived:
+        return updated, frozenset()
+    if type(prior_event) is not dict:
+        raise NativeRefusal("committed prior cognitive event required")
+    frame, advice, control = (
+        prior_event.get("frame"), prior_event.get("advice"),
+        prior_event.get("control_review"))
+    if (not isinstance(frame, dict) or not isinstance(advice, dict)
+            or not isinstance(control, dict)
+            or control.get("status") != "REVIEWED_NOT_ADMITTED"):
+        return updated, frozenset()
+    selected = control.get("suggested_candidate_ref")
+    picked = [c for c in frame.get("candidates", ())
+              if c["candidate_ref"] == selected]
+    valued = [v for v in advice.get("values", ())
+              if v["candidate_ref"] == selected]
+    if (len(picked) != 1 or len(valued) != 1
+            or picked[0]["semantic_ref"] != last[2]
+            or PLACE_RETURN_EVIDENCE not in valued[0]["evidence_ref"]):
+        return updated, frozenset()
+    paid_return_value = valued[0]["value"]
+    if type(paid_return_value) is not int or paid_return_value <= 0:
+        return updated, frozenset()
+    # The remembered place must have been physically experienced already.
+    effects = lived_place_outcomes(
+        tuple(tuple(row) for row in previous[:-1]),
+        traits=traits, enabled=True)
+    summary = summarized_site_experience(effects)
+    pressures = assess_needs(body, traits).pressures
+    applicable = []
+    for action, target in CONSUMED_RESOURCE_NEED.items():
+        if action not in claim.capture.accessible_semantics:
+            continue
+        success, failures, total = summary.get((arrived, target), (0, 0, 0))
+        if (success > 0 and total > 0 and pressures[target] > 0
+                and action in updated):
+            applicable.append(action)
+    if len(applicable) != 1:
+        return updated, frozenset()
+    action = applicable[0]
+    if paid_return_value <= updated[action]:
+        return updated, frozenset()
+    updated[action] = paid_return_value
+    return updated, frozenset((action,))
+
+
 def sleep_consolidated_scores(scores, *, previous, learning, enabled):
     """Stabilize ONLY repeatedly lived outcomes before a committed sleep.
 
@@ -386,13 +453,16 @@ def sleep_consolidated_scores(scores, *, previous, learning, enabled):
 class _Valuation(ChosenOutcomeValuationStudy):
     def __init__(self, *, body, traits, previous=(), learning=False,
                  sleep_consolidation=True, evidence_tie_exploration=False,
-                 place_return_tie=False, **kwargs):
+                 place_return_tie=False, purpose_followthrough=False,
+                 prior_event=None, **kwargs):
         super().__init__(**kwargs)
         self.body, self.traits = body, traits
         self.previous, self.learning = tuple(previous), learning
         self.sleep_consolidation = sleep_consolidation
         self.evidence_tie_exploration = evidence_tie_exploration
         self.place_return_tie = place_return_tie
+        self.purpose_followthrough = purpose_followthrough
+        self.prior_event = prior_event
 
     def evaluate_batch(self, *, frame, receipts):
         evaluated = super().evaluate_batch(frame=frame, receipts=receipts)
@@ -413,6 +483,10 @@ class _Valuation(ChosenOutcomeValuationStudy):
             updated, claim=self.claim, body=self.body, traits=self.traits,
             previous=self.previous, learning=self.learning,
             enabled=self.place_return_tie)
+        updated, carried = personally_paid_arrival_purpose(
+            updated, claim=self.claim, body=self.body, traits=self.traits,
+            previous=self.previous, prior_event=self.prior_event,
+            learning=self.learning, enabled=self.purpose_followthrough)
         return tuple(replace(
             v, value=updated[named[v.candidate_ref]],
             evidence_ref=v.evidence_ref +
@@ -422,6 +496,8 @@ class _Valuation(ChosenOutcomeValuationStudy):
              named[v.candidate_ref] in exploratory else "") +
             (PLACE_RETURN_EVIDENCE if
              named[v.candidate_ref] in remembered else "") +
+            (PURPOSE_HANDOFF_EVIDENCE if
+             named[v.candidate_ref] in carried else "") +
             ":native-body" +
             (SLEEP_EVIDENCE if named[v.candidate_ref] in consolidated
              and named[v.candidate_ref] not in associated else "") +
@@ -519,7 +595,8 @@ def genesis_digest(meta):
         meta["max_steps"], meta["water_restock_every"],
         meta["water_quality_change_at"], meta["water_quality_after_gain"],
         meta["evidence_tie_exploration"], meta["spatial_world"],
-        meta["ordinary_water_site"], meta["place_return_tie"]]).encode("ascii")).hexdigest()
+        meta["ordinary_water_site"], meta["place_return_tie"],
+        meta["purpose_followthrough"]]).encode("ascii")).hexdigest()
 
 
 class NativePaidI2:
@@ -553,7 +630,7 @@ class NativePaidI2:
                learning=True, sleep_consolidation=True,
                evidence_tie_exploration=False, spatial_world=False,
                ordinary_water_site=None, place_return_tie=False,
-               max_steps=HORIZON, food_stock=4, water_stock=4,
+               purpose_followthrough=False, max_steps=HORIZON, food_stock=4, water_stock=4,
                water_restock_every=0,
                water_quality_change_at=0, water_quality_after_gain=0.0,
                uc=80,
@@ -567,6 +644,9 @@ class NativePaidI2:
                 type(evidence_tie_exploration) is not bool or
                 type(spatial_world) is not bool or
                 type(place_return_tie) is not bool or
+                type(purpose_followthrough) is not bool or
+                (purpose_followthrough and (not spatial_world or
+                    not place_return_tie or not learning)) or
                 (place_return_tie and not spatial_world) or
                 (ordinary_water_site is not None and
                  (type(ordinary_water_site) is not str or
@@ -630,6 +710,8 @@ class NativePaidI2:
                 spatial_world INTEGER NOT NULL CHECK(spatial_world IN (0,1)),
                 ordinary_water_site TEXT,
                 place_return_tie INTEGER NOT NULL CHECK(place_return_tie IN (0,1)),
+                purpose_followthrough INTEGER NOT NULL
+                    CHECK(purpose_followthrough IN (0,1)),
                 digest TEXT NOT NULL)""")
             db.execute("""CREATE TABLE native_discoveries (
                 seq INTEGER PRIMARY KEY,
@@ -651,8 +733,9 @@ class NativePaidI2:
                         evidence_tie_exploration=int(evidence_tie_exploration),
                         spatial_world=int(spatial_world),
                         ordinary_water_site=ordinary_water_site,
-                        place_return_tie=int(place_return_tie))
-            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                        place_return_tie=int(place_return_tie),
+                        purpose_followthrough=int(purpose_followthrough))
+            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                        (*meta.values(), genesis_digest(meta)))
             db.commit()
         obj.audit()
@@ -871,6 +954,7 @@ class NativePaidI2:
         if len(discoveries_by_seq) != len(discoveries):
             raise NativeRefusal("duplicate discovery")
         total_uc, terminal = 0, False
+        prior_cognitive_event = None
         for index, (source, effect) in enumerate(zip(recorded, effects)):
             seq, capture, event_json, cognition_hash = source
             (phy_seq, action, admission_ref, linked_head,
@@ -927,6 +1011,11 @@ class NativePaidI2:
                     scores, claim=claim, body=body, traits=traits,
                     previous=previous, learning=bool(meta["learning"]),
                     enabled=bool(meta["place_return_tie"]))
+                scores, carried = personally_paid_arrival_purpose(
+                    scores, claim=claim, body=body, traits=traits,
+                    previous=previous, prior_event=prior_cognitive_event,
+                    learning=bool(meta["learning"]),
+                    enabled=bool(meta["purpose_followthrough"]))
                 candidates = {item["candidate_ref"]: item["semantic_ref"]
                               for item in frame["candidates"]}
                 values = advice["values"]
@@ -942,6 +1031,8 @@ class NativePaidI2:
                                  candidates[c] in exploratory else "") +
                                 (PLACE_RETURN_EVIDENCE if
                                  candidates[c] in remembered else "") +
+                                (PURPOSE_HANDOFF_EVIDENCE if
+                                 candidates[c] in carried else "") +
                                 ":native-body" +
                                 (SLEEP_EVIDENCE if
                                  candidates[c] in consolidated and
@@ -1036,6 +1127,7 @@ class NativePaidI2:
                          event["control_uc"])
             previous.append((seq, capture, action, relief,
                              before_json, after_json, found))
+            prior_cognitive_event = event
             body = next_body
         if (len(discoveries) != sum(r[2] == "collecter" for r in previous) or
                 body != snapshot["body"] or
@@ -1067,6 +1159,11 @@ class NativePaidI2:
             snap = native_snapshot(db)
             rows = self._rows(db)
         claim = self._claim(snap, meta, rows)
+        with self._connect() as db:
+            prior_row = (db.execute("SELECT event_json FROM events WHERE seq=?",
+                                    (len(rows),)).fetchone()
+                         if rows else None)
+        prior_cognitive_event = (json.loads(prior_row[0]) if prior_row else None)
         body, traits = snap["body"], snap["traits"]
         self.observation.expected = claim.digest()
         self.current.ref = claim.capture.ref
@@ -1080,7 +1177,9 @@ class NativePaidI2:
             previous=rows, learning=bool(meta["learning"]),
             sleep_consolidation=bool(meta["sleep_consolidation"]),
             evidence_tie_exploration=bool(meta["evidence_tie_exploration"]),
-            place_return_tie=bool(meta["place_return_tie"]))
+            place_return_tie=bool(meta["place_return_tie"]),
+            purpose_followthrough=bool(meta["purpose_followthrough"]),
+            prior_event=prior_cognitive_event)
         fixture = self._fixture(valuation)
         try:
             if not rows:
