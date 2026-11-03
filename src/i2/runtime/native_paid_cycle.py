@@ -386,7 +386,11 @@ class NativePaidI2:
         if seq != snapshot["revision"]:
             raise NativeRefusal("native observation crossed revisions")
         chosen = [r[2] for r in rows]
+        # Physical access, independent of the learning flag: every born life
+        # sees the same local search site until it has actually explored it.
         offered = ["dormir", "attendre"]
+        if "collecter" not in chosen:
+            offered.append("collecter")
         if chosen.count("manger") < meta["food_stock"]:
             offered.append("manger")
         if chosen.count("boire") < meta["water_stock"]:
@@ -418,15 +422,8 @@ class NativePaidI2:
                 body=body, previous=rows, action=action
             ) for action in DIRECT_RESTORATION_RESERVE
         ):
-            # A new *unknown* probe is now perceivable, not automatically
-            # chosen. The known physical collect action currently costs energy
-            # and yields no nutrition or hydration in this bounded world.
-            # Only paid competition and safety can select it.
-            # This bounded world has exactly one local search site. After
-            # observing a probe (found or empty) there is no second site to
-            # explore; do not invent renewed physical accessibility.
-            if "collecter" not in chosen:
-                offered.append("collecter")
+            # Reappraisal changes the current GOAL and paid priorities,
+            # never whether a physical search site exists.
             return ObservationClaim(
                 self.life_ref, FirstPersonCapture(
                     10 + 8 * seq, "capture:i2:native:" + str(seq),
