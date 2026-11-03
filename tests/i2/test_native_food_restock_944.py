@@ -152,6 +152,28 @@ class ExogenousNativeFoodRestock944(unittest.TestCase):
                     visited_sites.append(site)
                 self.assertEqual(final["site"], site)
                 actions = [item[0] for item in records]
+                # Distinguish a never-visited source, a physically visited
+                # source with no stock, an actual first-person food offer,
+                # and a physically admitted meal. No inferred hidden payoff.
+                food_offer_ticks = []
+                meal_ticks = []
+                for tick, (action, _, _) in enumerate(records, 1):
+                    offered = cognitive[tick - 1]["claim"]["capture"][
+                        "accessible_semantics"]
+                    if "manger" in offered:
+                        self.assertEqual(visited_sites[tick - 1], "source")
+                        food_offer_ticks.append(tick)
+                    if action == "manger":
+                        self.assertIn("manger", offered)
+                        meal_ticks.append(tick)
+                if meal_ticks:
+                    food_exposure = "FOOD_CONSUMED"
+                elif food_offer_ticks:
+                    food_exposure = "FOOD_OFFERED_NOT_CHOSEN"
+                elif "source" in visited_sites:
+                    food_exposure = "SOURCE_REACHED_NO_FOOD_OFFER"
+                else:
+                    food_exposure = "SOURCE_NOT_VISITED"
                 # Read-only diagnosis of a possible persistent positive tie.
                 # These are real previously paid frames, never new evaluations.
                 statuses = []
@@ -230,6 +252,9 @@ class ExogenousNativeFoodRestock944(unittest.TestCase):
                     source_tied_top_ticks=source_best_ties,
                     source_below_top_ticks=source_below_best,
                     food_use_sites=food_sites,
+                    food_offer_ticks=food_offer_ticks,
+                    food_consumption_ticks=meal_ticks,
+                    food_exposure_state=food_exposure,
                     water_history=[round(json.loads(a)["water"], 3)
                                    for _, _, a in records],
                     food_history=[round(json.loads(a)["food"], 3)
@@ -239,8 +264,6 @@ class ExogenousNativeFoodRestock944(unittest.TestCase):
                     terminal=final["terminal"],
                     right_censored=(
                         final["revision"] == 96 and not final["terminal"]),
-                    food_exposure=("FOOD_USED" if food_sites
-                                   else "NO_FOOD_EXPOSURE"),
                     cold_audit="PASS")
                 self.assertEqual(final["scientific_verdict"], "NOT_ESTABLISHED")
                 self.assertFalse(final["m11_authenticated"])
