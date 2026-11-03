@@ -86,3 +86,25 @@ def summarized_site_experience(outcomes):
         old[2] += item.effect
     return {key: (value[0], value[1], round(value[2], 6))
             for key, value in totals.items()}
+
+
+def current_need_site_relevance(outcomes, *, body, traits):
+    """Project observed site consequences onto CURRENT bodily pressures.
+
+    A site has no predicted guaranteed payoff: this is only the signed mean
+    of actually personally lived target-reserve changes, weighted by the
+    current corresponding need. Missing sites are UNKNOWN, not zero-valued.
+    Past success/failure evidence persists unchanged as time passes.
+    """
+    if type(traits) is not BirthTemperament:
+        raise ValueError("exact born temperament required")
+    needs = assess_needs(body, traits)
+    totals = summarized_site_experience(outcomes)
+    relevance = {}
+    for (site, target), (successes, failures, total) in totals.items():
+        count = successes + failures
+        if count <= 0:
+            raise ValueError("site experience requires an actual contact")
+        relevance[(site, target)] = round(
+            (total / count) * needs.pressures[target], 6)
+    return relevance
