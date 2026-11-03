@@ -33,16 +33,21 @@ from i2.modules.native_owner_support import (
     saved_body, saved_traits,
 )
 from i2.modules.native_physiological_needs import assess_needs
+from i2.modules.native_spatial_world import (
+    GRAPH, MOTIONS, offered_moves, destination, site_after,
+    replay_site, local_evidence,
+)
 from i2.runtime.native_physiology_journal import (
     initialize_native_body, native_snapshot, commit_admitted_physics,
     audit_native_body, commit_unadmitted_tick, passive_body_tick, NO_ACTION,
 )
 
-PRIORS = {"boire": 1, "manger": 4, "dormir": 2, "attendre": 1, "collecter": 2, "boire_decouverte": 1}
+PRIORS = {"boire": 1, "manger": 4, "dormir": 2, "attendre": 1, "collecter": 2, "boire_decouverte": 1,
+          **{motion: 3 for motion in MOTIONS}}
 HORIZON = 8
 MAX_BORN_STEPS = 128
 # Capture is a bounded projection, not a deletion of an individual's journal.
-GENESIS_SCHEMA = "i2-native-paid-local-life-v10-opt-in-evidence-tie-exploration"
+GENESIS_SCHEMA = "i2-native-paid-local-life-v11-opt-in-minimal-spatial-world"
 MAX_NATIVE_CAPTURE_REFS = 64
 
 
@@ -118,6 +123,9 @@ def innate_adjustment(values, body, traits):
     # and whether to use it remains a fully paid Competition decision.
     if "boire_decouverte" in scores:
         scores["boire_decouverte"] += round(8 * needs.pressures["water"])
+    for motion in MOTIONS:
+        if motion in scores:
+            scores[motion] += round(2 * traits.exploration)
     return scores
 
 
@@ -432,7 +440,7 @@ def genesis_digest(meta):
         meta["drink_water_gain"], meta["discovered_water_gain"], meta["sleep_consolidation"],
         meta["max_steps"], meta["water_restock_every"],
         meta["water_quality_change_at"], meta["water_quality_after_gain"],
-        meta["evidence_tie_exploration"]]).encode("ascii")).hexdigest()
+        meta["evidence_tie_exploration"], meta["spatial_world"]]).encode("ascii")).hexdigest()
 
 
 class NativePaidI2:
@@ -464,7 +472,7 @@ class NativePaidI2:
     @classmethod
     def create(cls, path, *, body: Body, temperament: BirthTemperament,
                learning=True, sleep_consolidation=True,
-               evidence_tie_exploration=False,
+               evidence_tie_exploration=False, spatial_world=False,
                max_steps=HORIZON, food_stock=4, water_stock=4,
                water_restock_every=0,
                water_quality_change_at=0, water_quality_after_gain=0.0,
@@ -477,6 +485,7 @@ class NativePaidI2:
                 type(learning) is not bool or
                 type(sleep_consolidation) is not bool or
                 type(evidence_tie_exploration) is not bool or
+                type(spatial_world) is not bool or
                 type(max_steps) is not int or not 1 <= max_steps <= MAX_BORN_STEPS or
                 type(water_restock_every) is not int or
                 not 0 <= water_restock_every <= 32 or
@@ -533,6 +542,7 @@ class NativePaidI2:
                 water_quality_after_gain REAL NOT NULL,
                 evidence_tie_exploration INTEGER NOT NULL
                     CHECK(evidence_tie_exploration IN (0,1)),
+                spatial_world INTEGER NOT NULL CHECK(spatial_world IN (0,1)),
                 digest TEXT NOT NULL)""")
             db.execute("""CREATE TABLE native_discoveries (
                 seq INTEGER PRIMARY KEY,
@@ -551,8 +561,9 @@ class NativePaidI2:
                         water_restock_every=water_restock_every,
                         water_quality_change_at=water_quality_change_at,
                         water_quality_after_gain=water_quality_after_gain,
-                        evidence_tie_exploration=int(evidence_tie_exploration))
-            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                        evidence_tie_exploration=int(evidence_tie_exploration),
+                        spatial_world=int(spatial_world))
+            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                        (*meta.values(), genesis_digest(meta)))
             db.commit()
         obj.audit()
@@ -612,9 +623,14 @@ class NativePaidI2:
             offered.append("boire")
         if sum(r[6] for r in rows) > chosen.count("boire_decouverte"):
             offered.append("boire_decouverte")
+        site = replay_site(rows, enabled=bool(meta["spatial_world"]))
+        if meta["spatial_world"]:
+            offered.extend(offered_moves(site))
+        current = tuple(snapshot["current_evidence"])
+        if meta["spatial_world"]:
+            current += local_evidence(site)
         evidence = bounded_native_evidence(
-            snapshot["current_evidence"], rows,
-            water_restock_every=meta["water_restock_every"])
+            current, rows, water_restock_every=meta["water_restock_every"])
         def observed_claim(goal):
             return ObservationClaim(
                 self.life_ref, FirstPersonCapture(
@@ -696,6 +712,10 @@ class NativePaidI2:
                 (action == "manger" and
                  sum(r[2] == action for r in rows) >= meta["food_stock"])):
             raise NativeRefusal("unavailable or depleted native resource")
+        if destination(action) is not None:
+            if not meta["spatial_world"] or destination(action) not in GRAPH[
+                    replay_site(rows, enabled=True)]:
+                raise NativeRefusal("physical move not adjacent to current site")
         effect = {}
         if action == "boire":
             effect["drink_water_gain"] = actual_old_water_gain(meta, len(rows))
@@ -854,6 +874,11 @@ class NativePaidI2:
                     raise NativeRefusal("native physical action lacks fresh admission")
                 expected_ref = ("internal:i2:native-admission:" + sha256(
                     _json([seq, cognition_hash, action]).encode()).hexdigest())
+                if destination(action) is not None and (
+                        not meta["spatial_world"] or
+                        destination(action) not in GRAPH[
+                            replay_site(previous, enabled=True)]):
+                    raise NativeRefusal("replayed movement not adjacent")
                 if action == "boire" and old_water_available(meta, previous) <= 0:
                     raise NativeRefusal("native drank unavailable water")
                 if action == "boire_decouverte" and sum(
@@ -873,7 +898,9 @@ class NativePaidI2:
                     changes["berry_integrity_delta"] = meta["berry_integrity_delta"]
                 outcome = admitted_consequence(
                     before=body, temperament=traits,
-                    action=("boire" if action == "boire_decouverte" else action),
+                    action=("boire" if action == "boire_decouverte" else
+                            "se_deplacer" if destination(action) is not None
+                            else action),
                     admitted=True, applied=True, **changes)
                 next_body = outcome.after
                 terminal = outcome.terminal
@@ -921,6 +948,8 @@ class NativePaidI2:
         return {
             "revision": len(effects), "max_steps": meta["max_steps"],
             "body": body.as_dict(),
+            "site": replay_site(previous, enabled=bool(meta["spatial_world"]))
+                    if meta["spatial_world"] else None,
             "temperament": traits.as_dict(), "remaining_uc": remaining,
             "terminal": terminal, "m11_authenticated": False,
             "engine_registered": False, "scientific_verdict": "NOT_ESTABLISHED",

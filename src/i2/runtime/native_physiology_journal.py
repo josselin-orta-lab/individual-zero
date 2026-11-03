@@ -10,6 +10,7 @@ import sqlite3
 from hashlib import sha256
 
 from i2.modules.native_body_contract import Body
+from i2.modules.native_spatial_world import destination
 from i2.modules.native_birth_temperament import BirthTemperament
 from i2.modules.native_consequence_bridge import admitted_consequence
 from i2.modules.native_owner_support import (
@@ -102,7 +103,8 @@ def commit_admitted_physics(conn: sqlite3.Connection, *,
         raise ValueError("terminal native physiology cannot act")
     result = admitted_consequence(
         before=body, temperament=traits,
-        action=("boire" if action == "boire_decouverte" else action),
+        action=("boire" if action == "boire_decouverte" else
+                "se_deplacer" if destination(action) is not None else action),
         admitted=True, applied=True, berry_food_gain=berry_food_gain,
         berry_integrity_delta=berry_integrity_delta,
         drink_water_gain=drink_water_gain)
