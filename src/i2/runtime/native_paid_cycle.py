@@ -21,6 +21,7 @@ from i2.modules.cognitive_cycle_fixture import (
 from i2.modules.action_control_boundary import SafetyFinding
 from i2.modules.chosen_outcome_study import (
     ChosenOutcomeValuationStudy, ObservedChosenResult, observed_chosen_scores,
+    MAX_RECORDED_CHOICES,
 )
 from i2.modules.intention_continuity import FirstPersonCapture
 from i2.modules.intention_ingress import ObservationClaim
@@ -445,12 +446,18 @@ class NativePaidI2:
         return ordinary
 
     def _history(self, rows):
+        # Keep the FULL lifelong physical and cognitive journal for audit;
+        # expose only the latest bounded chosen results to G2 Competition.
+        # This is an explicit finite working window, never a new memory owner
+        # or a deletion of older first-person experiences.
+        lived = [row for row in rows if row[2] != NO_ACTION]
         return tuple(ObservedChosenResult(
             self.life_ref, capture, action,
             11 + 8 * (seq - 1),
             "evidence:i2:native:outcome:" + str(seq),
             int(round(20 * relief)))
-            for seq, capture, action, relief, *_ in rows if action != NO_ACTION)
+            for seq, capture, action, relief, *_ in
+            lived[-MAX_RECORDED_CHOICES:])
 
     def _apply(self, *, conn, seq, claim, frame, control_review,
                remaining_uc, event_head):
