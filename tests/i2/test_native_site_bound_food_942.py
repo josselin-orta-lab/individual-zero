@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from i2.modules.native_body_contract import Body
 from i2.modules.native_birth_temperament import BirthTemperament
+from i2.modules.native_owner_support import current_evidence
 from i2.runtime.native_paid_cycle import (
     NativePaidI2, NativeRefusal, old_food_accessible,
 )
@@ -24,7 +25,7 @@ BORN = Body(85, 35, 35, 100)
 
 def row(seq, action):
     # Read-only physical route model, NEVER used as an autonomous action tape.
-    return (seq, "capture:" + str(seq), action)
+    return (seq, "capture:" + str(seq), action, 0.0, "{}", "{}", 0)
 
 
 class SiteBoundOrdinaryFood942(unittest.TestCase):
@@ -47,6 +48,42 @@ class SiteBoundOrdinaryFood942(unittest.TestCase):
             **meta, "ordinary_food_site": None}, ()))
         self.assertFalse(old_food_accessible({
             **meta, "food_stock": 0}, ()))
+
+    def test_pure_routed_claim_offers_only_reached_food_without_oracle(self):
+        # This explicitly models routing; no cognitive decision or paid motor
+        # occurred. It tests subjective capture contents, NOT autonomous life.
+        with tempfile.TemporaryDirectory() as directory:
+            life = NativePaidI2.create(
+                Path(directory) / "claim.sqlite", body=BORN, temperament=TRAITS,
+                spatial_world=True, ordinary_food_site="source",
+                ordinary_water_site="camp", food_stock=2, water_stock=2,
+                max_steps=4, uc=100)
+            with life._connect() as db:
+                meta = life._meta(db)
+            def physical_claim(rows):
+                return life._claim(
+                    {"revision": len(rows), "body": BORN, "traits": TRAITS,
+                     "current_evidence": current_evidence(BORN, TRAITS)},
+                    meta, rows)
+            at_passage = (row(1, "se_deplacer_vers_passage"),)
+            at_source = (*at_passage, row(2, "se_deplacer_vers_source"))
+            for rows in ((), at_passage):
+                self.assertNotIn(
+                    "manger", physical_claim(rows).capture.accessible_semantics)
+            arrived = physical_claim(at_source)
+            self.assertIn("manger", arrived.capture.accessible_semantics)
+            self.assertNotIn("boire", arrived.capture.accessible_semantics)
+            self.assertIn("evidence:i2:spatial:current:source",
+                          arrived.subjective_evidence_refs)
+            self.assertFalse(any(
+                "future" in item or "food_stock" in item
+                for item in arrived.subjective_evidence_refs))
+            consumed = (*at_source, row(3, "manger"), row(4, "manger"))
+            self.assertNotIn(
+                "manger", physical_claim(consumed).capture.accessible_semantics)
+            departed = (*at_source, row(3, "se_deplacer_vers_passage"))
+            self.assertNotIn(
+                "manger", physical_claim(departed).capture.accessible_semantics)
 
     def test_genesis_gate_and_first_person_offer_at_born_camp(self):
         with tempfile.TemporaryDirectory() as directory:
