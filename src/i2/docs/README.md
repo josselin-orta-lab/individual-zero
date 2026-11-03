@@ -6,6 +6,8 @@
 
 **Method for every I2 research agent:** [scientific development method](SCIENTIFIC_DEVELOPMENT_METHOD.md), grounded in accepted [ADR-0012](../../../docs/decisions/ADR-0012-i2-scientific-development-methodology.md). It governs falsification, lived-body observations, held-out generalization, evidence labels and convergence without changing P0-P5 or creating a second roadmap.
 
+**Research and architecture purpose:** [ADR-0013: lived autonomy rather than prescribed success](../../../docs/decisions/ADR-0013-lived-autonomy-and-experimental-restraint.md) and the [embodied autonomy architecture/scientific plan](EMBODIED_AUTONOMY_RESEARCH_PLAN.md) explain the principal P3/P4 research challenge (one life, several strategies), scientific individuality controls, interpretation of valid mistakes, and hard first-person/action boundaries. They do not replace the P0-P5 roadmap or the single scientific method.
+
 ## Historical mechanisms and deeper reading
 
 1. [Current status and remaining evidence gaps](STATUS.md): **short, maintained summary only**; [append-only development ledger](STATUS_HISTORY.md) retains dated iterations and the complete pre-rationalization status snapshot. Prefer adding new G2 implementation notes to the ledger or owner-specific mechanism guide instead of growing this entrypoint. A change to current STATUS requires explicit review of its scientific source pins.

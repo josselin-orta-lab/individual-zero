@@ -33,6 +33,11 @@ Within **one continuing born SQLite research identity**, an I2 individual must p
 - **Verdict:** distinguish software PASS, observed personally motivated paid action with measured body outcome, and independently supported general adaptation. Green CI or one favorable life is not scientific GO.
 
 
+## Scientific and architectural intent (ADR-0013)
+
+The owner has accepted [ADR-0013](../../../docs/decisions/ADR-0013-lived-autonomy-and-experimental-restraint.md): build conditions under which a fallible individual develops behavior through lived consequences, **not** a scripted survival policy. The [embodied-autonomy architecture/science plan](EMBODIED_AUTONOMY_RESEARCH_PLAN.md) specifies existing physical/cognitive boundaries and a **prospective P3/P4 integrated milestone**: one continuous identity may learn an initially helpful strategy, personally encounter its ineffectiveness, then voluntarily persist, reconsider, explore or attempt a physically feasible alternative/last resort. No successful switch is mandated. Separately study controlled personal-history divergence, distinguishing learned effects from innate traits and world access. Use the existing method [ADR-0012](../../../docs/decisions/ADR-0012-i2-scientific-development-methodology.md); this is a refinement of P3/P4, **not** another roadmap, authorization or engine gate.
+
+
 ## Strict invariants
 
 1. **Single I2 owner and generation autonomy.** The already existing native SQLite state owner contains physical position, body, temperament, UC, motor/admission, remembered consequences and terminal. No second world/memory database, no I1 code or lived memory inheritance, no backward-compatibility owner.

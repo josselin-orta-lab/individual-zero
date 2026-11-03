@@ -1,0 +1,43 @@
+# ADR-0013: Lived autonomy, non-prescriptive behavior and experimental restraint
+
+**Status: ACCEPTED by the project owner, 3 November 2026.** Research and architectural direction for Individual Zero; currently applied to the independent I2 research prototype. This is a normative design choice, **not** evidence that autonomy, individuality, consciousness, sentience, natural learning or survival advantage has already been demonstrated. It does not authorize a new living engine, external action or scientific GO.
+
+Related authorities: [ADR-0001](ADR-0001-strict-generation-autonomy.md) (generation independence), [ADR-0010](ADR-0010-stable-world-evidence-based-association.md) (experienced need-specific associations), [ADR-0011](ADR-0011-i2-integrated-spatial-life-priorities.md) (current P0-P5 work order) and [ADR-0012](ADR-0012-i2-scientific-development-methodology.md) (scientific development process). The [I2 embodied-autonomy architecture and science plan](../../src/i2/docs/EMBODIED_AUTONOMY_RESEARCH_PLAN.md) translates this decision into observable architectural boundaries and prospective research questions, without creating a competing roadmap.
+
+## Problem and motivation
+
+An architecture assembled from individually effective learning, memory, need and control components may still fail to exhibit coherent behavior in one continuous life. I1 encountered this difficulty: growing subsystem sophistication did not establish sustained, general useful adaptation. I2's documented place-return experiments distinguish learning or remembering a useful location, choosing a route, and actually obtaining its bodily benefit. Those are separate observations; a correct intermediate behavior is not a successful whole-life adaptation.
+
+A second failure mode lies with the researcher: if every suboptimal decision is repaired by adding a special score, action script or exception, the resulting agent follows the developer's preferred story rather than developing its own fallible behavioral history.
+
+The project's question is therefore **what happens when a minimal individual has bodily needs, limited perception, innate dispositions, memory, genuine action choices and consequential experience**, not how to hand-code a universally successful survivor.
+
+## Alternatives considered
+
+- **Program successful sequences or optimize every poor choice:** rejected as the scientific default. This can be useful as an explicit engineering oracle/control, but must never be labeled autonomous action.
+- **Treat innate drives, survival reflexes or temperament as invalid autonomy:** rejected. They are permitted initial equipment; scientific tests must distinguish them from acquired personal associations.
+- **Demand optimal survival or long-term success from every individual:** rejected. Rational or coherent action under incomplete information may still cause harm or death.
+- **Build a bounded, first-person, fallible individual and test integration without scripting its trajectory:** accepted.
+
+## Architectural and research decisions
+
+1. **Build conditions, not a life script.** Developers may implement physical laws, innate needs, temperament, sensory limits, eligible actions, evidence-driven memory, paid choice and action safety. They must not supply future destinations, hidden resource rewards, fixed motor sequences or a forced "correct" alternative as though those were personally chosen.
+2. **Distinguish the world from the individual's knowledge.** The research world may have exogenous deterministic laws, hidden physical state, depletion and renewal. Only information personally observed or committed as a consequence of an admitted action may become evidence for the individual; distant exogenous changes are not omniscient messages. Stability is a modeling prior, not a guarantee of perpetual resource quality.
+3. **Keep innate motives and learned usefulness distinct.** Physiology, survival reflex and born temperament can motivate behavior without being evidence of learned adaptation. Valuation of an action or visited site must be tied to personally experienced, need-specific physical effects and present bodily relevance. Competition and fresh Action Control remain responsible for admitting motor actions, at real UC and bodily cost; intention and memory cannot bypass them.
+4. **Treat an individual as an uninterrupted causal history.** Study birth traits, physiological evolution, perception, exploration, selection, consequences, memory, competing needs, possible abandonment of strategies, risks, death and censoring in one persistent local identity. Never manufacture continuity by resetting, splicing lives, leaking future events or reviving a dead identity.
+5. **Preserve the right to make mistakes.** A poor choice is not automatically an architectural defect. Diagnose what was perceptible, what actions were offered/reachable, what the current bodily pressures were, how prior evidence informed the competition, and whether admission/physics was correct. A voluntary harmful or inefficient choice can be a valid individual outcome. Correct structural errors, broken causal credit or invalid observations; do not retune merely to force success.
+6. **Study behavioral individuality without anthropomorphism.** Compare independently born individuals with controlled identical or varied temperament, physical conditions and genuinely different personal histories. Seek history-dependent differences in preferences and decisions, plus regularities under comparable histories. Distinguish innate variation, random schedules, opportunity differences and learned experience; do not assume human personality, awareness or identity from behavioral divergence.
+7. **Prefer a small consequential ecology over a large scripted test world.** Use a few persistent, traversable sites and meaningful food/water/rest opportunities with genuine needs, depletion, renewal, access costs and imperfect cues. An individual's strategy can become ineffective; a physically accessible but not magically known alternative may exist. An experiment must allow failure, abstention or death and must not fabricate a successful fallback.
+8. **The central integrated scientific challenge is strategy revision, not survival optimization.** In one life, observe whether personally verified benefits lead to chosen behavior and whether later experienced ineffectiveness, competing needs or lost access results in an independently chosen re-evaluation, exploration or last resort when physically feasible. Record nonrevision and excessive persistence as carefully as useful recovery.
+9. **Scientific priority over feature count.** After a meaningful behavior, first test the unchanged policy across prospectively specified environments and longer lives; preserve null/adverse results, periodic architectural convergence and explicit distinction among technical, behavioral and scientific proof. Apply [ADR-0012](ADR-0012-i2-scientific-development-methodology.md) instead of adding a second procedural framework.
+10. **Bound authority and claims.** The I2 native SQLite research birth remains local and research-only. I2 has no activated engine entrypoints, independently attested M11, external motor rights or scientific generalization GO. Architecture autonomy from I1 is mandatory. No new review bureaucracy or mandatory heavy CI is introduced by this decision.
+
+## Operational consequences
+
+The [embodied-autonomy research plan](../../src/i2/docs/EMBODIED_AUTONOMY_RESEARCH_PLAN.md) defines the architectural observation boundaries, candidate falsifiers for coherent multi-strategy lives and controlled historical individuality, and acceptance/interpretation rules. [The single P0-P5 roadmap](../../src/i2/docs/INTEGRATED_BEHAVIOR_ROADMAP.md) retains development sequence and [master #921](https://github.com/josselin-orta-lab/individual-zero/issues/921) retains live issues. [ADR-0012](ADR-0012-i2-scientific-development-methodology.md) and its [single method](../../src/i2/docs/SCIENTIFIC_DEVELOPMENT_METHOD.md) retain research protocol and agent handoff procedure.
+
+Do not create a new cognitive owner, new research gate, automatic experiment launch, artificial success bonus or second roadmap to "implement" this ADR. No previously frozen experiment or birth is retroactively modified. Historical failed lives remain valid evidence of what occurred, not defects to conceal.
+
+## Date and status
+
+3 November 2026: **ACCEPTED as an explicit project-owner research and architecture direction.** Current implementation and scientific evidence remain whatever the source-locked trials independently establish.

@@ -8,6 +8,9 @@ Can an I2 individual use **only its personally experienced history and present b
 
 Do not demand an advantageous outcome from every life. A legitimate failed or terminal life may identify a critical cognitive or environmental limitation. The technical maximum step count is a censoring boundary, not evidence that an ecological lifespan has been covered.
 
+**What to avoid optimizing away:** [ADR-0013](../../../docs/decisions/ADR-0013-lived-autonomy-and-experimental-restraint.md) recognizes that an individual's voluntary but ineffective choice, hesitation or death may be legitimate data. Before changing the policy after a poor result, classify the actual episode using the [embodied autonomy architecture and science plan](EMBODIED_AUTONOMY_RESEARCH_PLAN.md): structural/physical invalidity, integration gap, coherent but harmful individual choice, NO_EXPOSURE, NO_FEASIBLE_ALTERNATIVE, technical censor or biological death. Do not add a behavior-specific rescue unless the prospective general hypothesis has earned its own falsifier. Individuality and one-life multi-strategy tests are candidate P3/P4 scientific questions, not automatic launches.
+
+
 ## Development and experiment loop
 
 1. **Diagnose the gap.** Inspect actual main/head SHAs, current issue/PR dependencies, negative/positive source-locked traces and first-person evidence at the decision point. State the shortest unresolved causal link rather than enumerating desirable modules.
