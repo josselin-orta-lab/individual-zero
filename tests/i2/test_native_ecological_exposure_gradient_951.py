@@ -62,12 +62,18 @@ class NativeEcologicalExposureGradient951(unittest.TestCase):
                     site = BORN_SITE
                     sites = [site]
                     food_offers, meals, water_offers, ties = [], [], [], []
+                    source_tied_ticks, paid_statuses = [], []
                     for tick, ((action, before, after), event) in enumerate(
                             zip(physical, cognitive), 1):
                         before_body, after_body = (
                             json.loads(before), json.loads(after))
                         offered = event["claim"]["capture"][
                             "accessible_semantics"]
+                        # In a spatial birth no unseen remote refill belongs
+                        # to an individual's subjective history (#945/#950).
+                        self.assertFalse(any(
+                            "water-offer-refilled:" in ref
+                            for ref in event["claim"]["subjective_evidence_refs"]))
                         if "manger" in offered:
                             self.assertEqual(site, food_site)
                             food_offers.append(tick)
@@ -87,8 +93,24 @@ class NativeEcologicalExposureGradient951(unittest.TestCase):
                             self.assertLessEqual(
                                 after_body["water"], before_body["water"])
                         advice = event.get("advice") or {}
+                        paid_statuses.append(advice.get("status"))
                         if advice.get("status") == "AMBIGUOUS":
                             ties.append(tick)
+                            frame = event.get("frame")
+                            if frame is not None:
+                                names = {
+                                    candidate["candidate_ref"]: candidate["semantic_ref"]
+                                    for candidate in frame["candidates"]}
+                                values = advice.get("values") or []
+                                if values:
+                                    top = max(value["value"] for value in values)
+                                    leaders = {
+                                        names[value["candidate_ref"]]
+                                        for value in values if value["value"] == top}
+                                    if (site == "passage" and top > 0 and
+                                            {"se_deplacer_vers_camp",
+                                             "se_deplacer_vers_source"} <= leaders):
+                                        source_tied_ticks.append(tick)
                         if destination(action) is not None:
                             site = site_after(site, action)
                         sites.append(site)
@@ -109,6 +131,8 @@ class NativeEcologicalExposureGradient951(unittest.TestCase):
                         "meals": meals,
                         "food_exposure": exposure,
                         "ambiguous_ticks": ties,
+                        "passage_source_route_tied_ticks": source_tied_ticks,
+                        "paid_statuses": paid_statuses,
                         "food_history": [
                             round(json.loads(row[2])["food"], 3)
                             for row in physical],
