@@ -48,7 +48,7 @@ class RecurrentNeedReexposure906(unittest.TestCase):
                             path,
                             body=self.BIRTH_BODY, temperament=self.TRAITS,
                             learning=learning, sleep_consolidation=False,
-                            max_steps=self.MAX_STEPS, uc=1200,
+                            max_steps=self.MAX_STEPS, uc=1000,
                             food_stock=0, water_stock=1,
                             water_restock_every=2,
                             discovered_water_gain=0, **born_world,
@@ -75,11 +75,25 @@ class RecurrentNeedReexposure906(unittest.TestCase):
                         self.assertEqual(last["scientific_verdict"], "NOT_ESTABLISHED")
                         postchange_drinks = []
                         critical_ticks = []
+                        critical_postchange_ticks = []
+                        first_prechange_restorative_drink = None
+                        recurrent_critical_after_restoration = None
+                        postchange_nonrestoring_drinks = 0
+                        first_person_last_resort_steps = []
                         for tick, (event, (action, before_json, after_json)) in enumerate(
                                 zip(decisions, physical), start=1):
                             before, after = json.loads(before_json), json.loads(after_json)
                             if before["water"] <= 10:
                                 critical_ticks.append(tick)
+                                if tick > self.CHANGE_AT:
+                                    critical_postchange_ticks.append(tick)
+                                if (first_prechange_restorative_drink is not None
+                                        and recurrent_critical_after_restoration is None
+                                        and tick > first_prechange_restorative_drink):
+                                    recurrent_critical_after_restoration = tick
+                            if event["claim"]["capture"]["goal_ref"] == (
+                                    "goal:physical-last-resort"):
+                                first_person_last_resort_steps.append(tick)
                             actual = (actual_old_water_gain(born_world, tick - 1)
                                       if action == "boire" else 0.0)
                             self.assertAlmostEqual(
@@ -91,7 +105,13 @@ class RecurrentNeedReexposure906(unittest.TestCase):
                             refs = event["claim"]["subjective_evidence_refs"]
                             self.assertFalse(any(
                                 "water-quality" in ref for ref in refs))
+                            if (tick <= self.CHANGE_AT and action == "boire"
+                                    and actual > 0 and
+                                    first_prechange_restorative_drink is None):
+                                first_prechange_restorative_drink = tick
                             if tick > self.CHANGE_AT and action == "boire":
+                                if actual == 0:
+                                    postchange_nonrestoring_drinks += 1
                                 postchange_drinks.append({
                                     "step": tick,
                                     "actual_gain": actual,
@@ -109,6 +129,16 @@ class RecurrentNeedReexposure906(unittest.TestCase):
                                 "TERMINAL" if last["terminal"] else "HORIZON_CENSORED"),
                             "first_critical_water_tick": (
                                 critical_ticks[0] if critical_ticks else None),
+                            "first_prechange_restorative_drink_tick": (
+                                first_prechange_restorative_drink),
+                            "first_recurrent_critical_after_restoration_tick": (
+                                recurrent_critical_after_restoration),
+                            "first_postchange_critical_water_tick": (
+                                critical_postchange_ticks[0]
+                                if critical_postchange_ticks else None),
+                            "postchange_nonrestoring_drinks": (
+                                postchange_nonrestoring_drinks),
+                            "last_resort_goal_ticks": first_person_last_resort_steps,
                             "first_postchange_drink_tick": (
                                 postchange_drinks[0]["step"]
                                 if postchange_drinks else None),
