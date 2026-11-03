@@ -86,6 +86,34 @@ class SpatialWaterRefillEvidence945(unittest.TestCase):
             self.assertNotIn("manger", camp_claim.capture.accessible_semantics)
             self.assertEqual(life.audit(), NativePaidI2.inspect(path).audit())
 
+    def test_forged_remote_water_refill_in_cognitive_journal_refused(self):
+        # Negative integrity control, not a legitimate observation: an
+        # adversary cannot manufacture a first-person refill by rewriting
+        # one sealed event without a matching owned provenance chain.
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "forged_refill.sqlite"
+            life = NativePaidI2.create(
+                path, body=BODY, temperament=TRAITS, uc=200,
+                spatial_world=True, ordinary_water_site="source",
+                ordinary_food_site="camp", water_stock=0, food_stock=0,
+                water_restock_every=2, food_restock_every=0,
+                max_steps=5)
+            for _ in range(4):
+                life.step()
+            self.assertEqual(life.audit(), NativePaidI2.inspect(path).audit())
+            with sqlite3.connect(path) as db:
+                original = db.execute(
+                    "SELECT event_json FROM events WHERE seq=4").fetchone()[0]
+                event = json.loads(original)
+                evidence = event["claim"]["subjective_evidence_refs"]
+                self.assertFalse(any(MARKER in item for item in evidence))
+                evidence.append(MARKER + "2")
+                db.execute("UPDATE events SET event_json=? WHERE seq=4",
+                           (json.dumps(event, sort_keys=True,
+                                       separators=(",", ":")),))
+            with self.assertRaises((NativeRefusal, ValueError)):
+                life.audit()
+
     def test_same_physical_laws_paid_learning_off_on_cold_audit(self):
         out = {}
         with tempfile.TemporaryDirectory() as folder:
