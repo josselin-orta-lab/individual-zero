@@ -39,7 +39,8 @@ from i2.runtime.native_physiology_journal import (
 
 PRIORS = {"boire": 1, "manger": 4, "dormir": 2, "attendre": 1, "collecter": 2, "boire_decouverte": 1}
 HORIZON = 8
-GENESIS_SCHEMA = "i2-native-paid-local-life-v3-discovery-sleep"
+MAX_BORN_STEPS = 128
+GENESIS_SCHEMA = "i2-native-paid-local-life-v4-born-lifetime"
 
 
 class NativeRefusal(ValueError):
@@ -251,7 +252,8 @@ def genesis_digest(meta):
         meta["genesis_ref"], meta["body_json"], meta["traits_json"],
         meta["food_stock"], meta["water_stock"], meta["learning"],
         meta["berry_food_gain"], meta["berry_integrity_delta"],
-        meta["drink_water_gain"], meta["discovered_water_gain"], meta["sleep_consolidation"]]).encode("ascii")).hexdigest()
+        meta["drink_water_gain"], meta["discovered_water_gain"], meta["sleep_consolidation"],
+        meta["max_steps"]]).encode("ascii")).hexdigest()
 
 
 class NativePaidI2:
@@ -283,7 +285,7 @@ class NativePaidI2:
     @classmethod
     def create(cls, path, *, body: Body, temperament: BirthTemperament,
                learning=True, sleep_consolidation=True,
-               food_stock=4, water_stock=4, uc=80,
+               max_steps=HORIZON, food_stock=4, water_stock=4, uc=80,
                berry_food_gain=20.0, berry_integrity_delta=-8.0,
                drink_water_gain=25.0, discovered_water_gain=0.0):
         if (type(body) is not Body or
@@ -291,6 +293,7 @@ class NativePaidI2:
                 min(body.food, body.water, body.integrity) <= 0 or
                 type(learning) is not bool or
                 type(sleep_consolidation) is not bool or
+                type(max_steps) is not int or not 1 <= max_steps <= MAX_BORN_STEPS or
                 type(food_stock) is not int or not 0 <= food_stock <= 8 or
                 type(water_stock) is not int or not 0 <= water_stock <= 8 or
                 type(uc) is not int or not 0 <= uc <= 1000 or
@@ -323,6 +326,7 @@ class NativePaidI2:
                 drink_water_gain REAL NOT NULL,
                 discovered_water_gain REAL NOT NULL,
                 sleep_consolidation INTEGER NOT NULL,
+                max_steps INTEGER NOT NULL CHECK(max_steps BETWEEN 1 AND 128),
                 digest TEXT NOT NULL)""")
             db.execute("""CREATE TABLE native_discoveries (
                 seq INTEGER PRIMARY KEY,
@@ -336,8 +340,9 @@ class NativePaidI2:
                         berry_integrity_delta=berry_integrity_delta,
                         drink_water_gain=drink_water_gain,
                         discovered_water_gain=discovered_water_gain,
-                        sleep_consolidation=int(sleep_consolidation))
-            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                        sleep_consolidation=int(sleep_consolidation),
+                        max_steps=max_steps)
+            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                        (*meta.values(), genesis_digest(meta)))
             db.commit()
         obj.audit()
@@ -522,7 +527,8 @@ class NativePaidI2:
                 "SELECT capacity,remaining_uc FROM identity JOIN account ON "
                 "identity.id=account.id WHERE identity.id=1").fetchone()
         cognition = self._fixture(_NoEvaluation()).audit()
-        if (len(recorded) != len(effects) or len(effects) > HORIZON or
+        if (len(recorded) != len(effects) or
+                len(effects) > meta["max_steps"] or
                 physical["revision"] != len(effects) or
                 cognition["committed"] != len(effects) or
                 cognition["motor_authority"] != "NONE" or
@@ -691,7 +697,8 @@ class NativePaidI2:
                 remaining != cognition["remaining_synthetic_uc"]):
             raise NativeRefusal("native final body or paid UC disagrees with replay")
         return {
-            "revision": len(effects), "body": body.as_dict(),
+            "revision": len(effects), "max_steps": meta["max_steps"],
+            "body": body.as_dict(),
             "temperament": traits.as_dict(), "remaining_uc": remaining,
             "terminal": terminal, "m11_authenticated": False,
             "engine_registered": False, "scientific_verdict": "NOT_ESTABLISHED",
@@ -704,7 +711,7 @@ class NativePaidI2:
         if type(veto) is not bool:
             raise NativeRefusal("native safety veto must be a boolean")
         before = self.audit()
-        if before["terminal"] or before["revision"] >= HORIZON:
+        if before["terminal"] or before["revision"] >= before["max_steps"]:
             raise NativeRefusal("terminal or bounded native life")
         with self._connect() as db:
             meta = self._meta(db)
