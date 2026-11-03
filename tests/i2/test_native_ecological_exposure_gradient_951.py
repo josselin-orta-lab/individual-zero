@@ -24,6 +24,7 @@ FOOD_SITES = ("camp", "passage", "source")
 class NativeEcologicalExposureGradient951(unittest.TestCase):
     def test_paid_graded_food_access_without_motor_scripts(self):
         outcomes = {}
+        born_physical_laws = {}
         with tempfile.TemporaryDirectory() as folder:
             for food_site in FOOD_SITES:
                 for learning in (False, True):
@@ -52,6 +53,12 @@ class NativeEcologicalExposureGradient951(unittest.TestCase):
                     final = life.audit()
                     self.assertEqual(final, NativePaidI2.inspect(path).audit())
                     with sqlite3.connect(path) as db:
+                        born_physical_laws[key] = db.execute(
+                            "SELECT body_json,traits_json,food_stock,water_stock,"
+                            "ordinary_food_site,ordinary_water_site,"
+                            "food_restock_every,water_restock_every,"
+                            "berry_food_gain,drink_water_gain,max_steps "
+                            "FROM native_genesis WHERE id=1").fetchone()
                         physical = db.execute(
                             "SELECT admitted_action,before_json,after_json "
                             "FROM native_physical_events ORDER BY seq"
@@ -153,6 +160,12 @@ class NativeEcologicalExposureGradient951(unittest.TestCase):
                         final["scientific_verdict"], "NOT_ESTABLISHED")
                     self.assertFalse(final["engine_registered"])
                     self.assertFalse(final["m11_authenticated"])
+            for food_site in FOOD_SITES:
+                # ON/OFF are genuinely matched on every physical birth law;
+                # the learning-dependent package is the only arm contrast.
+                self.assertEqual(
+                    born_physical_laws[food_site + "-off"],
+                    born_physical_laws[food_site + "-on"])
             print("I2_ECOLOGICAL_EXPOSURE_GRADIENT_951=" + json.dumps(
                 outcomes, sort_keys=True, separators=(",", ":")), flush=True)
 
