@@ -1,7 +1,7 @@
 # Native I2: experience-grounded, persistent resource associations
 
 **Design and research correction, 3 November 2026.** Scientific ruling:
-[ADR-0010](../../docs/decisions/ADR-0010-stable-world-evidence-based-association.md).
+[ADR-0010](../../../docs/decisions/ADR-0010-stable-world-evidence-based-association.md).
 Source-locked earlier negative evidence remains in
 [NATIVE_RECURRENT_NEED_RESULTS_906.md](NATIVE_RECURRENT_NEED_RESULTS_906.md):
 both arms in #912 drank degraded water ineffectively 42 times, and neither
