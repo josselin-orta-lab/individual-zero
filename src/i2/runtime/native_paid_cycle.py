@@ -41,7 +41,7 @@ from i2.runtime.native_physiology_journal import (
 PRIORS = {"boire": 1, "manger": 4, "dormir": 2, "attendre": 1, "collecter": 2, "boire_decouverte": 1}
 HORIZON = 8
 MAX_BORN_STEPS = 128
-GENESIS_SCHEMA = "i2-native-paid-local-life-v5-born-water-renewal"
+GENESIS_SCHEMA = "i2-native-paid-local-life-v6-hidden-water-outcome-reversal"
 
 
 class NativeRefusal(ValueError):
@@ -249,6 +249,19 @@ class _Valuation(ChosenOutcomeValuationStudy):
 
 
 
+def actual_old_water_gain(meta, elapsed_ticks):
+    """External world quality at this physical time, NOT an observation.
+
+    A birth-locked reversal may change old-source hydration after a fixed
+    committed-time boundary, without granting any evidence or water. Only a
+    later admitted drink actually reveals the resulting bodily consequence.
+    """
+    change_at = meta["water_quality_change_at"]
+    if change_at and elapsed_ticks >= change_at:
+        return meta["water_quality_after_gain"]
+    return meta["drink_water_gain"]
+
+
 def old_water_available(meta, rows):
     """Present physical offers, never a prediction of water's actual effect.
 
@@ -270,7 +283,8 @@ def genesis_digest(meta):
         meta["food_stock"], meta["water_stock"], meta["learning"],
         meta["berry_food_gain"], meta["berry_integrity_delta"],
         meta["drink_water_gain"], meta["discovered_water_gain"], meta["sleep_consolidation"],
-        meta["max_steps"], meta["water_restock_every"]]).encode("ascii")).hexdigest()
+        meta["max_steps"], meta["water_restock_every"],
+        meta["water_quality_change_at"], meta["water_quality_after_gain"]]).encode("ascii")).hexdigest()
 
 
 class NativePaidI2:
@@ -303,7 +317,9 @@ class NativePaidI2:
     def create(cls, path, *, body: Body, temperament: BirthTemperament,
                learning=True, sleep_consolidation=True,
                max_steps=HORIZON, food_stock=4, water_stock=4,
-               water_restock_every=0, uc=80,
+               water_restock_every=0,
+               water_quality_change_at=0, water_quality_after_gain=0.0,
+               uc=80,
                berry_food_gain=20.0, berry_integrity_delta=-8.0,
                drink_water_gain=25.0, discovered_water_gain=0.0):
         if (type(body) is not Body or
@@ -314,6 +330,11 @@ class NativePaidI2:
                 type(max_steps) is not int or not 1 <= max_steps <= MAX_BORN_STEPS or
                 type(water_restock_every) is not int or
                 not 0 <= water_restock_every <= 32 or
+                type(water_quality_change_at) is not int or
+                not 0 <= water_quality_change_at <= MAX_BORN_STEPS or
+                (water_quality_change_at and not water_restock_every) or
+                type(water_quality_after_gain) not in (int, float) or
+                not 0 <= water_quality_after_gain <= 100 or
                 type(food_stock) is not int or not 0 <= food_stock <= 8 or
                 type(water_stock) is not int or not 0 <= water_stock <= 8 or
                 type(uc) is not int or not 0 <= uc <= 1000 or
@@ -331,6 +352,7 @@ class NativePaidI2:
         berry_integrity_delta = float(berry_integrity_delta)
         drink_water_gain = float(drink_water_gain)
         discovered_water_gain = float(discovered_water_gain)
+        water_quality_after_gain = float(water_quality_after_gain)
         key = uuid4().hex
         obj = cls(path, "i2:prototype:native:" + key,
                   "genesis:i2:native:" + key)
@@ -356,6 +378,9 @@ class NativePaidI2:
                 max_steps INTEGER NOT NULL CHECK(max_steps BETWEEN 1 AND 128),
                 water_restock_every INTEGER NOT NULL
                     CHECK(water_restock_every BETWEEN 0 AND 32),
+                water_quality_change_at INTEGER NOT NULL
+                    CHECK(water_quality_change_at BETWEEN 0 AND 128),
+                water_quality_after_gain REAL NOT NULL,
                 digest TEXT NOT NULL)""")
             db.execute("""CREATE TABLE native_discoveries (
                 seq INTEGER PRIMARY KEY,
@@ -371,8 +396,10 @@ class NativePaidI2:
                         discovered_water_gain=discovered_water_gain,
                         sleep_consolidation=int(sleep_consolidation),
                         max_steps=max_steps,
-                        water_restock_every=water_restock_every)
-            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                        water_restock_every=water_restock_every,
+                        water_quality_change_at=water_quality_change_at,
+                        water_quality_after_gain=water_quality_after_gain)
+            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                        (*meta.values(), genesis_digest(meta)))
             db.commit()
         obj.audit()
@@ -528,7 +555,7 @@ class NativePaidI2:
             raise NativeRefusal("unavailable or depleted native resource")
         effect = {}
         if action == "boire":
-            effect["drink_water_gain"] = meta["drink_water_gain"]
+            effect["drink_water_gain"] = actual_old_water_gain(meta, len(rows))
         elif action == "boire_decouverte":
             effect["drink_water_gain"] = meta["discovered_water_gain"]
         elif action == "manger":
@@ -686,7 +713,7 @@ class NativePaidI2:
                     raise NativeRefusal("native ate unavailable food")
                 changes = {}
                 if action == "boire":
-                    changes["drink_water_gain"] = meta["drink_water_gain"]
+                    changes["drink_water_gain"] = actual_old_water_gain(meta, len(previous))
                 elif action == "boire_decouverte":
                     changes["drink_water_gain"] = meta["discovered_water_gain"]
                 elif action == "manger":
