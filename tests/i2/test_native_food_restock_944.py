@@ -194,8 +194,35 @@ class ExogenousNativeFoodRestock944(unittest.TestCase):
                             "tick": tick, "site": visited_sites[tick - 1],
                             "top": top, "candidates": tied,
                             "advice_status": advice.get("status")})
+                # A paid abstention is not an attempted source visit.
+                # Diagnose genuine no-action physiology and offered routes
+                # from past committed captures, not from an imagined world.
+                no_action_status_counts = {}
+                abstention_samples = []
+                for tick, (action, before, _) in enumerate(records, 1):
+                    if action != "NO_ACTION":
+                        continue
+                    status = statuses[tick - 1] or "NO_PAID_ADVICE"
+                    no_action_status_counts[status] = (
+                        no_action_status_counts.get(status, 0) + 1)
+                    body_at_choice = json.loads(before)
+                    observed = cognitive[tick - 1]["claim"]["capture"][
+                        "accessible_semantics"]
+                    abstention_samples.append({
+                        "tick": tick,
+                        "site": visited_sites[tick - 1],
+                        "body_food": round(body_at_choice["food"], 3),
+                        "body_water": round(body_at_choice["water"], 3),
+                        "offered_moves": sorted(
+                            action for action in observed
+                            if action.startswith("se_deplacer_vers_")),
+                        "paid_status": status,
+                    })
                 outcomes[key] = dict(
                     actions=actions, visited_sites=visited_sites,
+                    no_action_by_paid_status=no_action_status_counts,
+                    first_abstentions=abstention_samples[:3],
+                    last_abstentions=abstention_samples[-3:],
                     paid_advice_statuses=statuses,
                     positive_top_ties=ambiguous,
                     source_offer_ticks=source_offers,
