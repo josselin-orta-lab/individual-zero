@@ -75,3 +75,5 @@ A filled illustrative example is available in [../../examples/adr-example.md](..
 - [ADR-0009: I2 physiology and temperament comparability](ADR-0009-i2-physiology-temperament-parity.md) (2 November 2026). Physical and birth-trait parity is required before claiming cross-generation adaptation, without runtime dependence on I1.
 
 - [ADR-0010: stable-world prior and evidence-based associative memory](ADR-0010-stable-world-evidence-based-association.md) (3 November 2026). Unobserved world changes cannot be inferred from time; real targeted experiences accumulate without instant erasure, and innate need is kept distinct from learned resource efficacy.
+
+- [ADR-0011: I2 integrated spatial life, experienced place value and longitudinal priorities](ADR-0011-i2-integrated-spatial-life-priorities.md) (3 November 2026). Owner-approved P0-P5 priority, source-locked same-life return falsifier and no-heuristic-drift requirement, without activation or scientific GO.

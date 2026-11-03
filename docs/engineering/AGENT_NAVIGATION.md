@@ -14,7 +14,7 @@ This is a **navigation index**, not a second architectural specification. It sho
 | Understand I1 causal flow | `src/i1/docs/COGNITIVE_FLOW.md` | `src/i1/docs/STAGES_AND_INTERFACES.md` |
 | Change memory, needs, sleep or M11 | `src/i1/docs/README.md` | mechanism guide, observed source paths and invariants |
 | Evaluate an I1 scientific claim | `src/i1/docs/EVIDENCE_MATRIX.md` | original preregistration, exact SHA and evidence |
-| Work on I2 research fixtures | `src/i2/AGENTS.md`, `src/i2/docs/README.md` | `src/i2/docs/STATUS.md`, `tests/i2/` |
+| Work on independent I2 research / spatial-life roadmap | `src/i2/docs/INTEGRATED_BEHAVIOR_ROADMAP.md`, `src/i2/AGENTS.md` | live native owner, `src/i2/docs/STATUS.md`, issue #921 and `tests/i2/` |
 | Propose/promote an engine | `docs/engineering/ENGINE_PROMOTION.md` | `docs/decisions/ADR-0001-strict-generation-autonomy.md` |
 | Inspect archived I0 | `docs/architecture/ENGINE_GENERATIONS.md` | `config/archives/i0-20261017.json` without modifying history |
 | Contribute or file an issue | `CONTRIBUTING.md` | issue/PR templates and code owner policy |
@@ -43,7 +43,7 @@ Use `python tools/check_repo_navigation.py --scope current` for current guides. 
 
 ## Working boundaries
 
-- I0 is immutable research history. I1 has its own cognition, runtime, Lab, tests and existing born identities. I2 has independent, non-living synthetic prototypes only. No historical runtime imports, carried-over life state or compatibility modes for successor engines.
+- I0 is immutable research history; I1 is the active generation. I2 has independent synthetic fixtures **and local born native SQLite research-only lives**, but no registered active engine, independently witnessed M11 or scientific GO. Follow [I2 approved integrated roadmap](../../src/i2/docs/INTEGRATED_BEHAVIOR_ROADMAP.md) and master [#921](https://github.com/josselin-orta-lab/individual-zero/issues/921). No I1 runtime imports, inherited live memory, duplicate owners or old compatibility modes.
 - `src/i1/docs/STATUS.md` and `src/i2/docs/STATUS.md` are **short current reading surfaces**, with earlier campaign ledgers preserved alongside as `STATUS_HISTORY.md`.
 - `docs/research/` includes many historical experiment records. Read the current evidence index and the original, dated protocol **before** drawing a conclusion. `experiments/` contains experiment conventions and formal records; its sparse index is not evidence that no research has occurred.
 - For a narrow fix, read the specific owner contract and its direct tests. Don't load every historical file into agent context.

@@ -1,8 +1,10 @@
 # I2 research handbook (proposal only)
 
-**I2 is an independent architectural proposal, not an active artificial individual.** Its modules, fixtures and SQLite journal are **synthetic research software**. There is no I2 birth, living WorldBody, registered runtime, authenticated M11 continuity or scientific GO.
+**I2 remains an unregistered, inactive architectural proposal.** Besides the historical synthetic G2 fixtures, it contains an independent *locally born native SQLite research prototype* with internally admitted, paid physical actions and cold replay. This local experimental birth is **not** a registered living I2 engine, authenticated M11 continuity, a public motor or a scientific GO.
 
-## Reading order for a new agent
+**Current priority:** [owner-approved integrated spatial-life roadmap](INTEGRATED_BEHAVIOR_ROADMAP.md), [accepted ADR-0011](../../../docs/decisions/ADR-0011-i2-integrated-spatial-life-priorities.md), [master issue #921](https://github.com/josselin-orta-lab/individual-zero/issues/921), and [native architecture](ARCHITECTURE.md). Work P0 #922 -> P1 #923 -> P2 #924 -> P3 #925 -> P4 existing #906; P5 #926/#888 parallel. The historic reading order below is secondary to this current approved route.
+
+## Historical mechanisms and deeper reading
 
 1. [Current status and remaining evidence gaps](STATUS.md): **short, maintained summary only**; [append-only development ledger](STATUS_HISTORY.md) retains dated iterations and the complete pre-rationalization status snapshot. Prefer adding new G2 implementation notes to the ledger or owner-specific mechanism guide instead of growing this entrypoint. A change to current STATUS requires explicit review of its scientific source pins.
 2. [Architecture and boundaries](ARCHITECTURE.md): generation autonomy, ownership and permissions.
@@ -28,4 +30,4 @@
 
 The `parent` field means comparative lineage, never live code or state inheritance. Validate synthetic software with `python -m unittest discover -s tests/i2 -p 'test_*.py' -v`. A passing test never registers I2 or establishes adaptive autonomous learning.
 
-**Current owner routing:** [ADR-0008](../../../docs/decisions/ADR-0008-remove-obsolete-i2-external-g1-review-gate.md) retires the mandatory external G1 reviewer hold. Implement and test an isolated I2-only prototype for #664 now, without claiming M11/scientific GO or registering I2. Earlier review packets remain as historical contract/falsifier references.
+**Current owner routing:** [ADR-0008](../../../docs/decisions/ADR-0008-remove-obsolete-i2-external-g1-review-gate.md) retires the mandatory external G1 reviewer hold. Implement and test an isolated I2-only prototype for #664 now, without claiming M11/scientific GO or registering I2. The minimum isolated native local loop was built under closed #664; follow the new P0-P5 spatial integration roadmap rather than restarting that closed ticket. Earlier review packets remain historical contract/falsifier references.
