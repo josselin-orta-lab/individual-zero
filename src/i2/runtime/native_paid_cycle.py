@@ -324,8 +324,12 @@ def personally_observed_place_tie(
     tied = [a for a in offered if updated.get(a) == top]
     if len(tied) < 2:
         return updated, frozenset()
+    # The native journal uses sqlite3.Row; the read-only site extractor
+    # intentionally accepts only plain immutable physical-event tuples.
+    # Normalize the same owner's already committed rows without altering
+    # their order, values, or evidence boundary.
     evidence = lived_place_outcomes(
-        previous, traits=traits, enabled=True)
+        tuple(tuple(row) for row in previous), traits=traits, enabled=True)
     relevance = current_need_site_relevance(
         evidence, body=body, traits=traits)
     possibilities = []
