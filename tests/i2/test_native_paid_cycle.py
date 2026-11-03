@@ -369,6 +369,132 @@ class NativePaidCycleTests(unittest.TestCase):
         self.assertNotEqual(event["intention_kind"], "goal_changed")
         self.assertEqual(actor.audit()["revision"], 3)
 
+    def test_paid_probe_reveals_hidden_water_only_after_commit(self):
+        import json
+        actor = self.birth(body=Body(80, 60, 3, 100),
+                           learning=True, food_stock=0, water_stock=4,
+                           drink_water_gain=0.0, discovered_water_gain=30.0)
+        for _ in range(3):
+            actor.step()
+        with sqlite3.connect(self.path) as db:
+            events = [json.loads(x[0]) for x in db.execute(
+                "SELECT event_json FROM events ORDER BY seq")]
+            found = db.execute(
+                "SELECT seq,found FROM native_discoveries").fetchall()
+        self.assertEqual(found, [(3, 1)])
+        self.assertNotIn(
+            "boire_decouverte", events[2]["claim"]["capture"]["accessible_semantics"])
+        self.assertNotIn(
+            "evidence:i2:native:water-found:3",
+            events[2]["claim"]["subjective_evidence_refs"])
+        actor.step()
+        with sqlite3.connect(self.path) as db:
+            fourth = json.loads(db.execute(
+                "SELECT event_json FROM events WHERE seq=4").fetchone()[0])
+        self.assertIn(
+            "boire_decouverte", fourth["claim"]["capture"]["accessible_semantics"])
+        self.assertIn(
+            "evidence:i2:native:water-found:3",
+            fourth["claim"]["subjective_evidence_refs"])
+        self.assertEqual(actor.audit()["revision"], 4)
+        # The previous CI proved the learned policy consumed the new source
+        # already at seq4, NOT at seq5. Check the actual chosen transition,
+        # without requiring a second, physically impossible consumption.
+        with sqlite3.connect(self.path) as db:
+            taken = db.execute("SELECT admitted_action,before_json,after_json "
+                               "FROM native_physical_events WHERE seq=4").fetchone()
+        self.assertEqual(taken[0], "boire_decouverte")
+        self.assertGreater(json.loads(taken[2])["water"],
+                           json.loads(taken[1])["water"])
+        actor.step()
+        with sqlite3.connect(self.path) as db:
+            fifth = json.loads(db.execute(
+                "SELECT event_json FROM events WHERE seq=5").fetchone()[0])
+            physical_uses = db.execute(
+                "SELECT COUNT(*) FROM native_physical_events "
+                "WHERE admitted_action='boire_decouverte'").fetchone()[0]
+        self.assertNotIn("boire_decouverte",
+                         fifth["claim"]["capture"]["accessible_semantics"])
+        self.assertEqual(physical_uses, 1)
+        self.assertEqual(actor.audit()["revision"], 5)
+
+    def test_observed_new_water_is_scored_from_current_thirst_not_hidden_gain(self):
+        from i2.runtime.native_paid_cycle import innate_adjustment
+        from i2.modules.native_physiological_needs import assess_needs
+        body = Body(80, 60, 1.8, 100)
+        initial = {"boire_decouverte": 1, "boire": 1, "manger": 4,
+                   "collecter": 2, "dormir": 2, "attendre": 1}
+        scores = innate_adjustment(initial, body, self.traits)
+        thirst = round(8 * assess_needs(body, self.traits).pressures["water"])
+        self.assertEqual(scores["boire_decouverte"], 1 + thirst)
+        self.assertEqual(scores["boire"], 1 + thirst)
+        self.assertGreater(scores["boire_decouverte"], scores["dormir"])
+
+    def test_probe_without_hidden_water_never_claims_discovery(self):
+        import json
+        actor = self.birth(body=Body(80, 60, 3, 100),
+                           learning=True, food_stock=0, water_stock=4,
+                           drink_water_gain=0.0, discovered_water_gain=0.0)
+        for _ in range(4):
+            actor.step()
+        with sqlite3.connect(self.path) as db:
+            self.assertEqual(db.execute(
+                "SELECT seq,found FROM native_discoveries").fetchall(), [(3, 0)])
+            fourth = json.loads(db.execute(
+                "SELECT event_json FROM events WHERE seq=4").fetchone()[0])
+        self.assertNotIn(
+            "boire_decouverte", fourth["claim"]["capture"]["accessible_semantics"])
+        self.assertEqual(actor.audit()["revision"], 4)
+
+    def test_discovery_and_sleep_ablation_are_physically_matched_before_sleep(self):
+        """Neither sleep switch reveals water nor changes physics pre-sleep."""
+        import json
+        arms = []
+        for enabled in (True, False):
+            path = Path(self.tmp.name) / ("combined-" + str(enabled) + ".sqlite")
+            actor = NativePaidI2.create(
+                path, body=Body(80, 60, 3, 100),
+                temperament=self.traits, learning=True,
+                sleep_consolidation=enabled, food_stock=0, water_stock=4,
+                drink_water_gain=0.0, discovered_water_gain=30.0)
+            born = actor.audit()
+            for _ in range(4):
+                actor.step()
+            with sqlite3.connect(path) as db:
+                events = [json.loads(r[0]) for r in db.execute(
+                    "SELECT event_json FROM events ORDER BY seq")]
+                effects = [tuple(r) for r in db.execute(
+                    "SELECT admitted_action,before_json,after_json "
+                    "FROM native_physical_events ORDER BY seq")]
+                discoveries = db.execute(
+                    "SELECT seq,found FROM native_discoveries").fetchall()
+            self.assertEqual(discoveries, [(3, 1)])
+            self.assertEqual([e[0] for e in effects],
+                             ["boire", "boire", "collecter", "boire_decouverte"])
+            self.assertNotIn(
+                "boire_decouverte", events[2]["claim"]["capture"]["accessible_semantics"])
+            self.assertIn(
+                "boire_decouverte", events[3]["claim"]["capture"]["accessible_semantics"])
+            self.assertGreater(json.loads(effects[3][2])["water"],
+                               json.loads(effects[3][1])["water"])
+            self.assertNotIn("sleep-consolidated",
+                             " ".join(json.dumps(e) for e in events))
+            self.assertEqual(actor.audit()["revision"], 4)
+            arms.append((born["body"], born["temperament"],
+                         [e[0] for e in effects], actor.audit()["body"]))
+        self.assertEqual(arms[0], arms[1])
+
+    def test_tampered_found_water_fails_native_cold_replay(self):
+        actor = self.birth(body=Body(80, 60, 3, 100),
+                           learning=True, food_stock=0, water_stock=4,
+                           drink_water_gain=0.0, discovered_water_gain=0.0)
+        for _ in range(3):
+            actor.step()
+        with sqlite3.connect(self.path) as db:
+            db.execute("UPDATE native_discoveries SET found=1 WHERE seq=3")
+        with self.assertRaises(ValueError):
+            actor.audit()
+
     def test_sleep_consolidates_only_personally_observed_repetition(self):
         from i2.runtime.native_paid_cycle import sleep_consolidated_scores
         rows = (

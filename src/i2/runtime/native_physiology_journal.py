@@ -101,7 +101,8 @@ def commit_admitted_physics(conn: sqlite3.Connection, *,
     if min(body.food, body.water, body.integrity) <= 0:
         raise ValueError("terminal native physiology cannot act")
     result = admitted_consequence(
-        before=body, temperament=traits, action=action,
+        before=body, temperament=traits,
+        action=("boire" if action == "boire_decouverte" else action),
         admitted=True, applied=True, berry_food_gain=berry_food_gain,
         berry_integrity_delta=berry_integrity_delta,
         drink_water_gain=drink_water_gain)
