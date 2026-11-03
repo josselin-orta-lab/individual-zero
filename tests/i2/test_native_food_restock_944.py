@@ -13,6 +13,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 from i2.modules.native_body_contract import Body
 from i2.modules.native_birth_temperament import BirthTemperament
+from i2.modules.native_owner_support import current_evidence
 from i2.modules.native_spatial_world import BORN_SITE, destination, site_after
 from i2.runtime.native_paid_cycle import (
     NativePaidI2, NativeRefusal, old_food_available, old_food_accessible,
@@ -54,6 +55,41 @@ class ExogenousNativeFoodRestock944(unittest.TestCase):
         one_born = {**meta, "food_stock": 1}
         self.assertTrue(old_food_accessible(one_born, at_source))
         self.assertEqual(old_food_available(one_born, refilled), 2)
+
+    def test_current_capture_never_offers_remote_or_future_food(self):
+        # Pure prospective route probe, not a real paid/dispatched action.
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "local_capture.sqlite"
+            life = NativePaidI2.create(
+                path, body=BODY, temperament=TRAITS,
+                spatial_world=True, ordinary_food_site="source",
+                ordinary_water_site="camp", food_stock=0, water_stock=0,
+                food_restock_every=3, uc=100, max_steps=7)
+            with life._connect() as db:
+                meta = life._meta(db)
+            def offer(rows):
+                claim = life._claim(
+                    {"revision": len(rows), "body": BODY, "traits": TRAITS,
+                     "current_evidence": current_evidence(BODY, TRAITS)},
+                    meta, rows)
+                self.assertFalse(any("food-restock" in ref or
+                                     "future" in ref for ref in
+                                     claim.subjective_evidence_refs))
+                return claim.capture.accessible_semantics
+            beginning = ()
+            at_passage = (physical(1, "se_deplacer_vers_passage"),)
+            at_source = (*at_passage, physical(2, "se_deplacer_vers_source"))
+            self.assertNotIn("manger", offer(beginning))
+            self.assertNotIn("manger", offer(at_passage))
+            self.assertNotIn("manger", offer(at_source))
+            refill_at_source = (*at_source, physical(3))
+            self.assertIn("manger", offer(refill_at_source))
+            eaten = (*refill_at_source, physical(4, "manger"))
+            self.assertNotIn("manger", offer(eaten))
+            self.assertIn("manger", offer((*eaten, physical(5), physical(6))))
+            remote_again = (*eaten, physical(5, "se_deplacer_vers_passage"),
+                            physical(6))
+            self.assertNotIn("manger", offer(remote_again))
 
     def test_born_interval_is_exact_and_tamper_is_rejected(self):
         with tempfile.TemporaryDirectory() as folder:
