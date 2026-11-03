@@ -71,6 +71,7 @@ class LivedPlaceReturnCohort924(unittest.TestCase):
                         records = []
                         for tick,((action,bef,aft),event) in enumerate(
                                 zip(phys,events),start=1):
+                            pre_site = site
                             before,after=json.loads(bef),json.loads(aft)
                             claims=set(event["claim"]["subjective_evidence_refs"])
                             offers=set(event["claim"]["capture"][
@@ -112,12 +113,7 @@ class LivedPlaceReturnCohort924(unittest.TestCase):
                                      "provenance":v["evidence_ref"]}
                                     for v in advice["values"]}
                             records.append({
-                                "tick":tick,"site_before":(
-                                    site if dst is None else
-                                    ("passage" if dst=="camp" else
-                                     "camp" if dst=="passage" and
-                                         first_departure==tick else
-                                     "passage")),
+                                "tick":tick,"site_before":pre_site,
                                 "action":action,"water_before":before["water"],
                                 "water_after":after["water"],
                                 "scores":value,
