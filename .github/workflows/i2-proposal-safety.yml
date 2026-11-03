@@ -28,9 +28,10 @@ jobs:
   inert-proposal:
     name: I2 inactive proposal (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
-    # Full source-locked I2 science suite now exceeds five minutes on 3.12.
-    # Time bound allows completion; tests and scientific gates are unchanged.
-    timeout-minutes: 12
+    # Full source-locked I2 science suite exceeded the former 12-minute
+    # ceiling twice on Python 3.12 (#946); preserve ALL tests and gate checks.
+    # Only the execution timeout is increased, not scientific acceptance.
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:

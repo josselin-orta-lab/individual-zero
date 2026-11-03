@@ -51,7 +51,7 @@ PRIORS = {"boire": 1, "manger": 4, "dormir": 2, "attendre": 1, "collecter": 2, "
 HORIZON = 8
 MAX_BORN_STEPS = 128
 # Capture is a bounded projection, not a deletion of an individual's journal.
-GENESIS_SCHEMA = "i2-native-paid-local-life-v15-contextual-movement-credit-isolation"
+GENESIS_SCHEMA = "i2-native-paid-local-life-v16-site-bound-ordinary-food"
 MAX_NATIVE_CAPTURE_REFS = 64
 
 
@@ -619,6 +619,17 @@ def old_water_accessible(meta, rows):
             replay_site(rows, enabled=True) == home)
 
 
+def old_food_accessible(meta, rows):
+    """Physically stocked and locally offered food, never hidden payoff."""
+    if sum(row[2] == "manger" for row in rows) >= meta["food_stock"]:
+        return False
+    home = meta["ordinary_food_site"]
+    if home is None:
+        return True
+    return (bool(meta["spatial_world"]) and
+            replay_site(rows, enabled=True) == home)
+
+
 def genesis_digest(meta):
     return sha256(_json([GENESIS_SCHEMA, meta["life_ref"],
         meta["genesis_ref"], meta["body_json"], meta["traits_json"],
@@ -630,7 +641,8 @@ def genesis_digest(meta):
         meta["evidence_tie_exploration"], meta["spatial_world"],
         meta["ordinary_water_site"], meta["place_return_tie"],
         meta["purpose_followthrough"],
-        meta["contextual_movement_credit"]]).encode("ascii")).hexdigest()
+        meta["contextual_movement_credit"],
+        meta["ordinary_food_site"]]).encode("ascii")).hexdigest()
 
 
 class NativePaidI2:
@@ -665,7 +677,7 @@ class NativePaidI2:
                evidence_tie_exploration=False, spatial_world=False,
                ordinary_water_site=None, place_return_tie=False,
                purpose_followthrough=False, contextual_movement_credit=False,
-               max_steps=HORIZON, food_stock=4, water_stock=4,
+               ordinary_food_site=None, max_steps=HORIZON, food_stock=4, water_stock=4,
                water_restock_every=0,
                water_quality_change_at=0, water_quality_after_gain=0.0,
                uc=80,
@@ -689,6 +701,9 @@ class NativePaidI2:
                 (ordinary_water_site is not None and
                  (type(ordinary_water_site) is not str or
                   ordinary_water_site not in GRAPH or not spatial_world)) or
+                (ordinary_food_site is not None and
+                 (type(ordinary_food_site) is not str or
+                  ordinary_food_site not in GRAPH or not spatial_world)) or
                 type(max_steps) is not int or not 1 <= max_steps <= MAX_BORN_STEPS or
                 type(water_restock_every) is not int or
                 not 0 <= water_restock_every <= 32 or
@@ -752,6 +767,7 @@ class NativePaidI2:
                     CHECK(purpose_followthrough IN (0,1)),
                 contextual_movement_credit INTEGER NOT NULL
                     CHECK(contextual_movement_credit IN (0,1)),
+                ordinary_food_site TEXT,
                 digest TEXT NOT NULL)""")
             db.execute("""CREATE TABLE native_discoveries (
                 seq INTEGER PRIMARY KEY,
@@ -775,8 +791,9 @@ class NativePaidI2:
                         ordinary_water_site=ordinary_water_site,
                         place_return_tie=int(place_return_tie),
                         purpose_followthrough=int(purpose_followthrough),
-                        contextual_movement_credit=int(contextual_movement_credit))
-            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                        contextual_movement_credit=int(contextual_movement_credit),
+                        ordinary_food_site=ordinary_food_site)
+            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                        (*meta.values(), genesis_digest(meta)))
             db.commit()
         obj.audit()
@@ -830,7 +847,7 @@ class NativePaidI2:
         offered = ["dormir", "attendre"]
         if "collecter" not in chosen:
             offered.append("collecter")
-        if chosen.count("manger") < meta["food_stock"]:
+        if old_food_accessible(meta, rows):
             offered.append("manger")
         if old_water_accessible(meta, rows):
             offered.append("boire")
@@ -923,7 +940,7 @@ class NativePaidI2:
                 (action == "boire" and
                  not old_water_accessible(meta, rows)) or
                 (action == "manger" and
-                 sum(r[2] == action for r in rows) >= meta["food_stock"])):
+                 not old_food_accessible(meta, rows))):
             raise NativeRefusal("unavailable or depleted native resource")
         if destination(action) is not None:
             if (not meta["spatial_world"] or
@@ -1121,9 +1138,8 @@ class NativePaidI2:
                         prior[2] == action for prior in previous) >= sum(
                             prior[6] for prior in previous):
                     raise NativeRefusal("drank new source before discovered")
-                if action == "manger" and sum(
-                        prior[2] == action for prior in previous) >= meta["food_stock"]:
-                    raise NativeRefusal("native ate unavailable food")
+                if action == "manger" and not old_food_accessible(meta, previous):
+                    raise NativeRefusal("native ate unavailable or remote food")
                 changes = {}
                 if action == "boire":
                     changes["drink_water_gain"] = actual_old_water_gain(meta, len(previous))
