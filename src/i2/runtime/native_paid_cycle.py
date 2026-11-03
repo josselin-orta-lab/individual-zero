@@ -621,7 +621,9 @@ def old_water_accessible(meta, rows):
 
 def old_food_available(meta, rows):
     """Actual food units; exogenous clock is physical, never learned payoff."""
-    interval = meta["food_restock_every"]
+    # Pure legacy physical projection fixtures omit an optional refill period.
+    # Persisted v17 genesis always includes its born-locked signed value.
+    interval = meta.get("food_restock_every", 0)
     elapsed = len(rows)
     replenished = elapsed // interval if interval else 0
     consumed = sum(row[2] == "manger" for row in rows)
