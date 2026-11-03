@@ -41,7 +41,7 @@ from i2.runtime.native_physiology_journal import (
 PRIORS = {"boire": 1, "manger": 4, "dormir": 2, "attendre": 1, "collecter": 2, "boire_decouverte": 1}
 HORIZON = 8
 MAX_BORN_STEPS = 128
-GENESIS_SCHEMA = "i2-native-paid-local-life-v4-born-lifetime"
+GENESIS_SCHEMA = "i2-native-paid-local-life-v5-born-water-renewal"
 
 
 class NativeRefusal(ValueError):
@@ -248,13 +248,29 @@ class _Valuation(ChosenOutcomeValuationStudy):
             for v in evaluated)
 
 
+
+def old_water_available(meta, rows):
+    """Present physical offers, never a prediction of water's actual effect.
+
+    An exogenous refill becomes perceivable only after the corresponding
+    number of committed physical ticks. No action or learning flag creates
+    a refill, and an admitted drink must still cause any physiological gain.
+    """
+    interval = meta["water_restock_every"]
+    born_supply = meta["water_stock"]
+    elapsed = len(rows)
+    replenished = elapsed // interval if interval else 0
+    consumed = sum(row[2] == "boire" for row in rows)
+    return born_supply + replenished - consumed
+
+
 def genesis_digest(meta):
     return sha256(_json([GENESIS_SCHEMA, meta["life_ref"],
         meta["genesis_ref"], meta["body_json"], meta["traits_json"],
         meta["food_stock"], meta["water_stock"], meta["learning"],
         meta["berry_food_gain"], meta["berry_integrity_delta"],
         meta["drink_water_gain"], meta["discovered_water_gain"], meta["sleep_consolidation"],
-        meta["max_steps"]]).encode("ascii")).hexdigest()
+        meta["max_steps"], meta["water_restock_every"]]).encode("ascii")).hexdigest()
 
 
 class NativePaidI2:
@@ -286,7 +302,8 @@ class NativePaidI2:
     @classmethod
     def create(cls, path, *, body: Body, temperament: BirthTemperament,
                learning=True, sleep_consolidation=True,
-               max_steps=HORIZON, food_stock=4, water_stock=4, uc=80,
+               max_steps=HORIZON, food_stock=4, water_stock=4,
+               water_restock_every=0, uc=80,
                berry_food_gain=20.0, berry_integrity_delta=-8.0,
                drink_water_gain=25.0, discovered_water_gain=0.0):
         if (type(body) is not Body or
@@ -295,6 +312,8 @@ class NativePaidI2:
                 type(learning) is not bool or
                 type(sleep_consolidation) is not bool or
                 type(max_steps) is not int or not 1 <= max_steps <= MAX_BORN_STEPS or
+                type(water_restock_every) is not int or
+                not 0 <= water_restock_every <= 32 or
                 type(food_stock) is not int or not 0 <= food_stock <= 8 or
                 type(water_stock) is not int or not 0 <= water_stock <= 8 or
                 type(uc) is not int or not 0 <= uc <= 1000 or
@@ -335,6 +354,8 @@ class NativePaidI2:
                 discovered_water_gain REAL NOT NULL,
                 sleep_consolidation INTEGER NOT NULL,
                 max_steps INTEGER NOT NULL CHECK(max_steps BETWEEN 1 AND 128),
+                water_restock_every INTEGER NOT NULL
+                    CHECK(water_restock_every BETWEEN 0 AND 32),
                 digest TEXT NOT NULL)""")
             db.execute("""CREATE TABLE native_discoveries (
                 seq INTEGER PRIMARY KEY,
@@ -349,8 +370,9 @@ class NativePaidI2:
                         drink_water_gain=drink_water_gain,
                         discovered_water_gain=discovered_water_gain,
                         sleep_consolidation=int(sleep_consolidation),
-                        max_steps=max_steps)
-            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                        max_steps=max_steps,
+                        water_restock_every=water_restock_every)
+            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                        (*meta.values(), genesis_digest(meta)))
             db.commit()
         obj.audit()
@@ -406,11 +428,19 @@ class NativePaidI2:
             offered.append("collecter")
         if chosen.count("manger") < meta["food_stock"]:
             offered.append("manger")
-        if chosen.count("boire") < meta["water_stock"]:
+        if old_water_available(meta, rows) > 0:
             offered.append("boire")
         if sum(r[6] for r in rows) > chosen.count("boire_decouverte"):
             offered.append("boire_decouverte")
         evidence = list(snapshot["current_evidence"])
+        # A naturally reappearing source is observed now, not forecast.
+        # Each refill is caused by elapsed committed physical time, not a
+        # learning flag and not a hidden prospective reward.
+        interval = meta["water_restock_every"]
+        if interval:
+            evidence.extend(
+                "evidence:i2:native:water-offer-refilled:" + str(epoch * interval)
+                for epoch in range(1, seq // interval + 1))
         evidence.extend("evidence:i2:native:outcome:" + str(r[0])
                         for r in rows if r[2] != NO_ACTION)
         evidence.extend("evidence:i2:native:water-found:" + str(r[0])
@@ -492,7 +522,7 @@ class NativePaidI2:
                 (action == "boire_decouverte" and
                  sum(r[2] == action for r in rows) >= sum(r[6] for r in rows)) or
                 (action == "boire" and
-                 sum(r[2] == action for r in rows) >= meta["water_stock"]) or
+                 old_water_available(meta, rows) <= 0) or
                 (action == "manger" and
                  sum(r[2] == action for r in rows) >= meta["food_stock"])):
             raise NativeRefusal("unavailable or depleted native resource")
@@ -645,8 +675,7 @@ class NativePaidI2:
                     raise NativeRefusal("native physical action lacks fresh admission")
                 expected_ref = ("internal:i2:native-admission:" + sha256(
                     _json([seq, cognition_hash, action]).encode()).hexdigest())
-                if action == "boire" and sum(
-                        prior[2] == action for prior in previous) >= meta["water_stock"]:
+                if action == "boire" and old_water_available(meta, previous) <= 0:
                     raise NativeRefusal("native drank unavailable water")
                 if action == "boire_decouverte" and sum(
                         prior[2] == action for prior in previous) >= sum(
