@@ -63,3 +63,53 @@ is claimed. Dream-like replay stays deferred in #902.
 This cohort is independent of the previous **8-tick terminal**
 sanity check. The result is not required to be positive, and criteria
 must not be rewritten after inspecting first CI logs.
+
+## Retrospective result and identifiability (3 November 2026)
+
+**Status: exploratory analysis of the original, unchanged #910 protocol, not
+a new preregistration or a learning-performance GO.** Original source:
+[PR #910](https://github.com/josselin-orta-lab/individual-zero/pull/910),
+test head `6b29cff5be58e1c6b1eb2dd5cf2e2cd57a0f5c8a`,
+[Python 3.11/3.12 PASS run 41609889806](https://github.com/josselin-orta-lab/individual-zero/actions/runs/41609889806).
+Both versions replayed the same deterministic laboratory test; they are not
+independent biological or scientific replications.
+
+| World | ON/OFF water choices before tick 13 | ON/OFF water choices from tick 13 | First ON/OFF action divergence | Post-change outcome observable? |
+| --- | ---: | ---: | ---: | --- |
+| Always empty | 6 / 6 | 10 / 10 | None in 32 ticks | No change |
+| Becomes useful | 6 / 6 | 3 / 2 | Tick 17 | Yes, both drank after the change |
+| Becomes empty | 3 / 2 | 0 / 0 | Tick 5 (before the change) | **NO, censored** |
+| Always useful | 3 / 2 | 0 / 0 | Tick 5 | No change |
+
+All eight laboratory lives were nonterminal at the technical 32-tick bound.
+In the *becomes useful* world, both arms had the **same admitted action and
+physical outcome through tick 16**, including actual successful hydration
+at ticks 13 and 15; tick 17 is the first action divergence (learned:
+`boire`, innate-only: `dormir`). Its causal attribution should examine
+both arms' paid action-specific opinions and identical first-person facts at
+the divergence. This establishes a **candidate experience-dependent choice
+difference in a bounded engineered policy**, not a general adaptive gain or
+an independently verified cognition claim.
+
+In the *becomes empty* world, the quality flip at 12 was never followed by
+a chosen drink in either arm. The two lives behaved identically to their
+respective *always useful* controls. The experiment **cannot test response
+to newly ineffective water** in that cell. Final reserves (82.2 ON vs 62.2
+OFF) reflect an extra *pre-change* successful drink in the ON arm, not
+recognition of the deterioration. In the always-empty world ON and OFF
+make identical decisions across all 32 ticks, underscoring the continued
+strength of innate behavior.
+
+The updated software readout distinguishes `UNOBSERVED_CENSORED` from
+`PHYSICALLY_OBSERVED`, counts no-motor ticks and checks that any first
+choice divergence is preceded by identical committed physical states and
+available personal evidence. These are **post-hoc diagnostics**, not
+predicted successful results, new world events, new motor authority or
+confirmation of longitudinal natural learning.
+
+**Next falsifier:** give the same born individual a genuinely revisitable
+physical need and changing resource over enough real, paid time to observe
+both success and later failure, with identical innate-only controls. Declare
+the environmental change and the opportunity/observation criterion *before*
+the new run. If no individual revisits, report non-identifiability again;
+never force a `boire` motor action or feed the world schedule to cognition.
