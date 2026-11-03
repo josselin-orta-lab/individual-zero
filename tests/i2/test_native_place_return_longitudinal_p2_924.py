@@ -120,7 +120,18 @@ class LivedPlaceReturnCohort924(unittest.TestCase):
                                 "subjective":sorted(claims)})
                         self.assertEqual(site,final["site"])
                         histories[(gain,enabled)]=(phys,events,records)
+                        genuine_return = bool(
+                            gain > 0 and initial_contact is not None and
+                            first_departure is not None and
+                            first_return is not None and
+                            initial_contact < first_departure < first_return and
+                            records[first_return-1]["site_before"]=="passage" and
+                            records[first_return-1]["water_before"] < 70 and
+                            any(a=="boire" and json.loads(aft)["water"] >
+                                json.loads(bef)["water"]
+                                for a,bef,aft in phys[:initial_contact]))
                         results[key]={
+                            "genuine_need_return":genuine_return,
                             "ticks":final["revision"],
                             "censor":"TERMINAL" if final["terminal"] else
                                      "HORIZON_CENSORED",
@@ -152,6 +163,30 @@ class LivedPlaceReturnCohort924(unittest.TestCase):
                     "first_quality_exposure":(
                         before_contact+1 if before_contact<
                         min(len(bad[0]),len(good[0])) else None)}
+            for gain in (0.0,40.0):
+                innate=histories[(gain,False)]
+                learned=histories[(gain,True)]
+                prefix=0
+                for a,b in zip(innate[0],learned[0]):
+                    if a!=b:
+                        break
+                    prefix+=1
+                diverged=(prefix<min(len(innate[0]),len(learned[0])))
+                if diverged:
+                    left,right=innate[1][prefix],learned[1][prefix]
+                    self.assertEqual(
+                        left["claim"]["subjective_evidence_refs"],
+                        right["claim"]["subjective_evidence_refs"])
+                    self.assertEqual(
+                        left["claim"]["capture"]["accessible_semantics"],
+                        right["claim"]["capture"]["accessible_semantics"])
+                    self.assertEqual(
+                        innate[0][prefix][1],learned[0][prefix][1])
+                results[":learning-difference:"+str(gain)]={
+                    "first_motor_or_physical_difference":prefix+1 if diverged else None,
+                    "matched_physical_prefix":prefix,
+                    "interpretation":"NO_DIFFERENCE" if not diverged else
+                        "DIVERGENT_CHOICE_CAUSAL_REVIEW_REQUIRED"}
             print("I2_NATIVE_PLACE_RETURN_P2_924="+json.dumps(
                 results,sort_keys=True,separators=(",",":")),flush=True)
 
