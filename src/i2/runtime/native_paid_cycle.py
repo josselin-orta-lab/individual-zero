@@ -51,7 +51,7 @@ PRIORS = {"boire": 1, "manger": 4, "dormir": 2, "attendre": 1, "collecter": 2, "
 HORIZON = 8
 MAX_BORN_STEPS = 128
 # Capture is a bounded projection, not a deletion of an individual's journal.
-GENESIS_SCHEMA = "i2-native-paid-local-life-v14-one-capture-purpose-handoff"
+GENESIS_SCHEMA = "i2-native-paid-local-life-v15-contextual-movement-credit-isolation"
 MAX_NATIVE_CAPTURE_REFS = 64
 
 
@@ -142,6 +142,7 @@ TIE_EXPLORATION_EVIDENCE = ":novel-under-lived-failure-tie"
 SLEEP_EVIDENCE = ":sleep-consolidated"
 PLACE_RETURN_EVIDENCE = ":personally-observed-reachable-place"
 PURPOSE_HANDOFF_EVIDENCE = ":paid-purpose-carried-from-arrival"
+MOVEMENT_CREDIT_EVIDENCE = ":movement-result-not-generalized-across-sites"
 
 # The target is an ordinary innate action affordance, not a hidden prediction.
 # Rest/wait can repair integrity when resources permit, but neither drinks
@@ -353,6 +354,29 @@ def personally_observed_place_tie(
     return updated, frozenset(favored)
 
 
+def isolate_context_free_movement_credit(scores, *, learning, spatial_world, enabled):
+    """Refuse to transport one move's outcome to all same-named moves.
+
+    The historical G2 result score does not encode origin, need or intended
+    physical destination. Do not pretend its immediate physiological relief
+    is a general learned payoff for movement to that destination. Retain the
+    same innate motion prior and born exploration, and let separately lived
+    place/need evidence influence the existing optional tie mechanism.
+    """
+    if any(type(flag) is not bool for flag in
+           (learning, spatial_world, enabled)):
+        raise NativeRefusal("exact native movement-credit birth flags required")
+    if enabled and (not learning or not spatial_world):
+        raise NativeRefusal("isolated movement credit requires spatial learning")
+    updated = dict(scores)
+    if not enabled:
+        return updated, frozenset()
+    isolated = frozenset(action for action in MOTIONS if action in updated)
+    for action in isolated:
+        updated[action] = PRIORS[action]
+    return updated, isolated
+
+
 def personally_paid_arrival_purpose(
     scores, *, claim, body, traits, previous, prior_event, learning, enabled,
 ):
@@ -454,7 +478,7 @@ class _Valuation(ChosenOutcomeValuationStudy):
     def __init__(self, *, body, traits, previous=(), learning=False,
                  sleep_consolidation=True, evidence_tie_exploration=False,
                  place_return_tie=False, purpose_followthrough=False,
-                 prior_event=None, **kwargs):
+                 contextual_movement_credit=False, prior_event=None, **kwargs):
         super().__init__(**kwargs)
         self.body, self.traits = body, traits
         self.previous, self.learning = tuple(previous), learning
@@ -462,6 +486,7 @@ class _Valuation(ChosenOutcomeValuationStudy):
         self.evidence_tie_exploration = evidence_tie_exploration
         self.place_return_tie = place_return_tie
         self.purpose_followthrough = purpose_followthrough
+        self.contextual_movement_credit = contextual_movement_credit
         self.prior_event = prior_event
 
     def evaluate_batch(self, *, frame, receipts):
@@ -471,7 +496,11 @@ class _Valuation(ChosenOutcomeValuationStudy):
         stabilized, consolidated = sleep_consolidated_scores(
             original, previous=self.previous, learning=self.learning,
             enabled=self.sleep_consolidation)
-        initial = innate_adjustment(stabilized, self.body, self.traits)
+        contextual, isolated = isolate_context_free_movement_credit(
+            stabilized, learning=self.learning,
+            spatial_world=self.place_return_tie,
+            enabled=self.contextual_movement_credit)
+        initial = innate_adjustment(contextual, self.body, self.traits)
         updated, discouraged, associated = personally_nonrestoring_scores(
             initial, claim=self.claim, body=self.body, traits=self.traits,
             previous=self.previous, learning=self.learning)
@@ -498,6 +527,8 @@ class _Valuation(ChosenOutcomeValuationStudy):
              named[v.candidate_ref] in remembered else "") +
             (PURPOSE_HANDOFF_EVIDENCE if
              named[v.candidate_ref] in carried else "") +
+            (MOVEMENT_CREDIT_EVIDENCE if
+             named[v.candidate_ref] in isolated else "") +
             ":native-body" +
             (SLEEP_EVIDENCE if named[v.candidate_ref] in consolidated
              and named[v.candidate_ref] not in associated else "") +
@@ -596,7 +627,8 @@ def genesis_digest(meta):
         meta["water_quality_change_at"], meta["water_quality_after_gain"],
         meta["evidence_tie_exploration"], meta["spatial_world"],
         meta["ordinary_water_site"], meta["place_return_tie"],
-        meta["purpose_followthrough"]]).encode("ascii")).hexdigest()
+        meta["purpose_followthrough"],
+        meta["contextual_movement_credit"]]).encode("ascii")).hexdigest()
 
 
 class NativePaidI2:
@@ -630,7 +662,8 @@ class NativePaidI2:
                learning=True, sleep_consolidation=True,
                evidence_tie_exploration=False, spatial_world=False,
                ordinary_water_site=None, place_return_tie=False,
-               purpose_followthrough=False, max_steps=HORIZON, food_stock=4, water_stock=4,
+               purpose_followthrough=False, contextual_movement_credit=False,
+               max_steps=HORIZON, food_stock=4, water_stock=4,
                water_restock_every=0,
                water_quality_change_at=0, water_quality_after_gain=0.0,
                uc=80,
@@ -645,6 +678,9 @@ class NativePaidI2:
                 type(spatial_world) is not bool or
                 type(place_return_tie) is not bool or
                 type(purpose_followthrough) is not bool or
+                type(contextual_movement_credit) is not bool or
+                (contextual_movement_credit and
+                 (not spatial_world or not learning)) or
                 (purpose_followthrough and (not spatial_world or
                     not place_return_tie or not learning)) or
                 (place_return_tie and not spatial_world) or
@@ -712,6 +748,8 @@ class NativePaidI2:
                 place_return_tie INTEGER NOT NULL CHECK(place_return_tie IN (0,1)),
                 purpose_followthrough INTEGER NOT NULL
                     CHECK(purpose_followthrough IN (0,1)),
+                contextual_movement_credit INTEGER NOT NULL
+                    CHECK(contextual_movement_credit IN (0,1)),
                 digest TEXT NOT NULL)""")
             db.execute("""CREATE TABLE native_discoveries (
                 seq INTEGER PRIMARY KEY,
@@ -734,8 +772,9 @@ class NativePaidI2:
                         spatial_world=int(spatial_world),
                         ordinary_water_site=ordinary_water_site,
                         place_return_tie=int(place_return_tie),
-                        purpose_followthrough=int(purpose_followthrough))
-            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                        purpose_followthrough=int(purpose_followthrough),
+                        contextual_movement_credit=int(contextual_movement_credit))
+            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                        (*meta.values(), genesis_digest(meta)))
             db.commit()
         obj.audit()
@@ -999,7 +1038,11 @@ class NativePaidI2:
                 stabilized, consolidated = sleep_consolidated_scores(
                     priors, previous=previous, learning=bool(meta["learning"]),
                     enabled=bool(meta["sleep_consolidation"]))
-                initial = innate_adjustment(stabilized, body, traits)
+                contextual, isolated = isolate_context_free_movement_credit(
+                    stabilized, learning=bool(meta["learning"]),
+                    spatial_world=bool(meta["spatial_world"]),
+                    enabled=bool(meta["contextual_movement_credit"]))
+                initial = innate_adjustment(contextual, body, traits)
                 scores, discouraged, associated = personally_nonrestoring_scores(
                     initial, claim=claim, body=body, traits=traits,
                     previous=previous, learning=bool(meta["learning"]))
@@ -1033,6 +1076,8 @@ class NativePaidI2:
                                  candidates[c] in remembered else "") +
                                 (PURPOSE_HANDOFF_EVIDENCE if
                                  candidates[c] in carried else "") +
+                                (MOVEMENT_CREDIT_EVIDENCE if
+                                 candidates[c] in isolated else "") +
                                 ":native-body" +
                                 (SLEEP_EVIDENCE if
                                  candidates[c] in consolidated and
@@ -1179,6 +1224,7 @@ class NativePaidI2:
             evidence_tie_exploration=bool(meta["evidence_tie_exploration"]),
             place_return_tie=bool(meta["place_return_tie"]),
             purpose_followthrough=bool(meta["purpose_followthrough"]),
+            contextual_movement_credit=bool(meta["contextual_movement_credit"]),
             prior_event=prior_cognitive_event)
         fixture = self._fixture(valuation)
         try:
