@@ -137,15 +137,36 @@ class SpatialWaterRefillEvidence945(unittest.TestCase):
                 with sqlite3.connect(life.path) as db:
                     records = [json.loads(row[0]) for row in db.execute(
                         "SELECT event_json FROM events ORDER BY seq")]
-                    actions = [row[0] for row in db.execute(
-                        "SELECT admitted_action FROM native_physical_events "
-                        "ORDER BY seq")]
-                for event in records:
+                    physical = list(db.execute(
+                        "SELECT admitted_action,before_json,after_json "
+                        "FROM native_physical_events ORDER BY seq"))
+                self.assertEqual(len(records), len(physical))
+                actions = []
+                local_offers = []
+                for tick, (event, sample) in enumerate(
+                        zip(records, physical), 1):
+                    action, before_json, after_json = sample
+                    actions.append(action)
                     self.assertFalse(any(
                         MARKER in evidence for evidence in
                         event["claim"]["subjective_evidence_refs"]))
+                    offered = event["claim"]["capture"][
+                        "accessible_semantics"]
+                    if "boire" in offered:
+                        local_offers.append(tick)
+                    if action == "boire":
+                        self.assertIn("boire", offered)
+                    if action == "NO_ACTION":
+                        # Even when physical refill happens after a tick,
+                        # an abstention never produces free bodily hydration.
+                        before_body = json.loads(before_json)
+                        after_body = json.loads(after_json)
+                        self.assertLessEqual(
+                            after_body["water"], before_body["water"])
                 out["on" if learning else "off"] = dict(
-                    actions=actions, final_body=final["body"],
+                    actions=actions,
+                    locally_observed_water_offer_ticks=local_offers,
+                    final_body=final["body"],
                     spent_uc=initial["remaining_uc"]-final["remaining_uc"],
                     death=final["terminal"],
                     right_censored=final["revision"] == 16
