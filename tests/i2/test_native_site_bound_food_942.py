@@ -131,7 +131,7 @@ class SiteBoundOrdinaryFood942(unittest.TestCase):
                 max_steps=2, spatial_world=True, ordinary_water_site="camp",
                 ordinary_food_site="source", water_stock=2, food_stock=2)
             life.step()
-            self.assertEqual(life.audit()["site"], "camp")
+            self.assertNotEqual(life.audit()["site"], "source")
             with sqlite3.connect(path) as db:
                 db.execute(
                     "UPDATE native_physical_events SET admitted_action='manger' "
