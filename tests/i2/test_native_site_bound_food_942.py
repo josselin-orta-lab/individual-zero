@@ -122,6 +122,23 @@ class SiteBoundOrdinaryFood942(unittest.TestCase):
             with self.assertRaises(NativeRefusal):
                 life.audit()
 
+    def test_offsite_forged_meal_in_physical_journal_fails_cold_audit(self):
+        # This is a tamper probe, not a valid motor or new source behavior.
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "tampered.sqlite"
+            life = NativePaidI2.create(
+                path, body=BORN, temperament=TRAITS, uc=100,
+                max_steps=2, spatial_world=True, ordinary_water_site="camp",
+                ordinary_food_site="source", water_stock=2, food_stock=2)
+            life.step()
+            self.assertEqual(life.audit()["site"], "camp")
+            with sqlite3.connect(path) as db:
+                db.execute(
+                    "UPDATE native_physical_events SET admitted_action='manger' "
+                    "WHERE seq=1")
+            with self.assertRaises(ValueError):
+                life.audit()
+
     def test_new_same_world_paid_longer_lives_no_motor_script(self):
         outcomes = {}
         with tempfile.TemporaryDirectory() as directory:
