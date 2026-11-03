@@ -347,10 +347,16 @@ class NativePaidCycleTests(unittest.TestCase):
                 "SELECT admitted_action FROM native_physical_events ORDER BY seq")]
             event = json.loads(db.execute(
                 "SELECT event_json FROM events WHERE seq=3").fetchone()[0])
-        self.assertEqual(actions[:2], ["boire", "boire"])
+        # The physical site exists from birth in both arms; Competition may
+        # genuinely explore before drinking. Never force an old action tape.
+        self.assertIn("boire", actions)
+        self.assertLessEqual(actions.count("collecter"), 1)
         self.assertEqual(event["claim"]["capture"]["goal_ref"],
                          "goal:physical-needs")
         self.assertNotEqual(event["intention_kind"], "goal_changed")
+        self.assertFalse(any(
+            v["evidence_ref"].endswith(":personal-nonrestoration")
+            for v in event["advice"]["values"]))
         self.assertEqual(actor.audit()["revision"], 3)
 
     def test_eating_while_thirsty_is_not_falsely_labelled_hydration_failure(self):
