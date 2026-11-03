@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 from i2.modules.native_body_contract import Body
 from i2.modules.native_birth_temperament import BirthTemperament
 from i2.modules.native_owner_support import current_evidence
+from i2.modules.native_spatial_world import BORN_SITE, destination, site_after
 from i2.runtime.native_paid_cycle import (
     NativePaidI2, NativeRefusal, old_food_accessible,
 )
@@ -151,7 +152,21 @@ class SiteBoundOrdinaryFood942(unittest.TestCase):
                         "native_physical_events ORDER BY seq"))
                 actions = [action for action, _ in physical]
                 samples = [json.loads(body) for _, body in physical]
+                site = BORN_SITE
+                visited = [site]
+                food_sites = []
+                for action in actions:
+                    if action == "manger":
+                        food_sites.append(site)
+                        self.assertEqual(site, "source")
+                    if destination(action) is not None:
+                        site = site_after(site, action)
+                    visited.append(site)
+                self.assertLessEqual(len(food_sites), 2)
+                self.assertEqual(final["site"], site)
                 outcomes[key] = {
+                    "visited_sites": visited,
+                    "food_use_sites": food_sites,
                     "actions": actions,
                     "food_uses": sum(a == "manger" for a in actions),
                     "drinks": sum(a == "boire" for a in actions),
