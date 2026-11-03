@@ -59,6 +59,11 @@ For wider context than the curated research-program seed, run `python tools/rese
 
 The global coordinator's evidence and gate logic remains curated; corpus index entries never automatically become new scientific findings, changes to the registry or permits to execute. Cite the original source before linking a candidate into the verified research program.
 
+## I2 method for selecting the next intervention
+
+For I2, follow accepted [ADR-0012](../decisions/ADR-0012-i2-scientific-development-methodology.md) and its single [operational procedure](../../src/i2/docs/SCIENTIFIC_DEVELOPMENT_METHOD.md), while retaining the [P0-P5 roadmap](../../src/i2/docs/INTEGRATED_BEHAVIOR_ROADMAP.md) as the work order. After an observed behavioral link, recommend a prospective held-out generalization check before another scoring mechanism; at milestones check convergence and stale agent documentation. Do not label a no-exposure trajectory a learning failure, deterministic CI replay an independent replication, or a method decision an experiment authorization. This pointer does not change the curated scientific source pins or promote any existing finding.
+
+
 ## Curated source dossiers and unresolved independent reviews
 
 The [research dossier register](RESEARCH_DOSSIERS.md) bridges the wide lexical corpus index and the small, prioritized research program. Run `python tools/research_dossiers.py list`, `show --id I1-A1C-TARGETED` and `gaps` to see original preregistrations, dated outcomes, post-hoc diagnostics, what is not independently verified, and precisely scoped comparisons. **Never treat a dossier, its Git source pins or its completion as a scientific approval.**

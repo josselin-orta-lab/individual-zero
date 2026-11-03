@@ -4,6 +4,8 @@
 
 **Current priority:** [owner-approved integrated spatial-life roadmap](INTEGRATED_BEHAVIOR_ROADMAP.md), [accepted ADR-0011](../../../docs/decisions/ADR-0011-i2-integrated-spatial-life-priorities.md), [master issue #921](https://github.com/josselin-orta-lab/individual-zero/issues/921), and [native architecture](ARCHITECTURE.md). Work P0 #922 -> P1 #923 -> P2 #924 -> P3 #925 -> P4 existing #906; P5 #926/#888 parallel. The historic reading order below is secondary to this current approved route.
 
+**Method for every I2 research agent:** [scientific development method](SCIENTIFIC_DEVELOPMENT_METHOD.md), grounded in accepted [ADR-0012](../../../docs/decisions/ADR-0012-i2-scientific-development-methodology.md). It governs falsification, lived-body observations, held-out generalization, evidence labels and convergence without changing P0-P5 or creating a second roadmap.
+
 ## Historical mechanisms and deeper reading
 
 1. [Current status and remaining evidence gaps](STATUS.md): **short, maintained summary only**; [append-only development ledger](STATUS_HISTORY.md) retains dated iterations and the complete pre-rationalization status snapshot. Prefer adding new G2 implementation notes to the ledger or owner-specific mechanism guide instead of growing this entrypoint. A change to current STATUS requires explicit review of its scientific source pins.

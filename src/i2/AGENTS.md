@@ -76,6 +76,10 @@ Missing true M11 external trust remains a technical limitation to report,
 no I1 import or new duplicate state owner. Preserve the historical one-shot
 v1-r1 results without retuning.
 
+## Accepted scientific development methodology (3 November 2026)
+
+[ADR-0012](../../docs/decisions/ADR-0012-i2-scientific-development-methodology.md) is the owner-approved *method*, and [SCIENTIFIC_DEVELOPMENT_METHOD.md](docs/SCIENTIFIC_DEVELOPMENT_METHOD.md) is the only operational I2 checklist. Read it alongside the current P0-P5 roadmap and original source-locked research results. After an observed integrated behavior, try to falsify the **unchanged** mechanism in separately born, prospectively fixed held-out environments before inventing another scoring offset. Measure physical effects over one continuing local research life, not only advice; distinguish NO_EXPOSURE, short-horizon censoring, technical PASS, observed motor effect and general scientific proof. At P2/P3 milestones and before P4, review flags, redundant experimental routes and source/documentation consistency; never rewrite an old birth or experiment. Document safety/validity/physical-substrate exceptions and signal DRIFT DETECTED with a cheaper falsifier. This adds no engine activation authority, external reviewer gate, I1 dependency or heavy CI requirement.
+
 ## Latest owner-approved development direction: spatially integrated I2 life (3 November 2026)
 
 **Read [the canonical roadmap](docs/INTEGRATED_BEHAVIOR_ROADMAP.md), [ADR-0011](../../docs/decisions/ADR-0011-i2-integrated-spatial-life-priorities.md) and master [#921](https://github.com/josselin-orta-lab/individual-zero/issues/921) before taking the next task.** This section supersedes obsolete dated implementation prompts above while preserving their scientific negative results and invariant safeguards.
