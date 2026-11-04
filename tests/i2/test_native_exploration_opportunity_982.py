@@ -274,7 +274,7 @@ class PaidExplorationOpportunity982(unittest.TestCase):
                         exploration_enabled=True)
                     self.assertEqual(len(opportunities), final["revision"])
                     # FNV-1a of actual paid motors cross-checked to #981 logs.
-                    motor_text = "\\n".join(row[0] for row in physical)
+                    motor_text = "\n".join(row[0] for row in physical)
                     hash_value = 2166136261
                     for byte in motor_text.encode("ascii"):
                         hash_value = ((hash_value ^ byte) * 16777619) & 0xffffffff
