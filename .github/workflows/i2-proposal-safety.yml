@@ -11,6 +11,7 @@ on:
       - '!src/i2/README.md'
       - '!src/i2/AGENTS.md'
       - 'tests/i2/**'
+      - 'tools/i2_ci_shards.py'
       - 'tools/assess_engine_proposal.py'
       # Structural policy changes must be validated without an I1 birth.
       - 'scripts/check_engine_repository.py'
@@ -28,9 +29,9 @@ jobs:
   inert-proposal:
     name: I2 inactive proposal (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
-    # Full source-locked I2 science suite exceeded the former 12-minute
-    # ceiling twice on Python 3.12 (#946); preserve ALL tests and gate checks.
-    # Only the execution timeout is increased, not scientific acceptance.
+    # Two processes per runner schedule ALL discovered tests exactly once.
+    # Preserve the full source-locked 3.11/3.12 suite and all gate checks.
+    # Retain the 20-minute guard until the first ordinary PR run is measured.
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -48,7 +49,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Isolated I2 policy and scaffold tests (no birth)
         run: |
-          python -m unittest discover -s tests/i2 -p 'test_*.py' -v
+          python tools/i2_ci_shards.py
           python -m compileall -q src/i2 tests/i2
       - name: Registered generation boundaries (static only, no I1 runtime)
         run: |
