@@ -60,6 +60,28 @@ class CompletedNativeCustody988(unittest.TestCase):
         self.assertEqual(inspect.call_count, 3)
 
     @patch("tools.i2_native_completed_life_archive.NativePaidI2.inspect")
+    def test_wal_source_is_archived_as_one_independently_readable_file(self, inspect):
+        inspect.return_value = self._identity(report())
+        with sqlite3.connect(self.source) as db:
+            self.assertEqual(db.execute("PRAGMA journal_mode=WAL").fetchone(),
+                             ("wal",))
+            db.execute("INSERT INTO journal VALUES(2,'wal-committed')")
+        receipt = archive_completed_life(self.source, self.archive)
+        self.assertEqual(receipt["archive_sha256"],
+                         sha256(self.archive.read_bytes()).hexdigest())
+        for suffix in ("-wal", "-shm", "-journal"):
+            self.assertFalse(Path(str(self.archive) + suffix).exists())
+        with sqlite3.connect(self.archive.resolve().as_uri() + "?mode=ro",
+                             uri=True) as copied:
+            self.assertEqual(copied.execute("PRAGMA journal_mode").fetchone(),
+                             ("delete",))
+            self.assertEqual(copied.execute("PRAGMA integrity_check").fetchone(),
+                             ("ok",))
+            self.assertEqual(copied.execute(
+                "SELECT item FROM journal ORDER BY seq").fetchall(),
+                [("observed",), ("wal-committed",)])
+
+    @patch("tools.i2_native_completed_life_archive.NativePaidI2.inspect")
     def test_refuses_incomplete_and_existing_destination(self, inspect):
         inspect.return_value = self._identity(
             report(terminal=False, revision=2, max_steps=3))
