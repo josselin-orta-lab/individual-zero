@@ -38,7 +38,7 @@ from i2.modules.native_place_experience import (
     current_need_site_relevance,
 )
 from i2.modules.native_spatial_world import (
-    GRAPH, MOTIONS, offered_moves, destination, site_after,
+    GRAPH, MOTIONS, BORN_SITE, offered_moves, destination, site_after,
     replay_site, local_evidence,
 )
 from i2.runtime.native_physiology_journal import (
@@ -51,7 +51,7 @@ PRIORS = {"boire": 1, "manger": 4, "dormir": 2, "attendre": 1, "collecter": 2, "
 HORIZON = 8
 MAX_BORN_STEPS = 128
 # Capture is a bounded projection, not a deletion of an individual's journal.
-GENESIS_SCHEMA = "i2-native-paid-local-life-v19-target-food-credit-ablation"
+GENESIS_SCHEMA = "i2-native-paid-local-life-v20-origin-novelty-tie"
 MAX_NATIVE_CAPTURE_REFS = 64
 
 
@@ -141,6 +141,7 @@ RESOURCE_OUTCOME_EVIDENCE = ":experienced-target-outcome"
 TIE_EXPLORATION_EVIDENCE = ":novel-under-lived-failure-tie"
 SLEEP_EVIDENCE = ":sleep-consolidated"
 PLACE_RETURN_EVIDENCE = ":personally-observed-reachable-place"
+ORIGIN_NOVELTY_EVIDENCE = ":visited-versus-unvisited-adjacent-tie"
 PURPOSE_HANDOFF_EVIDENCE = ":paid-purpose-carried-from-arrival"
 MOVEMENT_CREDIT_EVIDENCE = ":movement-result-not-generalized-across-sites"
 
@@ -344,6 +345,57 @@ def native_evidence_tie_exploration(
     return adjusted, frozenset(unseen)
 
 
+def origin_novelty_tie_scores(scores, *, offered, destinations, visited,
+                              exploration, reflex_state, enabled):
+    """One opt-in point at a strictly positive tie between adjacent moves only.
+
+    Destination labels/hidden payoff never enter scoring, and an equally
+    ranked nonmovement action prevents the adjustment. This changes advice,
+    not motor authority, admission or physiological consequence.
+    """
+    if type(enabled) is not bool:
+        raise NativeRefusal("origin novelty birth flag must be exact bool")
+    updated = dict(scores)
+    if not enabled or exploration <= 0 or reflex_state != "NO_PREEMPTION":
+        return updated, frozenset()
+    ranked = [a for a in offered if a in updated]
+    if not ranked:
+        return updated, frozenset()
+    top = max(updated[a] for a in ranked)
+    if not 0 < top < 1024:
+        return updated, frozenset()
+    tied = [a for a in ranked if updated[a] == top]
+    if len(tied) < 2 or any(a not in destinations for a in tied):
+        return updated, frozenset()
+    unseen = [a for a in tied if destinations[a] not in visited]
+    seen = [a for a in tied if destinations[a] in visited]
+    if len(unseen) != 1 or not seen:
+        return updated, frozenset()
+    updated[unseen[0]] += 1
+    return updated, frozenset(unseen)
+
+
+def personally_observed_origin_novelty(
+    scores, *, claim, body, traits, previous, enabled,
+):
+    """Only already committed reached sites, never an experimenter world map."""
+    site = BORN_SITE
+    visited = {site}
+    for row in previous:
+        if destination(row[2]) is not None:
+            site = site_after(site, row[2])
+            visited.add(site)
+    choices = {a: d for a in claim.capture.accessible_semantics
+               if (d := destination(a)) is not None and d in GRAPH[site]}
+    return origin_novelty_tie_scores(
+        scores, offered=claim.capture.accessible_semantics,
+        destinations=choices, visited=frozenset(visited),
+        exploration=traits.exploration,
+        reflex_state=NativeCaptureReflex(claim, body, traits).state,
+        enabled=enabled,
+    )
+
+
 def personally_observed_place_tie(
     scores, *, claim, body, traits, previous, learning, enabled,
 ):
@@ -521,7 +573,8 @@ class _Valuation(ChosenOutcomeValuationStudy):
                  sleep_consolidation=True, evidence_tie_exploration=False,
                  place_return_tie=False, purpose_followthrough=False,
                  contextual_movement_credit=False, spatial_world=False,
-                 target_food_credit_enabled=True, prior_event=None, **kwargs):
+                 target_food_credit_enabled=True, origin_novelty_tie=False,
+                 prior_event=None, **kwargs):
         super().__init__(**kwargs)
         self.body, self.traits = body, traits
         self.previous, self.learning = tuple(previous), learning
@@ -531,6 +584,7 @@ class _Valuation(ChosenOutcomeValuationStudy):
         self.purpose_followthrough = purpose_followthrough
         self.contextual_movement_credit = contextual_movement_credit
         self.target_food_credit_enabled = target_food_credit_enabled
+        self.origin_novelty_tie = origin_novelty_tie
         self.spatial_world = spatial_world
         self.prior_event = prior_event
 
@@ -562,6 +616,9 @@ class _Valuation(ChosenOutcomeValuationStudy):
             updated, claim=self.claim, body=self.body, traits=self.traits,
             previous=self.previous, prior_event=self.prior_event,
             learning=self.learning, enabled=self.purpose_followthrough)
+        updated, origin_novel = personally_observed_origin_novelty(
+            updated, claim=self.claim, body=self.body, traits=self.traits,
+            previous=self.previous, enabled=self.origin_novelty_tie)
         return tuple(replace(
             v, value=updated[named[v.candidate_ref]],
             evidence_ref=v.evidence_ref +
@@ -573,6 +630,8 @@ class _Valuation(ChosenOutcomeValuationStudy):
              named[v.candidate_ref] in remembered else "") +
             (PURPOSE_HANDOFF_EVIDENCE if
              named[v.candidate_ref] in carried else "") +
+            (ORIGIN_NOVELTY_EVIDENCE if
+             named[v.candidate_ref] in origin_novel else "") +
             (MOVEMENT_CREDIT_EVIDENCE if
              named[v.candidate_ref] in isolated else "") +
             ":native-body" +
@@ -702,7 +761,8 @@ def genesis_digest(meta):
         meta["contextual_movement_credit"],
         meta["ordinary_food_site"],
         meta["food_restock_every"],
-        meta["target_food_credit_enabled"]]).encode("ascii")).hexdigest()
+        meta["target_food_credit_enabled"],
+        meta["origin_novelty_tie"]]).encode("ascii")).hexdigest()
 
 
 class NativePaidI2:
@@ -738,6 +798,7 @@ class NativePaidI2:
                ordinary_water_site=None, place_return_tie=False,
                purpose_followthrough=False, contextual_movement_credit=False,
                ordinary_food_site=None, target_food_credit_enabled=True,
+               origin_novelty_tie=False,
                max_steps=HORIZON, food_stock=4, water_stock=4,
                water_restock_every=0, food_restock_every=0,
                water_quality_change_at=0, water_quality_after_gain=0.0,
@@ -755,6 +816,8 @@ class NativePaidI2:
                 type(purpose_followthrough) is not bool or
                 type(contextual_movement_credit) is not bool or
                 type(target_food_credit_enabled) is not bool or
+                type(origin_novelty_tie) is not bool or
+                (origin_novelty_tie and not spatial_world) or
                 (contextual_movement_credit and
                  (not spatial_world or not learning)) or
                 (purpose_followthrough and (not spatial_world or
@@ -836,6 +899,8 @@ class NativePaidI2:
                     CHECK(food_restock_every BETWEEN 0 AND 32),
                 target_food_credit_enabled INTEGER NOT NULL
                     CHECK(target_food_credit_enabled IN (0,1)),
+                origin_novelty_tie INTEGER NOT NULL
+                    CHECK(origin_novelty_tie IN (0,1)),
                 digest TEXT NOT NULL)""")
             db.execute("""CREATE TABLE native_discoveries (
                 seq INTEGER PRIMARY KEY,
@@ -862,8 +927,9 @@ class NativePaidI2:
                         contextual_movement_credit=int(contextual_movement_credit),
                         ordinary_food_site=ordinary_food_site,
                         food_restock_every=food_restock_every,
-                        target_food_credit_enabled=int(target_food_credit_enabled))
-            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                        target_food_credit_enabled=int(target_food_credit_enabled),
+                        origin_novelty_tie=int(origin_novelty_tie))
+            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                        (*meta.values(), genesis_digest(meta)))
             db.commit()
         obj.audit()
@@ -1166,6 +1232,9 @@ class NativePaidI2:
                     previous=previous, prior_event=prior_cognitive_event,
                     learning=bool(meta["learning"]),
                     enabled=bool(meta["purpose_followthrough"]))
+                scores, origin_novel = personally_observed_origin_novelty(
+                    scores, claim=claim, body=body, traits=traits,
+                    previous=previous, enabled=bool(meta["origin_novelty_tie"]))
                 candidates = {item["candidate_ref"]: item["semantic_ref"]
                               for item in frame["candidates"]}
                 values = advice["values"]
@@ -1183,6 +1252,8 @@ class NativePaidI2:
                                  candidates[c] in remembered else "") +
                                 (PURPOSE_HANDOFF_EVIDENCE if
                                  candidates[c] in carried else "") +
+                                (ORIGIN_NOVELTY_EVIDENCE if
+                                 candidates[c] in origin_novel else "") +
                                 (MOVEMENT_CREDIT_EVIDENCE if
                                  candidates[c] in isolated else "") +
                                 ":native-body" +
@@ -1335,6 +1406,7 @@ class NativePaidI2:
             contextual_movement_credit=bool(meta["contextual_movement_credit"]),
             target_food_credit_enabled=bool(meta["target_food_credit_enabled"]),
             spatial_world=bool(meta["spatial_world"]),
+            origin_novelty_tie=bool(meta["origin_novelty_tie"]),
             prior_event=prior_cognitive_event)
         fixture = self._fixture(valuation)
         try:
