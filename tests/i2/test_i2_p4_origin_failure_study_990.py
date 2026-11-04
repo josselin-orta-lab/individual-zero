@@ -15,7 +15,8 @@ from tools.i2_p4_origin_failure_study_990 import (
 
 
 def frame(action, *, before=None, after=None, site="camp", offers=None,
-          factor_tagged=False, chosen_motor_credited=False):
+          factor_tagged=False, chosen_motor_credited=False,
+          subjective_context=None):
     body = before or {"energy": 78.0, "food": 46.0,
                       "water": 44.0, "integrity": 94.0}
     return {
@@ -24,6 +25,10 @@ def frame(action, *, before=None, after=None, site="camp", offers=None,
         "offered": offers or ["attendre", "se_deplacer_vers_passage"],
         "factor_tagged": factor_tagged,
         "factor_credited_chosen_motor": chosen_motor_credited,
+        "subjective_context": (
+            {"goal": "goal:physical-needs",
+             "evidence": ["local:camp"], "contradicted": []}
+            if subjective_context is None else subjective_context),
     }
 
 
@@ -163,6 +168,34 @@ class P4OriginFailure990Contract(unittest.TestCase):
               frame("manger", offers=normal),
               frame("se_deplacer_vers_passage",
                     factor_tagged=True, chosen_motor_credited=True)]
+        result = first_matched_factor_divergence(
+            off, on, diagnose(2), diagnose(2))
+        self.assertEqual(result["classification"],
+                         "DIVERGENCE_WITH_UNMATCHED_HISTORY")
+        self.assertFalse(result["same_prehistory"])
+
+    def test_prior_different_subjective_claim_blocks_matched_history(self):
+        changed = {"goal": "goal:physical-last-resort",
+                   "evidence": ["local:camp"], "contradicted": []}
+        off = [frame("manger"), frame("manger"), frame("attendre")]
+        on = [frame("manger", subjective_context=changed),
+              frame("manger"),
+              frame("se_deplacer_vers_passage",
+                    factor_tagged=True, chosen_motor_credited=True)]
+        result = first_matched_factor_divergence(
+            off, on, diagnose(2), diagnose(2))
+        self.assertEqual(result["classification"],
+                         "DIVERGENCE_WITH_UNMATCHED_HISTORY")
+        self.assertFalse(result["same_prehistory"])
+
+    def test_current_different_subjective_evidence_blocks_attribution(self):
+        changed = {"goal": "goal:physical-needs",
+                   "evidence": ["local:camp", "new:personal"], "contradicted": []}
+        common = [frame("manger"), frame("manger")]
+        off = common + [frame("attendre")]
+        on = common + [frame("se_deplacer_vers_passage",
+                             factor_tagged=True, chosen_motor_credited=True,
+                             subjective_context=changed)]
         result = first_matched_factor_divergence(
             off, on, diagnose(2), diagnose(2))
         self.assertEqual(result["classification"],
