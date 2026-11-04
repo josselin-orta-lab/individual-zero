@@ -159,14 +159,32 @@ def signed_trace(path):
     return trace
 
 
+def _two_recent_failed_origin_meals(trace, index):
+    """Only actual nonrestoring origin food experiences qualify #990.
+
+    The v23 runtime may diagnose food failures at any visited site; this
+    prospective cohort specifically asks whether failed eating at BORN_SITE
+    changes the next paid choice. Do not conflate those two questions.
+    """
+    prior_meals = [x for x in trace[:index] if x["action"] == "manger"]
+    return len(prior_meals) >= 2 and all(
+        meal["site_before"] == BORN_SITE
+        and meal["before"]["food"] < 70
+        and meal["after"]["food"] <= meal["before"]["food"]
+        for meal in prior_meals[-2:]
+    )
+
+
 def first_matched_factor_divergence(control_trace, factor_trace,
                                     control_diag, factor_diag):
-    """Observational primary endpoint: same prior physical lives only."""
+    """Observational primary endpoint: same lived physical opportunity only."""
     for i, (a, b) in enumerate(zip(control_trace, factor_trace)):
         prior_a, prior_b = control_trace[:i], factor_trace[:i]
         past_matched = all(
-            (x["action"], x["before"], x["after"], x["site_after"]) ==
-            (y["action"], y["before"], y["after"], y["site_after"])
+            (x["action"], x["before"], x["after"], x["site_before"],
+             x["site_after"], x["offered"]) ==
+            (y["action"], y["before"], y["after"], y["site_before"],
+             y["site_after"], y["offered"])
             for x, y in zip(prior_a, prior_b))
         current_matched = (
             past_matched and a["before"] == b["before"] and
@@ -181,6 +199,11 @@ def first_matched_factor_divergence(control_trace, factor_trace,
               "food" not in control_diag["ticks"][i]["failed_channels"] or
               "food" not in factor_diag["ticks"][i]["failed_channels"]):
             verdict = "DIVERGENCE_BEFORE_PERSONAL_DOUBLE_FAILURE"
+        elif not (
+            _two_recent_failed_origin_meals(control_trace, i)
+            and _two_recent_failed_origin_meals(factor_trace, i)
+        ):
+            verdict = "DIVERGENCE_WITHOUT_TWO_FAILED_ORIGIN_MEALS"
         elif b.get("factor_credited_chosen_motor") is True:
             # The actual admitted motor, not merely an unchosen candidate,
             # carries a signed v23 factor provenance. Still not a proof
