@@ -40,6 +40,7 @@ class FailureOpportunity:
     top_score: int | None
     candidate_score: int | None
     score_gap: int | None
+    offered_movement_count: int
     origin_novelty: bool
     factor_tagged: bool
     factor_enabled: bool
@@ -146,12 +147,16 @@ def audit_need_failure_opportunities(*, events, physical, traits,
         unseen = tuple(a for a in offered
                        if destination(a) in GRAPH[site]
                        and destination(a) not in visited)
+        if (len(old_tags) > 1 or
+                any(destination(a) not in GRAPH[site] for a in old_tags)):
+            raise ValueError("invalid previous novelty provenance")
         if len(tagged) > 1 or (tagged and
                 (not factor_enabled or tagged[0] not in unseen or old_tags)):
             raise ValueError("impossible native exploration provenance")
         reflex = _reflex(before, traits)
         top = max(values.values()) if values else None
         candidate = values[unseen[0]] if len(unseen) == 1 and values else None
+        offered_moves = sum(destination(a) in GRAPH[site] for a in offered)
         gap = top - candidate if candidate is not None and not tagged else None
         if frame is None:
             reason = "NO_PAID_FRAME"
@@ -183,6 +188,7 @@ def audit_need_failure_opportunities(*, events, physical, traits,
             visited_before=tuple(sorted(visited)), unknown_offered=unseen,
             offered=tuple(offered), reflex=reflex,
             top_score=top, candidate_score=candidate, score_gap=gap,
+            offered_movement_count=offered_moves,
             origin_novelty=bool(old_tags), factor_tagged=bool(tagged),
             factor_enabled=factor_enabled, reason=reason))
         previous.append((tick, "", action, 0.0, before_json, after_json, 0))
@@ -202,6 +208,32 @@ def summarize_need_failure_opportunities(rows):
         "factor_tags": sum(x.factor_tagged for x in rows),
         "current_double_failure_ticks": sum(bool(x.failed_channels) for x in rows),
         "unseen_move_offers": sum(bool(x.unknown_offered) for x in rows),
+        "no_movement_offered_ticks": sum(
+            x.offered_movement_count == 0 for x in rows),
+        "only_visited_moves_offered_ticks": sum(
+            x.offered_movement_count > 0 and not x.unknown_offered for x in rows),
+        "multiple_unseen_offers_ticks": sum(
+            len(x.unknown_offered) > 1 for x in rows),
+        "origin_novelty_ticks": sum(x.origin_novelty for x in rows),
+        "urgent_reflex_ticks": sum(
+            x.reflex != "NO_PREEMPTION" for x in rows),
+        "unique_unseen_and_double_failure_ticks": sum(
+            len(x.unknown_offered) == 1 and bool(x.failed_channels)
+            for x in rows),
+        "positive_bounded_score_opportunity_ticks": sum(
+            x.reason in ("ELIGIBLE_BUT_NOT_CREDITED",
+                         "UNOBSERVABLE_PREBOOST_SCORE")
+            for x in rows),
+        "eligible_but_not_credited_on_ticks": sum(
+            x.reason == "ELIGIBLE_BUT_NOT_CREDITED" and x.factor_enabled
+            for x in rows),
+        "first_double_failure_tick": next(
+            (x.tick for x in rows if x.failed_channels), None),
+        "first_unique_unseen_and_double_failure_tick": next(
+            (x.tick for x in rows if len(x.unknown_offered) == 1
+             and x.failed_channels), None),
+        "first_factor_tag_tick": next(
+            (x.tick for x in rows if x.factor_tagged), None),
         "offered_but_below_top": sum(
             x.score_gap is not None and x.score_gap > 0 for x in rows),
         "chosen_movements": sum(destination(x.chosen) is not None for x in rows),
