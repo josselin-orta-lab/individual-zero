@@ -35,7 +35,7 @@ from i2.modules.native_owner_support import (
 from i2.modules.native_physiological_needs import assess_needs
 from i2.modules.native_place_experience import (
     lived_place_outcomes, summarized_site_experience,
-    current_need_site_relevance,
+    current_need_site_relevance, lived_whole_body_site_consequences,
 )
 from i2.modules.native_spatial_world import (
     GRAPH, MOTIONS, BORN_SITE, offered_moves, destination, site_after,
@@ -51,7 +51,7 @@ PRIORS = {"boire": 1, "manger": 4, "dormir": 2, "attendre": 1, "collecter": 2, "
 HORIZON = 8
 MAX_BORN_STEPS = 128
 # Capture is a bounded projection, not a deletion of an individual's journal.
-GENESIS_SCHEMA = "i2-native-paid-local-life-v21-dual-local-food"
+GENESIS_SCHEMA = "i2-native-paid-local-life-v22-whole-body-place-tie"
 MAX_NATIVE_CAPTURE_REFS = 64
 
 
@@ -141,6 +141,7 @@ RESOURCE_OUTCOME_EVIDENCE = ":experienced-target-outcome"
 TIE_EXPLORATION_EVIDENCE = ":novel-under-lived-failure-tie"
 SLEEP_EVIDENCE = ":sleep-consolidated"
 PLACE_RETURN_EVIDENCE = ":personally-observed-reachable-place"
+WHOLE_BODY_PLACE_EVIDENCE = ":lived-whole-body-site-need-relevance"
 ORIGIN_NOVELTY_EVIDENCE = ":visited-versus-unvisited-adjacent-tie"
 PURPOSE_HANDOFF_EVIDENCE = ":paid-purpose-carried-from-arrival"
 MOVEMENT_CREDIT_EVIDENCE = ":movement-result-not-generalized-across-sites"
@@ -396,6 +397,81 @@ def personally_observed_origin_novelty(
     )
 
 
+def whole_body_site_relevance(outcomes, *, body, traits):
+    """Per-place mean of personally lived *resource* effects at CURRENT needs.
+
+    Unknown and unconsumed sites have no evidence. Rest or sleep is excluded:
+    these actions can be chosen anywhere and do not confer place quality.
+    """
+    if type(body) is not Body or type(traits) is not BirthTemperament:
+        raise NativeRefusal("native body and birth traits required")
+    pressures = assess_needs(body, traits).pressures
+    sums = {}
+    for item in outcomes:
+        if (item.action not in CONSUMED_RESOURCE_NEED or
+                item.site not in GRAPH):
+            continue
+        total, count = sums.get(item.site, (0.0, 0))
+        effect = sum(delta * pressures[channel] for channel, delta in zip(
+            ("energy", "food", "water", "integrity"), item.deltas))
+        sums[item.site] = (total + effect, count + 1)
+    return {site: total / count for site, (total, count) in sums.items()}
+
+
+def whole_body_site_tie_scores(
+    scores, *, offered, destinations, effects, reflex_state, enabled,
+):
+    """Pure positive-top tie discriminator; never chooses a motor itself."""
+    if type(enabled) is not bool:
+        raise NativeRefusal("exact whole-body tie research flag required")
+    adjusted = dict(scores)
+    if not enabled or reflex_state != "NO_PREEMPTION":
+        return adjusted, frozenset()
+    ranked = [action for action in offered if action in adjusted]
+    if not ranked:
+        return adjusted, frozenset()
+    high = max(adjusted[action] for action in ranked)
+    if high <= 0 or high >= 1024:
+        return adjusted, frozenset()
+    tied = [action for action in ranked if adjusted[action] == high]
+    if len(tied) < 2:
+        return adjusted, frozenset()
+    candidates = [(action, effects[destinations[action]])
+                  for action in tied if action in destinations and
+                  destinations[action] in effects and
+                  effects[destinations[action]] > 0]
+    if not candidates:
+        return adjusted, frozenset()
+    strongest = max(value for _, value in candidates)
+    winners = [action for action, value in candidates if value == strongest]
+    if len(winners) != 1:
+        return adjusted, frozenset()
+    adjusted[winners[0]] += 1
+    return adjusted, frozenset(winners)
+
+
+def personally_lived_whole_body_place_tie(
+    scores, *, claim, body, traits, previous, learning, enabled,
+):
+    """Resolve a paid tie from only personally committed sites and effects."""
+    if type(enabled) is not bool or type(learning) is not bool:
+        raise NativeRefusal("exact whole-body place learning flags required")
+    if not enabled or not learning:
+        return dict(scores), frozenset()
+    site = replay_site(previous, enabled=True)
+    choices = {action: dest for action in claim.capture.accessible_semantics
+               if (dest := destination(action)) is not None and
+               dest in GRAPH[site]}
+    evidence = lived_whole_body_site_consequences(
+        tuple(tuple(row) for row in previous), traits=traits, enabled=True)
+    effects = whole_body_site_relevance(evidence, body=body, traits=traits)
+    return whole_body_site_tie_scores(
+        scores, offered=claim.capture.accessible_semantics,
+        destinations=choices, effects=effects,
+        reflex_state=NativeCaptureReflex(claim, body, traits).state,
+        enabled=True)
+
+
 def personally_observed_place_tie(
     scores, *, claim, body, traits, previous, learning, enabled,
 ):
@@ -574,7 +650,7 @@ class _Valuation(ChosenOutcomeValuationStudy):
                  place_return_tie=False, purpose_followthrough=False,
                  contextual_movement_credit=False, spatial_world=False,
                  target_food_credit_enabled=True, origin_novelty_tie=False,
-                 prior_event=None, **kwargs):
+                 whole_body_place_tie=False, prior_event=None, **kwargs):
         super().__init__(**kwargs)
         self.body, self.traits = body, traits
         self.previous, self.learning = tuple(previous), learning
@@ -585,6 +661,7 @@ class _Valuation(ChosenOutcomeValuationStudy):
         self.contextual_movement_credit = contextual_movement_credit
         self.target_food_credit_enabled = target_food_credit_enabled
         self.origin_novelty_tie = origin_novelty_tie
+        self.whole_body_place_tie = whole_body_place_tie
         self.spatial_world = spatial_world
         self.prior_event = prior_event
 
@@ -611,7 +688,11 @@ class _Valuation(ChosenOutcomeValuationStudy):
         updated, remembered = personally_observed_place_tie(
             updated, claim=self.claim, body=self.body, traits=self.traits,
             previous=self.previous, learning=self.learning,
-            enabled=self.place_return_tie)
+            enabled=self.place_return_tie and not self.whole_body_place_tie)
+        updated, whole_body_remembered = personally_lived_whole_body_place_tie(
+            updated, claim=self.claim, body=self.body, traits=self.traits,
+            previous=self.previous, learning=self.learning,
+            enabled=self.whole_body_place_tie)
         updated, carried = personally_paid_arrival_purpose(
             updated, claim=self.claim, body=self.body, traits=self.traits,
             previous=self.previous, prior_event=self.prior_event,
@@ -628,6 +709,8 @@ class _Valuation(ChosenOutcomeValuationStudy):
              named[v.candidate_ref] in exploratory else "") +
             (PLACE_RETURN_EVIDENCE if
              named[v.candidate_ref] in remembered else "") +
+            (WHOLE_BODY_PLACE_EVIDENCE if
+             named[v.candidate_ref] in whole_body_remembered else "") +
             (PURPOSE_HANDOFF_EVIDENCE if
              named[v.candidate_ref] in carried else "") +
             (ORIGIN_NOVELTY_EVIDENCE if
@@ -809,7 +892,7 @@ def genesis_digest(meta):
         meta["ordinary_food_site"],
         meta["food_restock_every"],
         meta["target_food_credit_enabled"],
-        meta["origin_novelty_tie"],
+        meta["origin_novelty_tie"], meta["whole_body_place_tie"],
         meta.get("second_food_site"), meta["second_food_stock"],
         meta["second_food_restock_every"], meta["second_berry_food_gain"],
         meta["second_berry_integrity_delta"]]).encode("ascii")).hexdigest()
@@ -848,7 +931,7 @@ class NativePaidI2:
                ordinary_water_site=None, place_return_tie=False,
                purpose_followthrough=False, contextual_movement_credit=False,
                ordinary_food_site=None, target_food_credit_enabled=True,
-               origin_novelty_tie=False,
+               origin_novelty_tie=False, whole_body_place_tie=False,
                second_food_site=None, second_food_stock=0,
                second_food_restock_every=0, second_berry_food_gain=0.0,
                second_berry_integrity_delta=0.0,
@@ -870,6 +953,10 @@ class NativePaidI2:
                 type(contextual_movement_credit) is not bool or
                 type(target_food_credit_enabled) is not bool or
                 type(origin_novelty_tie) is not bool or
+                type(whole_body_place_tie) is not bool or
+                (whole_body_place_tie and
+                 (not learning or not spatial_world or
+                  not place_return_tie or purpose_followthrough)) or
                 (origin_novelty_tie and not spatial_world) or
                 (second_food_site is not None and
                  (type(second_food_site) is not str or
@@ -971,6 +1058,8 @@ class NativePaidI2:
                     CHECK(target_food_credit_enabled IN (0,1)),
                 origin_novelty_tie INTEGER NOT NULL
                     CHECK(origin_novelty_tie IN (0,1)),
+                whole_body_place_tie INTEGER NOT NULL
+                    CHECK(whole_body_place_tie IN (0,1)),
                 second_food_site TEXT,
                 second_food_stock INTEGER NOT NULL
                     CHECK(second_food_stock BETWEEN 0 AND 8),
@@ -1006,12 +1095,13 @@ class NativePaidI2:
                         food_restock_every=food_restock_every,
                         target_food_credit_enabled=int(target_food_credit_enabled),
                         origin_novelty_tie=int(origin_novelty_tie),
+                        whole_body_place_tie=int(whole_body_place_tie),
                         second_food_site=second_food_site,
                         second_food_stock=second_food_stock,
                         second_food_restock_every=second_food_restock_every,
                         second_berry_food_gain=second_berry_food_gain,
                         second_berry_integrity_delta=second_berry_integrity_delta)
-            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                        (*meta.values(), genesis_digest(meta)))
             db.commit()
         obj.audit()
@@ -1308,7 +1398,12 @@ class NativePaidI2:
                 scores, remembered = personally_observed_place_tie(
                     scores, claim=claim, body=body, traits=traits,
                     previous=previous, learning=bool(meta["learning"]),
-                    enabled=bool(meta["place_return_tie"]))
+                    enabled=bool(meta["place_return_tie"]) and
+                            not bool(meta["whole_body_place_tie"]))
+                scores, whole_body_remembered = personally_lived_whole_body_place_tie(
+                    scores, claim=claim, body=body, traits=traits,
+                    previous=previous, learning=bool(meta["learning"]),
+                    enabled=bool(meta["whole_body_place_tie"]))
                 scores, carried = personally_paid_arrival_purpose(
                     scores, claim=claim, body=body, traits=traits,
                     previous=previous, prior_event=prior_cognitive_event,
@@ -1332,6 +1427,8 @@ class NativePaidI2:
                                  candidates[c] in exploratory else "") +
                                 (PLACE_RETURN_EVIDENCE if
                                  candidates[c] in remembered else "") +
+                                (WHOLE_BODY_PLACE_EVIDENCE if
+                                 candidates[c] in whole_body_remembered else "") +
                                 (PURPOSE_HANDOFF_EVIDENCE if
                                  candidates[c] in carried else "") +
                                 (ORIGIN_NOVELTY_EVIDENCE if
@@ -1489,6 +1586,7 @@ class NativePaidI2:
             target_food_credit_enabled=bool(meta["target_food_credit_enabled"]),
             spatial_world=bool(meta["spatial_world"]),
             origin_novelty_tie=bool(meta["origin_novelty_tie"]),
+            whole_body_place_tie=bool(meta["whole_body_place_tie"]),
             prior_event=prior_cognitive_event)
         fixture = self._fixture(valuation)
         try:
