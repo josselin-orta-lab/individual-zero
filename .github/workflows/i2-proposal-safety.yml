@@ -31,8 +31,11 @@ jobs:
     runs-on: ubuntu-latest
     # Two processes per runner schedule ALL discovered tests exactly once.
     # Preserve the full source-locked 3.11/3.12 suite and all gate checks.
-    # Retain the 20-minute guard until the first ordinary PR run is measured.
-    timeout-minutes: 20
+    # Measured on #985 exact-head: 812 tests/interpreter, 384 passed in
+    # 1042 s on Python 3.11; 20 min cancelled the other worker. Allow
+    # full exhaustive disjoint replay before a scientific/merge verdict.
+    # This changes CI time budget only, not the frozen v23 cohort or scores.
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
