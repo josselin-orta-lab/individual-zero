@@ -90,6 +90,19 @@ class P4OriginFailure990Contract(unittest.TestCase):
             self.assertFalse(destination.exists())
         birth.assert_not_called()
 
+    @patch("tools.i2_p4_origin_failure_study_990.subprocess.check_output")
+    def test_source_lock_rejects_untracked_files(self, git_output):
+        from tools.i2_p4_origin_failure_study_990 import (
+            _require_exact_clean_checkout,
+        )
+        head = "a" * 40
+        git_output.side_effect = [head + "\\n", "?? tools/rogue_module.py\\n"]
+        with self.assertRaisesRegex(ValueError, "clean source-locked"):
+            _require_exact_clean_checkout(head)
+        self.assertEqual(git_output.call_count, 2)
+        args = git_output.call_args.args[0]
+        self.assertIn("--untracked-files=all", args)
+
     @patch("tools.i2_p4_origin_failure_study_990.NativePaidI2.create")
     def test_bad_head_refused_before_birth(self, birth):
         with tempfile.TemporaryDirectory() as folder:
