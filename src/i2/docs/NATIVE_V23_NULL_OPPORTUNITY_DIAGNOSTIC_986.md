@@ -22,6 +22,14 @@ The pure read-only `native_need_failure_opportunity_audit.py` operates on **cold
 - `ELIGIBLE_BUT_NOT_CREDITED`: structural conditions observed but the actual recording shows no factor adjustment. In a factor-OFF birth this is expected; in an ON birth it is evidence to investigate, not a retrospective motor edit.
 - `UNOBSERVABLE_PREBOOST_SCORE`: a tagged factor-ON frame has already overwritten its candidate value; **the actual preboost score gap cannot be inferred from the final signed frame**. The independent native cold audit, not this observer, must authenticate the recorded final frame and original genesis.
 
+## Diagnostic interpretation of the frozen ticks 49-55
+
+In each original world the native physical record shows a paid camp-to-passage movement at tick **49**, five personally committed non-restoring passage meals at ticks **50-54** (each food delta **-0.2** after metabolism), and a genuinely paid passage-to-source movement at tick **55**. This timeline is authentic physical evidence, but **does not prove** whether a bounded v23 bonus would have applied on tick 52/53/54/55: that requires the corresponding first-person claim, competing scores, and a signed birth factor. The new observer provides these gate-level counters and first-tick locations directly from the already verified existing owner journal. The reported null v23 credit remains unchanged.
+
+The three distinct opportunity cases now have separate counters: `no_movement_offered_ticks` (physically absent movement affordances), `only_visited_moves_offered_ticks` (offered movements, but nowhere unseen), and `unique_unseen_and_double_failure_ticks` when exactly one never-reached local destination coexists with a personally established double-failure. Other reasons can still override such an overlap. The `first_double_failure_tick` and `first_unique_unseen_and_double_failure_tick` fields are retrospective research coordinates, **not new motor triggers**.
+
+An `ELIGIBLE_BUT_NOT_CREDITED` tick under an ON birth is an integrity diagnostic warranting native replay scrutiny, **not automatically an instance of the expected behavior**. Under an OFF birth it may be a fully legitimate structural counterfactual, but not a claim that the alternate motor would have been chosen.
+
 Counterfactuals remain explicitly limited: a historical final motor sequence cannot tell us what an unexecuted action would have found, and this classification cannot prove that boosting a move would improve survival. Neither visited source identity nor external food stock is input to the score categorization. If only one world or six lives yields a correlation, do not promote it to H3/G3 or independent M11.
 
 ## Software boundaries
