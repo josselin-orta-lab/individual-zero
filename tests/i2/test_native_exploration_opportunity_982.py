@@ -48,6 +48,14 @@ def physics(*, action="NO_ACTION", body=None):
     return (action, _json(b.as_dict()), _json(b.as_dict()))
 
 
+def passage_prefix(body=None):
+    """Synthetic fixture ONLY: start camp, admit adjacent move to passage."""
+    b = body or Body(85, 65, 60, 90)
+    return (event(("se_deplacer_vers_passage",),
+                  {"se_deplacer_vers_passage":5}),), (
+           physics(action="se_deplacer_vers_passage", body=b),)
+
+
 class PaidExplorationOpportunity982(unittest.TestCase):
     def classify(self, scores, offered, *, visited=frozenset({"camp", "passage"}),
                  site="passage", exploration=.3,
@@ -95,21 +103,22 @@ class PaidExplorationOpportunity982(unittest.TestCase):
     def test_read_only_paid_tag_correction_preserves_motors(self):
         moves=("se_deplacer_vers_camp","se_deplacer_vers_source")
         first=event((*moves,"manger"),{moves[0]:4,moves[1]:4,"manger":4})
+        ev, ph = passage_prefix()
         result=audit_paid_opportunities(
-            events=(first,),physical=(physics(),),traits=TRAITS,
+            events=ev+(first,),physical=ph+(physics(),),traits=TRAITS,
             exploration_enabled=True)
-        self.assertEqual(len(result),1)
-        self.assertEqual(result[0].reason,"NONMOVE_TIED_TOP")
-        self.assertEqual(result[0].chosen_action,"NO_ACTION")
+        self.assertEqual(len(result),2)
+        self.assertEqual(result[-1].reason,"NONMOVE_TIED_TOP")
+        self.assertEqual(result[-1].chosen_action,"NO_ACTION")
         scored=event(moves,{moves[0]:4,moves[1]:4},novelty=moves[1])
         second=audit_paid_opportunities(
-            events=(scored,),physical=(physics(),),traits=TRAITS,
+            events=ev+(scored,),physical=ph+(physics(),),traits=TRAITS,
             exploration_enabled=True)
-        self.assertEqual(second[0].reason,"ELIGIBLE")
-        self.assertEqual(second[0].top_value_before_novelty,4)
-        self.assertEqual(second[0].original_novelty_tagged,(moves[1],))
-        self.assertEqual(second[0].unseen_tied_top,(moves[1],))
-        self.assertEqual(second[0].chosen_action,"NO_ACTION")
+        self.assertEqual(second[-1].reason,"ELIGIBLE")
+        self.assertEqual(second[-1].top_value_before_novelty,4)
+        self.assertEqual(second[-1].original_novelty_tagged,(moves[1],))
+        self.assertEqual(second[-1].unseen_tied_top,(moves[1],))
+        self.assertEqual(second[-1].chosen_action,"NO_ACTION")
         self.assertEqual(
             summarize_source_opportunities(second)["source_novelty_eligible"],1)
         self.assertEqual(summarize_source_opportunities(second)["source_chosen"],0)
@@ -118,11 +127,12 @@ class PaidExplorationOpportunity982(unittest.TestCase):
         bad=Body(85,55,8,90)
         moves=("se_deplacer_vers_camp","se_deplacer_vers_source")
         scored=event(moves,{a:4 for a in moves})
+        ev, ph = passage_prefix(bad)
         rows=audit_paid_opportunities(
-            events=(scored,),physical=(physics(body=bad),),
+            events=ev+(scored,),physical=ph+(physics(body=bad),),
             traits=TRAITS,exploration_enabled=True)
-        self.assertEqual(rows[0].reflex_state,"CONSTRAIN")
-        self.assertEqual(rows[0].reason,"URGENT_REFLEX")
+        self.assertEqual(rows[-1].reflex_state,"CONSTRAIN")
+        self.assertEqual(rows[-1].reason,"URGENT_REFLEX")
         self.assertFalse(hasattr(rows[0],"food_quality"))
         self.assertFalse(hasattr(rows[0],"hidden_site_stock"))
 
@@ -133,31 +143,25 @@ class PaidExplorationOpportunity982(unittest.TestCase):
         bad_tag=event((*moves,"dormir"),
                       {moves[0]:4,moves[1]:4,"dormir":4},
                       novelty=moves[1])
-        invalid=(
-            ((signed,), (physics(action="se_deplacer_vers_source"),)),
-            ((untagged,), (physics(),)),
-            ((bad_tag,), (physics(),)),
-            ((signed,), (physics(action="manger"),)),
-            ((signed,), (physics(action="se_deplacer_vers_camp"),)),
+        ev, ph = passage_prefix()
+        invalid = (
+            (ev+(untagged,), ph+(physics(),)),  # missing paid novelty tag
+            (ev+(bad_tag,), ph+(physics(),)),   # tag despite non-move tie
+            (ev+(signed,), ph+(physics(action="manger"),)), # not offered
+            (ev+(signed,), ph+(physics(action="se_deplacer_vers_passage"),)),
+            (ev+(signed,), ph+(physics(),physics())), # bad lengths
         )
-        # Camp has only passage adjacent; these passage move offers cannot
-        # be interpreted as an actual camp capture. Strict signature checks
-        # remain the sole owner's responsibility, not this pure fixture.
         for i,(events,rows) in enumerate(invalid):
-            with self.subTest(i=i):
-                if i in (0,3,4):
-                    # The native cold-audit layer is responsible for verifying
-                    # offered true semantics and physical adjacency. This
-                    # observer must never claim to replace that authority.
-                    continue
-                with self.assertRaises(ValueError):
-                    audit_paid_opportunities(events=events,physical=rows,
-                                             traits=TRAITS,
-                                             exploration_enabled=True)
+            with self.subTest(i=i),self.assertRaises(ValueError):
+                audit_paid_opportunities(
+                    events=events,physical=rows,traits=TRAITS,
+                    exploration_enabled=True)
+        remote=event(("se_deplacer_vers_source",),
+                     {"se_deplacer_vers_source":5})
         with self.assertRaises(ValueError):
             audit_paid_opportunities(
-                events=(untagged,untagged),
-                physical=(physics(),),traits=TRAITS,exploration_enabled=True)
+                events=(remote,),physical=(physics(),),traits=TRAITS,
+                exploration_enabled=True)
 
     def test_real_born_paid_independent_cold_audit_then_projection(self):
         with tempfile.TemporaryDirectory() as root:
