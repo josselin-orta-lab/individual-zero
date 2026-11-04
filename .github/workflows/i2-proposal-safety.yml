@@ -31,8 +31,11 @@ jobs:
     runs-on: ubuntu-latest
     # Two processes per runner schedule ALL discovered tests exactly once.
     # Preserve the full source-locked 3.11/3.12 suite and all gate checks.
-    # Retain the 20-minute guard until the first ordinary PR run is measured.
-    timeout-minutes: 20
+    # Source-locked #985 second full attempt: Python 3.11 PASS 812/812
+    # plus six boundaries and inert engine at ~27 min; Python 3.12
+    # shard 0 PASS 384/384 in 1126 s but shard 1 still running at 30m.
+    # Exhaustive guards and cohort stay unchanged; only the job timeout grows.
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:

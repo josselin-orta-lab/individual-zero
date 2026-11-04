@@ -51,7 +51,7 @@ PRIORS = {"boire": 1, "manger": 4, "dormir": 2, "attendre": 1, "collecter": 2, "
 HORIZON = 8
 MAX_BORN_STEPS = 128
 # Capture is a bounded projection, not a deletion of an individual's journal.
-GENESIS_SCHEMA = "i2-native-paid-local-life-v22-whole-body-place-tie"
+GENESIS_SCHEMA = "i2-native-paid-local-life-v23-need-failure-exploration"
 MAX_NATIVE_CAPTURE_REFS = 64
 
 
@@ -143,6 +143,7 @@ SLEEP_EVIDENCE = ":sleep-consolidated"
 PLACE_RETURN_EVIDENCE = ":personally-observed-reachable-place"
 WHOLE_BODY_PLACE_EVIDENCE = ":lived-whole-body-site-need-relevance"
 ORIGIN_NOVELTY_EVIDENCE = ":visited-versus-unvisited-adjacent-tie"
+NEED_FAILURE_EXPLORATION_EVIDENCE = ":personal-need-failure-adjacent-exploration"
 PURPOSE_HANDOFF_EVIDENCE = ":paid-purpose-carried-from-arrival"
 MOVEMENT_CREDIT_EVIDENCE = ":movement-result-not-generalized-across-sites"
 
@@ -344,6 +345,81 @@ def native_evidence_tie_exploration(
         return adjusted, frozenset()
     adjusted[unseen[0]] += 1
     return adjusted, frozenset(unseen)
+
+
+def personally_failed_need_channels(*, body, traits, previous):
+    """Two latest need-relevant committed attempts in a channel must fail."""
+    if type(body) is not Body or type(traits) is not BirthTemperament:
+        raise NativeRefusal("native body and immutable birth traits required")
+    current = assess_needs(body, traits).pressures
+    latest = {"food": [], "water": []}
+    for row in reversed(previous):
+        channel = CONSUMED_RESOURCE_NEED.get(row[2])
+        if channel not in latest or len(latest[channel]) >= NONRESTORING_ATTEMPTS:
+            continue
+        before = saved_body(row[4])
+        if assess_needs(before, traits).pressures[channel] <= 0:
+            continue
+        after = saved_body(row[5])
+        latest[channel].append(
+            getattr(after, channel) <= getattr(before, channel))
+        if all(len(v) >= NONRESTORING_ATTEMPTS for v in latest.values()):
+            break
+    return frozenset(k for k, v in latest.items()
+                     if current[k] > 0 and
+                     len(v) == NONRESTORING_ATTEMPTS and all(v))
+
+
+def need_failure_exploration_scores(
+    scores, *, offered, destinations, visited, body, traits, previous,
+    reflex_state, enabled, existing_novelty=frozenset(),
+):
+    """Research-only bounded paid score proposal, never a motor order."""
+    if (type(enabled) is not bool or type(body) is not Body or
+            type(traits) is not BirthTemperament or
+            type(existing_novelty) is not frozenset):
+        raise NativeRefusal("invalid exact native research inputs")
+    updated = dict(scores)
+    if (not enabled or traits.exploration <= 0 or existing_novelty or
+            reflex_state != "NO_PREEMPTION" or
+            not personally_failed_need_channels(
+                body=body, traits=traits, previous=previous)):
+        return updated, frozenset()
+    unseen = [a for a in offered if a in updated and a in destinations
+              and destinations[a] not in visited]
+    if len(unseen) != 1 or any(a not in updated for a in offered):
+        return updated, frozenset()
+    candidate = unseen[0]
+    top = max((updated[a] for a in offered), default=0)
+    current = updated[candidate]
+    if not (0 < top < 1024 and 0 < current <= top and top-current <= 4):
+        return updated, frozenset()
+    updated[candidate] = top+1
+    return updated, frozenset((candidate,))
+
+
+def personally_explored_after_failed_need(
+    scores, *, claim, body, traits, previous, enabled, existing_novelty,
+):
+    if type(enabled) is not bool:
+        raise NativeRefusal("exact born exploration flag required")
+    if not enabled:
+        return dict(scores), frozenset()
+    site, visited = BORN_SITE, {BORN_SITE}
+    for row in previous:
+        if destination(row[2]) is not None:
+            site = site_after(site, row[2])
+            visited.add(site)
+    destinations = {
+        a: d for a in claim.capture.accessible_semantics
+        if (d := destination(a)) is not None and d in GRAPH[site]
+    }
+    return need_failure_exploration_scores(
+        scores, offered=claim.capture.accessible_semantics,
+        destinations=destinations, visited=frozenset(visited),
+        body=body, traits=traits, previous=previous,
+        reflex_state=NativeCaptureReflex(claim, body, traits).state,
+        enabled=True, existing_novelty=existing_novelty)
 
 
 def origin_novelty_tie_scores(scores, *, offered, destinations, visited,
@@ -650,7 +726,8 @@ class _Valuation(ChosenOutcomeValuationStudy):
                  place_return_tie=False, purpose_followthrough=False,
                  contextual_movement_credit=False, spatial_world=False,
                  target_food_credit_enabled=True, origin_novelty_tie=False,
-                 whole_body_place_tie=False, prior_event=None, **kwargs):
+                 whole_body_place_tie=False, need_failure_exploration=False,
+                 prior_event=None, **kwargs):
         super().__init__(**kwargs)
         self.body, self.traits = body, traits
         self.previous, self.learning = tuple(previous), learning
@@ -662,6 +739,7 @@ class _Valuation(ChosenOutcomeValuationStudy):
         self.target_food_credit_enabled = target_food_credit_enabled
         self.origin_novelty_tie = origin_novelty_tie
         self.whole_body_place_tie = whole_body_place_tie
+        self.need_failure_exploration = need_failure_exploration
         self.spatial_world = spatial_world
         self.prior_event = prior_event
 
@@ -700,6 +778,10 @@ class _Valuation(ChosenOutcomeValuationStudy):
         updated, origin_novel = personally_observed_origin_novelty(
             updated, claim=self.claim, body=self.body, traits=self.traits,
             previous=self.previous, enabled=self.origin_novelty_tie)
+        updated, failed_need_exploratory = personally_explored_after_failed_need(
+            updated, claim=self.claim, body=self.body, traits=self.traits,
+            previous=self.previous, enabled=self.need_failure_exploration,
+            existing_novelty=origin_novel)
         return tuple(replace(
             v, value=updated[named[v.candidate_ref]],
             evidence_ref=v.evidence_ref +
@@ -715,6 +797,8 @@ class _Valuation(ChosenOutcomeValuationStudy):
              named[v.candidate_ref] in carried else "") +
             (ORIGIN_NOVELTY_EVIDENCE if
              named[v.candidate_ref] in origin_novel else "") +
+            (NEED_FAILURE_EXPLORATION_EVIDENCE if
+             named[v.candidate_ref] in failed_need_exploratory else "") +
             (MOVEMENT_CREDIT_EVIDENCE if
              named[v.candidate_ref] in isolated else "") +
             ":native-body" +
@@ -893,6 +977,7 @@ def genesis_digest(meta):
         meta["food_restock_every"],
         meta["target_food_credit_enabled"],
         meta["origin_novelty_tie"], meta["whole_body_place_tie"],
+        meta["need_failure_exploration"],
         meta.get("second_food_site"), meta["second_food_stock"],
         meta["second_food_restock_every"], meta["second_berry_food_gain"],
         meta["second_berry_integrity_delta"]]).encode("ascii")).hexdigest()
@@ -932,6 +1017,7 @@ class NativePaidI2:
                purpose_followthrough=False, contextual_movement_credit=False,
                ordinary_food_site=None, target_food_credit_enabled=True,
                origin_novelty_tie=False, whole_body_place_tie=False,
+               need_failure_exploration=False,
                second_food_site=None, second_food_stock=0,
                second_food_restock_every=0, second_berry_food_gain=0.0,
                second_berry_integrity_delta=0.0,
@@ -954,6 +1040,8 @@ class NativePaidI2:
                 type(target_food_credit_enabled) is not bool or
                 type(origin_novelty_tie) is not bool or
                 type(whole_body_place_tie) is not bool or
+                type(need_failure_exploration) is not bool or
+                (need_failure_exploration and (not learning or not spatial_world)) or
                 (whole_body_place_tie and
                  (not learning or not spatial_world or
                   not place_return_tie or purpose_followthrough)) or
@@ -1060,6 +1148,8 @@ class NativePaidI2:
                     CHECK(origin_novelty_tie IN (0,1)),
                 whole_body_place_tie INTEGER NOT NULL
                     CHECK(whole_body_place_tie IN (0,1)),
+                need_failure_exploration INTEGER NOT NULL
+                    CHECK(need_failure_exploration IN (0,1)),
                 second_food_site TEXT,
                 second_food_stock INTEGER NOT NULL
                     CHECK(second_food_stock BETWEEN 0 AND 8),
@@ -1096,12 +1186,13 @@ class NativePaidI2:
                         target_food_credit_enabled=int(target_food_credit_enabled),
                         origin_novelty_tie=int(origin_novelty_tie),
                         whole_body_place_tie=int(whole_body_place_tie),
+                        need_failure_exploration=int(need_failure_exploration),
                         second_food_site=second_food_site,
                         second_food_stock=second_food_stock,
                         second_food_restock_every=second_food_restock_every,
                         second_berry_food_gain=second_berry_food_gain,
                         second_berry_integrity_delta=second_berry_integrity_delta)
-            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                        (*meta.values(), genesis_digest(meta)))
             db.commit()
         obj.audit()
@@ -1412,6 +1503,11 @@ class NativePaidI2:
                 scores, origin_novel = personally_observed_origin_novelty(
                     scores, claim=claim, body=body, traits=traits,
                     previous=previous, enabled=bool(meta["origin_novelty_tie"]))
+                scores, failed_need_exploratory = personally_explored_after_failed_need(
+                    scores, claim=claim, body=body, traits=traits,
+                    previous=previous,
+                    enabled=bool(meta["need_failure_exploration"]),
+                    existing_novelty=origin_novel)
                 candidates = {item["candidate_ref"]: item["semantic_ref"]
                               for item in frame["candidates"]}
                 values = advice["values"]
@@ -1433,6 +1529,8 @@ class NativePaidI2:
                                  candidates[c] in carried else "") +
                                 (ORIGIN_NOVELTY_EVIDENCE if
                                  candidates[c] in origin_novel else "") +
+                                (NEED_FAILURE_EXPLORATION_EVIDENCE if
+                                 candidates[c] in failed_need_exploratory else "") +
                                 (MOVEMENT_CREDIT_EVIDENCE if
                                  candidates[c] in isolated else "") +
                                 ":native-body" +
@@ -1587,6 +1685,7 @@ class NativePaidI2:
             spatial_world=bool(meta["spatial_world"]),
             origin_novelty_tie=bool(meta["origin_novelty_tie"]),
             whole_body_place_tie=bool(meta["whole_body_place_tie"]),
+            need_failure_exploration=bool(meta["need_failure_exploration"]),
             prior_event=prior_cognitive_event)
         fixture = self._fixture(valuation)
         try:
