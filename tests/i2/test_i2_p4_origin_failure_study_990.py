@@ -1,4 +1,5 @@
 """#990 pure study-contract tests. Absolutely no real born-life cohort in CI."""
+from hashlib import sha256
 from pathlib import Path
 import sys
 import tempfile
@@ -10,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from tools.i2_p4_origin_failure_study_990 import (
     ARMS, MAX_STEPS, WORLD_HARMS, frozen_cells,
     frozen_birth_kwargs, first_matched_factor_divergence,
-    classify_protocol_exposure, run_study,
+    classify_protocol_exposure, run_study, verify_custody_receipt,
 )
 
 
@@ -269,6 +270,29 @@ class P4OriginFailure990Contract(unittest.TestCase):
                            "unknown_offered": [], "reason": "NO_FAILED_CURRENT_NEED"}]}
         with self.assertRaisesRegex(ValueError, "unaligned"):
             classify_protocol_exposure(trace, diag, factor_enabled=True)
+
+    def test_retained_archive_receipt_rejects_replacement(self):
+        with tempfile.TemporaryDirectory() as folder:
+            source = Path(folder) / "original.sqlite"
+            archive = Path(folder) / "archive.sqlite"
+            archive.write_bytes(b"original-archive")
+            end = dict(revision=3, max_steps=3, terminal=False,
+                       remaining_uc=50, site="camp", body={"food": 30})
+            receipt = dict(
+                source=str(source), archive=str(archive), cold_audit="PASS",
+                revision=3, max_steps=3, biological_terminal=False,
+                right_censored=True, remaining_uc=50, site="camp",
+                body=end["body"],
+                archive_sha256=sha256(archive.read_bytes()).hexdigest())
+            self.assertTrue(verify_custody_receipt(
+                source, archive, receipt, end))
+            archive.write_bytes(b"replaced-archive")
+            with self.assertRaisesRegex(ValueError, "digest"):
+                verify_custody_receipt(source, archive, receipt, end)
+            archive.write_bytes(b"original-archive")
+            with self.assertRaisesRegex(ValueError, "not bound"):
+                verify_custody_receipt(
+                    source, archive, dict(receipt, remaining_uc=49), end)
 
     def test_pre_failure_divergence_not_credited_to_lived_failure(self):
         common = [frame("attendre")]
