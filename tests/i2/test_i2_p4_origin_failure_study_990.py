@@ -139,6 +139,36 @@ class P4OriginFailure990Contract(unittest.TestCase):
                          "DIVERGENCE_AFTER_MATCHED_FAILURE_NO_FACTOR_CREDIT")
         self.assertFalse(result["factor_tagged_at_divergence"])
 
+    def test_passage_failures_do_not_count_as_origin_exposure(self):
+        common = [frame("manger", site="passage"),
+                  frame("manger", site="passage")]
+        off = common + [frame("attendre", site="passage")]
+        on = common + [frame("se_deplacer_vers_camp",
+                             site="passage", factor_tagged=True,
+                             chosen_motor_credited=True)]
+        result = first_matched_factor_divergence(
+            off, on, diagnose(2), diagnose(2))
+        self.assertEqual(
+            result["classification"],
+            "DIVERGENCE_WITHOUT_TWO_FAILED_ORIGIN_MEALS")
+        self.assertTrue(result["same_prehistory"])
+
+    def test_prior_different_local_offers_block_matched_history(self):
+        normal = ["attendre", "manger", "se_deplacer_vers_passage"]
+        hidden = ["attendre", "manger"]
+        off = [frame("manger", offers=normal),
+               frame("manger", offers=normal),
+               frame("attendre")]
+        on = [frame("manger", offers=hidden),
+              frame("manger", offers=normal),
+              frame("se_deplacer_vers_passage",
+                    factor_tagged=True, chosen_motor_credited=True)]
+        result = first_matched_factor_divergence(
+            off, on, diagnose(2), diagnose(2))
+        self.assertEqual(result["classification"],
+                         "DIVERGENCE_WITH_UNMATCHED_HISTORY")
+        self.assertFalse(result["same_prehistory"])
+
     def test_pre_failure_divergence_not_credited_to_lived_failure(self):
         common = [frame("attendre")]
         result = first_matched_factor_divergence(
