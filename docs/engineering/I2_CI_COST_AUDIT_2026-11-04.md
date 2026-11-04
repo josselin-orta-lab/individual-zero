@@ -15,17 +15,29 @@ The slowest complete test modules in the Python 3.12 log were: recurrent-need re
 
 ## Controlled change
 
-The Python 3.11/3.12 matrix and checkout at the exact PR HEAD are unchanged. The same full unittest discovery is retained through tools/i2_ci_shards.py and split into exactly two concurrent processes per existing runner, not two additional jobs. All discovered test IDs must be unique; the partition is exhaustive and disjoint by module, preserving test order within each module and separate in-memory test state.
+The Python 3.11/3.12 matrix and checkout at the exact PR HEAD are unchanged. The same full unittest discovery is retained through tools/i2_ci_shards.py and split into exactly two concurrent processes per existing runner, not two additional jobs. The original discovery contains some repeated unittest IDs. Every **occurrence**, not just every name, is preserved using its index in full discovery; an exhaustive and disjoint partition by module retains the original order within each module and uses separate in-memory worker processes. A worker must rediscover the same complete, ordered ID sequence.
 
 Historical timings are scheduling hints only, NEVER coverage filters. New modules are included automatically. Discovery errors, altered worker membership, test errors, failures, missing cases and skips fail the job. The parent checks the total executed count against full discovery. Compilation, the six repository-boundary tests, independent proposal assessment, source pinning and the 20-minute job timeout remain unchanged.
 
-A local synthetic miniature suite verified successful exhaustive execution, stable partitioning and propagation of intentional test failure. It is NOT an I2 scientific-suite benchmark.
+An initial automatic run on PR #958 failed fast because the first scheduler rejected repeated unittest IDs. The corrected scheduler preserves each occurrence by position; planner regressions and the full two-version matrix passed on the exact following source. The first failure was a CI-orchestration failure, not a scientific-test failure.
 
-## Measurement and rollback
+## Observed after-time (not the theoretical 522-second target)
 
-Do not trigger additional scientific campaigns or rerun GitHub Actions to benchmark this change. Observe only the normal PR run carrying this change. Record the exact PR source SHA, discovered/executed test counts, version-specific job durations and any contention or failures. Compare I2 suite wall times for both Python versions and sum of runner wall times, distinct from concurrent elapsed wall time.
+The normal PR #958 run [41804656481](https://github.com/josselin-orta-lab/individual-zero/actions/runs/41804656481) validated exact source `364eb301d0ac0cc0a0f9f4edf98d17a5b3aa7f5c`, with both Python jobs PASS. The old runner used serial full discovery and the new runner used full discovery distributed over two processes. Measured elapsed time is from the test step's "Run python" log marker to "I2_CI_FULL_SUITE=PASS"; it is **not** total CPU time.
 
-Historical module times imply a theoretical 2-way balance of roughly 522 seconds per process on Python 3.12 BEFORE contention and process overhead. This is a hypothesis, NOT a measured after-time or a guaranteed saving. If the ordinary run reveals process-interference, revert the scheduling change; keep the complete serial suite. Do not interpret an engineering speedup as scientific evidence.
+| Python | Before I2 suite | After I2 suite | Reduction in elapsed suite time | Cases before / after |
+| --- | ---: | ---: | ---: | ---: |
+| 3.11 | 998.211 s | 314.578 s | 68.5% | 755 / 761 |
+| 3.12 | 1042.675 s | 481.813 s | 53.8% | 755 / 761 |
+| Sum of two runner suite windows | 2040.886 s | 796.391 s | 61.0% | 1510 / 1522 |
+
+The 3.11 shards ran 391 tests in 300.541 s and 370 tests in 311.378 s. The 3.12 shards ran 391 tests in 463.419 s and 370 in 480.298 s. Each version independently reported **761 discovered, 761 executed, zero errors, failures or skips**, plus all six generation-boundary tests and the inert activation guard PASS. Counts grew because new tests were added; nothing was suppressed. The reduction is in GitHub runner elapsed time, **not** a demonstrated 61% reduction in executed CPU work.
+
+### Final exact-source integration and rollback
+
+After this first passing run, `main` advanced by merging PR #956, adding `tests/i2/test_native_paid_food_harm_divergence_955.py`. Before merging #958, the PR branch must include that test and pass both Python versions at its **new exact merged head**. This single documentation update is bundled with that source synchronization, not committed independently to create a redundant heavy run. Record the final SHA and the standard CI results in PR #958; do not run additional Actions solely to benchmark.
+
+Never shorten simulated lives, discard cold audits, remove repeat test occurrences, or claim new scientific evidence from a scheduling change. If the new exact-head run exposes process interference, revert the sharding and preserve the complete serial suite.
 
 Primary evidence:
 - https://github.com/josselin-orta-lab/individual-zero/actions/runs/41740611291
