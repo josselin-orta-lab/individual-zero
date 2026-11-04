@@ -44,6 +44,27 @@ class NativePaidCycleTests(unittest.TestCase):
         self.assertNotIn("evidence:i2:native:outcome:1", events[0])
         self.assertIn("evidence:i2:native:outcome:1", events[1])
 
+    def test_native_cold_audit_replays_cognition_once(self):
+        # A native audit still performs a FULL verified cognitive replay,
+        # but may not perform a second redundant reopen().audit() pass.
+        from unittest.mock import patch
+        from i2.modules.cognitive_cycle_fixture import CognitiveCycleFixture
+
+        actor = self.birth()
+        paid = actor.step()
+        original = CognitiveCycleFixture.audit
+        verified_life_refs = []
+
+        def audited(fixture):
+            verified_life_refs.append(fixture.life_ref)
+            return original(fixture)
+
+        with patch.object(CognitiveCycleFixture, "audit", audited):
+            self.assertEqual(actor.audit(), paid)
+        self.assertEqual(verified_life_refs, [actor.life_ref])
+        # Preserve the independent, inspection-only cold path and its verdict.
+        self.assertEqual(NativePaidI2.inspect(self.path).audit(), paid)
+
     def test_before_commit_rollback_and_uncertain_commit_halts(self):
         from i2.modules.cognitive_cycle_fixture import (
             FaultInjected, CommitAcknowledgmentLost)

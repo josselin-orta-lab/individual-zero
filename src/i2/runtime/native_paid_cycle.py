@@ -1013,7 +1013,16 @@ class NativePaidI2:
             capacity, remaining = db.execute(
                 "SELECT capacity,remaining_uc FROM identity JOIN account ON "
                 "identity.id=account.id WHERE identity.id=1").fetchone()
-        cognition = self._fixture(_NoEvaluation()).audit()
+        # The full cognitive cold replay is mandatory. The ordinary fixture
+        # reopen() already calls audit(), so reopen().audit() would replay the
+        # same journal twice here. Construct the same inert fixture and run
+        # exactly one complete audit; action-path reopen() remains unchanged.
+        cognition = CognitiveCycleFixture(
+            path=self.path, life_ref=self.life_ref,
+            observation_source=self.observation,
+            valuation_source=_NoEvaluation(), current_source=self.current,
+            safety_source=self.safety, genesis_ref=self.genesis_ref,
+            terminal_source=_Terminal()).audit()
         if (len(recorded) != len(effects) or
                 len(effects) > meta["max_steps"] or
                 physical["revision"] != len(effects) or

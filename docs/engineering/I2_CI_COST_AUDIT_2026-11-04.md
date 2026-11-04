@@ -39,6 +39,36 @@ After this first passing run, `main` advanced by merging PR #956, adding `tests/
 
 Never shorten simulated lives, discard cold audits, remove repeat test occurrences, or claim new scientific evidence from a scheduling change. If the new exact-head run exposes process interference, revert the sharding and preserve the complete serial suite.
 
+## Follow-up: eliminate duplicate full cognitive replay inside native audits
+
+Static call-chain review on 4 November 2026 found one concrete redundant
+operation in `NativePaidI2.audit()`: the old `self._fixture(_NoEvaluation()).audit()`
+called `CognitiveCycleFixture.reopen()`, which itself performs a complete
+`audit()`, then immediately performed the same complete `audit()` again.
+This duplicated the cognitive hash-chain, paid UC, intention, Competition,
+Action Control and feedback replay on every native cold audit. The native
+step already calls the native audit before and after each committed tick.
+
+The targeted change constructs the **same** synthetic cognition fixture with
+the inert `_NoEvaluation` port and calls its full `audit()` exactly once.
+The normal `_fixture()` path still uses the fully checked `reopen()` for the
+paid action, and the `_process()` transaction still independently validates
+the complete cognitive chain before commit. The native physical hash-chain
+audit, immutable-genesis physics replay, independent cold inspection and
+all test assertions are unchanged. No caching of prior journal content,
+rollback bypass, alternate action authority, changed birth or shorter life.
+
+A focused regression test instruments `CognitiveCycleFixture.audit()` after
+a paid native tick: it must be called once per native audit and return exactly
+the same result as the independent inspection-only cold path. Existing
+forgery/rollback tests remain mandatory on Python 3.11 and 3.12.
+
+**Performance status:** duplicate full-pass removal established by source
+inspection; no before/after runtime claim until the next ordinary exact-head
+PR checks. Do not dispatch a new scientific cohort or redundant GitHub Actions
+runs solely to measure it. Compare with prior I2 proposal CI cautiously:
+the test inventory, runner load, and shard scheduling can differ.
+
 Primary evidence:
 - https://github.com/josselin-orta-lab/individual-zero/actions/runs/41740611291
 - https://github.com/josselin-orta-lab/individual-zero/issues/946
