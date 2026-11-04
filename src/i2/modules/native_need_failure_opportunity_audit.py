@@ -220,10 +220,13 @@ def summarize_need_failure_opportunities(rows):
         "unique_unseen_and_double_failure_ticks": sum(
             len(x.unknown_offered) == 1 and bool(x.failed_channels)
             for x in rows),
+        # A tagged final score cannot reveal its preboost magnitude/gap.
+        # Count reconstructed eligible (uncredited) scores separately from
+        # observed activations; never silently combine them into one proof.
         "positive_bounded_score_opportunity_ticks": sum(
-            x.reason in ("ELIGIBLE_BUT_NOT_CREDITED",
-                         "UNOBSERVABLE_PREBOOST_SCORE")
-            for x in rows),
+            x.reason == "ELIGIBLE_BUT_NOT_CREDITED" for x in rows),
+        "tagged_preboost_unobservable_ticks": sum(
+            x.reason == "UNOBSERVABLE_PREBOOST_SCORE" for x in rows),
         "eligible_but_not_credited_on_ticks": sum(
             x.reason == "ELIGIBLE_BUT_NOT_CREDITED" and x.factor_enabled
             for x in rows),
