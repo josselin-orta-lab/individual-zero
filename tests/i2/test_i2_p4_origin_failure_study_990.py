@@ -15,7 +15,7 @@ from tools.i2_p4_origin_failure_study_990 import (
 
 
 def frame(action, *, before=None, after=None, site="camp", offers=None,
-          factor_tagged=False):
+          factor_tagged=False, chosen_motor_credited=False):
     body = before or {"energy": 78.0, "food": 46.0,
                       "water": 44.0, "integrity": 94.0}
     return {
@@ -23,6 +23,7 @@ def frame(action, *, before=None, after=None, site="camp", offers=None,
         "site_before": site, "site_after": site,
         "offered": offers or ["attendre", "se_deplacer_vers_passage"],
         "factor_tagged": factor_tagged,
+        "factor_credited_chosen_motor": chosen_motor_credited,
     }
 
 
@@ -103,14 +104,30 @@ class P4OriginFailure990Contract(unittest.TestCase):
         common = [frame("manger"), frame("manger")]
         off = common + [frame("attendre")]
         on = common + [frame("se_deplacer_vers_passage",
-                             factor_tagged=True)]
+                             factor_tagged=True, chosen_motor_credited=True)]
         result = first_matched_factor_divergence(
             off, on, diagnose(2), diagnose(2))
         self.assertEqual(result["classification"],
                          "DIVERGENCE_AFTER_MATCHED_FAILURE_WITH_FACTOR_CREDIT")
         self.assertTrue(result["factor_tagged_at_divergence"])
+        self.assertTrue(result["chosen_motor_factor_credited"])
         self.assertEqual(result["first_motor_divergence_tick"], 3)
         self.assertTrue(result["same_prehistory"])
+
+    def test_factor_on_unchosen_candidate_is_not_chosen_motor_credit(self):
+        common = [frame("manger"), frame("manger")]
+        off = common + [frame("attendre")]
+        on = common + [frame("se_deplacer_vers_passage",
+                             factor_tagged=True,
+                             chosen_motor_credited=False)]
+        result = first_matched_factor_divergence(
+            off, on, diagnose(2), diagnose(2))
+        self.assertEqual(
+            result["classification"],
+            "DIVERGENCE_AFTER_MATCHED_FAILURE_NO_FACTOR_CREDIT",
+        )
+        self.assertTrue(result["factor_tagged_at_divergence"])
+        self.assertFalse(result["chosen_motor_factor_credited"])
 
     def test_matched_postfailure_divergence_without_tag_not_credited(self):
         common = [frame("manger"), frame("manger")]
