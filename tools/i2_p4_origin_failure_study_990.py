@@ -175,12 +175,19 @@ def first_matched_factor_divergence(control_trace, factor_trace,
               "food" not in control_diag["ticks"][i]["failed_channels"] or
               "food" not in factor_diag["ticks"][i]["failed_channels"]):
             verdict = "DIVERGENCE_BEFORE_PERSONAL_DOUBLE_FAILURE"
+        elif b.get("factor_tagged") is True:
+            # A logged factor credit + a paid motor divergence is a narrow
+            # association; never infer success, safety or general learning.
+            verdict = "DIVERGENCE_AFTER_MATCHED_FAILURE_WITH_FACTOR_CREDIT"
         else:
-            verdict = "DIVERGENCE_AFTER_MATCHED_FOOD_FAILURE"
+            # Divergence alone cannot be attributed to v23 without its
+            # observed provenance on this same paid decision frame.
+            verdict = "DIVERGENCE_AFTER_MATCHED_FAILURE_NO_FACTOR_CREDIT"
         return {
             "classification": verdict, "first_motor_divergence_tick": i + 1,
             "control_action": a["action"], "factor_action": b["action"],
             "same_prehistory": current_matched,
+            "factor_tagged_at_divergence": b.get("factor_tagged") is True,
         }
     if len(control_trace) != len(factor_trace):
         return {"classification": "DIFFERENT_OBSERVED_LIFE_LENGTHS",
