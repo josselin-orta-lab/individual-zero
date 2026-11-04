@@ -145,6 +145,19 @@ class P4OriginFailure990Contract(unittest.TestCase):
                          "DIVERGENCE_WITH_UNMATCHED_HISTORY")
         self.assertFalse(result["same_prehistory"])
 
+    def test_identical_motors_different_body_are_not_matched_lives(self):
+        a = [frame("attendre")]
+        b = [frame("attendre", after={
+            "energy": 77.0, "food": 46.0, "water": 44.0,
+            "integrity": 94.0,
+        })]
+        result = first_matched_factor_divergence(a, b, diagnose(), diagnose())
+        self.assertEqual(
+            result["classification"],
+            "NO_MOTOR_DIVERGENCE_BUT_PHYSICS_UNMATCHED",
+        )
+        self.assertFalse(result["same_prehistory"])
+
     def test_different_lengths_are_not_a_matching_effect(self):
         result = first_matched_factor_divergence(
             [frame("manger")], [frame("manger"), frame("attendre")],
