@@ -138,6 +138,13 @@ def signed_trace(path):
             "tick": tick, "site_before": site_before, "site_after": site,
             "action": action, "offered": offers, "before": before,
             "after": after, "terminal": bool(terminal),
+            # Born life_ref differs by design; this comparison retains only
+            # first-person context, not the identity or score outcomes.
+            "subjective_context": {
+                "goal": event["claim"]["capture"]["goal_ref"],
+                "evidence": event["claim"]["subjective_evidence_refs"],
+                "contradicted": event["claim"]["capture"]["contradicted_semantics"],
+            },
             "admission_ref": admission,
             "food_meal": action == "manger",
             "need_relevant_food_failure": bool(
@@ -182,14 +189,15 @@ def first_matched_factor_divergence(control_trace, factor_trace,
         prior_a, prior_b = control_trace[:i], factor_trace[:i]
         past_matched = all(
             (x["action"], x["before"], x["after"], x["site_before"],
-             x["site_after"], x["offered"]) ==
+             x["site_after"], x["offered"], x["subjective_context"]) ==
             (y["action"], y["before"], y["after"], y["site_before"],
-             y["site_after"], y["offered"])
+             y["site_after"], y["offered"], y["subjective_context"])
             for x, y in zip(prior_a, prior_b))
         current_matched = (
             past_matched and a["before"] == b["before"] and
             a["site_before"] == b["site_before"] and
-            a["offered"] == b["offered"])
+            a["offered"] == b["offered"] and
+            a["subjective_context"] == b["subjective_context"])
         if a["action"] == b["action"]:
             continue
         if not current_matched:
@@ -227,9 +235,9 @@ def first_matched_factor_divergence(control_trace, factor_trace,
                 "same_prehistory": False}
     if any(
         (a["before"], a["after"], a["site_before"], a["site_after"],
-         a["offered"]) !=
+         a["offered"], a["subjective_context"]) !=
         (b["before"], b["after"], b["site_before"], b["site_after"],
-         b["offered"])
+         b["offered"], b["subjective_context"])
         for a, b in zip(control_trace, factor_trace)
     ):
         # Identical motors alone do not establish matched physical lives.
