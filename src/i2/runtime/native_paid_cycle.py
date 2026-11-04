@@ -51,7 +51,7 @@ PRIORS = {"boire": 1, "manger": 4, "dormir": 2, "attendre": 1, "collecter": 2, "
 HORIZON = 8
 MAX_BORN_STEPS = 128
 # Capture is a bounded projection, not a deletion of an individual's journal.
-GENESIS_SCHEMA = "i2-native-paid-local-life-v20-origin-novelty-tie"
+GENESIS_SCHEMA = "i2-native-paid-local-life-v21-dual-local-food"
 MAX_NATIVE_CAPTURE_REFS = 64
 
 
@@ -725,22 +725,69 @@ def old_water_accessible(meta, rows):
             replay_site(rows, enabled=True) == home)
 
 
+def locally_consumed_food(rows, site):
+    """Count admitted meals at their *actual* place before any subsequent move.
+
+    Only the single owner's existing physical-event order provides position;
+    this is neither a new stock owner nor a subjective counterfactual.
+    """
+    here = BORN_SITE
+    consumed = 0
+    for row in rows:
+        action = row[2]
+        if action == "manger" and here == site:
+            consumed += 1
+        if destination(action) is not None:
+            here = site_after(here, action)
+    return consumed
+
+
+def active_food_site(meta, rows):
+    if meta.get("second_food_site") is not None:
+        here = replay_site(rows, enabled=True)
+        if here == meta["ordinary_food_site"]:
+            return "primary"
+        if here == meta.get("second_food_site"):
+            return "secondary"
+        return None
+    return "primary"
+
+
+def food_effect_here(meta, rows):
+    """Physical effects at CURRENT site only; never exposed to cognition."""
+    if active_food_site(meta, rows) == "secondary":
+        return (meta["second_berry_food_gain"],
+                meta["second_berry_integrity_delta"])
+    return (meta["berry_food_gain"], meta["berry_integrity_delta"])
+
+
 def old_food_available(meta, rows):
     """Actual food units; exogenous clock is physical, never learned payoff."""
     # Pure legacy physical projection fixtures omit an optional refill period.
     # Persisted v17 genesis always includes its born-locked signed value.
-    interval = meta.get("food_restock_every", 0)
+    selected = active_food_site(meta, rows)
+    if selected is None:
+        return 0
+    secondary = selected == "secondary"
+    interval = meta["second_food_restock_every"] if secondary else meta.get("food_restock_every", 0)
     elapsed = len(rows)
     replenished = elapsed // interval if interval else 0
-    consumed = sum(row[2] == "manger" for row in rows)
-    return meta["food_stock"] + replenished - consumed
+    if meta.get("second_food_site") is not None:
+        site = (meta.get("second_food_site") if secondary else
+                meta["ordinary_food_site"])
+        consumed = locally_consumed_food(rows, site)
+    else:
+        consumed = sum(row[2] == "manger" for row in rows)
+    supply = meta["second_food_stock"] if secondary else meta["food_stock"]
+    return supply + replenished - consumed
 
 
 def old_food_accessible(meta, rows):
     """Physically stocked and locally offered food, never hidden payoff."""
     if old_food_available(meta, rows) <= 0:
         return False
-    home = meta["ordinary_food_site"]
+    home = (meta.get("second_food_site") if active_food_site(meta, rows) ==
+            "secondary" else meta["ordinary_food_site"])
     if home is None:
         return True
     return (bool(meta["spatial_world"]) and
@@ -762,7 +809,10 @@ def genesis_digest(meta):
         meta["ordinary_food_site"],
         meta["food_restock_every"],
         meta["target_food_credit_enabled"],
-        meta["origin_novelty_tie"]]).encode("ascii")).hexdigest()
+        meta["origin_novelty_tie"],
+        meta.get("second_food_site"), meta["second_food_stock"],
+        meta["second_food_restock_every"], meta["second_berry_food_gain"],
+        meta["second_berry_integrity_delta"]]).encode("ascii")).hexdigest()
 
 
 class NativePaidI2:
@@ -799,6 +849,9 @@ class NativePaidI2:
                purpose_followthrough=False, contextual_movement_credit=False,
                ordinary_food_site=None, target_food_credit_enabled=True,
                origin_novelty_tie=False,
+               second_food_site=None, second_food_stock=0,
+               second_food_restock_every=0, second_berry_food_gain=0.0,
+               second_berry_integrity_delta=0.0,
                max_steps=HORIZON, food_stock=4, water_stock=4,
                water_restock_every=0, food_restock_every=0,
                water_quality_change_at=0, water_quality_after_gain=0.0,
@@ -818,6 +871,19 @@ class NativePaidI2:
                 type(target_food_credit_enabled) is not bool or
                 type(origin_novelty_tie) is not bool or
                 (origin_novelty_tie and not spatial_world) or
+                (second_food_site is not None and
+                 (type(second_food_site) is not str or
+                  second_food_site not in GRAPH or
+                  second_food_site == ordinary_food_site or
+                  not spatial_world or ordinary_food_site is None)) or
+                type(second_food_stock) is not int or
+                not 0 <= second_food_stock <= 8 or
+                type(second_food_restock_every) is not int or
+                not 0 <= second_food_restock_every <= 32 or
+                (second_food_site is None and
+                 (second_food_stock != 0 or second_food_restock_every != 0 or
+                  second_berry_food_gain != 0 or
+                  second_berry_integrity_delta != 0)) or
                 (contextual_movement_credit and
                  (not spatial_world or not learning)) or
                 (purpose_followthrough and (not spatial_world or
@@ -849,11 +915,15 @@ class NativePaidI2:
         transition(body, "manger", berry_food_gain=berry_food_gain,
                    berry_integrity_delta=berry_integrity_delta)
         transition(body, "boire", drink_water_gain=drink_water_gain)
+        transition(body, "manger", berry_food_gain=second_berry_food_gain,
+                   berry_integrity_delta=second_berry_integrity_delta)
         # SQLite REAL columns restore integers as floating-point values.
         # Canonicalize physics inputs BEFORE hashing the immutable genesis,
         # so valid 0 and 0.0 are the same born world (but tampering still fails).
         berry_food_gain = float(berry_food_gain)
         berry_integrity_delta = float(berry_integrity_delta)
+        second_berry_food_gain = float(second_berry_food_gain)
+        second_berry_integrity_delta = float(second_berry_integrity_delta)
         drink_water_gain = float(drink_water_gain)
         discovered_water_gain = float(discovered_water_gain)
         water_quality_after_gain = float(water_quality_after_gain)
@@ -901,6 +971,13 @@ class NativePaidI2:
                     CHECK(target_food_credit_enabled IN (0,1)),
                 origin_novelty_tie INTEGER NOT NULL
                     CHECK(origin_novelty_tie IN (0,1)),
+                second_food_site TEXT,
+                second_food_stock INTEGER NOT NULL
+                    CHECK(second_food_stock BETWEEN 0 AND 8),
+                second_food_restock_every INTEGER NOT NULL
+                    CHECK(second_food_restock_every BETWEEN 0 AND 32),
+                second_berry_food_gain REAL NOT NULL,
+                second_berry_integrity_delta REAL NOT NULL,
                 digest TEXT NOT NULL)""")
             db.execute("""CREATE TABLE native_discoveries (
                 seq INTEGER PRIMARY KEY,
@@ -928,8 +1005,13 @@ class NativePaidI2:
                         ordinary_food_site=ordinary_food_site,
                         food_restock_every=food_restock_every,
                         target_food_credit_enabled=int(target_food_credit_enabled),
-                        origin_novelty_tie=int(origin_novelty_tie))
-            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                        origin_novelty_tie=int(origin_novelty_tie),
+                        second_food_site=second_food_site,
+                        second_food_stock=second_food_stock,
+                        second_food_restock_every=second_food_restock_every,
+                        second_berry_food_gain=second_berry_food_gain,
+                        second_berry_integrity_delta=second_berry_integrity_delta)
+            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                        (*meta.values(), genesis_digest(meta)))
             db.commit()
         obj.audit()
@@ -1091,8 +1173,8 @@ class NativePaidI2:
         elif action == "boire_decouverte":
             effect["drink_water_gain"] = meta["discovered_water_gain"]
         elif action == "manger":
-            effect["berry_food_gain"] = meta["berry_food_gain"]
-            effect["berry_integrity_delta"] = meta["berry_integrity_delta"]
+            effect["berry_food_gain"], effect["berry_integrity_delta"] = (
+                food_effect_here(meta, rows))
         result = commit_admitted_physics(
             conn, action=action, admission_ref=admission,
             cognition_hash=event_head, **effect)
@@ -1305,8 +1387,8 @@ class NativePaidI2:
                 elif action == "boire_decouverte":
                     changes["drink_water_gain"] = meta["discovered_water_gain"]
                 elif action == "manger":
-                    changes["berry_food_gain"] = meta["berry_food_gain"]
-                    changes["berry_integrity_delta"] = meta["berry_integrity_delta"]
+                    changes["berry_food_gain"], changes["berry_integrity_delta"] = (
+                        food_effect_here(meta, previous))
                 outcome = admitted_consequence(
                     before=body, temperament=traits,
                     action=("boire" if action == "boire_decouverte" else
