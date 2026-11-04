@@ -122,6 +122,20 @@ class PaidExplorationOpportunity982(unittest.TestCase):
         self.assertEqual(
             summarize_source_opportunities(second)["source_novelty_eligible"],1)
         self.assertEqual(summarize_source_opportunities(second)["source_chosen"],0)
+        end = audit_paid_opportunities(
+            events=ev+(scored,), physical=ph+(
+                physics(action="se_deplacer_vers_source"),),
+            traits=TRAITS, exploration_enabled=True)
+        final_summary = summarize_source_opportunities(end)
+        self.assertEqual(final_summary["source_chosen"], 1)
+        # A last-tick arrival is a REAL visit, even without a later capture.
+        self.assertTrue(final_summary["source_visited"])
+        self.assertEqual(final_summary["source_food_consumed"], 0)
+        self.assertEqual(
+            summarize_source_opportunities(result)["source_tied_with_nonmovement"],
+            1)
+        self.assertEqual(
+            summarize_source_opportunities(result)["top_manger_at_passage"], 1)
 
     def test_no_hidden_effects_and_urgent_reflex(self):
         bad=Body(85,55,8,90)

@@ -223,12 +223,25 @@ def summarize_source_opportunities(rows, *, source="source"):
         "source_offered": sum(toward in r.offered for r in at_passage),
         "source_highest_pre_novelty": sum(
             toward in r.tied_top for r in at_passage),
+        "source_offered_below_top": sum(
+            toward in r.offered and toward not in r.tied_top
+            for r in at_passage),
+        "source_tied_with_nonmovement": sum(
+            toward in r.tied_top and bool(r.nonmovement_tied_top)
+            for r in at_passage),
+        "top_manger_at_passage": sum(
+            "manger" in r.tied_top for r in at_passage),
+        "top_dormir_at_passage": sum(
+            "dormir" in r.tied_top for r in at_passage),
+        "top_boire_at_passage": sum(
+            "boire" in r.tied_top for r in at_passage),
         "source_novelty_eligible": sum(
             r.reason == "ELIGIBLE" and toward in r.unseen_tied_top
             for r in at_passage),
         "source_chosen": sum(r.chosen_action == toward for r in rows),
-        "source_visited": any(source in r.visited or
-                              r.site == source for r in rows),
+        "source_visited": any(
+            source in r.visited or r.site == source or
+            r.chosen_action == toward for r in rows),
         "source_food_offered": sum(
             r.site == source and "manger" in r.offered for r in rows),
         "source_food_consumed": sum(
