@@ -62,7 +62,7 @@ The repository contains distinct architectural generations. They are research ge
 | --- | --- |
 | **I0** | Preserved historical reference. |
 | **I1** | Currently registered active research engine, with its own runtime, laboratory, and evidence records. |
-| **I2** | Independent experimental proposal and non-living prototypes; not registered as an active or born engine. |
+| **I2** | Unregistered research proposal with an internally executable, locally born native SQLite prototype (paid body, spatial experience and audits); **not** an activated engine or independently witnessed M11 life. |
 
 The current implementation investigates embodied perception, internal regulation, memory, action, and continuity. It does **not** establish that a unified artificial individual has achieved generalized autonomous learning.
 

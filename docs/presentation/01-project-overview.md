@@ -6,11 +6,11 @@ Can an artificial individual in a simplified body and world learn useful behavio
 
 Individual Zero is an open research project in artificial intelligence, cognitive architectures, embodied agents, and autonomous learning. Human-inspired mechanisms are hypotheses to test, not prevalidated answers. The aim is measurable, inspectable, reproducible research rather than a claim of AGI or consciousness.
 
-## Architectural generations (31 October 2026)
+## Architectural generations (verified 4 November 2026)
 
 - **I0:** frozen historical reference.
 - **I1:** active generation with its own cognitive modules, Lab, runtime, memory, first-person observation boundaries, tests, and M11 persistence.
-- **I2:** proposed independent successor under architectural and scientific review. Any present fixtures are non-living research artifacts; I2 is not registered, born, or promoted.
+- **I2:** proposed independent successor with an **internally executable local SQLite research prototype**, paid actions, body, sites, lived evidence and cold replay alongside synthetic fixtures. Experimental identities can be born locally, but I2 is **not registered or activated as an engine**, independently witnessed by M11 or scientifically promoted.
 
 The active registry is [config/engine-registry.json](../../config/engine-registry.json). The [generation autonomy decision](../decisions/ADR-0001-strict-generation-autonomy.md) prohibits carrying over obsolete runtime engines, mutable living state, memories, or fallback modes into a successor.
 

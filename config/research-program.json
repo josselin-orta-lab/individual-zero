@@ -37,7 +37,7 @@
       "path": "src/i2/docs/STATUS.md",
       "marker": "PROPOSAL_ONLY / NOT_REGISTERED / NOT_EXECUTABLE / NOT_BORN",
       "authority": "status",
-      "blob_sha": "b9052d1fb88d871a4d9cc8269d7683eca4f63295"
+      "blob_sha": "23d6e907176bad93dcb29f45c080edb34fb6a9e0"
     },
     {
       "id": "g0",
@@ -51,28 +51,28 @@
       "path": "src/i2/docs/STATUS.md",
       "marker": "EXTERNAL_REVIEW_GATE_RETIRED",
       "authority": "status",
-      "blob_sha": "b9052d1fb88d871a4d9cc8269d7683eca4f63295"
+      "blob_sha": "23d6e907176bad93dcb29f45c080edb34fb6a9e0"
     },
     {
       "id": "g2",
       "path": "src/i2/docs/STATUS.md",
       "marker": "Independent **synthetic** research fixtures",
       "authority": "status",
-      "blob_sha": "b9052d1fb88d871a4d9cc8269d7683eca4f63295"
+      "blob_sha": "23d6e907176bad93dcb29f45c080edb34fb6a9e0"
     },
     {
       "id": "g3",
       "path": "src/i2/docs/STATUS.md",
       "marker": "no independently authenticated living M11",
       "authority": "status",
-      "blob_sha": "b9052d1fb88d871a4d9cc8269d7683eca4f63295"
+      "blob_sha": "23d6e907176bad93dcb29f45c080edb34fb6a9e0"
     },
     {
       "id": "g4",
       "path": "src/i2/docs/STATUS.md",
       "marker": "no I2 confirmatory study",
       "authority": "status",
-      "blob_sha": "b9052d1fb88d871a4d9cc8269d7683eca4f63295"
+      "blob_sha": "23d6e907176bad93dcb29f45c080edb34fb6a9e0"
     },
     {
       "id": "h1",
