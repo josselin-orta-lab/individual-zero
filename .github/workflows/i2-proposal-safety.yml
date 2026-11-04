@@ -31,11 +31,11 @@ jobs:
     runs-on: ubuntu-latest
     # Two processes per runner schedule ALL discovered tests exactly once.
     # Preserve the full source-locked 3.11/3.12 suite and all gate checks.
-    # Measured on #985 exact-head: 812 tests/interpreter, 384 passed in
-    # 1042 s on Python 3.11; 20 min cancelled the other worker. Allow
-    # full exhaustive disjoint replay before a scientific/merge verdict.
-    # This changes CI time budget only, not the frozen v23 cohort or scores.
-    timeout-minutes: 30
+    # Source-locked #985 second full attempt: Python 3.11 PASS 812/812
+    # plus six boundaries and inert engine at ~27 min; Python 3.12
+    # shard 0 PASS 384/384 in 1126 s but shard 1 still running at 30m.
+    # Exhaustive guards and cohort stay unchanged; only the job timeout grows.
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
