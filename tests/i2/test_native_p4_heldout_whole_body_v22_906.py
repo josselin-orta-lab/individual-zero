@@ -61,7 +61,6 @@ class P4HeldoutWholeBodyPlace906(unittest.TestCase):
                         place_return_tie=True,
                         evidence_tie_exploration=False,
                         sleep_consolidation=False,
-                        place_return_tie=False,
                         purpose_followthrough=False,
                         spatial_world=True, ordinary_water_site="camp",
                         water_stock=2, water_restock_every=10,
