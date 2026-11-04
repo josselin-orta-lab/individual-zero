@@ -1,0 +1,19 @@
+# I2 P4: matched contextual movement credit isolation after actual food exposure
+
+**Source-preregistered before code** in [#906 comment](https://github.com/josselin-orta-lab/individual-zero/issues/906#issuecomment-6631420559), on merged main baseline `695c987ceb2aa8f888caf846c254b29016e8414e`. New discovery-only four-life cohort. Do not rewrite #972 trajectories, tune this cohort or conflate technical consistency with natural learning.
+
+## Why a new ablation?
+
+The source-locked [#972](https://github.com/josselin-orta-lab/individual-zero/pull/972) study demonstrated genuine bodily food exposure in all four arms, with learning ON/OFF first motor divergence on tick 17, after first actual meal at tick 16. The learning-ON `se_deplacer_vers_passage` had value 6 in both harmless and harmful worlds; the learning-OFF runner had positive `manger`/`se_deplacer_vers_passage` tie at 4 and no action. The chosen movement score did **not** carry target-food evidence; a context-free G2 chosen-movement result may account for the decision. Learning ON repeatedly ate damaging/near-zero-yield food later and did not demonstrate hazard-sensitive reappraisal. We must not claim the first difference arose from food learning.
+
+## Immutable four-cell intervention
+
+Use unchanged native v20 `NativePaidI2` source; **no new mechanism**. Independently born learning ON individuals in harmless `berry_integrity_delta=0` and harmful `berry_integrity_delta=-12` worlds. In each world vary only existing born-hashed `contextual_movement_credit=False/True`; True removes cross-origin generalization of the most recently chosen movement score and uses its innate prior before current-body/exploration adjustments. Common immutable laws: Body(85,35,35,100); BirthTemperament(0,.5,.3,0,0); real 3-site graph camp-passage-source; food at source, water at camp; stock 1 food/2 water, restock every 8 committed steps; +35 actual food, +40 actual water, 950 UC and up to 96 committed steps. All have `origin_novelty_tie=True`, `learning=True`, `target_food_credit_enabled=True`; place-return/purpose handoff, evidence-tie exploration and sleep consolidation OFF. No motor tape, future food oracle, unearned survival, seed reuse or episode resets.
+
+**Source-locked readout:** every actually admitted action and real NO_ACTION, first passage/source, locally offered and chosen consumptions, zero-gain meals, physiological before/after injury and minima, true death versus 96-step right censor, actual UC and cold audit. For first matched-context motor difference insist previous actions, bodily state and physics are identical. Report exact paid score/evidence for every offered option, `:movement-result-not-generalized-across-sites` and `:visited-versus-unvisited-adjacent-tie` provenance, number of previous actual movements and meals. The first difference can occur **before food exposure**; then it falsifies an interpretation as learned food avoidance even if later bodily outcomes improve. Compare harmless/harmful only before first *real* food contact, not afterward. Negative, adverse, non-exposure and death are all publishable outcomes.
+
+**Interpretation limits:** same physical geometry as #972, so positive effect only mechanistic discovery. Isolating global move credit from site context does not prove food-harm credit, H3, overall survival benefit or independently authenticated M11/G3. No default switch, reward formula, birth-contract or action authority change from this observation.
+
+## Engineering gate
+
+Only new test `tests/i2/test_native_p4_movement_credit_906.py` and this page. Exactly one normal full sharded Python 3.11+3.12 I2 proposal CI on PR exact head, including all six generation boundary checks and inert-engine assessment. Document results with raw tag `I2_P4_MOVEMENT_CREDIT_906`, source SHA, honest censors and real cold replay before merge. No repeat CI without a specific implementation defect.
