@@ -108,3 +108,80 @@ def current_need_site_relevance(outcomes, *, body, traits):
         relevance[(site, target)] = round(
             (total / count) * needs.pressures[target], 6)
     return relevance
+
+
+# Source-only observational P2 expansion: never read from hidden world laws.
+# Existing target-only outcomes and paid decision ranking are not modified.
+LIVED_BODY_ACTIONS = frozenset((
+    "manger", "boire", "boire_decouverte", "dormir", "attendre",
+))
+
+
+@dataclass(frozen=True, slots=True)
+class LivedWholeBodySiteConsequence:
+    """One actually committed action, not a forecast, reward or motor policy."""
+    sequence: int
+    site: str
+    action: str
+    before: tuple[float, float, float, float]
+    after: tuple[float, float, float, float]
+    deltas: tuple[float, float, float, float]
+    prior_pressures: tuple[float, float, float, float]
+
+    def channel_effects(self) -> dict[str, float]:
+        return dict(zip(CHANNELS, self.deltas))
+
+
+def lived_whole_body_site_consequences(
+    rows, *, traits: BirthTemperament, enabled: bool,
+) -> tuple[LivedWholeBodySiteConsequence, ...]:
+    """Project ONLY sequential physically committed rows for one birth.
+
+    Canonical rows are (seq, capture, admitted_action, net_relief,
+    before_json, after_json, discovery). A pure projection carries no
+    independent hash authority: caller must first cold-audit the sole owner.
+    Retain even a meal at full food with zero gain and real integrity harm.
+    Unknown/unvisited locations have NO record, not fictitious zero injury.
+    """
+    if type(enabled) is not bool or type(traits) is not BirthTemperament:
+        raise ValueError("exact spatial birth and temperament required")
+    if type(rows) not in (tuple, list):
+        raise ValueError("ordered committed physical rows required")
+    site, previous_seq = BORN_SITE, 0
+    previous_after = None
+    observed = []
+    from i2.modules.native_body_contract import COSTS
+    allowed = set(COSTS) | {"boire_decouverte", "NO_ACTION"} | set(
+        "se_deplacer_vers_" + destination_name for destination_name in GRAPH)
+    for entry in rows:
+        if not isinstance(entry, (tuple, list)) or len(entry) != 7:
+            raise ValueError("complete canonical native physical row required")
+        seq, capture, action, net_relief, before_json, after_json, found = entry
+        if (type(seq) is not int or seq != previous_seq + 1 or
+                type(capture) is not str or not capture or
+                type(action) is not str or action not in allowed or
+                type(net_relief) not in (int, float) or
+                type(found) not in (int, bool) or int(found) not in (0, 1)):
+            raise ValueError("invalid ordered committed physical evidence")
+        before, after = saved_body(before_json), saved_body(after_json)
+        if previous_after is not None and before != previous_after:
+            raise ValueError("noncontinuous native bodily consequence")
+        previous_seq, previous_after = seq, after
+        motion = destination(action)
+        if motion is not None:
+            if not enabled:
+                raise ValueError("movement in nonspatial birth")
+            site = site_after(site, action)
+            continue
+        if action not in LIVED_BODY_ACTIONS or not enabled:
+            continue
+        prior_need = assess_needs(before, traits)
+        before_values = tuple(float(getattr(before, k)) for k in CHANNELS)
+        after_values = tuple(float(getattr(after, k)) for k in CHANNELS)
+        observed.append(LivedWholeBodySiteConsequence(
+            sequence=seq, site=site, action=action,
+            before=before_values, after=after_values,
+            deltas=tuple(a - b for a, b in zip(after_values, before_values)),
+            prior_pressures=tuple(prior_need.pressures[k] for k in CHANNELS),
+        ))
+    return tuple(observed)
