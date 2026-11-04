@@ -262,6 +262,50 @@ class P4OriginFailure990Contract(unittest.TestCase):
         self.assertIn("FACTOR_INACTIVE", report["labels"])
         self.assertNotIn("NO_ADMISSIBLE_ALTERNATIVE", report["labels"])
 
+    def test_urgent_reflex_not_mislabeled_as_numeric_score_ineligibility(self):
+        trace = [dict(frame("manger"), tick=1),
+                 dict(frame("manger"), tick=2),
+                 dict(frame("attendre"), tick=3)]
+        diag = {"ticks": [
+            {"tick": 1, "failed_channels": [],
+             "unknown_offered": [], "reason": "NO_FAILED_CURRENT_NEED"},
+            {"tick": 2, "failed_channels": [],
+             "unknown_offered": [], "reason": "NO_FAILED_CURRENT_NEED"},
+            {"tick": 3, "failed_channels": ["food"],
+             "unknown_offered": ["se_deplacer_vers_passage"],
+             "reason": "URGENT_REFLEX"}]}
+        report = classify_protocol_exposure(
+            trace, diag, factor_enabled=True)
+        self.assertNotIn("NO_ADMISSIBLE_ALTERNATIVE", report["labels"])
+        self.assertNotIn("NO_SCORE_ELIGIBILITY", report["labels"])
+        self.assertEqual(report["other_blocking_gate_ticks"], [3])
+        self.assertEqual(report["numeric_score_rejection_ticks"], [])
+        self.assertEqual(
+            report["novel_offer_gate_reasons"],
+            [{"tick": 3, "reason": "URGENT_REFLEX"}])
+
+    def test_mixed_reflex_and_numeric_rejection_is_not_clean_score_verdict(self):
+        trace = [dict(frame("manger"), tick=1),
+                 dict(frame("manger"), tick=2),
+                 dict(frame("attendre"), tick=3),
+                 dict(frame("attendre"), tick=4)]
+        diag = {"ticks": [
+            {"tick": 1, "failed_channels": [],
+             "unknown_offered": [], "reason": "NO_FAILED_CURRENT_NEED"},
+            {"tick": 2, "failed_channels": [],
+             "unknown_offered": [], "reason": "NO_FAILED_CURRENT_NEED"},
+            {"tick": 3, "failed_channels": ["food"],
+             "unknown_offered": ["se_deplacer_vers_passage"],
+             "reason": "URGENT_REFLEX"},
+            {"tick": 4, "failed_channels": ["food"],
+             "unknown_offered": ["se_deplacer_vers_passage"],
+             "reason": "NONPOSITIVE_SCORE"}]}
+        report = classify_protocol_exposure(
+            trace, diag, factor_enabled=True)
+        self.assertNotIn("NO_SCORE_ELIGIBILITY", report["labels"])
+        self.assertEqual(report["numeric_score_rejection_ticks"], [4])
+        self.assertEqual(report["other_blocking_gate_ticks"], [3])
+
     def test_visit_without_eating_retains_negative_outcome(self):
         trace = [dict(frame("se_deplacer_vers_passage",
                             site="camp"), tick=1, site_after="passage"),
