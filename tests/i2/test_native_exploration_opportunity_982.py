@@ -204,5 +204,94 @@ class PaidExplorationOpportunity982(unittest.TestCase):
             self.assertFalse(accepted["m11_authenticated"])
 
 
+    def test_frozen_six_life_opportunity_accounting_without_new_policy(self):
+        """Read the SAME previously frozen born laws, do not force actions.
+
+        Expected action fingerprints are taken from the source-locked #981
+        Python 3.11/3.12 tagged logs. This is an independent new paid replay
+        of that immutable experiment, not fabricated archival SQLite data.
+        """
+        from i2.modules.native_spatial_world import BORN_SITE, destination, site_after
+        cases = (
+            ("harm-passage", 0., -9.),
+            ("harm-source", -9., 0.),
+        )
+        arms = (
+            ("innate-only", False, False),
+            ("target-only", True, False),
+            ("whole-body", True, True),
+        )
+        expected_fingerprints = {
+            "harm-passage-innate-only": "5bfb9ce5",
+            "harm-passage-target-only": "fc211253",
+            "harm-passage-whole-body": "fc211253",
+            "harm-source-innate-only": "1c57e03c",
+            "harm-source-target-only": "0301463b",
+            "harm-source-whole-body": "0301463b",
+        }
+        report = {}
+        with tempfile.TemporaryDirectory() as root:
+            for world, source_injury, passage_injury in cases:
+                for arm, learning, holistic in arms:
+                    key = world + "-" + arm
+                    path = Path(root) / (key + ".sqlite")
+                    life = NativePaidI2.create(
+                        path, body=Body(78, 46, 44, 94),
+                        temperament=TRAITS, learning=learning,
+                        whole_body_place_tie=holistic,
+                        origin_novelty_tie=True,
+                        target_food_credit_enabled=False,
+                        contextual_movement_credit=False,
+                        place_return_tie=True,
+                        evidence_tie_exploration=False,
+                        sleep_consolidation=False,
+                        purpose_followthrough=False,
+                        spatial_world=True,
+                        ordinary_water_site="camp",
+                        water_stock=2, water_restock_every=10,
+                        drink_water_gain=35.,
+                        ordinary_food_site="source", food_stock=1,
+                        food_restock_every=12, berry_food_gain=10.,
+                        berry_integrity_delta=source_injury,
+                        second_food_site="passage", second_food_stock=1,
+                        second_food_restock_every=12,
+                        second_berry_food_gain=10.,
+                        second_berry_integrity_delta=passage_injury,
+                        uc=1000, max_steps=128)
+                    for _ in range(128):
+                        if life.step()["terminal"]:
+                            break
+                    final = life.audit()
+                    self.assertEqual(final, NativePaidI2.inspect(path).audit())
+                    with sqlite3.connect(path) as db:
+                        events = tuple(json.loads(v[0]) for v in db.execute(
+                            "SELECT event_json FROM events ORDER BY seq"))
+                        physical = tuple(db.execute(
+                            "SELECT admitted_action,before_json,after_json "
+                            "FROM native_physical_events ORDER BY seq"))
+                    opportunities = audit_paid_opportunities(
+                        events=events, physical=physical, traits=TRAITS,
+                        exploration_enabled=True)
+                    self.assertEqual(len(opportunities), final["revision"])
+                    # FNV-1a of actual paid motors cross-checked to #981 logs.
+                    motor_text = "\\n".join(row[0] for row in physical)
+                    hash_value = 2166136261
+                    for byte in motor_text.encode("ascii"):
+                        hash_value = ((hash_value ^ byte) * 16777619) & 0xffffffff
+                    fingerprint = format(hash_value, "08x")
+                    self.assertEqual(fingerprint, expected_fingerprints[key])
+                    summarized = summarize_source_opportunities(opportunities)
+                    self.assertFalse(summarized["source_visited"])
+                    self.assertEqual(summarized["source_chosen"], 0)
+                    self.assertEqual(summarized["source_food_consumed"], 0)
+                    summarized["trace_fingerprint"] = fingerprint
+                    summarized["revision"] = final["revision"]
+                    summarized["terminal"] = final["terminal"]
+                    summarized["cold_audit"] = "PASS"
+                    report[key] = summarized
+        print("I2_P4_EXPLORATION_OPPORTUNITIES_982=" + json.dumps(
+            report, sort_keys=True, separators=(",", ":")), flush=True)
+
+
 if __name__=="__main__":
     unittest.main()
