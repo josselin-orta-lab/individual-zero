@@ -28,4 +28,15 @@ Counterfactuals remain explicitly limited: a historical final motor sequence can
 
 The new module owns no SQLite memory, no motor, no Competition score or future food predictor. The test suite contains only constructed histories, not additional born lives and not a rerun of the original #984 panel. An operator who wishes to classify a real SQLite journal must FIRST call `NativePaidI2.inspect(path).audit()` on the same immutable completed journal, THEN extract the verified `events.event_json` and matching `native_physical_events` before applying `report_need_failure_opportunities`. Do not treat the pure observer as an independent cryptographic witness.
 
+## Existing-life read-only entry point
+
+After a native I2 research life has reached its authentic terminal or its born technical horizon, an operator may run:
+
+```sh
+python tools/i2_native_need_failure_diagnostic.py path/to/completed-native-life.sqlite
+python tools/i2_native_need_failure_diagnostic.py path/to/completed-native-life.sqlite --ticks
+```
+
+The tool calls `NativePaidI2.inspect(path).audit()` **before** reading the old journal, opens the same existing SQLite file in `mode=ro`, and rejects an incomplete still-running life. It reads already verified `native_genesis`, `events`, and `native_physical_events`, reporting eligibility classifications without choosing a motor or creating a life. No frozen birth is replayed as a *new* trial; observation is retrospective only. The local cold audit is a source integrity check, not independent anti-rollback M11 certification.
+
 The PR is stacked on still-unmerged v23. Do not merge it before #985's complete exact-head Python 3.11+3.12 suite passes. No engine activation, I1 import, autonomous survival victory, or physiological change is included.
