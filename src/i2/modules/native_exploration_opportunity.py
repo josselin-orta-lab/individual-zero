@@ -134,8 +134,12 @@ def audit_paid_opportunities(*, events, physical, traits, exploration_enabled):
             raise ValueError("missing committed first-person capture")
         cap = claim["capture"]
         offered = cap.get("accessible_semantics")
-        if type(offered) is not list or not offered or len(offered) != len(set(offered)):
-            raise ValueError("invalid local offered actions")
+        if (type(offered) is not list or not offered or
+                any(type(a) is not str for a in offered) or
+                len(offered) != len(set(offered)) or
+                any(destination(a) is not None and
+                    destination(a) not in GRAPH[site] for a in offered)):
+            raise ValueError("invalid or nonlocal offered actions")
         frame, advice = event.get("frame"), event.get("advice")
         if (frame is None) != (advice is None):
             raise ValueError("unpaired paid frame")
