@@ -358,6 +358,30 @@ def summary_of_life(cell, born, final, trace, diagnostic, custody):
     }
 
 
+def verify_custody_receipt(original, archive, receipt, final):
+    """Bind the reported SHA-256 and audited endpoint to this exact life.
+
+    Archive bytes may differ from the original due to WAL normalization.
+    This is local consistency, NOT authenticated immutable M11 evidence.
+    """
+    if (receipt.get("source") != str(original) or
+            receipt.get("archive") != str(archive) or
+            receipt.get("cold_audit") != "PASS" or
+            receipt.get("revision") != final["revision"] or
+            receipt.get("max_steps") != final["max_steps"] or
+            receipt.get("biological_terminal") is not final["terminal"] or
+            receipt.get("right_censored") is not (not final["terminal"]) or
+            receipt.get("remaining_uc") != final["remaining_uc"] or
+            receipt.get("site") != final["site"] or
+            receipt.get("body") != final["body"]):
+        raise ValueError("archival receipt not bound to this native life")
+    expected = receipt.get("archive_sha256")
+    if (type(expected) is not str or len(expected) != 64 or
+            sha256(archive.read_bytes()).hexdigest() != expected):
+        raise ValueError("archival SQLite digest disagrees with custody receipt")
+    return True
+
+
 def run_study(output, *, execute=False, expected_head=None):
     """Off by default; never run as a unit test or automatic CI step."""
     if execute is not True:
@@ -410,6 +434,10 @@ def run_study(output, *, execute=False, expected_head=None):
             trace = signed_trace(archive)
             if len(trace) != final["revision"]:
                 raise ValueError("full signed trace required")
+            # Recheck the archived bytes AFTER diagnostic and trace extraction.
+            # Without this, a later replacement could silently give the
+            # receipt a hash for data other than that just interpreted.
+            verify_custody_receipt(origin, archive, custody, final)
             report = summary_of_life(
                 cell, born, final, trace, diagnostic, custody)
             _write_json(output / (key + "__trace.json"), trace)
@@ -428,6 +456,17 @@ def run_study(output, *, execute=False, expected_head=None):
             comparisons[world] = first_matched_factor_divergence(
                 traces[left], traces[right],
                 diagnostics[left], diagnostics[right])
+        # Before declaring the six-cell cohort complete, prove that the
+        # retained archive bytes still match EVERY recorded custody receipt.
+        for key in reports:
+            verify_custody_receipt(
+                output / (key + "__original.sqlite"),
+                output / (key + "__archive.sqlite"),
+                json.loads((output / (key + "__receipt.json")).read_text(
+                    encoding="utf-8")),
+                NativePaidI2.inspect(
+                    output / (key + "__archive.sqlite")).audit(),
+            )
         result = {
             "protocol": PROTOCOL, "issue": PREREGISTERED_ISSUE,
             "source_commit": expected_head, "lives": reports,
