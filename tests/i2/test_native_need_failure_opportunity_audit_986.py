@@ -64,7 +64,7 @@ def records(*, meal_count=2, restore=False, move=True, scores=None,
             # The malformed-history test intentionally breaks continuity.
             pass
     offered = offered or (["attendre", "se_deplacer_vers_source"]
-                          if move else ["attendre", "se_deplacer_vers_source"])
+                          if move else ["attendre", "se_deplacer_vers_passage"])
     scores = scores or {name: 5 if name == "attendre" else 3 for name in offered}
     events.append(make_event(offered, scores, tags))
     effects.append(make_effect(action, body))
@@ -139,7 +139,7 @@ class NeedFailureOpportunityAudit986(unittest.TestCase):
                 events=es, physical=ps, traits=TRAITS, factor_enabled=True)
         es, ps = records()
         es[-1]["claim"]["capture"]["accessible_semantics"] = [
-            "attendre", "se_deplacer_vers_source"]
+            "attendre", "se_deplacer_vers_camp"]
         with self.assertRaises(ValueError):
             audit_need_failure_opportunities(
                 events=es, physical=ps, traits=TRAITS, factor_enabled=True)
