@@ -43,22 +43,23 @@ def make_effect(action, before=BODY, after=None):
 
 def records(*, meal_count=2, restore=False, move=True, scores=None,
             tags=None, before=BODY, offered=None, action="NO_ACTION",
-            first_meal_body=None):
+            first_meal_body=None, resource_action="manger"):
     events, effects = [], []
     body = dict(first_meal_body or BODY)
     if move:
         events.append(make_event(["se_deplacer_vers_passage"],
                                  {"se_deplacer_vers_passage": 5}))
         effects.append(make_effect("se_deplacer_vers_passage", body))
+    channel = {"manger": "food", "boire": "water"}[resource_action]
     for i in range(meal_count):
-        events.append(make_event(["manger", "attendre"],
-                                 {"manger": 6, "attendre": 1}))
+        events.append(make_event([resource_action, "attendre"],
+                                 {resource_action: 6, "attendre": 1}))
         next_body = dict(body)
         if restore and i == meal_count - 1:
-            next_body["food"] += 5
+            next_body[channel] += 5
         else:
-            next_body["food"] -= .2
-        effects.append(make_effect("manger", body, next_body))
+            next_body[channel] -= .2
+        effects.append(make_effect(resource_action, body, next_body))
         body = next_body
     if before is not BODY:
         body = dict(before)
@@ -115,6 +116,23 @@ class NeedFailureOpportunityAudit986(unittest.TestCase):
                              "NO_FAILED_CURRENT_NEED")
         self.assertEqual(classify(meal_count=2, restore=True)[-1].reason,
                          "NO_FAILED_CURRENT_NEED")
+
+    def test_committed_water_failures_at_camp_are_need_specific(self):
+        # Constructed projection only: no birth, no motor tape or new cohort.
+        # Actual drinking at camp can establish repeated water failure.
+        rows = classify(move=False, meal_count=2, resource_action="boire")
+        self.assertEqual(rows[-1].failed_channels, ("water",))
+        self.assertEqual(rows[-1].reason, "ELIGIBLE_BUT_NOT_CREDITED")
+        self.assertEqual(rows[-1].unknown_offered,
+                         ("se_deplacer_vers_passage",))
+        self.assertEqual(
+            classify(move=False, meal_count=1,
+                     resource_action="boire")[-1].reason,
+            "NO_FAILED_CURRENT_NEED")
+        self.assertEqual(
+            classify(move=False, meal_count=2, restore=True,
+                     resource_action="boire")[-1].reason,
+            "NO_FAILED_CURRENT_NEED")
 
     def test_no_current_need_and_urgent_reflex(self):
         full = dict(BODY, food=72.0)
