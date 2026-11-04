@@ -195,6 +195,8 @@ def classify_protocol_exposure(trace, diagnostic, *, factor_enabled):
         raise ValueError("complete aligned #990 trace/diagnostic required")
     first_failure, first_novel = None, None
     eligible, unknown_preboost, tags, passage_meals, safe_meals = [], [], [], [], []
+    numeric_score_rejections, other_blocking_gates = [], []
+    offered_novel_gate_reasons = []
     visited_passage = False
     for i, (event, gate) in enumerate(zip(trace, diagnostic["ticks"])):
         tick = i + 1
@@ -210,10 +212,19 @@ def classify_protocol_exposure(trace, diagnostic, *, factor_enabled):
             if novel:
                 if first_novel is None:
                     first_novel = tick
-                if gate["reason"] == "ELIGIBLE_BUT_NOT_CREDITED":
+                reason = gate["reason"]
+                offered_novel_gate_reasons.append(
+                    {"tick": tick, "reason": reason})
+                if reason == "ELIGIBLE_BUT_NOT_CREDITED":
                     eligible.append(tick)
-                elif gate["reason"] == "UNOBSERVABLE_PREBOOST_SCORE":
+                elif reason == "UNOBSERVABLE_PREBOOST_SCORE":
                     unknown_preboost.append(tick)
+                elif reason in ("NONPOSITIVE_SCORE", "SCORE_GAP_GT_FOUR"):
+                    numeric_score_rejections.append(tick)
+                else:
+                    # Reflex preemption, missing paid frame or other gates
+                    # cannot be reclassified as a measured score failure.
+                    other_blocking_gates.append(tick)
                 if event["factor_tagged"]:
                     tags.append(tick)
         if (event["site_before"] != "passage" and
@@ -229,7 +240,12 @@ def classify_protocol_exposure(trace, diagnostic, *, factor_enabled):
         flags.append("NO_DOUBLE_FAILURE_EXPOSURE")
     elif first_novel is None:
         flags.append("NO_ADMISSIBLE_ALTERNATIVE")
-    elif not eligible and not unknown_preboost:
+    elif (numeric_score_rejections and
+          not eligible and not unknown_preboost and
+          not other_blocking_gates):
+        # Only a fully observed set of numeric score rejections can
+        # establish this label. Never confuse an urgent reflex or a
+        # missing frame with a measured ineligible score.
         flags.append("NO_SCORE_ELIGIBILITY")
     if factor_enabled and not tags:
         flags.append("FACTOR_INACTIVE")
@@ -243,6 +259,9 @@ def classify_protocol_exposure(trace, diagnostic, *, factor_enabled):
         "first_novel_passage_offer_after_failure_tick": first_novel,
         "reconstructed_uncredited_score_windows": eligible,
         "tagged_preboost_unobservable_windows": unknown_preboost,
+        "numeric_score_rejection_ticks": numeric_score_rejections,
+        "other_blocking_gate_ticks": other_blocking_gates,
+        "novel_offer_gate_reasons": offered_novel_gate_reasons,
         "factor_tag_ticks_after_exposure": tags,
         "passage_meal_ticks": passage_meals,
         "single_meal_noninjurious_food_restoration_ticks": safe_meals,
