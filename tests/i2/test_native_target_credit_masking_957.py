@@ -11,8 +11,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 from i2.modules.intention_continuity import FirstPersonCapture
 from i2.modules.intention_ingress import ObservationClaim
 from i2.modules.native_birth_temperament import BirthTemperament
-from i2.modules.native_body_contract import Body
+from i2.modules.native_body_contract import Body, transition
+from i2.modules.native_physiological_needs import assess_needs
 from i2.modules.native_owner_support import _json, current_evidence
+from i2.modules.chosen_outcome_study import FIXED_SCORE_OFFSET
 from i2.runtime.native_paid_cycle import (
     PRIORS, innate_adjustment, personally_nonrestoring_scores,
     personally_observed_resource_outcomes,
@@ -59,6 +61,42 @@ class TargetCreditMasking957(unittest.TestCase):
             self.assertFalse(discouraged)
             observed.append(result["manger"])
         self.assertEqual(len(set(observed)), 1)
+
+    def test_physical_net_relief_diverges_even_though_target_value_does_not(self):
+        # Actual born-law pure transitions from an identical physical body.
+        # These are prospective physics projections, NOT admitted motors or
+        # hidden future outcomes presented to an individual.
+        next_harm = transition(
+            BODY, "manger", berry_food_gain=35.,
+            berry_integrity_delta=-8.).body
+        next_safe = transition(
+            BODY, "manger", berry_food_gain=35.,
+            berry_integrity_delta=0.).body
+        self.assertEqual(next_harm.food, next_safe.food)
+        self.assertLess(next_harm.integrity, next_safe.integrity)
+        current = assess_needs(BODY, TRAITS)
+        relief = []
+        target_adjusted = []
+        for after in (next_harm, next_safe):
+            later = assess_needs(after, TRAITS)
+            actual_relief = (
+                sum(current.pressures.values()) -
+                sum(later.pressures.values()))
+            relief.append(actual_relief)
+            # This is the existing G2 projection from a committed net
+            # consequence, not a new reward formula applied in native.
+            generic = int(round(20 * actual_relief)) + FIXED_SCORE_OFFSET
+            history = ((1, "capture:i2:p4:prior:1", "manger",
+                        actual_relief, _json(BODY.as_dict()),
+                        _json(after.as_dict()), 0),)
+            adjusted, _, associated = personally_nonrestoring_scores(
+                {"manger": generic},
+                claim=claim(BODY), body=BODY, traits=TRAITS,
+                previous=history, learning=True)
+            self.assertIn("manger", associated)
+            target_adjusted.append(adjusted["manger"])
+        self.assertLess(relief[0], relief[1])
+        self.assertEqual(target_adjusted[0], target_adjusted[1])
 
     def test_without_target_history_generic_value_survives(self):
         for generic in (-35, 15, 70):
