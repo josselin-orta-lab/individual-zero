@@ -182,6 +182,73 @@ def _two_recent_failed_origin_meals(trace, index):
     )
 
 
+def classify_protocol_exposure(trace, diagnostic, *, factor_enabled):
+    """Independent, nonexclusive #990 exposure and physical outcome labels.
+
+    Only completed, independently cold-audited histories reach this readout.
+    Absence of an observed opportunity is not an adverse learning result.
+    """
+    if (type(factor_enabled) is not bool or
+            len(trace) != len(diagnostic["ticks"])):
+        raise ValueError("complete aligned #990 trace/diagnostic required")
+    first_failure, first_novel = None, None
+    eligible, unknown_preboost, tags, passage_meals, safe_meals = [], [], [], [], []
+    visited_passage = False
+    for i, (event, gate) in enumerate(zip(trace, diagnostic["ticks"])):
+        tick = i + 1
+        if event["tick"] != tick or gate["tick"] != tick:
+            raise ValueError("unaligned native tick chronology")
+        if _two_recent_failed_origin_meals(trace, i):
+            if first_failure is None:
+                first_failure = tick
+            novel = (event["site_before"] == BORN_SITE and
+                     "food" in gate["failed_channels"] and
+                     "se_deplacer_vers_passage" in gate["unknown_offered"] and
+                     "se_deplacer_vers_passage" in event["offered"])
+            if novel:
+                if first_novel is None:
+                    first_novel = tick
+                if gate["reason"] == "ELIGIBLE_BUT_NOT_CREDITED":
+                    eligible.append(tick)
+                elif gate["reason"] == "UNOBSERVABLE_PREBOOST_SCORE":
+                    unknown_preboost.append(tick)
+                if event["factor_tagged"]:
+                    tags.append(tick)
+        if (event["site_before"] != "passage" and
+                event["site_after"] == "passage"):
+            visited_passage = True
+        if event["site_before"] == "passage" and event["action"] == "manger":
+            passage_meals.append(tick)
+            if (event["after"]["food"] > event["before"]["food"] and
+                    event["after"]["integrity"] >= event["before"]["integrity"]):
+                safe_meals.append(tick)
+    flags = []
+    if first_failure is None:
+        flags.append("NO_DOUBLE_FAILURE_EXPOSURE")
+    elif first_novel is None:
+        flags.append("NO_ADMISSIBLE_ALTERNATIVE")
+    elif not eligible and not unknown_preboost:
+        flags.append("NO_SCORE_ELIGIBILITY")
+    if factor_enabled and not tags:
+        flags.append("FACTOR_INACTIVE")
+    if visited_passage and not passage_meals:
+        flags.append("VISIT_WITHOUT_MEAL")
+    if not safe_meals:
+        flags.append("NO_SAFE_RECOVERY")
+    return {
+        "labels": flags,  # Independent descriptions, not exclusive verdicts.
+        "first_origin_double_failure_predecision_tick": first_failure,
+        "first_novel_passage_offer_after_failure_tick": first_novel,
+        "reconstructed_uncredited_score_windows": eligible,
+        "tagged_preboost_unobservable_windows": unknown_preboost,
+        "factor_tag_ticks_after_exposure": tags,
+        "passage_meal_ticks": passage_meals,
+        "single_meal_noninjurious_food_restoration_ticks": safe_meals,
+        "independent_m11": False,
+        "interpretation": "DESCRIPTIVE_NOT_GENERAL_ADAPTATION",
+    }
+
+
 def first_matched_factor_divergence(control_trace, factor_trace,
                                     control_diag, factor_diag):
     """Observational primary endpoint: same lived physical opportunity only."""
@@ -282,6 +349,8 @@ def summary_of_life(cell, born, final, trace, diagnostic, custody):
             diagnostic["summary"]["first_double_failure_tick"],
         "factor_tags": diagnostic["summary"]["factor_tags"],
         "diagnostic_reasons": diagnostic["summary"]["reason_counts"],
+        "protocol_exposure": classify_protocol_exposure(
+            trace, diagnostic, factor_enabled=factor),
         "archive_sha256": custody["archive_sha256"],
         "cold_audit": "PASS",
         "general_adaptation": "NOT_ESTABLISHED",
