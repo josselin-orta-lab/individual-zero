@@ -92,6 +92,22 @@ class NeedFailureOpportunityAudit986(unittest.TestCase):
         self.assertEqual(result["summary"]["factor_tags"], 0)
         self.assertTrue(result["summary"]["diagnostic_only"])
         self.assertFalse(result["summary"]["preboost_score_imputed"])
+        self.assertEqual(result["summary"]["first_double_failure_tick"], 4)
+        self.assertEqual(
+            result["summary"]["first_unique_unseen_and_double_failure_tick"], 4)
+        self.assertIsNone(result["summary"]["first_factor_tag_tick"])
+        self.assertEqual(result["summary"]["no_movement_offered_ticks"], 2)
+        self.assertEqual(result["summary"]["only_visited_moves_offered_ticks"], 0)
+        self.assertEqual(result["summary"]["positive_bounded_score_opportunity_ticks"], 1)
+        self.assertEqual(result["summary"]["eligible_but_not_credited_on_ticks"], 0)
+        enabled = report_need_failure_opportunities(
+            events=records(meal_count=2)[0],
+            physical=records(meal_count=2)[1],
+            traits=TRAITS, factor_enabled=True)
+        self.assertEqual(enabled["summary"]["eligible_but_not_credited_on_ticks"], 1)
+        # Synthetic history intentionally has an unexplained ON non-credit.
+        # The real native cold audit must reject an impossible signed event.
+        self.assertEqual(enabled["ticks"][-1]["reason"], "ELIGIBLE_BUT_NOT_CREDITED")
 
     def test_no_or_one_failed_attempt_and_later_success(self):
         for count in (0, 1):
