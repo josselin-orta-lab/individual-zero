@@ -40,7 +40,12 @@ class WholeBodyPlaceTieV22(unittest.TestCase):
             evidence, body=Body(85., 40., 65., 100.), traits=TRAITS)
         fragile = whole_body_site_relevance(
             evidence, body=Body(85., 95., 65., 55.), traits=TRAITS)
-        self.assertGreater(hungry["source"], hungry["passage"])
+        # An intact body has ZERO current integrity pressure. Past injury
+        # is therefore not automatically priced as a future penalty.
+        self.assertEqual(hungry["source"], hungry["passage"])
+        hungry_hurt = whole_body_site_relevance(
+            evidence, body=Body(85., 40., 65., 90.), traits=TRAITS)
+        self.assertGreater(hungry_hurt["source"], hungry_hurt["passage"])
         self.assertGreater(fragile["source"], fragile["passage"])
         self.assertGreater(hungry["passage"], fragile["passage"])
         self.assertGreater(hungry["source"], fragile["source"])
