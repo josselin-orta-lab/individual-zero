@@ -47,10 +47,12 @@ def records(*, meal_count=2, restore=False, move=True, scores=None,
     events, effects = [], []
     body = dict(first_meal_body or BODY)
     if move:
-        events.append(make_event(["se_deplacer_vers_passage"]))
+        events.append(make_event(["se_deplacer_vers_passage"],
+                                 {"se_deplacer_vers_passage": 5}))
         effects.append(make_effect("se_deplacer_vers_passage", body))
     for i in range(meal_count):
-        events.append(make_event(["manger", "attendre"]))
+        events.append(make_event(["manger", "attendre"],
+                                 {"manger": 6, "attendre": 1}))
         next_body = dict(body)
         if restore and i == meal_count - 1:
             next_body["food"] += 5
