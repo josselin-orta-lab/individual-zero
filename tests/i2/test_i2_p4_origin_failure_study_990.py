@@ -96,7 +96,7 @@ class P4OriginFailure990Contract(unittest.TestCase):
             _require_exact_clean_checkout,
         )
         head = "a" * 40
-        git_output.side_effect = [head + "\\n", "?? tools/rogue_module.py\\n"]
+        git_output.side_effect = [head + "\n", "?? tools/rogue_module.py\n"]
         with self.assertRaisesRegex(ValueError, "clean source-locked"):
             _require_exact_clean_checkout(head)
         self.assertEqual(git_output.call_count, 2)
