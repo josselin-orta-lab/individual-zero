@@ -743,11 +743,11 @@ def locally_consumed_food(rows, site):
 
 
 def active_food_site(meta, rows):
-    if meta["second_food_site"] is not None:
+    if meta.get("second_food_site") is not None:
         here = replay_site(rows, enabled=True)
         if here == meta["ordinary_food_site"]:
             return "primary"
-        if here == meta["second_food_site"]:
+        if here == meta.get("second_food_site"):
             return "secondary"
         return None
     return "primary"
@@ -772,8 +772,8 @@ def old_food_available(meta, rows):
     interval = meta["second_food_restock_every"] if secondary else meta.get("food_restock_every", 0)
     elapsed = len(rows)
     replenished = elapsed // interval if interval else 0
-    if meta["second_food_site"] is not None:
-        site = (meta["second_food_site"] if secondary else
+    if meta.get("second_food_site") is not None:
+        site = (meta.get("second_food_site") if secondary else
                 meta["ordinary_food_site"])
         consumed = locally_consumed_food(rows, site)
     else:
@@ -786,7 +786,7 @@ def old_food_accessible(meta, rows):
     """Physically stocked and locally offered food, never hidden payoff."""
     if old_food_available(meta, rows) <= 0:
         return False
-    home = (meta["second_food_site"] if active_food_site(meta, rows) ==
+    home = (meta.get("second_food_site") if active_food_site(meta, rows) ==
             "secondary" else meta["ordinary_food_site"])
     if home is None:
         return True
@@ -810,7 +810,7 @@ def genesis_digest(meta):
         meta["food_restock_every"],
         meta["target_food_credit_enabled"],
         meta["origin_novelty_tie"],
-        meta["second_food_site"], meta["second_food_stock"],
+        meta.get("second_food_site"), meta["second_food_stock"],
         meta["second_food_restock_every"], meta["second_berry_food_gain"],
         meta["second_berry_integrity_delta"]]).encode("ascii")).hexdigest()
 
