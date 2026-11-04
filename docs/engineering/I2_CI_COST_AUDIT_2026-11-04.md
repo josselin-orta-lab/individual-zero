@@ -69,6 +69,44 @@ PR checks. Do not dispatch a new scientific cohort or redundant GitHub Actions
 runs solely to measure it. Compare with prior I2 proposal CI cautiously:
 the test inventory, runner load, and shard scheduling can differ.
 
+## Follow-up #964: measured target-resource prefix scans
+
+A bounded local **algorithm-only** profile of synthetic 128-tick histories
+(129 prefixes, no additional I2 birth and no GitHub Actions dispatch) at
+main `0f858a6` showed two candidate sources of repeated CPU work:
+
+| Rebuilt algorithm across all 129 prefixes | Full scan | Local incremental projection |
+| --- | ---: | ---: |
+| Water/food availability + site + evidence refs | ~4.6 ms | ~0.6 ms |
+| Target-reserve success/failure association (canonical JSON + needs) | ~59.0 ms | ~1.0 ms |
+
+The respective outputs agreed on every fabricated prefix used in the local
+microfixtures. These are **isolated algorithm timings**, not end-to-end paid
+I2 audit measurements or a claimed CI speedup. The measurements were taken
+outside the scientific harness and do not validate I2 behavior.
+
+The first implementation targets **only** target-reserve association inside
+`NativePaidI2.audit()`. A read-only, local `_ColdAuditResourcePrefix`
+accepts each already replay-validated physical event in sequence and uses
+the same `_observed_resource_slot` function as the existing full scanner.
+The working projection is discarded after every audit; it is not persisted,
+not used by `_Valuation`, not used to admit any motor action, and never
+substitutes for the physical or cognitive hash-chain replay or the before/after
+comparison. Its defensive snapshot refuses stale revisions and foreign birth
+traits. The normal, full historical scan remains the default for all public
+callers and live cognitive valuations.
+
+Predeclared regression checks compare all 129 prefixes, no-action ticks,
+target-sated contacts, failures, successes, JSON canonicalization rejection
+and stale/foreign projection refusal, plus the existing two-version full
+science and tamper suite. No test is removed and no horizon is shortened.
+Attribution of any end-to-end speed gain is **not established**; normal PR
+checks may be observed, not manually rerun to create a benchmark.
+
+The wider #964 prefix-scan issue remains open for independent investigation
+of other paths. Do not broaden this optimization or introduce cross-audit
+caches without a fresh equivalence assessment.
+
 Primary evidence:
 - https://github.com/josselin-orta-lab/individual-zero/actions/runs/41740611291
 - https://github.com/josselin-orta-lab/individual-zero/issues/946

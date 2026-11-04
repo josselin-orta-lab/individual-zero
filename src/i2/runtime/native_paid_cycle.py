@@ -171,16 +171,53 @@ def personally_observed_resource_outcomes(*, previous, traits):
         raise NativeRefusal("native birth temperament required")
     counts = {action: [0, 0] for action in CONSUMED_RESOURCE_NEED}
     for row in previous:
-        target = CONSUMED_RESOURCE_NEED.get(row[2])
-        if target is None:
-            continue
-        before = saved_body(row[4])
-        if assess_needs(before, traits).pressures[target] <= 0:
-            continue
-        after = saved_body(row[5])
-        slot = 0 if getattr(after, target) > getattr(before, target) else 1
-        counts[row[2]][slot] += 1
+        observed = _observed_resource_slot(row, traits)
+        if observed is not None:
+            counts[observed[0]][observed[1]] += 1
     return {action: tuple(values) for action, values in counts.items()}
+
+
+def _observed_resource_slot(row, traits):
+    """One committed, target-specific effect, shared by scan and cold replay."""
+    target = CONSUMED_RESOURCE_NEED.get(row[2])
+    if target is None:
+        return None
+    before = saved_body(row[4])
+    if assess_needs(before, traits).pressures[target] <= 0:
+        return None
+    after = saved_body(row[5])
+    return row[2], (0 if getattr(after, target) > getattr(before, target) else 1)
+
+
+class _ColdAuditResourcePrefix:
+    """Ephemeral audit-local counters; never an owner or a persisted memory.
+
+    Rows are accepted ONLY after the physical and cognitive event have been
+    independently verified. The public runtime valuation keeps full scanning.
+    """
+    def __init__(self, traits):
+        if type(traits) is not BirthTemperament:
+            raise NativeRefusal("native birth temperament required")
+        self.traits = traits
+        self.revision = 0
+        self.last_row = None
+        self.counts = {action: [0, 0] for action in CONSUMED_RESOURCE_NEED}
+
+    def append_verified(self, row):
+        if type(row[0]) is not int or row[0] != self.revision + 1:
+            raise NativeRefusal("nonsequential cold resource evidence")
+        observed = _observed_resource_slot(row, self.traits)
+        if observed is not None:
+            self.counts[observed[0]][observed[1]] += 1
+        self.last_row = row
+        self.revision += 1
+
+    def snapshot(self, *, previous, traits):
+        if (type(traits) is not BirthTemperament or traits != self.traits or
+                self.revision != len(previous) or
+                (previous and previous[-1] != self.last_row)):
+            raise NativeRefusal("stale or foreign cold resource evidence")
+        return {action: tuple(values) for action, values in self.counts.items()}
 
 
 def personally_nonrestoring_action(*, body, previous, action):
@@ -210,7 +247,7 @@ def personally_nonrestoring_action(*, body, previous, action):
 
 def personally_nonrestoring_scores(
     scores, *, claim, body, traits, previous, learning,
-    target_food_credit_enabled=True,
+    target_food_credit_enabled=True, _cold_resource_prefix=None,
 ):
     """Use persistent target-specific evidence before any critical reflex.
 
@@ -229,8 +266,9 @@ def personally_nonrestoring_scores(
     if not learning:
         return adjusted, frozenset(), frozenset()
     baseline = innate_adjustment(PRIORS, body, traits)
-    outcomes = personally_observed_resource_outcomes(
-        previous=previous, traits=traits)
+    outcomes = (_cold_resource_prefix.snapshot(previous=previous, traits=traits)
+                if _cold_resource_prefix is not None else
+                personally_observed_resource_outcomes(previous=previous, traits=traits))
     associated = set()
     for action in claim.capture.accessible_semantics:
         if (action not in adjusted or action not in outcomes or
@@ -256,6 +294,7 @@ def personally_nonrestoring_scores(
 
 def native_evidence_tie_exploration(
     scores, *, claim, body, traits, previous, learning, enabled,
+    _cold_resource_prefix=None,
 ):
     """A born-locked, nonmotor experiment at a tied POSITIVE maximum.
 
@@ -287,8 +326,9 @@ def native_evidence_tie_exploration(
     unseen = [a for a in tied if a not in chosen_before]
     if len(unseen) != 1:
         return adjusted, frozenset()
-    outcomes = personally_observed_resource_outcomes(
-        previous=previous, traits=traits)
+    outcomes = (_cold_resource_prefix.snapshot(previous=previous, traits=traits)
+                if _cold_resource_prefix is not None else
+                personally_observed_resource_outcomes(previous=previous, traits=traits))
     failed_tied = [
         a for a in tied if a != unseen[0] and a in outcomes
         and outcomes[a][1] >= NONRESTORING_ATTEMPTS
@@ -1053,6 +1093,11 @@ class NativePaidI2:
             raise NativeRefusal("duplicate discovery")
         total_uc, terminal = 0, False
         prior_cognitive_event = None
+        # Reconstruct only from already cold-verified effects. Each historical
+        # resource observation is decoded once per audit, never shared between
+        # audit calls, live decisions or COMMIT transactions.
+        resource_prefix = (_ColdAuditResourcePrefix(traits)
+                           if meta["learning"] else None)
         for index, (source, effect) in enumerate(zip(recorded, effects)):
             seq, capture, event_json, cognition_hash = source
             (phy_seq, action, admission_ref, linked_head,
@@ -1105,11 +1150,13 @@ class NativePaidI2:
                 scores, discouraged, associated = personally_nonrestoring_scores(
                     initial, claim=claim, body=body, traits=traits,
                     previous=previous, learning=bool(meta["learning"]),
-                    target_food_credit_enabled=bool(meta["target_food_credit_enabled"]))
+                    target_food_credit_enabled=bool(meta["target_food_credit_enabled"]),
+                    _cold_resource_prefix=resource_prefix)
                 scores, exploratory = native_evidence_tie_exploration(
                     scores, claim=claim, body=body, traits=traits,
                     previous=previous, learning=bool(meta["learning"]),
-                    enabled=bool(meta["evidence_tie_exploration"]))
+                    enabled=bool(meta["evidence_tie_exploration"]),
+                    _cold_resource_prefix=resource_prefix)
                 scores, remembered = personally_observed_place_tie(
                     scores, claim=claim, body=body, traits=traits,
                     previous=previous, learning=bool(meta["learning"]),
@@ -1231,6 +1278,8 @@ class NativePaidI2:
                          event["control_uc"])
             previous.append((seq, capture, action, relief,
                              before_json, after_json, found))
+            if resource_prefix is not None:
+                resource_prefix.append_verified(previous[-1])
             prior_cognitive_event = event
             body = next_body
         if (len(discoveries) != sum(r[2] == "collecter" for r in previous) or
