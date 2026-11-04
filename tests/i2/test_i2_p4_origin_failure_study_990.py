@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from tools.i2_p4_origin_failure_study_990 import (
     ARMS, MAX_STEPS, WORLD_HARMS, frozen_cells,
     frozen_birth_kwargs, first_matched_factor_divergence,
-    run_study,
+    classify_protocol_exposure, run_study,
 )
 
 
@@ -201,6 +201,74 @@ class P4OriginFailure990Contract(unittest.TestCase):
         self.assertEqual(result["classification"],
                          "DIVERGENCE_WITH_UNMATCHED_HISTORY")
         self.assertFalse(result["same_prehistory"])
+
+    def test_no_origin_exposure_and_factor_inactive_are_separate(self):
+        trace = [dict(frame("attendre"), tick=1)]
+        diag = {"ticks": [{"tick": 1, "failed_channels": [],
+                           "unknown_offered": [], "reason": "NO_FAILED_CURRENT_NEED"}]}
+        report = classify_protocol_exposure(
+            trace, diag, factor_enabled=True)
+        self.assertIn("NO_DOUBLE_FAILURE_EXPOSURE", report["labels"])
+        self.assertIn("FACTOR_INACTIVE", report["labels"])
+        self.assertIn("NO_SAFE_RECOVERY", report["labels"])
+        self.assertNotIn("NO_SCORE_ELIGIBILITY", report["labels"])
+
+    def test_food_failure_without_unseen_offer_is_not_ineligible_score(self):
+        trace = [dict(frame("manger"), tick=1),
+                 dict(frame("manger"), tick=2),
+                 dict(frame("attendre"), tick=3)]
+        diag = {"ticks": [
+            {"tick": 1, "failed_channels": [],
+             "unknown_offered": [], "reason": "NO_FAILED_CURRENT_NEED"},
+            {"tick": 2, "failed_channels": [],
+             "unknown_offered": [], "reason": "NO_FAILED_CURRENT_NEED"},
+            {"tick": 3, "failed_channels": ["food"],
+             "unknown_offered": [], "reason": "NO_UNSEEN_OFFERED_MOVE"}]}
+        report = classify_protocol_exposure(
+            trace, diag, factor_enabled=False)
+        self.assertEqual(report["first_origin_double_failure_predecision_tick"], 3)
+        self.assertIn("NO_ADMISSIBLE_ALTERNATIVE", report["labels"])
+        self.assertNotIn("NO_SCORE_ELIGIBILITY", report["labels"])
+
+    def test_offered_unknown_with_nonpositive_score_is_separate(self):
+        trace = [dict(frame("manger"), tick=1),
+                 dict(frame("manger"), tick=2),
+                 dict(frame("attendre"), tick=3)]
+        diag = {"ticks": [
+            {"tick": 1, "failed_channels": [],
+             "unknown_offered": [], "reason": "NO_FAILED_CURRENT_NEED"},
+            {"tick": 2, "failed_channels": [],
+             "unknown_offered": [], "reason": "NO_FAILED_CURRENT_NEED"},
+            {"tick": 3, "failed_channels": ["food"],
+             "unknown_offered": ["se_deplacer_vers_passage"],
+             "reason": "NONPOSITIVE_SCORE"}]}
+        report = classify_protocol_exposure(
+            trace, diag, factor_enabled=True)
+        self.assertIn("NO_SCORE_ELIGIBILITY", report["labels"])
+        self.assertIn("FACTOR_INACTIVE", report["labels"])
+        self.assertNotIn("NO_ADMISSIBLE_ALTERNATIVE", report["labels"])
+
+    def test_visit_without_eating_retains_negative_outcome(self):
+        trace = [dict(frame("se_deplacer_vers_passage",
+                            site="camp"), tick=1, site_after="passage"),
+                 dict(frame("attendre", site="passage"), tick=2)]
+        diag = {"ticks": [
+            {"tick": 1, "failed_channels": [], "unknown_offered": [],
+             "reason": "NO_FAILED_CURRENT_NEED"},
+            {"tick": 2, "failed_channels": [], "unknown_offered": [],
+             "reason": "NO_FAILED_CURRENT_NEED"}]}
+        report = classify_protocol_exposure(
+            trace, diag, factor_enabled=False)
+        self.assertIn("VISIT_WITHOUT_MEAL", report["labels"])
+        self.assertIn("NO_SAFE_RECOVERY", report["labels"])
+        self.assertEqual(report["passage_meal_ticks"], [])
+
+    def test_observer_refuses_unaligned_tick_history(self):
+        trace = [dict(frame("attendre"), tick=2)]
+        diag = {"ticks": [{"tick": 1, "failed_channels": [],
+                           "unknown_offered": [], "reason": "NO_FAILED_CURRENT_NEED"}]}
+        with self.assertRaisesRegex(ValueError, "unaligned"):
+            classify_protocol_exposure(trace, diag, factor_enabled=True)
 
     def test_pre_failure_divergence_not_credited_to_lived_failure(self):
         common = [frame("attendre")]
