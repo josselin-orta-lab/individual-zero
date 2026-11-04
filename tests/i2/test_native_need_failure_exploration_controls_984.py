@@ -140,5 +140,41 @@ class NeedFailureExplorationControls984(unittest.TestCase):
                 NativePaidI2.inspect(path)
 
 
+    def test_born_no_stock_and_both_harmful_no_hidden_food_assumption(self):
+        """Negative physical worlds remain independently cold replayable."""
+        with tempfile.TemporaryDirectory() as root:
+            for stock in (0, 1):
+                path=Path(root)/("harmful-"+str(stock)+".db")
+                life=NativePaidI2.create(
+                    path,body=Body(78,46,44,94),temperament=TRAITS,
+                    learning=True,spatial_world=True,
+                    need_failure_exploration=True,
+                    origin_novelty_tie=True,
+                    ordinary_food_site="source",
+                    food_stock=stock,food_restock_every=0,
+                    berry_food_gain=20.,berry_integrity_delta=-12.,
+                    second_food_site="passage",
+                    second_food_stock=stock,
+                    second_food_restock_every=0,
+                    second_berry_food_gain=0.,
+                    second_berry_integrity_delta=-12.,
+                    ordinary_water_site="camp",water_stock=2,
+                    drink_water_gain=35.,water_restock_every=10,
+                    max_steps=8,uc=250,
+                    sleep_consolidation=False)
+                for _ in range(8):
+                    if life.step()["terminal"]:
+                        break
+                self.assertEqual(life.audit(),NativePaidI2.inspect(path).audit())
+                self.assertFalse(life.audit()["engine_registered"])
+                self.assertFalse(life.audit()["m11_authenticated"])
+                with sqlite3.connect(path) as db:
+                    meals=db.execute(
+                        "SELECT COUNT(*) FROM native_physical_events "
+                        "WHERE admitted_action='manger'").fetchone()[0]
+                if stock == 0:
+                    self.assertEqual(meals,0)
+
+
 if __name__=="__main__":
     unittest.main()
