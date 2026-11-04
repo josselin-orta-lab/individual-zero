@@ -1,0 +1,30 @@
+# I2 P4 #990: explicit origin-failure longitudinal experiment runner
+
+**Original prospective protocol:** [issue #990](https://github.com/josselin-orta-lab/individual-zero/issues/990), frozen before this runner and before any new birth. **Dependency:** [PR #989](https://github.com/josselin-orta-lab/individual-zero/pull/989) must merge after complete 3.11/3.12 safety CI before this proposed runner can be promoted to main. Parent [#906](https://github.com/josselin-orta-lab/individual-zero/issues/906) owns longitudinal science.
+
+This is an **optional, explicit external research command**, not normal CI. Its code and frozen-config tests do **not** execute the study. Nothing activates the I2 engine or changes cognition, body physics, motor competition or active generation. It is not an I2 successor owner.
+
+## Precise frozen experiment
+
+Only the six cells already preregistered in #990 are allowed: two declared passage-injury worlds (0 and -12) times three independent born arms (learning OFF/factor OFF; learning ON/factor OFF; learning ON/factor ON). Body E78/F46/W44/I94, declared temperament (0,.5,.3,0,0), 128 paid steps-or-death, 1000 UC. Ordinary food at camp restores 0 with stock 1 and replenishment every 8; second food at passage restores 20 but may injure integrity, stock 1 and replenishment every 8. Water at camp restores 35, stock 2 and replenishment every 10. Other birth flags are all OFF, including innate origin novelty. No scripted first move, forced feeding, hidden source payoffs, reset after death, new score parameters or demographic search.
+
+**Scientific falsifier:** factor ON/OFF motor divergence **after two actually paid, nonrestoring food attempts under the same prior chosen physical history**, not a changed internal score alone. The readout distinguishes `DIVERGENCE_AFTER_MATCHED_FAILURE_WITH_FACTOR_CREDIT` (a contemporaneously signed v23 evidence suffix **on the action that was actually admitted**) from `DIVERGENCE_AFTER_MATCHED_FAILURE_NO_FACTOR_CREDIT` (including a divergence where v23 merely tagged an unchosen candidate); **neither label alone proves causal learning or improved survival**. First motor divergence before sufficient failures or after mismatched prior body/site/affordances remains separately classified. Identical motor sequences with differing body states, offered actions or physical site trajectories are marked `NO_MOTOR_DIVERGENCE_BUT_PHYSICS_UNMATCHED`, rather than presented as matched lives. Alternative entry without consumption and food gain with integrity damage must remain distinct. Nulls, non-exposure, harmful decisions, genuine biological death and technical right censor are retained. This is targeted prospective mechanism identification, not independent held-out adaptation or general H3/G3/M11 GO.
+
+## Explicit command (only after #989 integration and reviewed protocol)
+
+```sh
+python tools/i2_p4_origin_failure_study_990.py \
+  --execute-protocol-990 \
+  --expected-head FULL_40_CHARACTER_REVIEWED_GIT_SHA \
+  --output /outside/the/repository/unique-i2-p4-990
+```
+
+The runner rejects an omitted explicit flag, an unmatched or dirty source checkout, an existing output directory, and output within the repository. It creates **one** new directory, never automatically retries, and retains all original native SQLite journal files as well as separately cold-audited, SHA-256-receipted archival copies. For completed lives it writes researcher-only full signed per-tick trace, diagnostic output, receipt, per-life status and cohort comparison. It retains originals after study completion. The per-tick trace includes genuine body before/after, observed local offers, committed movement/consumption, final scores with source evidence, terminal and signed admission reference. The trace does **not** infer unchosen consequences or expose hidden future world information to any individual.
+
+A study error writes `status.json` as ABORTED (when possible) and **preserves partial originals** for forensic analysis. Such aborted lives must not be counted as completed observations or resumed covertly as if uninterrupted. The output directory may contain sensitive local experimental artifacts; operator custody and external preservation remain separate requirements. The report's archive hash does not authenticate anti-rollback or external witness M11.
+
+## Technical tests and evidence status
+
+`tests/i2/test_i2_p4_origin_failure_study_990.py` covers only frozen cell configuration, six distinct declared arms/worlds, exact birth parameters, explicit execution/head guards, and synthetic matching-history versus premature/unmatched/absent divergences. **No born I2 life is run by these tests.** No results are available until a reviewed one-off execution of this exact protocol on a source-locked checkout. One complete dual-version Python native safety workflow and engine-inactive gates are required on the eventual final source. Report actual runtime and costs of the one-off study, not CI duration as survival.
+
+Do not claim the original six #985 SQLite journals were recovered; they were temporary and are not the same individuals as any new research births. Hold all interpretation and no-retuning boundaries of [ADR-0012](../../../docs/decisions/ADR-0012-i2-scientific-development-methodology.md) and [ADR-0013](../../../docs/decisions/ADR-0013-lived-autonomy-and-experimental-restraint.md).
