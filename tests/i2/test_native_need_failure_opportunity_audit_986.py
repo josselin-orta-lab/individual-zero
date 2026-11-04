@@ -41,7 +41,7 @@ def make_effect(action, before=BODY, after=None):
     return (action, canon(before), canon(before if after is None else after))
 
 
-def records(*, meal_count=2, restore=False, move=False, scores=None,
+def records(*, meal_count=2, restore=False, move=True, scores=None,
             tags=None, before=BODY, offered=None, action="NO_ACTION",
             first_meal_body=None):
     events, effects = [], []
@@ -64,7 +64,7 @@ def records(*, meal_count=2, restore=False, move=False, scores=None,
             # The malformed-history test intentionally breaks continuity.
             pass
     offered = offered or (["attendre", "se_deplacer_vers_source"]
-                          if move else ["attendre", "se_deplacer_vers_passage"])
+                          if move else ["attendre", "se_deplacer_vers_source"])
     scores = scores or {name: 5 if name == "attendre" else 3 for name in offered}
     events.append(make_event(offered, scores, tags))
     effects.append(make_effect(action, body))
@@ -114,21 +114,21 @@ class NeedFailureOpportunityAudit986(unittest.TestCase):
         self.assertEqual(rows[-1].visited_before, ("camp", "passage"))
 
     def test_old_novelty_cannot_stack_and_new_tag_preboost_unknown(self):
-        offered = ["attendre", "se_deplacer_vers_passage"]
-        scores = {"attendre": 5, "se_deplacer_vers_passage": 6}
-        rows = classify(scores=scores, tags={"se_deplacer_vers_passage": OLD})
+        offered = ["attendre", "se_deplacer_vers_source"]
+        scores = {"attendre": 5, "se_deplacer_vers_source": 6}
+        rows = classify(scores=scores, tags={"se_deplacer_vers_source": OLD})
         self.assertEqual(rows[-1].reason, "ORIGIN_NOVELTY_ALREADY_CREDITED")
-        rows = classify(scores=scores, tags={"se_deplacer_vers_passage": FAIL})
+        rows = classify(scores=scores, tags={"se_deplacer_vers_source": FAIL})
         self.assertEqual(rows[-1].reason, "UNOBSERVABLE_PREBOOST_SCORE")
         self.assertIsNone(rows[-1].score_gap)
 
     def test_bad_score_gap_and_nonpositive(self):
-        offered = ["attendre", "se_deplacer_vers_passage"]
+        offered = ["attendre", "se_deplacer_vers_source"]
         self.assertEqual(classify(scores={"attendre": 9,
-                          "se_deplacer_vers_passage": 3})[-1].reason,
+                          "se_deplacer_vers_source": 3})[-1].reason,
                          "SCORE_GAP_GT_FOUR")
         self.assertEqual(classify(scores={"attendre": 5,
-                          "se_deplacer_vers_passage": 0})[-1].reason,
+                          "se_deplacer_vers_source": 0})[-1].reason,
                          "NONPOSITIVE_SCORE")
 
     def test_unsigned_score_bad_offer_and_physical_discontinuity(self):
@@ -149,12 +149,12 @@ class NeedFailureOpportunityAudit986(unittest.TestCase):
                 events=es, physical=ps, traits=TRAITS, factor_enabled=True)
 
     def test_incorrect_disabled_tag_and_impossible_activation(self):
-        es, ps = records(tags={"se_deplacer_vers_passage": FAIL})
+        es, ps = records(tags={"se_deplacer_vers_source": FAIL})
         with self.assertRaises(ValueError):
             audit_need_failure_opportunities(
                 events=es, physical=ps, traits=TRAITS, factor_enabled=False)
         es, ps = records(meal_count=0,
-                         tags={"se_deplacer_vers_passage": FAIL})
+                         tags={"se_deplacer_vers_source": FAIL})
         with self.assertRaises(ValueError):
             audit_need_failure_opportunities(
                 events=es, physical=ps, traits=TRAITS, factor_enabled=True)
