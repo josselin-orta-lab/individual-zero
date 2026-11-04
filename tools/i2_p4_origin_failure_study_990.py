@@ -130,6 +130,10 @@ def signed_trace(path):
         offers = event["claim"]["capture"]["accessible_semantics"]
         if action != "NO_ACTION" and action not in offers:
             raise ValueError("claimed action was not locally offered")
+        credited_actions = tuple(sorted(
+            semantic for semantic, score in scores.items()
+            if NEED_FAILURE_EXPLORATION_EVIDENCE in score["evidence_ref"]))
+        credited_chosen_motor = action != "NO_ACTION" and action in credited_actions
         trace.append({
             "tick": tick, "site_before": site_before, "site_after": site,
             "action": action, "offered": offers, "before": before,
@@ -139,9 +143,11 @@ def signed_trace(path):
             "need_relevant_food_failure": bool(
                 action == "manger" and before["food"] < 70 and
                 after["food"] <= before["food"]),
-            "factor_tagged": any(
-                NEED_FAILURE_EXPLORATION_EVIDENCE in x["evidence_ref"]
-                for x in scores.values()),
+            # A credited but unchosen candidate does not establish that
+            # the actually admitted motor carried the factor's credit.
+            "factor_tagged": bool(credited_actions),
+            "factor_credited_actions": credited_actions,
+            "factor_credited_chosen_motor": credited_chosen_motor,
             "origin_novelty_tagged": any(
                 ORIGIN_NOVELTY_EVIDENCE in x["evidence_ref"]
                 for x in scores.values()),
@@ -175,19 +181,22 @@ def first_matched_factor_divergence(control_trace, factor_trace,
               "food" not in control_diag["ticks"][i]["failed_channels"] or
               "food" not in factor_diag["ticks"][i]["failed_channels"]):
             verdict = "DIVERGENCE_BEFORE_PERSONAL_DOUBLE_FAILURE"
-        elif b.get("factor_tagged") is True:
-            # A logged factor credit + a paid motor divergence is a narrow
-            # association; never infer success, safety or general learning.
+        elif b.get("factor_credited_chosen_motor") is True:
+            # The actual admitted motor, not merely an unchosen candidate,
+            # carries a signed v23 factor provenance. Still not a proof
+            # of survival, causal learning or long-horizon generality.
             verdict = "DIVERGENCE_AFTER_MATCHED_FAILURE_WITH_FACTOR_CREDIT"
         else:
-            # Divergence alone cannot be attributed to v23 without its
-            # observed provenance on this same paid decision frame.
+            # A different paid motor with a tag on another candidate
+            # is NOT credited to v23, even if the frame contained a tag.
             verdict = "DIVERGENCE_AFTER_MATCHED_FAILURE_NO_FACTOR_CREDIT"
         return {
             "classification": verdict, "first_motor_divergence_tick": i + 1,
             "control_action": a["action"], "factor_action": b["action"],
             "same_prehistory": current_matched,
             "factor_tagged_at_divergence": b.get("factor_tagged") is True,
+            "chosen_motor_factor_credited":
+                b.get("factor_credited_chosen_motor") is True,
         }
     if len(control_trace) != len(factor_trace):
         return {"classification": "DIFFERENT_OBSERVED_LIFE_LENGTHS",
