@@ -19,7 +19,8 @@ sys.path.insert(0, str(ROOT / "src"))
 from i2.modules.native_need_failure_opportunity_audit import (
     report_need_failure_opportunities,
 )
-from i2.modules.native_owner_support import saved_traits
+from i2.modules.native_owner_support import saved_body, saved_traits
+from i2.modules.native_spatial_world import replay_site
 from i2.runtime.native_paid_cycle import NativePaidI2
 
 
@@ -27,7 +28,8 @@ def diagnose_existing_life(path):
     path = Path(path)
     # This is the single native owner's complete independent physical and
     # cognitive cold replay, not a trusted verdict from the observer itself.
-    verified = NativePaidI2.inspect(path).audit()
+    inspected = NativePaidI2.inspect(path)
+    verified = inspected.audit()
     revision = verified["revision"]
     if (type(revision) is not int or
             type(verified["max_steps"]) is not int or
@@ -39,21 +41,37 @@ def diagnose_existing_life(path):
     with sqlite3.connect(uri, uri=True) as db:
         db.execute("BEGIN")
         birth = db.execute(
-            "SELECT traits_json,need_failure_exploration,spatial_world "
+            "SELECT life_ref,genesis_ref,traits_json,"
+            "need_failure_exploration,spatial_world "
             "FROM native_genesis WHERE id=1").fetchone()
         events = db.execute(
             "SELECT event_json FROM events ORDER BY seq").fetchall()
         physical = db.execute(
             "SELECT admitted_action,before_json,after_json "
             "FROM native_physical_events ORDER BY seq").fetchall()
-    if (birth is None or birth[1] not in (0, 1) or birth[2] != 1 or
+    if (birth is None or
+            (birth[0], birth[1]) !=
+                (inspected.life_ref, inspected.genesis_ref) or
+            birth[3] not in (0, 1) or birth[4] != 1 or
             len(events) != revision or len(physical) != revision):
         raise ValueError("cold-audited spatial genesis/journal mismatch")
+    traits = saved_traits(birth[2])
+    # The audit and this extraction use separate SQLite connections.
+    # Bind the extracted identity, physiology and walked site back to the
+    # cold-audited endpoint. This detects ordinary changed-file races, but
+    # is not an independently witnessed, atomic M11 snapshot.
+    replay_rows = tuple((step, "", action, 0.0, before, after, 0)
+                        for step, (action, before, after) in
+                        enumerate(physical, 1))
+    if (verified["temperament"] != traits.as_dict() or
+            saved_body(physical[-1][2]).as_dict() != verified["body"] or
+            replay_site(replay_rows, enabled=True) != verified["site"]):
+        raise ValueError("extracted journal disagrees with cold-audited endpoint")
     result = report_need_failure_opportunities(
         events=tuple(json.loads(x[0]) for x in events),
         physical=tuple(physical),
-        traits=saved_traits(birth[0]),
-        factor_enabled=bool(birth[1]),
+        traits=traits,
+        factor_enabled=bool(birth[3]),
     )
     return {
         "protocol": "i2-v23-need-failure-observation-986",
@@ -61,7 +79,7 @@ def diagnose_existing_life(path):
         "revision": revision,
         "biological_terminal": bool(verified["terminal"]),
         "right_censored": not verified["terminal"],
-        "factor_enabled": bool(birth[1]),
+        "factor_enabled": bool(birth[3]),
         **result,
     }
 
