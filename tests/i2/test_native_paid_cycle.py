@@ -65,6 +65,67 @@ class NativePaidCycleTests(unittest.TestCase):
         # Preserve the independent, inspection-only cold path and its verdict.
         self.assertEqual(NativePaidI2.inspect(self.path).audit(), paid)
 
+    def test_cold_resource_prefix_equals_full_scan_for_all_bounded_prefixes(self):
+        # Fabricated rows exercise the pure counting algorithm only; these
+        # are not extra births, artificial rewards or scientific cohorts.
+        from i2.runtime.native_paid_cycle import (
+            _ColdAuditResourcePrefix, personally_observed_resource_outcomes,
+        )
+        from i2.modules.native_owner_support import _json
+
+        actions = ("boire", "manger", "dormir", "boire_decouverte",
+                   "collecter", "NO_ACTION", "attendre")
+        rows = []
+        for seq in range(1, 129):
+            action = actions[(seq * 5) % len(actions)]
+            # Include target-sated attempts, failures, restoration and harm.
+            food = 100.0 if seq % 11 == 0 else 20.0
+            water = 100.0 if seq % 13 == 0 else 20.0
+            before = Body(60.0, food, water, 75.0)
+            food_after = (min(100.0, food + 8.0) if seq % 3 == 0
+                          else max(0.0, food - 1.0))
+            water_after = (min(100.0, water + 10.0) if seq % 4 == 0
+                           else max(0.0, water - 1.0))
+            after = Body(60.0, food_after, water_after, 75.0)
+            rows.append((seq, "capture", action, 0.0,
+                         _json(before.as_dict()), _json(after.as_dict()), 0))
+
+        prefix = _ColdAuditResourcePrefix(self.traits)
+        for length in range(len(rows) + 1):
+            historical = rows[:length]
+            self.assertEqual(
+                prefix.snapshot(previous=historical, traits=self.traits),
+                personally_observed_resource_outcomes(
+                    previous=historical, traits=self.traits))
+            if length < len(rows):
+                prefix.append_verified(rows[length])
+
+        # No stale, foreign or out-of-order projection can participate in
+        # an audit's score comparison.
+        with self.assertRaisesRegex(NativeRefusal, "stale or foreign"):
+            prefix.snapshot(previous=rows[:-1], traits=self.traits)
+        with self.assertRaisesRegex(NativeRefusal, "stale or foreign"):
+            prefix.snapshot(previous=rows, traits=BirthTemperament(0, 0, 0, 0, 0))
+        with self.assertRaisesRegex(NativeRefusal, "nonsequential"):
+            _ColdAuditResourcePrefix(self.traits).append_verified(rows[1])
+        forged = list(rows[1])  # first sampled resource action
+        forged[0] = 1  # valid first-position sequence for the isolated probe
+        forged[4] = '{"food":20}'
+        with self.assertRaises(ValueError):
+            _ColdAuditResourcePrefix(self.traits).append_verified(tuple(forged))
+
+    def test_cold_native_audit_does_not_rescan_verified_target_outcomes(self):
+        from unittest.mock import patch
+
+        actor = self.birth()
+        paid = actor.step()
+        # Unmodified live learning still uses historical scanning. A
+        # separate cold audit must instead use the verified local prefix.
+        with patch("i2.runtime.native_paid_cycle.personally_observed_resource_outcomes",
+                   side_effect=AssertionError("duplicate cold target scan")):
+            self.assertEqual(actor.audit(), paid)
+            self.assertEqual(NativePaidI2.inspect(self.path).audit(), paid)
+
     def test_before_commit_rollback_and_uncertain_commit_halts(self):
         from i2.modules.cognitive_cycle_fixture import (
             FaultInjected, CommitAcknowledgmentLost)
