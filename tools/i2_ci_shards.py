@@ -67,46 +67,45 @@ def discover_cases():
     if loader.errors:
         raise RuntimeError("I2 discovery failed:\n" + "\n".join(loader.errors))
     ids = [case.id() for case in cases]
-    if not ids or len(ids) != len(set(ids)):
-        raise RuntimeError("I2 discovery empty or has duplicate test IDs")
+    if not ids:
+        raise RuntimeError("I2 discovery is empty")
     return cases
 
 
 def partition(cases):
-    """Disjoint exhaustive module assignment, preserving each module's order."""
+    """Exhaustive, disjoint occurrences; preserve duplicate IDs and module order."""
     modules = defaultdict(list)
-    for case in cases:
-        test_id = case.id()
-        modules[test_id.split(".", 1)[0]].append(test_id)
-    weights = lambda name, ids: BASELINE_SECONDS.get(name, max(0.25, len(ids) * 0.2))
+    for index, case in enumerate(cases):
+        modules[case.id().split(".", 1)[0]].append(index)
+    weights = lambda name, indices: BASELINE_SECONDS.get(name, max(0.25, len(indices) * 0.2))
     assignment = [set(), set()]
     cost = [0.0, 0.0]
-    for module, ids in sorted(modules.items(),
-                              key=lambda row: (-weights(*row), row[0])):
+    for module, indices in sorted(modules.items(),
+                                  key=lambda row: (-weights(*row), row[0])):
         worker = 0 if cost[0] <= cost[1] else 1
-        assignment[worker].update(ids)
-        cost[worker] += weights(module, ids)
-    # Keep canonical unittest discovery order within each process.
-    shards = [[case.id() for case in cases if case.id() in selected]
+        assignment[worker].update(indices)
+        cost[worker] += weights(module, indices)
+    shards = [[i for i in range(len(cases)) if i in selected]
               for selected in assignment]
-    full = set(case.id() for case in cases)
-    if (len(full) != len(cases) or not all(shards) or
-            set(shards[0]) & set(shards[1]) or
-            set(shards[0]) | set(shards[1]) != full or
-            sum(map(len, shards)) != len(cases)):
+    complete = list(range(len(cases)))
+    if (not all(shards) or set(shards[0]) & set(shards[1]) or
+            sorted(shards[0] + shards[1]) != complete):
         raise RuntimeError("I2 partition is not exhaustive and disjoint")
     return shards
 
 
 def run_worker(manifest_path, report_path, index):
-    expected = json.loads(Path(manifest_path).read_text(encoding="utf-8"))["shards"][index]
+    manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
+    expected = manifest["shards"][index]
     cases = discover_cases()
-    available = {case.id() for case in cases}
-    if len(set(expected)) != len(expected) or not set(expected) <= available:
-        raise RuntimeError("I2 test IDs changed between planning and worker discovery")
-    selected = [case for case in cases if case.id() in set(expected)]
-    if len(selected) != len(expected):
-        raise RuntimeError("I2 worker's test membership changed")
+    # The entire ordered discovery (including duplicate IDs) is the contract;
+    # never silently drop an occurrence with the same unittest name.
+    if [case.id() for case in cases] != manifest["all_ids"]:
+        raise RuntimeError("I2 discovery changed between planning and worker")
+    if len(set(expected)) != len(expected) or any(
+            type(i) is not int or i < 0 or i >= len(cases) for i in expected):
+        raise RuntimeError("I2 shard contains invalid or duplicate positions")
+    selected = [cases[i] for i in expected]
     result = unittest.TextTestRunner(verbosity=2).run(unittest.TestSuite(selected))
     report = {
         "planned": len(expected), "executed": result.testsRun,
@@ -117,7 +116,6 @@ def run_worker(manifest_path, report_path, index):
     print(f"I2_CI_SHARD_{index}=" + json.dumps(report, sort_keys=True), flush=True)
     return 0 if (report["successful"] and report["executed"] == report["planned"]
                  and report["skipped"] == 0) else 1
-
 
 def relay(process, lock):
     for line in process.stdout:
@@ -133,7 +131,8 @@ def run_parent():
     with tempfile.TemporaryDirectory(prefix="i2-ci-") as directory:
         base = Path(directory)
         manifest = base / "manifest.json"
-        manifest.write_text(json.dumps({"shards": shards}), encoding="utf-8")
+        manifest.write_text(json.dumps({"all_ids": [case.id() for case in cases],
+                                        "shards": shards}), encoding="utf-8")
         processes = [subprocess.Popen(
             [sys.executable, "-u", str(Path(__file__).resolve()),
              "--worker", str(index), "--manifest", str(manifest),
