@@ -67,7 +67,7 @@ class NativeCrossChannelFoodEvidence952(unittest.TestCase):
             self.assertIn("manger", associated)
             self.assertEqual(adjusted["manger"], born["manger"] + 1)
             values.append(adjusted["manger"])
-        self.assertEqual(values, [values[0], values[0]])
+        self.assertEqual(values[0], values[1])
         self.assertNotEqual(harmful.integrity, beneficial.integrity)
 
     def test_saturated_harm_is_not_counted_as_food_success_or_failure(self):
