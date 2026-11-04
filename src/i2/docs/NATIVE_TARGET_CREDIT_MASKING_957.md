@@ -15,6 +15,7 @@ At an identical current body, temperament, canonical first-person capture and on
 2. With no personally chosen food result, show the incoming generic scores are preserved.
 3. With learning OFF, show identical preservation even if a physical food-result row exists.
 4. With identical food gain but different before/after integrity loss, show the target-specific count and target-association stage remain identical.
+5. Apply actual pure native `transition` to the same body with harmful versus harmless food; verify total measured need relief differs while later food-specific target credit collapses both to the same score. This is a physics projection, not a paid motor or independently learned causal effect.
 
 These are synthetic *stage probes*, not independent paid lives, not simulated successful behavior and not a replay of #953. Do not infer hidden future harm or an unchosen action. No new resource valuation, action veto, score formula, time clock, state owner, motor or UC path. All physical decisions in #953 remain frozen. Actual choice-level interpretation must consult first-person paid scores, prior observed food outcomes and current body in [#955](https://github.com/josselin-orta-lab/individual-zero/issues/955).
 
