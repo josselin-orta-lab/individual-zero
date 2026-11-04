@@ -9,7 +9,7 @@ This is a **navigation index**, not a second architectural specification. It sho
 | Determine what is currently active | `config/engine-registry.json` | current HEAD and generation `engine.json` |
 | Decide the next scientific intervention | `docs/engineering/RESEARCH_COORDINATOR.md` and `config/research-program.json` | dated evidence, source-pinned dossiers, current issues and unreviewed gaps |
 | See the architecture, causal path and intervention owners | `docs/architecture/ATLAS.md` | `docs/architecture/ENGINE_GENERATIONS.md`, generation-owned Stage maps and real call sites |
-| Inspect I2 G1 proposals versus G2 tests | `docs/architecture/proposals/README.md` | dated proposal headers and `src/i2/docs/STATUS.md` |
+| Distinguish I2 historic G1/G2 proposals from its current native prototype | `src/i2/docs/STATUS.md`, `src/i2/docs/ARCHITECTURE.md` | real native call path, dated proposal headers and original P4 negative lives |
 | Modify the living I1 engine | `src/i1/AGENTS.md`, `src/i1/docs/README.md` | `src/i1/docs/STATUS.md`, code, targeted tests |
 | Understand I1 causal flow | `src/i1/docs/COGNITIVE_FLOW.md` | `src/i1/docs/STAGES_AND_INTERFACES.md` |
 | Change memory, needs, sleep or M11 | `src/i1/docs/README.md` | mechanism guide, observed source paths and invariants |

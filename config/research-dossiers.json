@@ -63,7 +63,7 @@
     {
       "id": "i2-status",
       "path": "src/i2/docs/STATUS.md",
-      "blob_sha": "b9052d1fb88d871a4d9cc8269d7683eca4f63295",
+      "blob_sha": "aba81d3e8f54c002e783a456030d20be966550f3",
       "anchor": "EXTERNAL_REVIEW_GATE_RETIRED",
       "authority": "current_status_snapshot"
     },

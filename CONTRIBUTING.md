@@ -67,7 +67,7 @@ An ADR records a shared decision. It does not replace an experiment.
 | `src/adapters/` | external API conversion, integration, configuration, compatibility handling | new cognitive logic disguised as integration |
 | `src/i0/`, `archive/i0/` | frozen, separately reproducible historical reference | active I1 or I2 changes |
 | `src/i1/` | active I1 cognition, runtime, Lab and handbook | obsolete-generation runtime imports |
-| `src/i2/` | inoperative I2 research fixtures and proposal contracts | living engines, born states or motor authority |
+| `src/i2/` | synthetic fixtures, native locally born SQLite research prototype, research contracts and tests | registered engine activation, I1 inherited state, external actuation or independent M11 claims |
 | `experiments/` | question, RAI, protocol, reproduction commands, results, decision | permanent copies of reference code |
 | `benchmarks/` | reusable scenarios, metrics, reference data, comparison rules | conclusions specific to one EXP |
 | `tests/` | unit, integration, compatibility, regression tests | scientific interpretation |
