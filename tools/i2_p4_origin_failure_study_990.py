@@ -86,7 +86,9 @@ def _require_exact_clean_checkout(expected_head):
     actual = subprocess.check_output(
         ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     dirty = subprocess.check_output(
-        ["git", "status", "--porcelain", "--untracked-files=no"],
+        # Untracked research modules must not silently shadow reviewed code.
+        # A reproducible one-off life needs an entirely clean checkout.
+        ["git", "status", "--porcelain", "--untracked-files=all"],
         cwd=ROOT, text=True).strip()
     if actual != expected_head or dirty:
         raise ValueError("exact clean source-locked Git HEAD required")
