@@ -15,7 +15,9 @@ from i2.modules.native_body_contract import Body
 from i2.modules.native_birth_temperament import BirthTemperament
 from i2.modules.native_physiological_needs import assess_needs
 from i2.modules.native_spatial_world import BORN_SITE, destination, site_after
-from i2.runtime.native_paid_cycle import NativePaidI2
+from i2.runtime.native_paid_cycle import (
+    NativePaidI2, personally_observed_resource_outcomes,
+)
 
 BODY = Body(85, 35, 35, 100)
 TRAITS = BirthTemperament(0, .5, .3, 0, 0)
@@ -58,13 +60,21 @@ class PaidFoodHarmDivergence955(unittest.TestCase):
                         ).fetchall()
                         cognitive = [json.loads(r[0]) for r in db.execute(
                             "SELECT event_json FROM events ORDER BY seq")]
+                        # Independent observational projection FROM the
+                        # committed physical + cognitive journal, not a
+                        # hypothetical food action or second life owner.
+                        personal_history = life._rows(db)
                     self.assertEqual(len(physical), len(cognitive))
+                    self.assertEqual(len(physical), len(personal_history))
                     site = BORN_SITE
                     summary = []
                     for tick, ((action, before, after), event) in enumerate(
                             zip(physical, cognitive), 1):
                         body_before = Body(**json.loads(before))
                         pressures = assess_needs(body_before, TRAITS).pressures
+                        target_counts = personally_observed_resource_outcomes(
+                            previous=personal_history[:tick - 1],
+                            traits=TRAITS)["manger"]
                         offered = event["claim"]["capture"][
                             "accessible_semantics"]
                         if action == "manger":
@@ -89,6 +99,8 @@ class PaidFoodHarmDivergence955(unittest.TestCase):
                             "need_food": round(pressures["food"], 4),
                             "need_integrity": round(
                                 pressures["integrity"], 4),
+                            "observed_food_successes": target_counts[0],
+                            "observed_food_failures": target_counts[1],
                             "food_offered": "manger" in offered,
                             "paid_status": (
                                 advice["status"] if advice else None),
