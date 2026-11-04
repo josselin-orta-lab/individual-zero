@@ -1,6 +1,6 @@
 # I2: independent native research architecture
 
-**Verified snapshot: 4 November 2026, main `c6d6f8ec10546d3055d13db19754c20a20dc4812`.** [I2 engine contract](../engine.json) has **no registered entrypoint** and declares `NOT_REGISTERED_NOT_EXECUTABLE`; [registry](../../../config/engine-registry.json) still activates I1 only. Nevertheless, [NativePaidI2.create](../runtime/native_paid_cycle.py) starts an **independently born local SQLite research identity** whose internal actions have real modeled physiological consequences. Do not call this registered I2 activation, external actuation or independently authenticated M11.
+**Verified snapshot: 4 November 2026, main `6c9157371be0034b90f9fa617d061f721ba4a080`.** [I2 engine contract](../engine.json) has **no registered entrypoint** and declares `NOT_REGISTERED_NOT_EXECUTABLE`; [registry](../../../config/engine-registry.json) still activates I1 only. Nevertheless, [NativePaidI2.create](../runtime/native_paid_cycle.py) starts an **independently born local SQLite research identity** whose internal actions have real modeled physiological consequences. Do not call this registered I2 activation, external actuation or independently authenticated M11.
 
 Read [current status](STATUS.md), [single P0–P5 roadmap](INTEGRATED_BEHAVIOR_ROADMAP.md), [research method](SCIENTIFIC_DEVELOPMENT_METHOD.md) and [ADR-0013](../../../docs/decisions/ADR-0013-lived-autonomy-and-experimental-restraint.md) before changing behavior. Historical G1/G2 synthetic studies are comparison and negative evidence, not the sole current I2 implementation.
 
@@ -23,6 +23,10 @@ Read [current status](STATUS.md), [single P0–P5 roadmap](INTEGRATED_BEHAVIOR_R
 | P4 long, vulnerable continuous lives | [six-life protocol](NATIVE_COMPETING_SURVIVAL_967.md), [PR #968](https://github.com/josselin-orta-lab/individual-zero/pull/968) | All six died from food exhaustion at tick 61 with zero food offers. Hidden water-quality reversal contacted at tick 49; neither ON nor OFF showed a survival advantage |
 
 The P0–P5 issue sequence remains a **research organization**, not a checklist of entirely unimplemented code. In particular **P1 exists**, **P2 and P3 are partially integrated**, and **P4 scientific generalization is not established**. The next useful investigation must separate failed access to food/alternatives from failed learned choice **before** adding another score adjustment. [Research roadmap](INTEGRATED_BEHAVIOR_ROADMAP.md) records evidence/priority and [ADR-0010](../../../docs/decisions/ADR-0010-stable-world-evidence-based-association.md) prohibits guesses about invisible environment changes.
+
+## Current v20 extension: optional origin novelty
+
+[Issue #969](https://github.com/josselin-orta-lab/individual-zero/issues/969) / [PR #970](https://github.com/josselin-orta-lab/individual-zero/pull/970) added an **innate, birth-hashed and default-OFF** novelty discriminator under research-only native genesis v20. It may distinguish an equally ranked, available and previously *unvisited* adjacent move from a known adjacent move by one score unit, provided exploration temperament is positive and no urgent reflex applies. It neither knows source rewards nor forces motor decisions. Source-locked learning-OFF paired lives showed one admitted source visit at tick 15 and two meals with food gain and integrity injury. It is **not learned place memory** or demonstrated autonomy; v19 historical lives remain separate.
 
 ## Invariants and gates still missing
 
