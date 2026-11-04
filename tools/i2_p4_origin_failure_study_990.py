@@ -193,6 +193,17 @@ def first_matched_factor_divergence(control_trace, factor_trace,
         return {"classification": "DIFFERENT_OBSERVED_LIFE_LENGTHS",
                 "first_motor_divergence_tick": None,
                 "same_prehistory": False}
+    if any(
+        (a["before"], a["after"], a["site_before"], a["site_after"],
+         a["offered"]) !=
+        (b["before"], b["after"], b["site_before"], b["site_after"],
+         b["offered"])
+        for a, b in zip(control_trace, factor_trace)
+    ):
+        # Identical motors alone do not establish matched physical lives.
+        return {"classification": "NO_MOTOR_DIVERGENCE_BUT_PHYSICS_UNMATCHED",
+                "first_motor_divergence_tick": None,
+                "same_prehistory": False}
     return {"classification": "NO_MOTOR_DIVERGENCE",
             "first_motor_divergence_tick": None,
             "same_prehistory": True}
