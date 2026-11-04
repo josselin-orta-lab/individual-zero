@@ -26,26 +26,26 @@ class I2CIShardPlannerTests(unittest.TestCase):
         cases = [Dummy(value) for value in ids]
         first = shards.partition(cases)
         self.assertEqual(first, shards.partition(cases))
-        self.assertEqual(set(first[0]) | set(first[1]), set(ids))
+        self.assertEqual(sorted(first[0] + first[1]), list(range(len(ids))))
         self.assertFalse(set(first[0]) & set(first[1]))
         for group in first:
-            self.assertEqual(group, [value for value in ids if value in group])
+            self.assertEqual(group, sorted(group))
         for module in ("test_slow", "test_tiny", "test_other"):
-            self.assertEqual(sum(any(name.startswith(module + ".") for name in group)
+            self.assertEqual(sum(any(ids[i].startswith(module + ".") for i in group)
                                  for group in first), 1)
 
-    def test_duplicate_case_is_not_silently_dropped(self):
+    def test_duplicate_ids_keep_every_occurrence(self):
         cases = [Dummy("test_a.A.test_same"), Dummy("test_a.A.test_same"),
                  Dummy("test_b.B.test_other")]
-        with self.assertRaisesRegex(RuntimeError, "exhaustive and disjoint"):
-            shards.partition(cases)
+        groups = shards.partition(cases)
+        self.assertEqual(sorted(groups[0] + groups[1]), [0, 1, 2])
+        self.assertTrue(any(0 in group and 1 in group for group in groups))
 
     def test_empty_or_unsplittable_suite_is_rejected(self):
         for cases in ([], [Dummy("test_a.A.test_one")]):
             with self.subTest(length=len(cases)):
                 with self.assertRaisesRegex(RuntimeError, "exhaustive and disjoint"):
                     shards.partition(cases)
-
 
 if __name__ == "__main__":
     unittest.main()
