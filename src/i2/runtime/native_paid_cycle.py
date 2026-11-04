@@ -51,7 +51,7 @@ PRIORS = {"boire": 1, "manger": 4, "dormir": 2, "attendre": 1, "collecter": 2, "
 HORIZON = 8
 MAX_BORN_STEPS = 128
 # Capture is a bounded projection, not a deletion of an individual's journal.
-GENESIS_SCHEMA = "i2-native-paid-local-life-v18-spatial-water-refill-evidence-boundary"
+GENESIS_SCHEMA = "i2-native-paid-local-life-v19-target-food-credit-ablation"
 MAX_NATIVE_CAPTURE_REFS = 64
 
 
@@ -210,6 +210,7 @@ def personally_nonrestoring_action(*, body, previous, action):
 
 def personally_nonrestoring_scores(
     scores, *, claim, body, traits, previous, learning,
+    target_food_credit_enabled=True,
 ):
     """Use persistent target-specific evidence before any critical reflex.
 
@@ -222,8 +223,8 @@ def personally_nonrestoring_scores(
     The distinct critical last-resort gate may still cap a repeatedly
     failing action at zero and does not authorize a motor act.
     """
-    if type(learning) is not bool:
-        raise NativeRefusal("native learning arm must be exact boolean")
+    if type(learning) is not bool or type(target_food_credit_enabled) is not bool:
+        raise NativeRefusal("native learning and food-credit flags must be exact booleans")
     adjusted = dict(scores)
     if not learning:
         return adjusted, frozenset(), frozenset()
@@ -232,7 +233,8 @@ def personally_nonrestoring_scores(
         previous=previous, traits=traits)
     associated = set()
     for action in claim.capture.accessible_semantics:
-        if action not in adjusted or action not in outcomes:
+        if (action not in adjusted or action not in outcomes or
+                (action == "manger" and not target_food_credit_enabled)):
             continue
         successes, failures = outcomes[action]
         if successes + failures:
@@ -479,7 +481,7 @@ class _Valuation(ChosenOutcomeValuationStudy):
                  sleep_consolidation=True, evidence_tie_exploration=False,
                  place_return_tie=False, purpose_followthrough=False,
                  contextual_movement_credit=False, spatial_world=False,
-                 prior_event=None, **kwargs):
+                 target_food_credit_enabled=True, prior_event=None, **kwargs):
         super().__init__(**kwargs)
         self.body, self.traits = body, traits
         self.previous, self.learning = tuple(previous), learning
@@ -488,6 +490,7 @@ class _Valuation(ChosenOutcomeValuationStudy):
         self.place_return_tie = place_return_tie
         self.purpose_followthrough = purpose_followthrough
         self.contextual_movement_credit = contextual_movement_credit
+        self.target_food_credit_enabled = target_food_credit_enabled
         self.spatial_world = spatial_world
         self.prior_event = prior_event
 
@@ -505,7 +508,8 @@ class _Valuation(ChosenOutcomeValuationStudy):
         initial = innate_adjustment(contextual, self.body, self.traits)
         updated, discouraged, associated = personally_nonrestoring_scores(
             initial, claim=self.claim, body=self.body, traits=self.traits,
-            previous=self.previous, learning=self.learning)
+            previous=self.previous, learning=self.learning,
+            target_food_credit_enabled=self.target_food_credit_enabled)
         updated, exploratory = native_evidence_tie_exploration(
             updated, claim=self.claim, body=self.body, traits=self.traits,
             previous=self.previous, learning=self.learning,
@@ -657,7 +661,8 @@ def genesis_digest(meta):
         meta["purpose_followthrough"],
         meta["contextual_movement_credit"],
         meta["ordinary_food_site"],
-        meta["food_restock_every"]]).encode("ascii")).hexdigest()
+        meta["food_restock_every"],
+        meta["target_food_credit_enabled"]]).encode("ascii")).hexdigest()
 
 
 class NativePaidI2:
@@ -692,7 +697,8 @@ class NativePaidI2:
                evidence_tie_exploration=False, spatial_world=False,
                ordinary_water_site=None, place_return_tie=False,
                purpose_followthrough=False, contextual_movement_credit=False,
-               ordinary_food_site=None, max_steps=HORIZON, food_stock=4, water_stock=4,
+               ordinary_food_site=None, target_food_credit_enabled=True,
+               max_steps=HORIZON, food_stock=4, water_stock=4,
                water_restock_every=0, food_restock_every=0,
                water_quality_change_at=0, water_quality_after_gain=0.0,
                uc=80,
@@ -708,6 +714,7 @@ class NativePaidI2:
                 type(place_return_tie) is not bool or
                 type(purpose_followthrough) is not bool or
                 type(contextual_movement_credit) is not bool or
+                type(target_food_credit_enabled) is not bool or
                 (contextual_movement_credit and
                  (not spatial_world or not learning)) or
                 (purpose_followthrough and (not spatial_world or
@@ -787,6 +794,8 @@ class NativePaidI2:
                 ordinary_food_site TEXT,
                 food_restock_every INTEGER NOT NULL
                     CHECK(food_restock_every BETWEEN 0 AND 32),
+                target_food_credit_enabled INTEGER NOT NULL
+                    CHECK(target_food_credit_enabled IN (0,1)),
                 digest TEXT NOT NULL)""")
             db.execute("""CREATE TABLE native_discoveries (
                 seq INTEGER PRIMARY KEY,
@@ -812,8 +821,9 @@ class NativePaidI2:
                         purpose_followthrough=int(purpose_followthrough),
                         contextual_movement_credit=int(contextual_movement_credit),
                         ordinary_food_site=ordinary_food_site,
-                        food_restock_every=food_restock_every)
-            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                        food_restock_every=food_restock_every,
+                        target_food_credit_enabled=int(target_food_credit_enabled))
+            db.execute("INSERT INTO native_genesis VALUES(1,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                        (*meta.values(), genesis_digest(meta)))
             db.commit()
         obj.audit()
@@ -1085,7 +1095,8 @@ class NativePaidI2:
                 initial = innate_adjustment(contextual, body, traits)
                 scores, discouraged, associated = personally_nonrestoring_scores(
                     initial, claim=claim, body=body, traits=traits,
-                    previous=previous, learning=bool(meta["learning"]))
+                    previous=previous, learning=bool(meta["learning"]),
+                    target_food_credit_enabled=bool(meta["target_food_credit_enabled"]))
                 scores, exploratory = native_evidence_tie_exploration(
                     scores, claim=claim, body=body, traits=traits,
                     previous=previous, learning=bool(meta["learning"]),
@@ -1264,6 +1275,7 @@ class NativePaidI2:
             place_return_tie=bool(meta["place_return_tie"]),
             purpose_followthrough=bool(meta["purpose_followthrough"]),
             contextual_movement_credit=bool(meta["contextual_movement_credit"]),
+            target_food_credit_enabled=bool(meta["target_food_credit_enabled"]),
             spatial_world=bool(meta["spatial_world"]),
             prior_event=prior_cognitive_event)
         fixture = self._fixture(valuation)
