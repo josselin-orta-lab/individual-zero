@@ -36,7 +36,7 @@ def food_claim(body):
     return ObservationClaim(
         "life:i2:p4:food-audit",
         FirstPersonCapture(2, "capture:i2:p4:food-audit",
-                           "goal:physical-needs", ("manger", "boire")),
+                           "goal:physical-needs", ("boire", "manger")),
         "source:i2:p4:food-audit",
         tuple(sorted(current_evidence(body, TRAITS))))
 
