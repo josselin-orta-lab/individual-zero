@@ -100,6 +100,7 @@ class NeedFailureOpportunityAudit986(unittest.TestCase):
         self.assertEqual(result["summary"]["no_movement_offered_ticks"], 2)
         self.assertEqual(result["summary"]["only_visited_moves_offered_ticks"], 0)
         self.assertEqual(result["summary"]["positive_bounded_score_opportunity_ticks"], 1)
+        self.assertEqual(result["summary"]["tagged_preboost_unobservable_ticks"], 0)
         self.assertEqual(result["summary"]["eligible_but_not_credited_on_ticks"], 0)
         enabled = report_need_failure_opportunities(
             events=records(meal_count=2)[0],
@@ -157,6 +158,21 @@ class NeedFailureOpportunityAudit986(unittest.TestCase):
         rows = classify(scores=scores, tags={"se_deplacer_vers_source": FAIL})
         self.assertEqual(rows[-1].reason, "UNOBSERVABLE_PREBOOST_SCORE")
         self.assertIsNone(rows[-1].score_gap)
+
+    def test_tagged_boost_is_observed_not_reconstructed_eligibility(self):
+        events, physical = records(
+            scores={"attendre": 5, "se_deplacer_vers_source": 6},
+            tags={"se_deplacer_vers_source": FAIL})
+        report = report_need_failure_opportunities(
+            events=events, physical=physical, traits=TRAITS,
+            factor_enabled=True)
+        summary = report["summary"]
+        self.assertEqual(summary["factor_tags"], 1)
+        self.assertEqual(summary["tagged_preboost_unobservable_ticks"], 1)
+        self.assertEqual(summary["positive_bounded_score_opportunity_ticks"], 0)
+        self.assertIsNone(report["ticks"][-1]["score_gap"])
+        self.assertEqual(report["ticks"][-1]["reason"],
+                         "UNOBSERVABLE_PREBOOST_SCORE")
 
     def test_bad_score_gap_and_nonpositive(self):
         offered = ["attendre", "se_deplacer_vers_source"]
