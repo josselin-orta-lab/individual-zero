@@ -159,8 +159,11 @@ class P4FailedNeedExploration984(unittest.TestCase):
                             # may leak into a prior meal.
                             self.assertLessEqual(injury, 0)
                             if site == "passage":
+                                # +0 genuine food: metabolic tick still costs food.
                                 self.assertLessEqual(gain, 0)
-                            else:
+                            elif pre["food"] < 80:
+                                # A +20 source meal can saturate at 100;
+                                # do not require restoration at full reserve.
                                 self.assertGreater(gain, 0)
                             if expected_injury == 0:
                                 self.assertEqual(injury, 0)
