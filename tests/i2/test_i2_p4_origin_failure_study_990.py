@@ -14,13 +14,15 @@ from tools.i2_p4_origin_failure_study_990 import (
 )
 
 
-def frame(action, *, before=None, after=None, site="camp", offers=None):
+def frame(action, *, before=None, after=None, site="camp", offers=None,
+          factor_tagged=False):
     body = before or {"energy": 78.0, "food": 46.0,
                       "water": 44.0, "integrity": 94.0}
     return {
         "action": action, "before": body, "after": after or body,
         "site_before": site, "site_after": site,
         "offered": offers or ["attendre", "se_deplacer_vers_passage"],
+        "factor_tagged": factor_tagged,
     }
 
 
@@ -100,13 +102,25 @@ class P4OriginFailure990Contract(unittest.TestCase):
     def test_genuine_matched_first_divergence_after_failed_food(self):
         common = [frame("manger"), frame("manger")]
         off = common + [frame("attendre")]
+        on = common + [frame("se_deplacer_vers_passage",
+                             factor_tagged=True)]
+        result = first_matched_factor_divergence(
+            off, on, diagnose(2), diagnose(2))
+        self.assertEqual(result["classification"],
+                         "DIVERGENCE_AFTER_MATCHED_FAILURE_WITH_FACTOR_CREDIT")
+        self.assertTrue(result["factor_tagged_at_divergence"])
+        self.assertEqual(result["first_motor_divergence_tick"], 3)
+        self.assertTrue(result["same_prehistory"])
+
+    def test_matched_postfailure_divergence_without_tag_not_credited(self):
+        common = [frame("manger"), frame("manger")]
+        off = common + [frame("attendre")]
         on = common + [frame("se_deplacer_vers_passage")]
         result = first_matched_factor_divergence(
             off, on, diagnose(2), diagnose(2))
         self.assertEqual(result["classification"],
-                         "DIVERGENCE_AFTER_MATCHED_FOOD_FAILURE")
-        self.assertEqual(result["first_motor_divergence_tick"], 3)
-        self.assertTrue(result["same_prehistory"])
+                         "DIVERGENCE_AFTER_MATCHED_FAILURE_NO_FACTOR_CREDIT")
+        self.assertFalse(result["factor_tagged_at_divergence"])
 
     def test_pre_failure_divergence_not_credited_to_lived_failure(self):
         common = [frame("attendre")]
