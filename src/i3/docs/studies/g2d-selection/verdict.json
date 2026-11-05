@@ -1,0 +1,127 @@
+{
+ "base_g2": {
+  "g2-i1-foraging-like": true,
+  "g2-i2-native-A-like": true,
+  "g2-i2-native-B-like": true
+ },
+ "comparisons": {
+  "P1_2": {
+   "floors": {
+    "budget": true,
+    "g2_regression": true,
+    "replay": true,
+    "same_worlds": true
+   },
+   "mean_step_ms": 0.8273,
+   "qualifies": true,
+   "vs_base": {
+    "R": {
+     "base": 198,
+     "cand": 425,
+     "worlds_better": 79,
+     "worlds_worse": 9
+    },
+    "dev": {
+     "base": 296,
+     "cand": 337,
+     "worlds_better": 42,
+     "worlds_worse": 27
+    },
+    "pooled": {
+     "base": 494,
+     "cand": 762,
+     "sign_test_p": 0.0,
+     "worlds_better": 121,
+     "worlds_worse": 36
+    }
+   }
+  },
+  "P1_3": {
+   "floors": {
+    "budget": true,
+    "g2_regression": true,
+    "replay": true,
+    "same_worlds": true
+   },
+   "mean_step_ms": 0.8166,
+   "qualifies": true,
+   "vs_base": {
+    "R": {
+     "base": 198,
+     "cand": 434,
+     "worlds_better": 82,
+     "worlds_worse": 3
+    },
+    "dev": {
+     "base": 296,
+     "cand": 346,
+     "worlds_better": 40,
+     "worlds_worse": 12
+    },
+    "pooled": {
+     "base": 494,
+     "cand": 780,
+     "sign_test_p": 0.0,
+     "worlds_better": 122,
+     "worlds_worse": 15
+    }
+   }
+  }
+ },
+ "decision": "ADOPT_P1_3",
+ "evolvability": {
+  "P1_1": 40,
+  "P1_2": 40,
+  "P1_3": 40
+ },
+ "ms": {
+  "P1_1": 0.7638,
+  "P1_2": 0.8273,
+  "P1_3": 0.8166
+ },
+ "qualified": [
+  "P1_2",
+  "P1_3"
+ ],
+ "random_alive": {
+  "P1_1": {
+   "R": 33,
+   "dev": 59
+  },
+  "P1_2": {
+   "R": 64,
+   "dev": 58
+  },
+  "P1_3": {
+   "R": 71,
+   "dev": 60
+  }
+ },
+ "reference": {
+  "R": 93,
+  "dev": 70
+ },
+ "selected": {
+  "P1_1": [
+   6018,
+   6001,
+   6002,
+   6004,
+   6020
+  ],
+  "P1_2": [
+   6001,
+   6033,
+   6002,
+   6021,
+   6025
+  ],
+  "P1_3": [
+   6002,
+   6028,
+   6001,
+   6021,
+   6022
+  ]
+ }
+}

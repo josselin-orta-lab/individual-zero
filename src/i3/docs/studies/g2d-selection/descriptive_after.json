@@ -1,0 +1,14 @@
+{
+ "computed_after_execution": true,
+ "note": "descriptive only (ADR-0015 point 6), omitted from the frozen tool",
+ "reference_alive_on_selection_worlds": 49,
+ "candidates_at_or_above_reference": {
+  "P1_1": 0,
+  "P1_2": 2,
+  "P1_3": 4
+ },
+ "exact_sign_test_p": {
+  "P1_3_vs_P1_1": 2.534051475822707e-22,
+  "P1_2_vs_P1_1": 3.0070038539186686e-12
+ }
+}
