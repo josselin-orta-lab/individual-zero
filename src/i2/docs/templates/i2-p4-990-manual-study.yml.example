@@ -1,0 +1,144 @@
+# INERT REVIEW TEMPLATE ONLY: NOT a GitHub Actions workflow while under src/i2/docs/.
+# NEVER install under .github/workflows without independent custody/security review.
+# One prospective frozen #990 cohort: once consumed, no re-dispatch or retry.
+name: I2 P4 #990 manual preserved six-life study
+
+on:
+  workflow_dispatch:
+    inputs:
+      expected_head:
+        description: 'Reviewed current main SHA, 40 lowercase hexadecimal characters'
+        required: true
+        type: string
+      confirm:
+        description: 'Type RUN-I2-P4-990-ONCE to consume the single cohort'
+        required: true
+        type: string
+
+permissions:
+  contents: write # only to create the reviewed once-only protected tag
+
+concurrency:
+  group: i2-p4-990-single-cohort
+  cancel-in-progress: false
+
+jobs:
+  frozen-cohort:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Verify exact manual first dispatch before checkout
+        env:
+          EXPECTED_HEAD: ${{ inputs.expected_head }}
+          CONFIRMATION: ${{ inputs.confirm }}
+          DISPATCH_SHA: ${{ github.sha }}
+          DISPATCH_REF: ${{ github.ref }}
+          RUN_NUMBER: ${{ github.run_number }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$CONFIRMATION" = 'RUN-I2-P4-990-ONCE'
+          test "$DISPATCH_REF" = 'refs/heads/main'
+          test "$RUN_NUMBER" = '1'
+          test "$RUN_ATTEMPT" = '1'
+          [[ "$EXPECTED_HEAD" =~ ^[0-9a-f]{40}$ ]]
+          test "$DISPATCH_SHA" = "$EXPECTED_HEAD"
+
+      - name: Checkout exact reviewed source with no persisted credential
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.expected_head }}
+          persist-credentials: false
+
+      - name: Setup Python 3.11 for the single scientific cohort
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Initialize external evidence custody before consumption
+        env:
+          EVIDENCE: ${{ runner.temp }}/i2-p4-990-evidence
+          EXPECTED_HEAD: ${{ inputs.expected_head }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e "$EVIDENCE"
+          mkdir -m 700 "$EVIDENCE"
+          printf '%s\n' "$EXPECTED_HEAD" > "$EVIDENCE/reviewed-head.txt"
+          printf '%s\n' 'PRE_CLAIM' > "$EVIDENCE/execution-phase.txt"
+
+      - name: Consume unique protected marker before ANY native birth
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          I2_P4_990_TAG_RULESET_ID: '26611746'
+          EXPECTED_HEAD: ${{ inputs.expected_head }}
+          CONFIRMATION: ${{ inputs.confirm }}
+          EVIDENCE: ${{ runner.temp }}/i2-p4-990-evidence
+          PYTHONDONTWRITEBYTECODE: '1'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+          test -z "$(git status --porcelain --untracked-files=all)"
+          # On error, NEVER automatically retry ambiguous remote claims.
+          python -B tools/i2_p4_990_one_shot_claim.py \
+            --expected-head "$EXPECTED_HEAD" \
+            --confirm "$CONFIRMATION" > "$EVIDENCE/claim-receipt.json"
+          printf '%s\n' 'CLAIM_CONSUMED' > "$EVIDENCE/execution-phase.txt"
+
+      - name: Execute the frozen six-cell #990 cohort, no retry
+        env:
+          EXPECTED_HEAD: ${{ inputs.expected_head }}
+          EVIDENCE: ${{ runner.temp }}/i2-p4-990-evidence
+          STUDY_OUTPUT: ${{ runner.temp }}/i2-p4-990-evidence/study
+          PYTHONDONTWRITEBYTECODE: '1'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s "$EVIDENCE/claim-receipt.json"
+          test "$(cat "$EVIDENCE/execution-phase.txt")" = 'CLAIM_CONSUMED'
+          test ! -e "$STUDY_OUTPUT"
+          python -B tools/i2_p4_origin_failure_study_990.py \
+            --execute-protocol-990 \
+            --expected-head "$EXPECTED_HEAD" \
+            --output "$STUDY_OUTPUT"
+
+      - name: Generate forensic inventory, including partial failures
+        if: ${{ always() }}
+        env:
+          EVIDENCE: ${{ runner.temp }}/i2-p4-990-evidence
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -d "$EVIDENCE" ]; then
+            mkdir -m 700 "$EVIDENCE"
+            printf '%s\n' 'REFUSED_BEFORE_CUSTODY_INIT' > "$EVIDENCE/execution-phase.txt"
+          fi
+          printf '%s\n' "$RUN_ID" > "$EVIDENCE/github-run-id.txt"
+          printf '%s\n' "$RUN_ATTEMPT" > "$EVIDENCE/github-run-attempt.txt"
+          # Hash from INSIDE evidence: absolute runner paths would not
+          # verify after artifacts are downloaded to a different machine.
+          # Reject symlinks, which could point outside the evidence bundle.
+          (
+            cd "$EVIDENCE"
+            test ! -e SHA256SUMS.txt
+            test -z "$(find . -type l -print -quit)"
+            find . -type f ! -name 'SHA256SUMS.txt' -print0 \
+              | sort -z | xargs -0 -r sha256sum > SHA256SUMS.txt
+            test -s SHA256SUMS.txt
+            sha256sum --check --status SHA256SUMS.txt
+          )
+
+      - name: Preserve all original SQLite journals and aborted partials
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: i2-p4-990-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/i2-p4-990-evidence/
+          if-no-files-found: error
+          include-hidden-files: true
+          compression-level: 0
+          retention-days: 90
