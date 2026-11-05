@@ -180,3 +180,24 @@ class ProjectionTests(unittest.TestCase):
         m = Mind(G.midpoint(), 0)
         _, end = m.project((5.0, 60.0, 60.0, 100.0, 100.0), m.drift())
         self.assertAlmostEqual(end[0], 5.0)
+
+
+class P13Tests(unittest.TestCase):
+    def test_place_belief_is_revised_at_the_inherited_rate(self):
+        for rate, expect_forgotten in ((0.5, True), (0.02, False)):
+            g = G.midpoint()
+            g["genes"]["belief_rate"] = rate
+            m = Mind(G.validate(g), 0)
+            full = {"body": (80.0, 60.0, 60.0, 100.0, 100.0), "inventory": (),
+                    "here": (False, ()), "neighbors": ((True, ()), (False, ()), (False, ()), (False, ()))}
+            dry = dict(full, neighbors=((False, ()), (False, ()), (False, ()), (False, ())))
+            for _ in range(20):
+                m.perceive(full, 0.0)
+            for _ in range(8):
+                m.perceive(dry, 0.0)
+            m.visible = ()
+            self.assertEqual(m.presence((0, -1)) == 0.0, expect_forgotten)
+
+    def test_added_gene_is_drawn_last(self):
+        self.assertEqual(G.GENE_ORDER[-1], "belief_rate")
+        self.assertEqual(len(G.GENE_ORDER), 30)  # 29 genes of v1 + belief_rate
