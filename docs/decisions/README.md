@@ -81,3 +81,7 @@ A filled illustrative example is available in [../../examples/adr-example.md](..
 - [ADR-0012: I2 scientific development through integrated behavior, generalization and convergence](ADR-0012-i2-scientific-development-methodology.md) (3 November 2026). Owner-approved development method, with a single [I2 operational protocol](../../src/i2/docs/SCIENTIFIC_DEVELOPMENT_METHOD.md); no new experimental or engine authorization.
 
 - [ADR-0013: lived autonomy and experimental restraint](ADR-0013-lived-autonomy-and-experimental-restraint.md) (3 November 2026). Owner-approved research and architecture direction: build the conditions for an individual's own fallible behavior, not a prescribed successful life. The [I2 architecture/science plan](../../src/i2/docs/EMBODIED_AUTONOMY_RESEARCH_PLAN.md) translates it into falsifiable observations; the existing roadmap and method remain canonical.
+
+- [ADR-0014: I3, an individual whose stake is itself, in a persistence-selected lineage](ADR-0014-i3-lignee-enjeu-de-soi.md) (5 November 2026). Owner-accepted I3 research proposal: lifetime persistence as the only selection criterion, generic heritable genes, reformulated birth invariant; I3 unregistered.
+
+- [ADR-0015: I3 gates judge an architecture on its best selected genomes](ADR-0015-i3-portes-sous-selection.md) (5 November 2026). Owner-accepted gate method for I3, applied on the funded v2 substrate; the first application (G2d, v1 physics) is archived and does not certify v2.
