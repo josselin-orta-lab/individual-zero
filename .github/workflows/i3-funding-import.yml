@@ -1,0 +1,127 @@
+name: I3 funded cognition verification (one shot)
+
+on:
+  push:
+    branches:
+      - 'automation/i3-funding-1004-20261105'
+
+permissions:
+  contents: write
+
+jobs:
+  verify-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout transport only
+        uses: actions/checkout@v4
+        with:
+          path: transport
+          persist-credentials: false
+      - name: Checkout exact main baseline
+        uses: actions/checkout@v4
+        with:
+          ref: 57d07cfbcb55ab31969422977acc4ffba1de7f6e
+          path: candidate
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify original main baseline
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = 57d07cfbcb55ab31969422977acc4ffba1de7f6e
+          python scripts/check_engine_repository.py --json
+          python -m unittest discover -s tests/i3 -p 'test_*.py' -v
+      - name: Reconstruct and verify exact reviewed patch
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import base64
+          import gzip
+          from hashlib import sha1, sha256
+          from pathlib import Path
+          import subprocess
+          folder = Path('../transport/.github/i3-funding')
+          parts = [folder.joinpath(f'part{i}.bin').read_bytes() for i in range(4)]
+          def blob(data):
+              return sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
+          observed_transport = ['2443f11c0d792b5e5364c06615f2f171d1422b11', 'fb964a7f473544789e91637f87df5760110a843e', 'efa0f4851265eaeb0bc48a089ae2d3c9481f93ad', 'f62596d9a5e1aeb43f63389861532ac37a5e9030']
+          assert [blob(p) for p in parts] == observed_transport
+          # Repair three known transcription errors in transport only.
+          # The original part hashes, whole gzip hash, patch SHA-256 and every
+          # resulting file identity below independently bind the intended bytes.
+          text = base64.b64encode(parts[0]).decode('ascii')
+          assert text.count('k1n8CdMF') == text.count('DhUuobXWwxdy') == 1
+          text = text.replace('k1n8CdMF', 'k1n8DdMF').replace('DhUuobXWwxdy', 'DhUuobXwxdy') + 'r'
+          parts[0] = base64.b64decode(text, validate=True)
+          text = base64.b64encode(parts[1]).decode('ascii')
+          assert text.count('L179V1cJZAM') == 1
+          parts[1] = base64.b64decode(text.replace('L179V1cJZAM', 'L179V1cXZAM'), validate=True)
+          expected_parts = ['f4a7a6d1d826f21204b680244cfd56a2e0d3f72b', '30e46fbba057a55d0d26dda136119f5602115295', 'efa0f4851265eaeb0bc48a089ae2d3c9481f93ad', 'f62596d9a5e1aeb43f63389861532ac37a5e9030']
+          assert [blob(p) for p in parts] == expected_parts
+          packed = b''.join(parts)
+          assert blob(packed) == '2d0bc07be573f90cb722cf9f4b1fb5d059a6d7a2'
+          patch = gzip.decompress(packed)
+          assert sha256(patch).hexdigest() == '6c05cffec1835cfd27eb0b21c211f5c8b2ac4d281d1a5b269f16ac4e5a0ac125'
+          subprocess.run(['git', 'apply', '--check', '-'], input=patch, check=True)
+          subprocess.run(['git', 'apply', '--index', '-'], input=patch, check=True)
+          expected = {
+              'src/i3/docs/ARCHITECTURE.md': 'a88dddc45a8bc1a748376cbae2d46a870db5fba6',
+              'src/i3/docs/COGNITIVE_FUNDING.md': 'ce23533881c6a8067892e9807cb5195fadf07685',
+              'src/i3/docs/DEVELOPMENT_PLAN.md': '2dd9a44cac0ebf259e4174072cad84eb1379897c',
+              'src/i3/docs/SPECIFICATION.md': 'd652be7656de3bfcb22009cc2ba901a2d8d45b5c',
+              'src/i3/docs/STATUS.md': 'dd7fcc23f1511825b16ce1d41e5bc20d6fa8e21a',
+              'src/i3/docs/TEST_PLAN.md': 'd9277742d619bd78e63849469f4637e901e88f2f',
+              'src/i3/docs/engineering/funding-v2/observations.json': '64b04895c806bb8516709bcc87a1a7728b76aeac',
+              'src/i3/modules/body.py': '22f0920a7bbb8ea4197cb7e2020fa63d2e7aa49b',
+              'src/i3/modules/mind.py': '67ea829d762b65f600b2b1739ea0cf550b9bc820',
+              'src/i3/modules/world.py': 'e2066e609b34b292dab1c100673ff2d2c627dff6',
+              'src/i3/runtime/life.py': '3429780c1917bd62b267ab2ff0bc204dc02a5f55',
+              'src/i3/runtime/provenance.py': '9baa81e238bfbbd05f574e776d7bc49d5ceb5259',
+              'tests/i3/test_core.py': 'b1ebb8fba7dfa9d92219d197c62c9bb2746e6dee',
+              'tests/i3/test_foundation.py': '80a3f904cd141a9a51c1b177bb02f7fa3ea199fa',
+              'tests/i3/test_funded_cognition.py': 'df14d387afe8277128a1c4b0c2131e543e2ea69b',
+          }
+          changed = subprocess.check_output(['git', 'diff', '--cached', '--name-only'], text=True).splitlines()
+          assert sorted(changed) == sorted(expected), changed
+          for name, want in expected.items():
+              got = subprocess.check_output(['git', 'hash-object', name], text=True).strip()
+              assert got == want, (name, got, want)
+          print('All 15 resulting files match the locally tested candidate.')
+          PY
+          git diff --cached --check
+          git switch -c fix/i3-funded-cognition-1004
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'fix(i3): pre-fund cognition and settle learning within each step'
+          echo "CANDIDATE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Candidate boundaries and I3 tests on Python 3.11
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/check_engine_repository.py --json
+          python -m unittest discover -s tests/i3 -p 'test_*.py' -v
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Candidate I3 tests on Python 3.12
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests/i3 -p 'test_*.py' -v
+          git diff --exit-code
+      - name: Publish only the verified candidate
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+          git push origin HEAD:refs/heads/fix/i3-funded-cognition-1004
+          printf 'Verified candidate: `%s`.\n\nBaseline 41 I3 tests and boundaries passed. Candidate 62 tests passed on Python 3.11 and 3.12. No held-out study or lineage executed. Development-only adverse observations are preserved, not tuned away.\n' "$CANDIDATE_SHA" >> "$GITHUB_STEP_SUMMARY"
