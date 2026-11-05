@@ -46,9 +46,9 @@ Autres écarts : le gène `v_s` est absorbé par `w.vigilance` (même rôle) ; l
 
 **Défaut ouvert, traité par P1.2** : l'exploration par la frontière la plus proche longe les murs et couvre mal l'espace ; aucune variante essayée ne fait mieux. Le grand champ de développement (eau à 9 cases hors de vue, 100 pas de réserve) reste à 0/30 pour toutes les versions et pourrait être infaisable pour toute stratégie avec cette perception et cette économie d'énergie.
 
-## P1.2 (en vérification, porte G2c)
+## P1.2 (rejeté par la porte G2c, conservé dans la branche `i3/p1.2-variant`)
 
-Deux gènes ajoutés (`i3-genome-v2`), voir [G2C_P12_HELDOUT_PREREG.md](G2C_P12_HELDOUT_PREREG.md) : `belief_rate` (vitesse de révision des croyances de lieu, moyenne mobile) et `reach` (exploration : 0 = frontière la plus proche, ≥ 1 = rayons à identité de cap). Outils de laboratoire ajoutés : générateur de familles (`lab/worldgen.py`, graines réservées ≥ 1 000 000) et sondes (`lab/probes.py` : oracle de vivabilité, chercheur systématique de référence). Sur 100 mondes générés, l'oracle survit partout et le chercheur systématique 72 fois : c'est l'ordre de grandeur du plafond imposé par une perception d'une case.
+Deux gènes y étaient ajoutés (`i3-genome-v2`), voir [G2C_P12_HELDOUT_PREREG.md](G2C_P12_HELDOUT_PREREG.md) : `belief_rate` (vitesse de révision des croyances de lieu, moyenne mobile) et `reach` (exploration : 0 = frontière la plus proche, ≥ 1 = rayons à identité de cap). Résultat : [RESULTS.md](studies/g2c-p12-heldout/RESULTS.md). La cognition de référence reste P1.1 (génome v1). Outils de laboratoire conservés : générateur de familles (`lab/worldgen.py`, graines réservées ≥ 1 000 000) et sondes (`lab/probes.py` : oracle de vivabilité, chercheur systématique de référence). Sur 100 mondes générés, l'oracle survit partout et le chercheur systématique 72 fois : c'est l'ordre de grandeur du plafond imposé par une perception d'une case.
 
 ## Hors v1
 
