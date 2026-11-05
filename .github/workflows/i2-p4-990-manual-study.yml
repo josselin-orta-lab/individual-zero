@@ -118,9 +118,18 @@ jobs:
           fi
           printf '%s\n' "$RUN_ID" > "$EVIDENCE/github-run-id.txt"
           printf '%s\n' "$RUN_ATTEMPT" > "$EVIDENCE/github-run-attempt.txt"
-          # The manifest is inside the uploaded evidence, but never hashes itself.
-          find "$EVIDENCE" -type f ! -name 'SHA256SUMS.txt' -print0 \
-            | sort -z | xargs -0 -r sha256sum > "$EVIDENCE/SHA256SUMS.txt"
+          # Hash from INSIDE evidence: absolute runner paths would not
+          # verify after artifacts are downloaded to a different machine.
+          # Reject symlinks, which could point outside the evidence bundle.
+          (
+            cd "$EVIDENCE"
+            test ! -e SHA256SUMS.txt
+            test -z "$(find . -type l -print -quit)"
+            find . -type f ! -name 'SHA256SUMS.txt' -print0 \
+              | sort -z | xargs -0 -r sha256sum > SHA256SUMS.txt
+            test -s SHA256SUMS.txt
+            sha256sum --check --status SHA256SUMS.txt
+          )
 
       - name: Preserve all original SQLite journals and aborted partials
         if: ${{ always() }}
