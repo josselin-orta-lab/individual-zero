@@ -1,0 +1,53 @@
+{
+ "by_world": {
+  "g2b-h1-hidden-spring": {
+   "alive_p1": 1,
+   "alive_p11": 0,
+   "non_inferior": true,
+   "thirst_after_drinking_p1": 0,
+   "thirst_after_drinking_p11": 0,
+   "used_far_spring_p1": 0,
+   "used_far_spring_p11": 0
+  },
+  "g2b-h2-round-trip": {
+   "alive_p1": 29,
+   "alive_p11": 28,
+   "non_inferior": true,
+   "thirst_after_drinking_p1": 1,
+   "thirst_after_drinking_p11": 0,
+   "used_far_spring_p1": 0,
+   "used_far_spring_p11": 0
+  },
+  "g2b-h3-dried-spring": {
+   "alive_p1": 3,
+   "alive_p11": 2,
+   "non_inferior": true,
+   "thirst_after_drinking_p1": 15,
+   "thirst_after_drinking_p11": 16,
+   "used_far_spring_p1": 3,
+   "used_far_spring_p11": 1
+  }
+ },
+ "criteria": {
+  "budget_ok": true,
+  "defect_not_worse_h2": true,
+  "g2_regression": true,
+  "mean_step_ms_p11": 0.5643,
+  "replay_all_p11": true
+ },
+ "decision": "ADOPT_P1_1",
+ "g2_regression_detail": {
+  "g2-i1-foraging-like": [
+   10,
+   7
+  ],
+  "g2-i2-native-A-like": [
+   10,
+   10
+  ],
+  "g2-i2-native-B-like": [
+   10,
+   10
+  ]
+ }
+}

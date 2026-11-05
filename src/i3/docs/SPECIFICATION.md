@@ -36,7 +36,7 @@ Autres écarts : le gène `v_s` est absorbé par `w.vigilance` (même rôle) ; l
 
 ## P1.1 (après la porte G2)
 
-**Adopté sous réserve de la porte G2b** : dans l'auto-projection, l'énergie et la vigilance ne sont plus figées. Si le sommeil a déjà restauré l'énergie, la projection les ramène à leur seuil de détresse en payant le surcoût alimentaire du sommeil. P1 les figeait, si bien qu'un plan finissant fatigué paraissait coûteux pour toujours (cause probable de la mort du génome 8 dans G2).
+**Adopté après la porte G2b** (non inférieur à P1, sans gain mesurable) : dans l'auto-projection, l'énergie et la vigilance ne sont plus figées. Si le sommeil a déjà restauré l'énergie, la projection les ramène à leur seuil de détresse en payant le surcoût alimentaire du sommeil. P1 les figeait, si bien qu'un plan finissant fatigué paraissait coûteux pour toujours (cause probable de la mort du génome 8 dans G2).
 
 **Essayé puis rejeté sur les mondes de développement** (30 génomes par monde) :
 
