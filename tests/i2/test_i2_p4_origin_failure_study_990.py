@@ -309,16 +309,25 @@ class P4OriginFailure990Contract(unittest.TestCase):
     def test_v23_tag_outside_origin_window_is_not_whole_life_inactive(self):
         # A tag on a real signed frame later in the life must not disappear
         # just because the preregistered origin-exposure gate was never met.
-        trace = [dict(frame("attendre", factor_tagged=True), tick=1)]
-        diag = {"ticks": [{
-            "tick": 1, "failed_channels": [], "unknown_offered": [],
-            "reason": "NO_FAILED_CURRENT_NEED",
-        }]}
+        trace = [
+            dict(frame("manger", site="passage"), tick=1),
+            dict(frame("manger", site="passage"), tick=2),
+            dict(frame("attendre", site="passage", factor_tagged=True), tick=3),
+        ]
+        diag = {"ticks": [
+            {"tick": 1, "failed_channels": [], "unknown_offered": [],
+             "reason": "NO_FAILED_CURRENT_NEED"},
+            {"tick": 2, "failed_channels": [], "unknown_offered": [],
+             "reason": "NO_FAILED_CURRENT_NEED"},
+            {"tick": 3, "failed_channels": ["food"],
+             "unknown_offered": ["se_deplacer_vers_source"],
+             "reason": "UNOBSERVABLE_PREBOOST_SCORE"},
+        ]}
         result = classify_protocol_exposure(
             trace, diag, factor_enabled=True)
         self.assertIn("NO_DOUBLE_FAILURE_EXPOSURE", result["labels"])
         self.assertNotIn("FACTOR_INACTIVE", result["labels"])
-        self.assertEqual(result["factor_tag_ticks_whole_life"], [1])
+        self.assertEqual(result["factor_tag_ticks_whole_life"], [3])
         self.assertEqual(result["factor_tag_ticks_after_exposure"], [])
         self.assertEqual(
             result["factor_chosen_motor_credit_ticks_whole_life"], [])
