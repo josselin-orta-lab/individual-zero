@@ -76,6 +76,30 @@ def _json_request(opener, url, token, *, method="GET", body=None):
     return data
 
 
+
+def verify_marker_ruleset(opener, base, token, ruleset_id):
+    """Require reviewed active exact-tag delete AND update protection.
+
+    A repository admin can still change rulesets; this is an operational
+    precondition, never a cryptographic or externally witnessed guarantee.
+    """
+    if not isinstance(ruleset_id, str) or not _DECIMAL.fullmatch(ruleset_id):
+        raise ClaimRefused("dedicated reviewed tag ruleset id required")
+    ruleset = _json_request(opener, base + "/rulesets/" + ruleset_id, token)
+    conditions = ruleset.get("conditions") or {}
+    names = conditions.get("ref_name") or {}
+    types = {item.get("type") for item in ruleset.get("rules", [])
+             if isinstance(item, dict)}
+    if (ruleset.get("target") != "tag" or
+            ruleset.get("source_type") != "Repository" or
+            ruleset.get("enforcement") != "active" or
+            names.get("include") != [CONSUMED_REF] or
+            names.get("exclude") != [] or
+            not {"deletion", "update"}.issubset(types) or
+            ruleset.get("bypass_actors") != []):
+        raise ClaimRefused("tag marker is not protected against update/deletion")
+    return True
+
 def claim_once(expected_sha, confirmation, *, environ=None, opener=None,
                api_url=API_URL):
     """Consume one GitHub tag ref atomically before any native birth.
@@ -95,6 +119,8 @@ def claim_once(expected_sha, confirmation, *, environ=None, opener=None,
         opener = urlopen
 
     base = api_url.rstrip("/") + "/repos/" + REPOSITORY
+    marker_ruleset = environ.get("I2_P4_990_TAG_RULESET_ID", "")
+    verify_marker_ruleset(opener, base, token, marker_ruleset)
     head = _json_request(
         opener, base + "/git/ref/heads/main", token)
     if head.get("object", {}).get("sha") != expected_sha:
@@ -108,7 +134,9 @@ def claim_once(expected_sha, confirmation, *, environ=None, opener=None,
         # An anomalous response may mean the tag was created; refuse the
         # experiment rather than try to claim another time.
         raise ClaimRefused("claimed marker did not match reviewed source")
-
+    # A ruleset modified in the claim window is a hard fail. This remains
+    # a best-effort live GitHub check, not an atomic ruleset transaction.
+    verify_marker_ruleset(opener, base, token, marker_ruleset)
     return {
         "protocol": "i2-P4-origin-failure-unknown-alternative-990-v1",
         "claim": "GITHUB_CREATE_REF_201",
