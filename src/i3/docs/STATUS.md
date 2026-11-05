@@ -44,7 +44,12 @@ cannot certify this changed substrate. Historical G2/G2b/G2c files stay intact.
 Development comparison (not a held-out study): 4/4 short lives survive in both
 versions; at 400 steps, 8/16 survive versus 14/16 in v1. All v2 declared work is
 settled with no pending replay. This adverse outcome is retained. The focused
-suite has 62 tests; exact CI status belongs to the implementation PR.
+suite had 62 tests at #1004; exact CI status belongs to the implementation PR.
+
+Laboratory probes (`lab/probes.py`) now execute under v2 with the individual's
+payment rules; they previously raised on most development worlds. They are still
+not validated or cost-matched comparators: that remains P2 work. See
+[COGNITIVE_FUNDING.md](COGNITIVE_FUNDING.md). Focused suite: 66 tests.
 
 Next: P1.3 on the same v2 substrate in both arms and P2 validation of existing
 world/probe tools. No selection pilot, new held-out evaluation or scientific GO.

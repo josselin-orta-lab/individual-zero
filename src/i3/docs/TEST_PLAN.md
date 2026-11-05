@@ -26,7 +26,15 @@ and v2 phase evidence rather than the historical observer-only shortfall and
 pending-replay behavior. Historical v1 hashes are retained but are not v2 parity
 targets. No historical result is rewritten to make tests pass.
 
-Current focused suite: 62 tests. The [funding contract](COGNITIVE_FUNDING.md)
-records exact model limits and a development-only adverse differential. Engine
-activation, a 1 ms performance guarantee, learning benefit and lineage outcomes
-are NOT established by these checks.
+Current focused suite: 66 tests (62 at #1004, plus the probe checks below). The
+[funding contract](COGNITIVE_FUNDING.md) records exact model limits and a
+development-only adverse differential. Engine activation, a 1 ms performance
+guarantee, learning benefit and lineage outcomes are NOT established by these checks.
+
+## Laboratory probes under v2
+
+`test_lab_probes.py` runs both probes on development cases where they used to
+raise under v2, and checks that every command pays `PROBE_WORK` first, that a
+motor command also leaves the next bill funded (otherwise the probe sleeps), and
+that an unpayable bill gives null commands with zero work. These checks make the
+probes executable; they do not validate them as comparators (P2).
