@@ -352,6 +352,62 @@ def first_matched_factor_divergence(control_trace, factor_trace,
             "same_prehistory": True}
 
 
+def crossworld_premeal_parity(safe_trace, harmful_trace):
+    """Negative control for the pre-registered undisclosed passage injury.
+
+    This physical parameter cannot be observed before a passage meal.
+    Compare matched predecision history through the first passage meal
+    inclusively, without comparing its *post*-meal body (which may differ).
+    No inferred counterfactual outcomes or additional motor authority.
+    """
+    def predecision(row):
+        return (
+            row["action"], row["site_before"], row["site_after"],
+            row["before"], row["offered"], row["subjective_context"],
+        )
+
+    for i, (safe, harmful) in enumerate(zip(safe_trace, harmful_trace)):
+        tick = i + 1
+        safe_meal = safe["action"] == "manger" and safe["site_before"] == "passage"
+        harmful_meal = (
+            harmful["action"] == "manger" and harmful["site_before"] == "passage"
+        )
+        if predecision(safe) != predecision(harmful):
+            return {
+                "classification": "PREMEAL_CROSSWORLD_MISMATCH",
+                "first_mismatch_tick": tick,
+                "passage_meal_at_mismatch": safe_meal or harmful_meal,
+                "independently_matched": False,
+            }
+        if safe_meal or harmful_meal:
+            # Equal predecision context & motor at the boundary, but
+            # subsequent physical states legitimately depend on injury.
+            return {
+                "classification": "MATCHED_THROUGH_FIRST_PASSAGE_MEAL",
+                "first_passage_meal_tick": tick,
+                "independently_matched": True,
+                "postmeal_not_compared": True,
+            }
+        if safe["after"] != harmful["after"]:
+            return {
+                "classification": "PREMEAL_CROSSWORLD_MISMATCH",
+                "first_mismatch_tick": tick,
+                "passage_meal_at_mismatch": False,
+                "independently_matched": False,
+            }
+    if len(safe_trace) != len(harmful_trace):
+        return {
+            "classification": "PREMEAL_DIFFERENT_LIFE_LENGTHS",
+            "first_mismatch_tick": min(len(safe_trace), len(harmful_trace)) + 1,
+            "independently_matched": False,
+        }
+    return {
+        "classification": "MATCHED_WITHOUT_PASSAGE_MEAL",
+        "compared_ticks": len(safe_trace),
+        "independently_matched": True,
+    }
+
+
 def summary_of_life(cell, born, final, trace, diagnostic, custody):
     world, injury, arm, learning, factor = cell
     minima = dict(born["body"])
@@ -492,6 +548,16 @@ def run_study(output, *, execute=False, expected_head=None):
             comparisons[world] = first_matched_factor_divergence(
                 traces[left], traces[right],
                 diagnostics[left], diagnostics[right])
+        # Pre-registered cross-world negative control: the alternative
+        # injury is physically hidden until a passage meal actually occurs.
+        # Report every arm, including innate-only and negative outcomes.
+        crossworld = {}
+        safe_world, harmful_world = (world for world, _ in WORLD_HARMS)
+        for arm, _, _ in ARMS:
+            crossworld[arm] = crossworld_premeal_parity(
+                traces[safe_world + "__" + arm],
+                traces[harmful_world + "__" + arm],
+            )
         # Before declaring the six-cell cohort complete, prove that the
         # retained archive bytes still match EVERY recorded custody receipt.
         for key in reports:
@@ -507,6 +573,7 @@ def run_study(output, *, execute=False, expected_head=None):
             "protocol": PROTOCOL, "issue": PREREGISTERED_ISSUE,
             "source_commit": expected_head, "lives": reports,
             "comparisons": comparisons,
+            "crossworld_premeal_negative_controls": crossworld,
             "elapsed_seconds": round(monotonic() - begun, 3),
             "study_verdict": "OBSERVATIONAL_ONLY_NOT_GENERAL_ADAPTATION",
             "independent_m11": False,

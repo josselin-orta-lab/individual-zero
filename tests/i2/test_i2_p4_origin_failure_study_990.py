@@ -12,6 +12,7 @@ from tools.i2_p4_origin_failure_study_990 import (
     ARMS, MAX_STEPS, WORLD_HARMS, frozen_cells,
     frozen_birth_kwargs, first_matched_factor_divergence,
     classify_protocol_exposure, run_study, verify_custody_receipt,
+    crossworld_premeal_parity,
 )
 
 
@@ -39,6 +40,54 @@ def diagnose(*failed_ticks):
 
 
 class P4OriginFailure990Contract(unittest.TestCase):
+    def test_crossworld_hidden_harm_matches_until_identical_meal(self):
+        common = [frame("attendre"), frame("se_deplacer_vers_passage",
+                    after={"energy": 77.0, "food": 46.0,
+                           "water": 44.0, "integrity": 94.0},
+                    site="camp")]
+        prior = frame("attendre", site="passage")
+        meal_before = {"energy": 74.0, "food": 43.0,
+                       "water": 42.0, "integrity": 94.0}
+        safe = common + [prior, frame(
+            "manger", site="passage", before=meal_before,
+            after=dict(meal_before, integrity=94.0, food=63.0))]
+        harmful = common + [prior, frame(
+            "manger", site="passage", before=meal_before,
+            after=dict(meal_before, integrity=82.0, food=63.0))]
+        result = crossworld_premeal_parity(safe, harmful)
+        self.assertEqual(
+            result["classification"], "MATCHED_THROUGH_FIRST_PASSAGE_MEAL")
+        self.assertEqual(result["first_passage_meal_tick"], 4)
+        self.assertTrue(result["postmeal_not_compared"])
+
+    def test_crossworld_rejects_hidden_harm_premature_motor_divergence(self):
+        safe = [frame("attendre"), frame("attendre")]
+        harmful = [frame("attendre"), frame("se_deplacer_vers_passage")]
+        result = crossworld_premeal_parity(safe, harmful)
+        self.assertEqual(
+            result["classification"], "PREMEAL_CROSSWORLD_MISMATCH")
+        self.assertEqual(result["first_mismatch_tick"], 2)
+        self.assertFalse(result["independently_matched"])
+
+    def test_crossworld_rejects_unexplained_premeal_physical_divergence(self):
+        safe = [frame("attendre")]
+        harmful = [frame("attendre", after={
+            "energy": 77.0, "food": 46.0, "water": 44.0, "integrity": 94.0,
+        })]
+        result = crossworld_premeal_parity(safe, harmful)
+        self.assertEqual(
+            result["classification"], "PREMEAL_CROSSWORLD_MISMATCH")
+        self.assertEqual(result["first_mismatch_tick"], 1)
+
+    def test_crossworld_no_meal_and_unequal_lengths_are_distinct(self):
+        safe = [frame("attendre"), frame("attendre")]
+        self.assertEqual(
+            crossworld_premeal_parity(safe, safe)["classification"],
+            "MATCHED_WITHOUT_PASSAGE_MEAL")
+        self.assertEqual(
+            crossworld_premeal_parity(safe, safe[:1])["classification"],
+            "PREMEAL_DIFFERENT_LIFE_LENGTHS")
+
     def test_exact_six_prospectively_frozen_birth_cells(self):
         cells = frozen_cells()
         self.assertEqual(len(cells), 6)
