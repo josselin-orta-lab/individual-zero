@@ -37,3 +37,21 @@ jobs:
           test "$(git rev-parse refs/heads/i3/p1.3-v2)" = "474259d0cdbbb4de610cb5039afa4a161caad1ee"
           git merge-base --is-ancestor eb12a0f8a8795ac653fb9cafd31fe75c0987f205 refs/heads/i3/dev3
           git push origin refs/heads/i3/dev3:refs/heads/i3/dev3 refs/heads/i3/p1.3-v2:refs/heads/i3/p1.3-v2
+
+  verify-imported-i3:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact original dev3 tip
+        uses: actions/checkout@v4
+        with:
+          ref: 9f9fd17585e6b633b686a1efdc3891005a19fec0
+          persist-credentials: false
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run I3 tests
+        run: python -m unittest discover -s tests/i3 -p 'test_*.py' -v
+      - name: Validate cross-generation repository guard
+        run: python scripts/check_engine_repository.py --json
