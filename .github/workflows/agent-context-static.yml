@@ -52,6 +52,7 @@ on:
       - 'tests/TEST_LAYOUT.md'
       - 'tests/research/i1-historical/README.md'
       - 'archive/README.md'
+      - 'archive/i0/README.md'
       - 'docs/README.md'
       - 'docs/research/README.md'
       - 'AGENTS.md'
