@@ -12,8 +12,8 @@ Décision : [ADR-0014](../../../docs/decisions/ADR-0014-i3-lignee-enjeu-de-soi.m
 | P1.1 | Adopté (porte G2b, [résultat](studies/g2b-p11-heldout/RESULTS.md)) : non inférieur à P1, sans gain mesurable |
 | P1.2 | **Rejeté** par la porte G2c ([résultat](studies/g2c-p12-heldout/RESULTS.md)) : révision bien meilleure (69 contre 46, p = 0,0007) mais non-infériorité générale manquée d'une vie. Variante conservée dans la branche `i3/p1.2-variant` |
 | Méthode | [ADR-0015](../../../docs/decisions/ADR-0015-i3-portes-sous-selection.md) : les portes jugent une architecture sur ses meilleurs génomes sélectionnés |
-| P1.3 | Prochaine étape : porte sous sélection P1.1 / P1.2 / P1.3 (croyances révisables seules) sur graines réservées neuves |
-| P2 Mondes | Non commencé |
+| P1.3 | **Adopté** par la porte G2d sous sélection ([résultat](studies/g2d-selection/RESULTS.md)) : 780 survies sur 1 000 contre 494 pour P1.1 (p = 3 × 10⁻²²). Cognition de référence : croyances de lieu révisables, génome `i3-genome-v3` |
+| P2 Mondes | Commencé : générateur de familles (`dev`, `R`, `E` à définir), oracle de vivabilité, chercheur de référence |
 | P3 Lignée | Non commencé |
 | P4 Étude | Non commencé |
 

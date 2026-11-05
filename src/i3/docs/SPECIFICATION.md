@@ -50,6 +50,10 @@ Autres écarts : le gène `v_s` est absorbé par `w.vigilance` (même rôle) ; l
 
 Deux gènes y étaient ajoutés (`i3-genome-v2`), voir [G2C_P12_HELDOUT_PREREG.md](G2C_P12_HELDOUT_PREREG.md) : `belief_rate` (vitesse de révision des croyances de lieu, moyenne mobile) et `reach` (exploration : 0 = frontière la plus proche, ≥ 1 = rayons à identité de cap). Résultat : [RESULTS.md](studies/g2c-p12-heldout/RESULTS.md). La cognition de référence reste P1.1 (génome v1). Outils de laboratoire conservés : générateur de familles (`lab/worldgen.py`, graines réservées ≥ 1 000 000) et sondes (`lab/probes.py` : oracle de vivabilité, chercheur systématique de référence). Sur 100 mondes générés, l'oracle survit partout et le chercheur systématique 72 fois : c'est l'ordre de grandeur du plafond imposé par une perception d'une case.
 
+## P1.3 (adopté par la porte G2d, sous sélection)
+
+Seul changement par rapport à P1.1 : les croyances de présence par lieu sont des moyennes mobiles des observations, au rythme du gène `belief_rate` ∈ [0,02 ; 0,5], au lieu d'un cumul. Une source tarie cesse d'être crue ; une parcelle qui se reconstitue l'est de nouveau quand on la revoit. Génome `i3-genome-v3` (30 gènes) ; le gène ajouté est tiré en dernier, si bien que les génomes v1 et v3 d'une même graine partagent tous les gènes de v1. Résultat : [G2d](studies/g2d-selection/RESULTS.md).
+
 ## Hors v1
 
 Générateur de familles de mondes (P2), lignée et registre (P3), étude 2 × 2 et ablations (P4), allostasie (révision des seuils θ_c en cours de vie).
