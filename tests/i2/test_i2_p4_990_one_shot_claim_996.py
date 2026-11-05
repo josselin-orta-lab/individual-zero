@@ -36,6 +36,7 @@ def environment(**updates):
 
 def good_ruleset():
     return {
+        "id": 1234, "source": REPOSITORY,
         "target": "tag", "source_type": "Repository",
         "enforcement": "active",
         "conditions": {"ref_name": {"include": [CONSUMED_REF],
@@ -185,6 +186,8 @@ class SingleUseClaimContract(unittest.TestCase):
 
     def test_wrong_or_bypassable_ruleset_refused_before_tag_creation(self):
         invalid = [
+            dict(good_ruleset(), id=4321),
+            dict(good_ruleset(), source="different/repository"),
             dict(good_ruleset(), target="branch"),
             dict(good_ruleset(), enforcement="evaluate"),
             dict(good_ruleset(), rules=[{"type": "deletion"}]),
