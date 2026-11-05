@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .body import ACTION_COSTS, BodyLaws, CognitiveWork, transition, validate_body
+from .body import ACTION_COSTS, BodyLaws, CognitiveWork, cognitive_cost, transition, validate_body
 
 DIRECTIONS = (("N", 0, -1), ("E", 1, 0), ("S", 0, 1), ("W", -1, 0))
 DELTA = {name: (dx, dy) for name, dx, dy in DIRECTIONS}
@@ -110,6 +110,7 @@ class World:
         """Apply one admitted action. An inadmissible command is a defect."""
         if self.dead:
             raise RuntimeError("death is irreversible: no action after death")
+        cognitive_cost(self.laws, work)  # Reject invalid bills before any world effect.
         self.t += 1
         self._apply_changes()
         kw = {}
@@ -140,7 +141,10 @@ class World:
             kw["water_gain"] = src.gain
         elif action not in ("dormir", "attendre"):
             raise ValueError("unknown action")
-        self.body, reasons = transition(self.body, action, self.laws, work, **kw)
+        accounting = {}
+        self.body, reasons = transition(self.body, action, self.laws, work,
+                                        accounting=accounting, **kw)
         self._restock()
         self.dead = reasons
-        return {"t": self.t, "body": self.body, "moved": moved, "dead": reasons}
+        return {"t": self.t, "body": self.body, "moved": moved, "dead": reasons,
+                "cognitive_accounting": accounting}

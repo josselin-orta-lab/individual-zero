@@ -499,11 +499,21 @@ class Mind:
 
     # ---- learning -------------------------------------------------------------
     def learn(self, result):
-        before, key, action, param = self.last
-        after = result["body"]
+        """Normal outcome pipeline; controls must not skip sensorimotor tracking."""
+        self.observe_outcome(result)
+        return self.learn_from_outcome(result)
+
+    def observe_outcome(self, result):
+        """Update position from the paid movement outcome, independently of learning."""
+        _, _, action, param = self.last
         if action == "se_deplacer" and result["moved"]:
             dx, dy = {n: (a, b) for n, a, b in DIRS}[param]
             self.pos = (self.pos[0] + dx, self.pos[1] + dy)
+
+    def learn_from_outcome(self, result):
+        """Learned updates only; a future ablation needs its own cost control."""
+        before, key, action, param = self.last
+        after = result["body"]
         real_key = key if action != "se_deplacer" else ("se_deplacer",)
         self.effects.observe(real_key, [a - b for a, b in zip(after, before)])
         dead = bool(result["dead"])

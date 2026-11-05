@@ -17,3 +17,18 @@ Décision : [ADR-0014](../../../docs/decisions/ADR-0014-i3-lignee-enjeu-de-soi.m
 | P4 Étude | Non commencé |
 
 Tests : `python -m unittest discover -s tests/i3 -p 'test_*.py' -v`. Une suite verte valide le logiciel au SHA exact, pas un comportement adaptatif.
+
+## Validated continuation (5 November 2026)
+
+[Development plan](DEVELOPMENT_PLAN.md), tracking
+[#1002](https://github.com/josselin-orta-lab/individual-zero/issues/1002).
+The first technical slice separates sensorimotor bookkeeping from learning,
+adds observer-only life provenance and exposes requested/paid/unpaid cognition.
+Negative work counters are rejected; normal P1.1 decision rules are unchanged.
+
+**Open validity gap:** zero-clamping can hide unfunded cognitive work, and
+sleep replay may remain unbilled at death/censoring. Reporting these gaps is
+not a physical fix. Resolve
+[#1004](https://github.com/josselin-orta-lab/individual-zero/issues/1004) before
+interpreting a selection pilot as genuinely funded cognition. No new held-out
+result or lineage experiment is claimed. Historical results above are unchanged.
