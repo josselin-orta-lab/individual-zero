@@ -7,16 +7,47 @@ cognitive cost; it sweeps space in lanes three cells apart, the systematic
 coverage that one-cell perception allows. It estimates the ceiling of search
 under the same body laws, so that a failure of I3 can be told apart from an
 unlivable world.
+
+Funding under body laws v2 (docs/COGNITIVE_FUNDING.md) is applied by
+``_funded_step``: a probe acts only after paying ``PROBE_WORK`` from the same
+reserves as an individual, never on credit. These rules only make the
+probes executable under v2; they are not a revalidation of the probes as
+scientific comparators (P2), and ``PROBE_WORK`` itself is unchanged.
 """
 from __future__ import annotations
 
 from collections import deque
 
-from i3.modules.body import ACTION_COSTS, CognitiveWork, E, F, W, V
+from i3.modules.body import (ACTION_COSTS, CognitiveBudget, CognitiveWork, E, F, W, V,
+                             cognitive_cost)
 from i3.modules.world import DIRECTIONS, World
 
 PROBE_WORK = CognitiveWork(cycles=2, simulated_steps=10, memory_items=50)
+IDLE = CognitiveWork()
 DELTA = {n: (dx, dy) for n, dx, dy in DIRECTIONS}
+
+
+def _funded_step(w: World, act: str, par):
+    """Apply one probe command under v2 funding; return (result, executed command).
+
+    If the reserves cannot pay ``PROBE_WORK``, no motor command is emitted (null
+    command, zero work), exactly as for an individual without a processing
+    budget: no free sleep and no free thought. Otherwise a motor command runs
+    only if the energy left after this bill covers its cost AND the reserves left
+    afterwards still cover the next ``PROBE_WORK``. Failing that, the probe
+    sleeps: its existing fallback for an unaffordable move and its only way to
+    recover. Sleep needs no motor energy. The reserve uses only the probe's own
+    body and fixed bill, never hidden world facts.
+    """
+    budget = CognitiveBudget(w.body, w.laws)
+    if not budget.try_spend(PROBE_WORK):
+        return w.step(None, None, IDLE), None
+    if act != "dormir":
+        bill_e, bill_v = cognitive_cost(w.laws, PROBE_WORK)
+        left = budget.remaining
+        if left[E] - ACTION_COSTS[act] < bill_e or left[V] < bill_v:
+            act, par = "dormir", None
+    return w.step(act, par, PROBE_WORK), act
 
 
 def _step_towards(pos, target, passable):
@@ -70,9 +101,9 @@ def oracle_survival(spec, horizon: int) -> int:
                 act, par = "se_deplacer", go(foods)
         elif b[E] < 30 or b[V] < 40:
             act = "dormir"
-        if act == "se_deplacer" and (par is None or b[E] < ACTION_COSTS[act]):
+        if act == "se_deplacer" and par is None:
             act, par = "dormir", None
-        w.step(act, par, PROBE_WORK)
+        _funded_step(w, act, par)  # energy/vigilance admission happens here
     return w.t
 
 
@@ -126,14 +157,14 @@ def reference_survival(spec, horizon: int) -> int:
                 act = "attendre"
         if isinstance(act, tuple):
             act, par = act
-            if par is None or b[E] < ACTION_COSTS["se_deplacer"]:
+            if par is None:
                 act, par = "dormir", None
-        res = w.step(act, par, PROBE_WORK)
-        if act == "se_deplacer":
+        res, done = _funded_step(w, act, par)  # may sleep or idle instead
+        if done == "se_deplacer":
             dx, dy = DELTA[par]
             pos = (pos[0] + dx, pos[1] + dy)
-        if pending is not None and act == "manger":
+        if pending is not None and done == "manger":
             t, before = pending
             verdict[t] = res["body"][3] >= before[3] - 1e-9 and res["body"][F] > before[F]
-            pending = None
+        pending = None  # a meal that did not happen leaves no stale test
     return w.t

@@ -93,9 +93,40 @@ Pure mathematical helpers are not independent runtime/payment authorities. The
 funded execution path is `run_life`; arbitrary monkey-patching is not attested.
 Old G2/G2b/G2c scripts and laboratory reference probes have NOT been revalidated
 as scientific comparators under v2; P2 must review their budgets before use.
+The probes are now executable under v2 (next section); that is not revalidation.
 Keep original results and preregistration SHAs untouched. A future P1.3 comparison
 must use the SAME funded substrate on both arms, not confound belief revision
 with this economics change.
+
+## Laboratory probes under v2
+
+At `2b3371dd` the probes in `lab/probes.py` still assumed v1 clamping and raised
+under v2 physics. Across the five development fixtures plus generated development
+seeds 0-29 of families `dev` and `R`, at horizons 400 and 1500, `reference_survival`
+raised in 79/130 runs and `oracle_survival` in 21/130: either `PROBE_WORK` exceeded
+the reserves (`CognitiveFundingError`) or a motor command was unfunded after the
+bill (`ValueError`). They now follow the individual's payment rules:
+
+- every probe step pays `PROBE_WORK` before acting, from actual reserves;
+- if that bill cannot be paid, the probe emits a null command with zero work
+  (passive inactivity, no free sleep), as an individual without a processing
+  budget does;
+- a motor command runs only if the energy left after the bill covers its cost
+  AND the reserves left afterwards still cover the next bill; otherwise the probe
+  sleeps, its existing fallback for an unaffordable move. This reserve uses only
+  the probe's own body and fixed bill, never a hidden world fact.
+
+On that development sweep, every run the unadapted probes completed returns an
+identical result, every run that used to raise now completes, and no run contains
+passive inactivity. Probe survival barely differs from v1: the oracle reaches both
+horizons in 64/65 worlds in v1 and v2; the reference searcher reaches 400 steps in
+50/65 worlds in both, and 1500 steps in 47/65 (v1) versus 46/65 (v2).
+
+`PROBE_WORK` (0.07 energy and 0.12 vigilance per step) is unchanged. It is far below
+the mean v2 individual bill in the development observations below (about 0.55
+energy and 0.70 vigilance per step), so the probes are NOT cost-matched comparators.
+P2 still owns their budget and comparator role. `heldout_p12.py`, which calls
+`reference_survival` on reserved seeds, was not run.
 
 ## Development-only observations
 
