@@ -23,6 +23,8 @@ DIRS = tuple((n, dx, dy) for n, dx, dy in DIRECTIONS)
 LEAK, GAIN, THRESHOLD, RESIDUAL = 0.2, 1.0, 1.5, 0.5
 MAX_WATER_OPTIONS, MAX_FOOD_OPTIONS, MAX_FRONTIER_OPTIONS = 2, 3, 2
 REPLAYS_PER_SLEEP = 16
+BELIEF_FLOOR = 0.05
+FRONTIER_CANDIDATES = 6
 # Innate self-projection: geometric chunks covering 255 future steps.
 PROJECTION_CHUNKS = (1, 2, 4, 8, 16, 32, 64, 128)
 VETO_INTEGRITY = 10.0
@@ -85,6 +87,8 @@ class Mind:
         self.inertia = 0.3 * (1.0 + g["temperament.goal_protection"]) / 2.0
         self.n_base, self.h_max = g["n_base"], g["h_max"]
         self.m_max = int(round(g["m_max"]))
+        self.belief_rate = g["belief_rate"]
+        self.reach = int(round(g["reach"]))  # 0: nearest-frontier exploration (P1.1)
         self.d_max = sum(self.w)
         # Learned residual on top of the innate self-projection (starts at zero).
         self.values = [[0.0] * 6 for _ in self.gammas]
@@ -92,7 +96,10 @@ class Mind:
         self.rng = random.Random(f"i3-life:{life_seed}")
         self.effects = EffectsModel()
         self.map: dict[tuple, tuple] = {}   # rel pos -> last (water, tokens) | None for edge
-        self.hist: dict[tuple, list] = {}   # rel pos -> [observations, water seen, {token: seen}]
+        # rel pos -> [observations, water belief, {token: belief}]; beliefs are
+        # recency-weighted (rate = gene belief_rate): a source that dried up
+        # stops being believed, at a speed the lineage can select.
+        self.hist: dict[tuple, list] = {}
         self.visible: tuple = ()
         self.pos = (0, 0)
         self.tokens: dict[str, str] = {}     # world token -> internal id
@@ -196,12 +203,19 @@ class Mind:
         for q, water, toks in seen:
             self.map[q] = (water, toks)
             h = self.hist.get(q)
+            rho = self.belief_rate
             if h is None:
-                h = self.hist[q] = [0, 0, {}]
+                h = self.hist[q] = [0, 1.0 if water else 0.0, {}]
+                for t in toks:
+                    h[2][t] = 1.0
+            else:
+                h[1] += rho * ((1.0 if water else 0.0) - h[1])
+                for t in toks:
+                    if t not in h[2]:
+                        h[2][t] = 0.0
+                for t in h[2]:
+                    h[2][t] += rho * ((1.0 if t in toks else 0.0) - h[2][t])
             h[0] += 1
-            h[1] += 1 if water else 0
-            for t in toks:
-                h[2][t] = h[2].get(t, 0) + 1
         self.visible = tuple(q for q, _, _ in seen)
         inv = tuple((self._internal(k), n) for k, n in cap["inventory"])
         return inv
@@ -214,8 +228,8 @@ class Mind:
         h = self.hist.get(q)
         if h is None:
             return 0.0
-        n = h[1] if token is None else h[2].get(token, 0)
-        return (n + 1.0) / (h[0] + 2.0) if n else 0.0
+        b = h[1] if token is None else h[2].get(token, 0.0)
+        return b if b > BELIEF_FLOOR else 0.0
 
     # ---- options ----------------------------------------------------------
     def _bfs(self, limit):
@@ -248,6 +262,30 @@ class Mind:
                 return name
         raise RuntimeError("path does not start at an adjacent cell")
 
+    def _rays(self, cell):
+        """Straight rays from a frontier cell into unknown space. Unknown cells
+        are assumed passable until perceived otherwise (no world fact)."""
+        out = []
+        for name, dx, dy in DIRS:
+            if (cell[0] + dx, cell[1] + dy) in self.map:
+                continue
+            seen = set()
+            q = cell
+            steps = 0
+            for _ in range(self.reach):
+                nq = (q[0] + dx, q[1] + dy)
+                if nq in self.map and self.map[nq] is None:
+                    break
+                q = nq
+                steps += 1
+                for a, b in ((0, 0), (dx, dy), (dy, dx), (-dy, -dx)):
+                    r = (q[0] + a, q[1] + b)
+                    if r not in self.map:
+                        seen.add(r)
+            if steps:
+                out.append((name, q, len(seen), steps))
+        return out
+
     def options(self, inv, body, horizon):
         self._unknown = {}
         self._presence = {}
@@ -268,13 +306,14 @@ class Mind:
                     opts.append((f"move:{name}", [("se_deplacer",)], ("se_deplacer", name)))
             order, dist, prev = self._bfs(horizon * horizon)
             nw = nf = nx = 0
+            frontier = []
             for cell in order[1:]:
                 d = dist[cell]
                 info = self.map[cell]
                 rel = f"{cell[0]},{cell[1]}"
                 travel = [("se_deplacer",)] * d
                 h = self.hist.get(cell)
-                if h is not None and h[1] and nw < MAX_WATER_OPTIONS:
+                if h is not None and h[1] > BELIEF_FLOOR and nw < MAX_WATER_OPTIONS:
                     pw = self.presence(cell)
                     if pw > 0.0:
                         nw += 1
@@ -291,10 +330,32 @@ class Mind:
                         opts.append((oid, travel + [("collecter", t), ("manger", t)],
                                      ("se_deplacer", self._first_dir(cell, prev))))
                 unknown = sum((cell[0] + dx, cell[1] + dy) not in self.map for _, dx, dy in DIRS)
-                if nx < MAX_FRONTIER_OPTIONS and unknown:
+                if self.reach == 0:
+                    if nx < MAX_FRONTIER_OPTIONS and unknown:
+                        nx += 1
+                        oid = f"explorer:{rel}"
+                        self._unknown[oid] = unknown
+                        opts.append((oid, travel, ("se_deplacer", self._first_dir(cell, prev))))
+                elif nx < FRONTIER_CANDIDATES and unknown:
                     nx += 1
-                    self._unknown[f"explorer:{rel}"] = unknown
-                    opts.append((f"explorer:{rel}", travel, ("se_deplacer", self._first_dir(cell, prev))))
+                    for name, end, revealed, steps in self._rays(cell):
+                        frontier.append((-revealed, d, len(frontier), cell, name, steps))
+            # Exploration rays: from a frontier cell, keep going into the
+            # unknown for up to `reach` steps. Their value is the number of
+            # unseen cells they would reveal, so open interior beats walls.
+            # An exploration intention is a heading: one option per direction
+            # (its best ray), with a stable identity so that Competition's
+            # intention continuity gives persistence instead of zigzags.
+            frontier.sort(key=lambda x: (x[0], x[1], x[2]))
+            headings = {}
+            for item in frontier:
+                headings.setdefault(item[4], item)
+            best = sorted(headings.values(), key=lambda x: (x[0], x[1], x[2]))
+            for neg, d, _, cell, name, steps in best[:MAX_FRONTIER_OPTIONS]:
+                oid = f"explorer:{name}"
+                self._unknown[oid] = -neg
+                opts.append((oid, [("se_deplacer",)] * (d + steps),
+                             ("se_deplacer", self._first_dir(cell, prev))))
         return opts
 
     # ---- self-model ---------------------------------------------------------
@@ -308,7 +369,7 @@ class Mind:
         p_water = 0.0
         if self.effects.known_positive(("boire",), W):
             for q, h in self.hist.items():
-                if h[1]:
+                if h[1] > BELIEF_FLOOR:
                     p_water = max(p_water, self.presence(q))
         carried = {t for t, n in inv if n > 0}
         p_food = 0.0

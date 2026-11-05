@@ -10,7 +10,7 @@ Décision : [ADR-0014](../../../docs/decisions/ADR-0014-i3-lignee-enjeu-de-soi.m
 | P1 Noyau | Implémenté : monde séparé, corps à cinq canaux, monnaie vitale, capacités vulnérables, génome, cognition, rejeu exact |
 | G2 Porte | **Franchie** le 5 novembre 2026 : 30/30 vies ont bu, rejeu exact, 0,40 ms par pas ([résultat](studies/g2-first-falsifier/RESULTS.md)). Deux défauts relevés pour P1.1 |
 | P1.1 | Adopté (porte G2b, [résultat](studies/g2b-p11-heldout/RESULTS.md)) : non inférieur à P1, sans gain mesurable |
-| P1.2 | **Bloquant avant toute lignée** : découverte hors de vue (H1 : 9/30 trouvent une eau à 4 cases) et révision de stratégie (H3 : 1 à 3/30 trouvent la seconde source) |
+| P1.2 | Croyances révisables et exploration héritables ; porte G2c préinscrite ([G2C_P12_HELDOUT_PREREG.md](G2C_P12_HELDOUT_PREREG.md)) |
 | P2 Mondes | Non commencé |
 | P3 Lignée | Non commencé |
 | P4 Étude | Non commencé |

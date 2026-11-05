@@ -14,7 +14,7 @@ import random
 
 from .body import CHANNELS
 
-SCHEMA = "i3-genome-v1"
+SCHEMA = "i3-genome-v2"
 
 # (name, low, high) per gene. Per-channel genes are expanded to 5 entries.
 PER_CHANNEL = {
@@ -32,6 +32,8 @@ SCALARS = {
     "n_base": (2.0, 8.0),      # base deliberation cycles
     "h_max": (4.0, 24.0),      # maximal simulation horizon
     "m_max": (32.0, 512.0),    # memory capacity (transitions)
+    "belief_rate": (0.02, 0.5),  # speed of revising place beliefs (P1.2)
+    "reach": (0.0, 6.0),         # exploration rays into the unknown; < 0.5 = nearest frontier (P1.2)
 }
 TEMPERAMENT = ("reward_sensitivity", "threat_sensitivity", "exploration",
                "goal_protection", "affiliation")
@@ -46,6 +48,10 @@ def gene_bounds() -> dict[str, tuple[float, float]]:
     bounds.update(SCALARS)
     for t in TEMPERAMENT:
         bounds[f"temperament.{t}"] = TEMPERAMENT_RANGE
+    # P1.2 genes come last so that earlier genes keep their generation-0
+    # draws: v1 and v2 genomes with the same seed share every v1 gene.
+    for k in ("belief_rate", "reach"):
+        bounds[k] = bounds.pop(k)
     return bounds
 
 
@@ -56,7 +62,7 @@ GENE_ORDER = tuple(BOUNDS)
 def validate(genome: dict) -> dict:
     """Static admissibility: closed schema, finite values inside bounds."""
     if type(genome) is not dict or genome.get("schema") != SCHEMA:
-        raise ValueError("exact i3-genome-v1 mapping required")
+        raise ValueError("exact i3-genome-v2 mapping required")
     genes = genome.get("genes")
     if type(genes) is not dict or tuple(sorted(genes)) != tuple(sorted(GENE_ORDER)):
         raise ValueError("genome must contain exactly the declared generic genes")

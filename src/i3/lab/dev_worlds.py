@@ -53,4 +53,17 @@ def dev_far_home() -> WorldSpec:
     )
 
 
-DEV_WORLDS = (dev_open_field, dev_long_corridor, dev_wide_field, dev_far_home)
+def dev_failing_well() -> WorldSpec:
+    """P1.2: a near well runs dry for good; another lies out of sight."""
+    return WorldSpec(
+        name="dev-failing-well", width=15, height=10, spawn=(12, 7),
+        body=(80.0, 65.0, 55.0, 95.0, 100.0),
+        water={(11, 7): WaterSource(gain=28.0, stock=5, max_stock=5, restock_every=0),
+               (2, 2): WaterSource(gain=28.0)},
+        food={(12, 5): FoodPatch("lilac", 3, 3, restock_every=10),
+              (3, 3): FoodPatch("lilac", 3, 3, restock_every=10)},
+        token_effects={"lilac": (12.0, 0.0)},
+    )
+
+
+DEV_WORLDS = (dev_open_field, dev_long_corridor, dev_wide_field, dev_far_home, dev_failing_well)

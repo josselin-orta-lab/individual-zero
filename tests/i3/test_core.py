@@ -180,3 +180,40 @@ class ProjectionTests(unittest.TestCase):
         m = Mind(G.midpoint(), 0)
         _, end = m.project((5.0, 60.0, 60.0, 100.0, 100.0), m.drift())
         self.assertAlmostEqual(end[0], 5.0)
+
+
+class P12Tests(unittest.TestCase):
+    def _genome(self, **genes):
+        g = G.midpoint()
+        g["genes"].update(genes)
+        return G.validate(g)
+
+    def test_place_belief_is_revised_at_the_inherited_rate(self):
+        for rate, expect_forgotten in ((0.5, True), (0.02, False)):
+            m = Mind(self._genome(belief_rate=rate), 0)
+            cap_full = {"body": (80.0, 60.0, 60.0, 100.0, 100.0), "inventory": (),
+                        "here": (False, ()), "neighbors": ((True, ()), (False, ()), (False, ()), (False, ()))}
+            cap_dry = dict(cap_full, neighbors=((False, ()), (False, ()), (False, ()), (False, ())))
+            for _ in range(20):
+                m.perceive(cap_full, 0.0)
+            for _ in range(8):
+                m.perceive(cap_dry, 0.0)
+            m.visible = ()
+            self.assertEqual(m.presence((0, -1)) == 0.0, expect_forgotten)
+
+    def test_exploration_options_are_headings_or_frontiers(self):
+        spec = small_world()
+        for reach, prefix in ((3, ("explorer:N", "explorer:E", "explorer:S", "explorer:W")),
+                              (0, ("explorer:",))):
+            m = Mind(self._genome(reach=float(reach)), 0)
+            w = World(spec)
+            cap = w.capture()
+            inv = m.perceive(cap, 0.0)
+            ids = [o[0] for o in m.options(inv, cap["body"], 10) if o[0].startswith("explorer:")]
+            self.assertTrue(ids)
+            for oid in ids:
+                self.assertTrue(oid.startswith(prefix))
+                if reach:
+                    self.assertIn(oid, prefix)
+                else:
+                    self.assertRegex(oid, r"explorer:-?\d+,-?\d+$")
