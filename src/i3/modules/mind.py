@@ -24,6 +24,7 @@ DIRS = tuple((n, dx, dy) for n, dx, dy in DIRECTIONS)
 LEAK, GAIN, THRESHOLD, RESIDUAL = 0.2, 1.0, 1.5, 0.5
 MAX_WATER_OPTIONS, MAX_FOOD_OPTIONS, MAX_FRONTIER_OPTIONS = 2, 3, 2
 REPLAYS_PER_SLEEP = 16
+BELIEF_FLOOR = 0.05
 # Innate self-projection: geometric chunks covering 255 future steps.
 PROJECTION_CHUNKS = (1, 2, 4, 8, 16, 32, 64, 128)
 VETO_INTEGRITY = 10.0
@@ -86,6 +87,7 @@ class Mind:
         self.inertia = 0.3 * (1.0 + g["temperament.goal_protection"]) / 2.0
         self.n_base, self.h_max = g["n_base"], g["h_max"]
         self.m_max = int(round(g["m_max"]))
+        self.belief_rate = g["belief_rate"]
         self.d_max = sum(self.w)
         # Learned residual on top of the innate self-projection (starts at zero).
         self.values = [[0.0] * 6 for _ in self.gammas]
@@ -94,7 +96,10 @@ class Mind:
         self._budget_rng = random.Random(f"i3-budget-order:{life_seed}")
         self.effects = EffectsModel()
         self.map: dict[tuple, tuple] = {}   # rel pos -> last (water, tokens) | None for edge
-        self.hist: dict[tuple, list] = {}   # rel pos -> [observations, water seen, {token: seen}]
+        # rel pos -> [observations, water belief, {token: belief}]; beliefs are
+        # recency-weighted (rate = gene belief_rate): a source that dried up
+        # stops being believed, at a speed the lineage can select (P1.3).
+        self.hist: dict[tuple, list] = {}
         self.visible: tuple = ()
         self.pos = (0, 0)
         self.tokens: dict[str, str] = {}     # world token -> internal id
@@ -200,12 +205,19 @@ class Mind:
         for q, water, toks in seen:
             self.map[q] = (water, toks)
             h = self.hist.get(q)
+            rho = self.belief_rate
             if h is None:
-                h = self.hist[q] = [0, 0, {}]
+                h = self.hist[q] = [0, 1.0 if water else 0.0, {}]
+                for t in toks:
+                    h[2][t] = 1.0
+            else:
+                h[1] += rho * ((1.0 if water else 0.0) - h[1])
+                for t in toks:
+                    if t not in h[2]:
+                        h[2][t] = 0.0
+                for t in h[2]:
+                    h[2][t] += rho * ((1.0 if t in toks else 0.0) - h[2][t])
             h[0] += 1
-            h[1] += 1 if water else 0
-            for t in toks:
-                h[2][t] = h[2].get(t, 0) + 1
         self.visible = tuple(q for q, _, _ in seen)
         inv = tuple((self._internal(k), n) for k, n in cap["inventory"])
         return inv
@@ -218,8 +230,8 @@ class Mind:
         h = self.hist.get(q)
         if h is None:
             return 0.0
-        n = h[1] if token is None else h[2].get(token, 0)
-        return (n + 1.0) / (h[0] + 2.0) if n else 0.0
+        b = h[1] if token is None else h[2].get(token, 0.0)
+        return b if b > BELIEF_FLOOR else 0.0
 
     # ---- options ----------------------------------------------------------
     def _bfs(self, limit):
@@ -278,7 +290,7 @@ class Mind:
                 rel = f"{cell[0]},{cell[1]}"
                 travel = [("se_deplacer",)] * d
                 h = self.hist.get(cell)
-                if h is not None and h[1] and nw < MAX_WATER_OPTIONS:
+                if h is not None and h[1] > BELIEF_FLOOR and nw < MAX_WATER_OPTIONS:
                     pw = self.presence(cell)
                     if pw > 0.0:
                         nw += 1
@@ -312,7 +324,7 @@ class Mind:
         p_water = 0.0
         if self.effects.known_positive(("boire",), W):
             for q, h in self.hist.items():
-                if h[1]:
+                if h[1] > BELIEF_FLOOR:
                     p_water = max(p_water, self.presence(q))
         carried = {t for t, n in inv if n > 0}
         p_food = 0.0
