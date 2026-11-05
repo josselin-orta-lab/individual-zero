@@ -1,0 +1,10 @@
+{
+ "evaluation": {
+  "dev": 70,
+  "R": 95
+ },
+ "selection": {
+  "dev": 22,
+  "R": 27
+ }
+}

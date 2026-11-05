@@ -1,0 +1,121 @@
+{
+ "comparisons": {
+  "P1_3": {
+   "floors": {
+    "g2_not_worse": true,
+    "no_shortfall": true,
+    "replay": true,
+    "same_worlds": true,
+    "step_ceiling": true
+   },
+   "qualifies": true,
+   "vs_base": {
+    "R": {
+     "base": 163,
+     "cand": 270,
+     "worlds_better": 62,
+     "worlds_worse": 9
+    },
+    "dev": {
+     "base": 201,
+     "cand": 208,
+     "worlds_better": 30,
+     "worlds_worse": 20
+    },
+    "pooled": {
+     "base": 364,
+     "cand": 478,
+     "sign_test_p": 3.9885609852979904e-09,
+     "worlds_better": 92,
+     "worlds_worse": 29
+    }
+   }
+  }
+ },
+ "decision": "ADOPT_P1_3",
+ "descriptive": {
+  "BASE": {
+   "depleted_lives": 325,
+   "g2_drank": {
+    "g2-i1-foraging-like": 10,
+    "g2-i2-native-A-like": 10,
+    "g2-i2-native-B-like": 10
+   },
+   "inactive_fraction_selected": 0.1061,
+   "latency_median": 124,
+   "latency_q1_q3": [
+    96,
+    140
+   ],
+   "mean_step_ms": 1.2663,
+   "random_alive": {
+    "R": 21,
+    "dev": 35
+   },
+   "revised_lives": 75,
+   "selected": [
+    6038,
+    6012,
+    6029,
+    6009,
+    6036
+   ],
+   "shortfall": 0,
+   "top5_selection_alive": [
+    27,
+    27,
+    27,
+    26,
+    25
+   ]
+  },
+  "P1_3": {
+   "depleted_lives": 346,
+   "g2_drank": {
+    "g2-i1-foraging-like": 10,
+    "g2-i2-native-A-like": 10,
+    "g2-i2-native-B-like": 10
+   },
+   "inactive_fraction_selected": 0.0779,
+   "latency_median": 134.5,
+   "latency_q1_q3": [
+    82,
+    182
+   ],
+   "mean_step_ms": 1.2784,
+   "random_alive": {
+    "R": 35,
+    "dev": 39
+   },
+   "revised_lives": 206,
+   "selected": [
+    6008,
+    6025,
+    6036,
+    6022,
+    6029
+   ],
+   "shortfall": 0,
+   "top5_selection_alive": [
+    33,
+    32,
+    32,
+    31,
+    30
+   ]
+  }
+ },
+ "qualified": [
+  "P1_3"
+ ],
+ "reference_probes_not_cost_matched": {
+  "evaluation": {
+   "R": 95,
+   "dev": 70
+  },
+  "selection": {
+   "R": 27,
+   "dev": 22
+  }
+ }
+}
