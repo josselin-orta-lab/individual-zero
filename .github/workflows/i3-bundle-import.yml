@@ -1,0 +1,46 @@
+name: I3 original bundle import (one shot)
+
+on:
+  push:
+    branches:
+      - "automation/i3-bundle-import-20261105"
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout import branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 3
+      - name: Verify bundle and exact pre-registered commits
+        shell: bash
+        run: |
+          set -euo pipefail
+          git cat-file -e 'f9ca3f47ad9f0b885f68fc876d5e1f489a5bcb31^{commit}'
+          git bundle verify .github/i3-import/i3-dev.bundle
+          git fetch .github/i3-import/i3-dev.bundle \
+            refs/heads/i3/p0-p1-core:refs/heads/i3/p0-p1-core \
+            refs/heads/i3/p1.2-variant:refs/heads/i3/p1.2-variant
+          test "$(git rev-parse refs/heads/i3/p0-p1-core)" = "fdb0d62b5c363c3cfe74f0c0e94163993b774680"
+          test "$(git rev-parse refs/heads/i3/p1.2-variant)" = "24a7ed9a28eae55b86fabb52428becd255558e46"
+          for commit in e25bf6350087e3a0257485e88cb5577757272884 d88fc3daa896893329d3fc9210a051060fa4f51c 2657f3bd7c93540176cc780c2be35a6ed6a59af3 d45809d5b165d4a9b7584c764a5d05e392eac915 10689354b276e4586a320da7635642ebdcc65225; do
+            git cat-file -e "$commit^{commit}"
+          done
+      - name: Run focused I3 proposal tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          git switch i3/p0-p1-core
+          python -m unittest discover -s tests/i3 -p 'test_*.py' -v
+      - name: Publish original I3 branches
+        shell: bash
+        run: |
+          set -euo pipefail
+          git push origin \
+            refs/heads/i3/p0-p1-core:refs/heads/i3/p0-p1-core \
+            refs/heads/i3/p1.2-variant:refs/heads/i3/p1.2-variant
