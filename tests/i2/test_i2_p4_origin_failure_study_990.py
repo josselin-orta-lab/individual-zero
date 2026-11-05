@@ -1,4 +1,5 @@
 """#990 pure study-contract tests. Absolutely no real born-life cohort in CI."""
+from hashlib import sha256
 from pathlib import Path
 import sys
 import tempfile
@@ -10,12 +11,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from tools.i2_p4_origin_failure_study_990 import (
     ARMS, MAX_STEPS, WORLD_HARMS, frozen_cells,
     frozen_birth_kwargs, first_matched_factor_divergence,
-    run_study,
+    classify_protocol_exposure, run_study, verify_custody_receipt,
 )
 
 
 def frame(action, *, before=None, after=None, site="camp", offers=None,
-          factor_tagged=False, chosen_motor_credited=False):
+          factor_tagged=False, chosen_motor_credited=False,
+          subjective_context=None):
     body = before or {"energy": 78.0, "food": 46.0,
                       "water": 44.0, "integrity": 94.0}
     return {
@@ -24,6 +26,10 @@ def frame(action, *, before=None, after=None, site="camp", offers=None,
         "offered": offers or ["attendre", "se_deplacer_vers_passage"],
         "factor_tagged": factor_tagged,
         "factor_credited_chosen_motor": chosen_motor_credited,
+        "subjective_context": (
+            {"goal": "goal:physical-needs",
+             "evidence": ["local:camp"], "contradicted": []}
+            if subjective_context is None else subjective_context),
     }
 
 
@@ -84,6 +90,19 @@ class P4OriginFailure990Contract(unittest.TestCase):
             self.assertFalse(destination.exists())
         birth.assert_not_called()
 
+    @patch("tools.i2_p4_origin_failure_study_990.subprocess.check_output")
+    def test_source_lock_rejects_untracked_files(self, git_output):
+        from tools.i2_p4_origin_failure_study_990 import (
+            _require_exact_clean_checkout,
+        )
+        head = "a" * 40
+        git_output.side_effect = [head + "\n", "?? tools/rogue_module.py\n"]
+        with self.assertRaisesRegex(ValueError, "clean source-locked"):
+            _require_exact_clean_checkout(head)
+        self.assertEqual(git_output.call_count, 2)
+        args = git_output.call_args.args[0]
+        self.assertIn("--untracked-files=all", args)
+
     @patch("tools.i2_p4_origin_failure_study_990.NativePaidI2.create")
     def test_bad_head_refused_before_birth(self, birth):
         with tempfile.TemporaryDirectory() as folder:
@@ -138,6 +157,199 @@ class P4OriginFailure990Contract(unittest.TestCase):
         self.assertEqual(result["classification"],
                          "DIVERGENCE_AFTER_MATCHED_FAILURE_NO_FACTOR_CREDIT")
         self.assertFalse(result["factor_tagged_at_divergence"])
+
+    def test_passage_failures_do_not_count_as_origin_exposure(self):
+        common = [frame("manger", site="passage"),
+                  frame("manger", site="passage")]
+        off = common + [frame("attendre", site="passage")]
+        on = common + [frame("se_deplacer_vers_camp",
+                             site="passage", factor_tagged=True,
+                             chosen_motor_credited=True)]
+        result = first_matched_factor_divergence(
+            off, on, diagnose(2), diagnose(2))
+        self.assertEqual(
+            result["classification"],
+            "DIVERGENCE_WITHOUT_TWO_FAILED_ORIGIN_MEALS")
+        self.assertTrue(result["same_prehistory"])
+
+    def test_prior_different_local_offers_block_matched_history(self):
+        normal = ["attendre", "manger", "se_deplacer_vers_passage"]
+        hidden = ["attendre", "manger"]
+        off = [frame("manger", offers=normal),
+               frame("manger", offers=normal),
+               frame("attendre")]
+        on = [frame("manger", offers=hidden),
+              frame("manger", offers=normal),
+              frame("se_deplacer_vers_passage",
+                    factor_tagged=True, chosen_motor_credited=True)]
+        result = first_matched_factor_divergence(
+            off, on, diagnose(2), diagnose(2))
+        self.assertEqual(result["classification"],
+                         "DIVERGENCE_WITH_UNMATCHED_HISTORY")
+        self.assertFalse(result["same_prehistory"])
+
+    def test_prior_different_subjective_claim_blocks_matched_history(self):
+        changed = {"goal": "goal:physical-last-resort",
+                   "evidence": ["local:camp"], "contradicted": []}
+        off = [frame("manger"), frame("manger"), frame("attendre")]
+        on = [frame("manger", subjective_context=changed),
+              frame("manger"),
+              frame("se_deplacer_vers_passage",
+                    factor_tagged=True, chosen_motor_credited=True)]
+        result = first_matched_factor_divergence(
+            off, on, diagnose(2), diagnose(2))
+        self.assertEqual(result["classification"],
+                         "DIVERGENCE_WITH_UNMATCHED_HISTORY")
+        self.assertFalse(result["same_prehistory"])
+
+    def test_current_different_subjective_evidence_blocks_attribution(self):
+        changed = {"goal": "goal:physical-needs",
+                   "evidence": ["local:camp", "new:personal"], "contradicted": []}
+        common = [frame("manger"), frame("manger")]
+        off = common + [frame("attendre")]
+        on = common + [frame("se_deplacer_vers_passage",
+                             factor_tagged=True, chosen_motor_credited=True,
+                             subjective_context=changed)]
+        result = first_matched_factor_divergence(
+            off, on, diagnose(2), diagnose(2))
+        self.assertEqual(result["classification"],
+                         "DIVERGENCE_WITH_UNMATCHED_HISTORY")
+        self.assertFalse(result["same_prehistory"])
+
+    def test_no_origin_exposure_and_factor_inactive_are_separate(self):
+        trace = [dict(frame("attendre"), tick=1)]
+        diag = {"ticks": [{"tick": 1, "failed_channels": [],
+                           "unknown_offered": [], "reason": "NO_FAILED_CURRENT_NEED"}]}
+        report = classify_protocol_exposure(
+            trace, diag, factor_enabled=True)
+        self.assertIn("NO_DOUBLE_FAILURE_EXPOSURE", report["labels"])
+        self.assertIn("FACTOR_INACTIVE", report["labels"])
+        self.assertIn("NO_SAFE_RECOVERY", report["labels"])
+        self.assertNotIn("NO_SCORE_ELIGIBILITY", report["labels"])
+
+    def test_food_failure_without_unseen_offer_is_not_ineligible_score(self):
+        trace = [dict(frame("manger"), tick=1),
+                 dict(frame("manger"), tick=2),
+                 dict(frame("attendre"), tick=3)]
+        diag = {"ticks": [
+            {"tick": 1, "failed_channels": [],
+             "unknown_offered": [], "reason": "NO_FAILED_CURRENT_NEED"},
+            {"tick": 2, "failed_channels": [],
+             "unknown_offered": [], "reason": "NO_FAILED_CURRENT_NEED"},
+            {"tick": 3, "failed_channels": ["food"],
+             "unknown_offered": [], "reason": "NO_UNSEEN_OFFERED_MOVE"}]}
+        report = classify_protocol_exposure(
+            trace, diag, factor_enabled=False)
+        self.assertEqual(report["first_origin_double_failure_predecision_tick"], 3)
+        self.assertIn("NO_ADMISSIBLE_ALTERNATIVE", report["labels"])
+        self.assertNotIn("NO_SCORE_ELIGIBILITY", report["labels"])
+
+    def test_offered_unknown_with_nonpositive_score_is_separate(self):
+        trace = [dict(frame("manger"), tick=1),
+                 dict(frame("manger"), tick=2),
+                 dict(frame("attendre"), tick=3)]
+        diag = {"ticks": [
+            {"tick": 1, "failed_channels": [],
+             "unknown_offered": [], "reason": "NO_FAILED_CURRENT_NEED"},
+            {"tick": 2, "failed_channels": [],
+             "unknown_offered": [], "reason": "NO_FAILED_CURRENT_NEED"},
+            {"tick": 3, "failed_channels": ["food"],
+             "unknown_offered": ["se_deplacer_vers_passage"],
+             "reason": "NONPOSITIVE_SCORE"}]}
+        report = classify_protocol_exposure(
+            trace, diag, factor_enabled=True)
+        self.assertIn("NO_SCORE_ELIGIBILITY", report["labels"])
+        self.assertIn("FACTOR_INACTIVE", report["labels"])
+        self.assertNotIn("NO_ADMISSIBLE_ALTERNATIVE", report["labels"])
+
+    def test_urgent_reflex_not_mislabeled_as_numeric_score_ineligibility(self):
+        trace = [dict(frame("manger"), tick=1),
+                 dict(frame("manger"), tick=2),
+                 dict(frame("attendre"), tick=3)]
+        diag = {"ticks": [
+            {"tick": 1, "failed_channels": [],
+             "unknown_offered": [], "reason": "NO_FAILED_CURRENT_NEED"},
+            {"tick": 2, "failed_channels": [],
+             "unknown_offered": [], "reason": "NO_FAILED_CURRENT_NEED"},
+            {"tick": 3, "failed_channels": ["food"],
+             "unknown_offered": ["se_deplacer_vers_passage"],
+             "reason": "URGENT_REFLEX"}]}
+        report = classify_protocol_exposure(
+            trace, diag, factor_enabled=True)
+        self.assertNotIn("NO_ADMISSIBLE_ALTERNATIVE", report["labels"])
+        self.assertNotIn("NO_SCORE_ELIGIBILITY", report["labels"])
+        self.assertEqual(report["other_blocking_gate_ticks"], [3])
+        self.assertEqual(report["numeric_score_rejection_ticks"], [])
+        self.assertEqual(
+            report["novel_offer_gate_reasons"],
+            [{"tick": 3, "reason": "URGENT_REFLEX"}])
+
+    def test_mixed_reflex_and_numeric_rejection_is_not_clean_score_verdict(self):
+        trace = [dict(frame("manger"), tick=1),
+                 dict(frame("manger"), tick=2),
+                 dict(frame("attendre"), tick=3),
+                 dict(frame("attendre"), tick=4)]
+        diag = {"ticks": [
+            {"tick": 1, "failed_channels": [],
+             "unknown_offered": [], "reason": "NO_FAILED_CURRENT_NEED"},
+            {"tick": 2, "failed_channels": [],
+             "unknown_offered": [], "reason": "NO_FAILED_CURRENT_NEED"},
+            {"tick": 3, "failed_channels": ["food"],
+             "unknown_offered": ["se_deplacer_vers_passage"],
+             "reason": "URGENT_REFLEX"},
+            {"tick": 4, "failed_channels": ["food"],
+             "unknown_offered": ["se_deplacer_vers_passage"],
+             "reason": "NONPOSITIVE_SCORE"}]}
+        report = classify_protocol_exposure(
+            trace, diag, factor_enabled=True)
+        self.assertNotIn("NO_SCORE_ELIGIBILITY", report["labels"])
+        self.assertEqual(report["numeric_score_rejection_ticks"], [4])
+        self.assertEqual(report["other_blocking_gate_ticks"], [3])
+
+    def test_visit_without_eating_retains_negative_outcome(self):
+        trace = [dict(frame("se_deplacer_vers_passage",
+                            site="camp"), tick=1, site_after="passage"),
+                 dict(frame("attendre", site="passage"), tick=2)]
+        diag = {"ticks": [
+            {"tick": 1, "failed_channels": [], "unknown_offered": [],
+             "reason": "NO_FAILED_CURRENT_NEED"},
+            {"tick": 2, "failed_channels": [], "unknown_offered": [],
+             "reason": "NO_FAILED_CURRENT_NEED"}]}
+        report = classify_protocol_exposure(
+            trace, diag, factor_enabled=False)
+        self.assertIn("VISIT_WITHOUT_MEAL", report["labels"])
+        self.assertIn("NO_SAFE_RECOVERY", report["labels"])
+        self.assertEqual(report["passage_meal_ticks"], [])
+
+    def test_observer_refuses_unaligned_tick_history(self):
+        trace = [dict(frame("attendre"), tick=2)]
+        diag = {"ticks": [{"tick": 1, "failed_channels": [],
+                           "unknown_offered": [], "reason": "NO_FAILED_CURRENT_NEED"}]}
+        with self.assertRaisesRegex(ValueError, "unaligned"):
+            classify_protocol_exposure(trace, diag, factor_enabled=True)
+
+    def test_retained_archive_receipt_rejects_replacement(self):
+        with tempfile.TemporaryDirectory() as folder:
+            source = Path(folder) / "original.sqlite"
+            archive = Path(folder) / "archive.sqlite"
+            archive.write_bytes(b"original-archive")
+            end = dict(revision=3, max_steps=3, terminal=False,
+                       remaining_uc=50, site="camp", body={"food": 30})
+            receipt = dict(
+                source=str(source), archive=str(archive), cold_audit="PASS",
+                revision=3, max_steps=3, biological_terminal=False,
+                right_censored=True, remaining_uc=50, site="camp",
+                body=end["body"],
+                archive_sha256=sha256(archive.read_bytes()).hexdigest())
+            self.assertTrue(verify_custody_receipt(
+                source, archive, receipt, end))
+            archive.write_bytes(b"replaced-archive")
+            with self.assertRaisesRegex(ValueError, "digest"):
+                verify_custody_receipt(source, archive, receipt, end)
+            archive.write_bytes(b"original-archive")
+            with self.assertRaisesRegex(ValueError, "not bound"):
+                verify_custody_receipt(
+                    source, archive, dict(receipt, remaining_uc=49), end)
 
     def test_pre_failure_divergence_not_credited_to_lived_failure(self):
         common = [frame("attendre")]

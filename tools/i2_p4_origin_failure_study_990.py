@@ -86,7 +86,9 @@ def _require_exact_clean_checkout(expected_head):
     actual = subprocess.check_output(
         ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     dirty = subprocess.check_output(
-        ["git", "status", "--porcelain", "--untracked-files=no"],
+        # Untracked research modules must not silently shadow reviewed code.
+        # A reproducible one-off life needs an entirely clean checkout.
+        ["git", "status", "--porcelain", "--untracked-files=all"],
         cwd=ROOT, text=True).strip()
     if actual != expected_head or dirty:
         raise ValueError("exact clean source-locked Git HEAD required")
@@ -138,6 +140,13 @@ def signed_trace(path):
             "tick": tick, "site_before": site_before, "site_after": site,
             "action": action, "offered": offers, "before": before,
             "after": after, "terminal": bool(terminal),
+            # Born life_ref differs by design; this comparison retains only
+            # first-person context, not the identity or score outcomes.
+            "subjective_context": {
+                "goal": event["claim"]["capture"]["goal_ref"],
+                "evidence": event["claim"]["subjective_evidence_refs"],
+                "contradicted": event["claim"]["capture"]["contradicted_semantics"],
+            },
             "admission_ref": admission,
             "food_meal": action == "manger",
             "need_relevant_food_failure": bool(
@@ -159,19 +168,124 @@ def signed_trace(path):
     return trace
 
 
+def _two_recent_failed_origin_meals(trace, index):
+    """Only actual nonrestoring origin food experiences qualify #990.
+
+    The v23 runtime may diagnose food failures at any visited site; this
+    prospective cohort specifically asks whether failed eating at BORN_SITE
+    changes the next paid choice. Do not conflate those two questions.
+    """
+    prior_meals = [x for x in trace[:index] if x["action"] == "manger"]
+    return len(prior_meals) >= 2 and all(
+        meal["site_before"] == BORN_SITE
+        and meal["before"]["food"] < 70
+        and meal["after"]["food"] <= meal["before"]["food"]
+        for meal in prior_meals[-2:]
+    )
+
+
+def classify_protocol_exposure(trace, diagnostic, *, factor_enabled):
+    """Independent, nonexclusive #990 exposure and physical outcome labels.
+
+    Only completed, independently cold-audited histories reach this readout.
+    Absence of an observed opportunity is not an adverse learning result.
+    """
+    if (type(factor_enabled) is not bool or
+            len(trace) != len(diagnostic["ticks"])):
+        raise ValueError("complete aligned #990 trace/diagnostic required")
+    first_failure, first_novel = None, None
+    eligible, unknown_preboost, tags, passage_meals, safe_meals = [], [], [], [], []
+    numeric_score_rejections, other_blocking_gates = [], []
+    offered_novel_gate_reasons = []
+    visited_passage = False
+    for i, (event, gate) in enumerate(zip(trace, diagnostic["ticks"])):
+        tick = i + 1
+        if event["tick"] != tick or gate["tick"] != tick:
+            raise ValueError("unaligned native tick chronology")
+        if _two_recent_failed_origin_meals(trace, i):
+            if first_failure is None:
+                first_failure = tick
+            novel = (event["site_before"] == BORN_SITE and
+                     "food" in gate["failed_channels"] and
+                     "se_deplacer_vers_passage" in gate["unknown_offered"] and
+                     "se_deplacer_vers_passage" in event["offered"])
+            if novel:
+                if first_novel is None:
+                    first_novel = tick
+                reason = gate["reason"]
+                offered_novel_gate_reasons.append(
+                    {"tick": tick, "reason": reason})
+                if reason == "ELIGIBLE_BUT_NOT_CREDITED":
+                    eligible.append(tick)
+                elif reason == "UNOBSERVABLE_PREBOOST_SCORE":
+                    unknown_preboost.append(tick)
+                elif reason in ("NONPOSITIVE_SCORE", "SCORE_GAP_GT_FOUR"):
+                    numeric_score_rejections.append(tick)
+                else:
+                    # Reflex preemption, missing paid frame or other gates
+                    # cannot be reclassified as a measured score failure.
+                    other_blocking_gates.append(tick)
+                if event["factor_tagged"]:
+                    tags.append(tick)
+        if (event["site_before"] != "passage" and
+                event["site_after"] == "passage"):
+            visited_passage = True
+        if event["site_before"] == "passage" and event["action"] == "manger":
+            passage_meals.append(tick)
+            if (event["after"]["food"] > event["before"]["food"] and
+                    event["after"]["integrity"] >= event["before"]["integrity"]):
+                safe_meals.append(tick)
+    flags = []
+    if first_failure is None:
+        flags.append("NO_DOUBLE_FAILURE_EXPOSURE")
+    elif first_novel is None:
+        flags.append("NO_ADMISSIBLE_ALTERNATIVE")
+    elif (numeric_score_rejections and
+          not eligible and not unknown_preboost and
+          not other_blocking_gates):
+        # Only a fully observed set of numeric score rejections can
+        # establish this label. Never confuse an urgent reflex or a
+        # missing frame with a measured ineligible score.
+        flags.append("NO_SCORE_ELIGIBILITY")
+    if factor_enabled and not tags:
+        flags.append("FACTOR_INACTIVE")
+    if visited_passage and not passage_meals:
+        flags.append("VISIT_WITHOUT_MEAL")
+    if not safe_meals:
+        flags.append("NO_SAFE_RECOVERY")
+    return {
+        "labels": flags,  # Independent descriptions, not exclusive verdicts.
+        "first_origin_double_failure_predecision_tick": first_failure,
+        "first_novel_passage_offer_after_failure_tick": first_novel,
+        "reconstructed_uncredited_score_windows": eligible,
+        "tagged_preboost_unobservable_windows": unknown_preboost,
+        "numeric_score_rejection_ticks": numeric_score_rejections,
+        "other_blocking_gate_ticks": other_blocking_gates,
+        "novel_offer_gate_reasons": offered_novel_gate_reasons,
+        "factor_tag_ticks_after_exposure": tags,
+        "passage_meal_ticks": passage_meals,
+        "single_meal_noninjurious_food_restoration_ticks": safe_meals,
+        "independent_m11": False,
+        "interpretation": "DESCRIPTIVE_NOT_GENERAL_ADAPTATION",
+    }
+
+
 def first_matched_factor_divergence(control_trace, factor_trace,
                                     control_diag, factor_diag):
-    """Observational primary endpoint: same prior physical lives only."""
+    """Observational primary endpoint: same lived physical opportunity only."""
     for i, (a, b) in enumerate(zip(control_trace, factor_trace)):
         prior_a, prior_b = control_trace[:i], factor_trace[:i]
         past_matched = all(
-            (x["action"], x["before"], x["after"], x["site_after"]) ==
-            (y["action"], y["before"], y["after"], y["site_after"])
+            (x["action"], x["before"], x["after"], x["site_before"],
+             x["site_after"], x["offered"], x["subjective_context"]) ==
+            (y["action"], y["before"], y["after"], y["site_before"],
+             y["site_after"], y["offered"], y["subjective_context"])
             for x, y in zip(prior_a, prior_b))
         current_matched = (
             past_matched and a["before"] == b["before"] and
             a["site_before"] == b["site_before"] and
-            a["offered"] == b["offered"])
+            a["offered"] == b["offered"] and
+            a["subjective_context"] == b["subjective_context"])
         if a["action"] == b["action"]:
             continue
         if not current_matched:
@@ -181,6 +295,11 @@ def first_matched_factor_divergence(control_trace, factor_trace,
               "food" not in control_diag["ticks"][i]["failed_channels"] or
               "food" not in factor_diag["ticks"][i]["failed_channels"]):
             verdict = "DIVERGENCE_BEFORE_PERSONAL_DOUBLE_FAILURE"
+        elif not (
+            _two_recent_failed_origin_meals(control_trace, i)
+            and _two_recent_failed_origin_meals(factor_trace, i)
+        ):
+            verdict = "DIVERGENCE_WITHOUT_TWO_FAILED_ORIGIN_MEALS"
         elif b.get("factor_credited_chosen_motor") is True:
             # The actual admitted motor, not merely an unchosen candidate,
             # carries a signed v23 factor provenance. Still not a proof
@@ -204,9 +323,9 @@ def first_matched_factor_divergence(control_trace, factor_trace,
                 "same_prehistory": False}
     if any(
         (a["before"], a["after"], a["site_before"], a["site_after"],
-         a["offered"]) !=
+         a["offered"], a["subjective_context"]) !=
         (b["before"], b["after"], b["site_before"], b["site_after"],
-         b["offered"])
+         b["offered"], b["subjective_context"])
         for a, b in zip(control_trace, factor_trace)
     ):
         # Identical motors alone do not establish matched physical lives.
@@ -251,11 +370,37 @@ def summary_of_life(cell, born, final, trace, diagnostic, custody):
             diagnostic["summary"]["first_double_failure_tick"],
         "factor_tags": diagnostic["summary"]["factor_tags"],
         "diagnostic_reasons": diagnostic["summary"]["reason_counts"],
+        "protocol_exposure": classify_protocol_exposure(
+            trace, diagnostic, factor_enabled=factor),
         "archive_sha256": custody["archive_sha256"],
         "cold_audit": "PASS",
         "general_adaptation": "NOT_ESTABLISHED",
         "m11_authenticated": False,
     }
+
+
+def verify_custody_receipt(original, archive, receipt, final):
+    """Bind the reported SHA-256 and audited endpoint to this exact life.
+
+    Archive bytes may differ from the original due to WAL normalization.
+    This is local consistency, NOT authenticated immutable M11 evidence.
+    """
+    if (receipt.get("source") != str(original) or
+            receipt.get("archive") != str(archive) or
+            receipt.get("cold_audit") != "PASS" or
+            receipt.get("revision") != final["revision"] or
+            receipt.get("max_steps") != final["max_steps"] or
+            receipt.get("biological_terminal") is not final["terminal"] or
+            receipt.get("right_censored") is not (not final["terminal"]) or
+            receipt.get("remaining_uc") != final["remaining_uc"] or
+            receipt.get("site") != final["site"] or
+            receipt.get("body") != final["body"]):
+        raise ValueError("archival receipt not bound to this native life")
+    expected = receipt.get("archive_sha256")
+    if (type(expected) is not str or len(expected) != 64 or
+            sha256(archive.read_bytes()).hexdigest() != expected):
+        raise ValueError("archival SQLite digest disagrees with custody receipt")
+    return True
 
 
 def run_study(output, *, execute=False, expected_head=None):
@@ -310,6 +455,10 @@ def run_study(output, *, execute=False, expected_head=None):
             trace = signed_trace(archive)
             if len(trace) != final["revision"]:
                 raise ValueError("full signed trace required")
+            # Recheck the archived bytes AFTER diagnostic and trace extraction.
+            # Without this, a later replacement could silently give the
+            # receipt a hash for data other than that just interpreted.
+            verify_custody_receipt(origin, archive, custody, final)
             report = summary_of_life(
                 cell, born, final, trace, diagnostic, custody)
             _write_json(output / (key + "__trace.json"), trace)
@@ -328,6 +477,17 @@ def run_study(output, *, execute=False, expected_head=None):
             comparisons[world] = first_matched_factor_divergence(
                 traces[left], traces[right],
                 diagnostics[left], diagnostics[right])
+        # Before declaring the six-cell cohort complete, prove that the
+        # retained archive bytes still match EVERY recorded custody receipt.
+        for key in reports:
+            verify_custody_receipt(
+                output / (key + "__original.sqlite"),
+                output / (key + "__archive.sqlite"),
+                json.loads((output / (key + "__receipt.json")).read_text(
+                    encoding="utf-8")),
+                NativePaidI2.inspect(
+                    output / (key + "__archive.sqlite")).audit(),
+            )
         result = {
             "protocol": PROTOCOL, "issue": PREREGISTERED_ISSUE,
             "source_commit": expected_head, "lives": reports,
