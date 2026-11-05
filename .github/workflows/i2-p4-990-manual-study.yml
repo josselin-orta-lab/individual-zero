@@ -1,0 +1,98 @@
+# Explicit one-time research ceremony for pre-registered issue #990.
+# Not a test workflow. Never trigger on push, PR, schedule or re-run by default.
+# Operator must approve ONE controlled execution and separately preserve artifacts.
+name: I2 P4 #990 manual preserved six-life study
+
+on:
+  workflow_dispatch:
+    inputs:
+      expected_head:
+        description: 'Current main HEAD: full 40-character reviewed commit SHA'
+        required: true
+        type: string
+      confirm:
+        description: 'Type exactly RUN-I2-P4-990-ONCE to authorize six native births'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: i2-p4-990-one-off-cohort
+  cancel-in-progress: false
+
+jobs:
+  frozen-cohort:
+    name: Six frozen native lives (explicit research action only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Fail closed unless explicitly approved on exact current main HEAD
+        shell: bash
+        env:
+          EXPECTED_HEAD: ${{ inputs.expected_head }}
+          CONFIRMATION: ${{ inputs.confirm }}
+          EVENT_SHA: ${{ github.sha }}
+          EVENT_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          test "$CONFIRMATION" = "RUN-I2-P4-990-ONCE"
+          test "$EVENT_REF" = "refs/heads/main"
+          [[ "$EXPECTED_HEAD" =~ ^[0-9a-f]{40}$ ]]
+          test "$EVENT_SHA" = "$EXPECTED_HEAD"
+          echo "ONE_OFF_I2_P4_990_SOURCE_AUTHORIZED"
+
+      - name: Checkout exact reviewed main SHA
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.expected_head }}
+          persist-credentials: false
+
+      - name: Python 3.11 (one primary scientific execution, not CI matrix)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Execute frozen six-cell native study at most once in this job
+        id: study
+        shell: bash
+        env:
+          EXPECTED_HEAD: ${{ inputs.expected_head }}
+          RESEARCH_OUTPUT: ${{ runner.temp }}/i2-p4-990-originals-and-archives
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+          test ! -e "$RESEARCH_OUTPUT"
+          # -B prevents import-generated __pycache__ from failing the
+          # runner's strict Git status --untracked-files=all source lock.
+          python -B tools/i2_p4_origin_failure_study_990.py \
+            --execute-protocol-990 \
+            --expected-head "$EXPECTED_HEAD" \
+            --output "$RESEARCH_OUTPUT"
+
+      - name: Publish whether completed or aborted (do not retry missing lives)
+        if: ${{ always() }}
+        shell: bash
+        env:
+          RESEARCH_OUTPUT: ${{ runner.temp }}/i2-p4-990-originals-and-archives
+        run: |
+          set -euo pipefail
+          if [ -f "$RESEARCH_OUTPUT/status.json" ]; then
+            cat "$RESEARCH_OUTPUT/status.json"
+          else
+            echo "NO_STUDY_OUTPUT_OR_PREFLIGHT_REFUSAL"
+          fi
+          echo "The job conclusion is not an H3/G3/M11 or survival verdict."
+
+      - name: Preserve original and archived journals even on abort
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: i2-p4-990-research-evidence-${{ github.run_id }}
+          path: ${{ runner.temp }}/i2-p4-990-originals-and-archives/
+          if-no-files-found: warn
+          include-hidden-files: true
+          retention-days: 90
+          compression-level: 0
