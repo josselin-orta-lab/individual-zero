@@ -10,6 +10,8 @@ For a task-oriented architecture map and intervention matrix, begin with the [Ar
 | I1 isolated Lab | generated from `src/i1/lab/` and `src/i1/runtime/` | temporary `i1lab/` | never commit generated output |
 | I1 birth | canonical natural identity | `i1lab.i1_birth.birth_i1` | no old experimental flags / hidden oracle |
 | I1 test harness | real engine, SMOKE/FULL | `scripts/test_i1_ci.py` | assert mechanism and observed outcomes, not fixed choices |
+| I2 | unregistered research proposal with a locally born native SQLite prototype | `src/i2/`, `src/i2/docs/STATUS.md` | isolated local research lives; no engine activation or independently established M11 custody |
+| I3 | unregistered proposal with independent local laboratory and preregistered study records | `src/i3/`, `tests/i3/`, `src/i3/docs/README.md` | preserve original commit provenance, failed P1.2 gate and no-entrypoint contract; no engine activation |
 | I0 history | non-authoritative for I1 | `archive/i0/` | byte immutable; manual restoration only |
 | Registry | canonical generation locations | `config/engine-registry.json` | review when adding a generation |
 | Archive inventory | original Git blob identities | `config/archives/i0-20261017.json` | never edit archived bytes to match a new engine |
@@ -26,7 +28,7 @@ For a task-oriented architecture map and intervention matrix, begin with the [Ar
 
 ## Next engine generation: I2, I3, ...
 
-**I2 has an independent proposal directory and synthetic fixtures, but no active or born engine has been created.** For each proposed generation, keep `src/iN/` source separate from previous generations, define canonical constructor/identity, isolated generation-owned Lab, typed contracts, a unique test harness, an explicit activation decision, and a separate CI workflow. Update the registry only after the generation is actually implemented. Do not rename I1 to I2 or inherit an experiment's measurements as normative requirements.
+**I2 has an independent, locally born native SQLite research prototype, but is not an activated engine. I3 is also an unregistered proposal with independent laboratory code and documented G2/G2b/G2c results; P1.2 remains rejected.** For each proposed generation, keep `src/iN/` source separate from previous generations, define a generation-owned constructor/identity, isolated Lab, typed contracts, a unique test harness, an explicit activation decision and dedicated checks when appropriate. Never infer activation from local execution or test success. Update the registry only following the formal promotion decision. Do not rename I1 or inherit an experiment's measurements as normative requirements.
 
 Use this promotion sequence: design proposal → architectural decision → isolated prototype → software invariants → new preregistered physical evidence → explicit activation. Record NO-GO and limitations. Keep older generations available for reproducible historical audits.
 
@@ -41,7 +43,7 @@ Avoid creating generic names such as `latest_model` in runtime imports. Every li
 
 ## Lab ownership per generation
 
-Each motor version owns its own laboratory: the current I1 Lab is `src/i1/lab/`, and the frozen I0 Lab is `archive/i0/lab/` (original Git tree SHA `18f5aabdd49a5cc2f7cae3b0996bf958a0843028`). The unversioned `src/lab/` path is removed. The only exception is a temporary restoration of I0's original Lab in a disposable CI checkout to run archived I0 tests against their original imports. This is not an active shared Lab. The I2 proposal contains `src/i2/lab/`, but any future living I2 still needs a fully independent implemented and verified Lab and its own tested custody; no engine should silently use another generation's Lab. The canonical I1 runner retains the generated `i1lab` import namespace for persisted birth compatibility, but its sources now come exclusively from I1.
+Each motor version owns its own laboratory: the current I1 Lab is `src/i1/lab/`, and the frozen I0 Lab is `archive/i0/lab/` (original Git tree SHA `18f5aabdd49a5cc2f7cae3b0996bf958a0843028`). The unversioned `src/lab/` path is removed. The only exception is a temporary restoration of I0's original Lab in a disposable CI checkout to run archived I0 tests against their original imports. This is not an active shared Lab. The I2 prototype contains `src/i2/lab/`, with a local native research lifecycle but without registered engine activation or independently established M11 custody. I3 also owns `src/i3/lab/`; its `engine.json` declares no activated entrypoints, and its vital-currency model is not an I1/I2 UC implementation. No engine should silently use another generation's Lab. The canonical I1 runner retains the generated `i1lab` import namespace for persisted birth compatibility, but its sources now come exclusively from I1.
 
 `individual-zero` remains a legacy I0 bootstrap demonstration, not a natural I1 CLI or scientific gate. Natural I1 must use its versioned birth entrypoint.
 
