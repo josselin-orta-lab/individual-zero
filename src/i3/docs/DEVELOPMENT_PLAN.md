@@ -73,6 +73,9 @@ claim this observation patch fixes them, or retroactively certify old studies.
    prospectively reserved fresh conditions; count revision latency from the
    first personally available evidence. Failure keeps P1.1; it does not itself
    forbid constructing the bounded selection pilot.
+   **Done (G2e):** adopted on the v2 substrate under selection (ADR-0015);
+   see [results](studies/g2e-p13-v2/RESULTS.md). Revision is more frequent,
+   not faster.
 2. P2: validate existing generators/probes, separate development, selection,
    validation and held-out conditions. New seeds alone are not new ecological
    families. A heuristic oracle's success witnesses feasibility; failure is

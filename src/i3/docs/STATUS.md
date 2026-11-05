@@ -11,7 +11,7 @@ Décision : [ADR-0014](../../../docs/decisions/ADR-0014-i3-lignee-enjeu-de-soi.m
 | G2 Porte | **Franchie** le 5 novembre 2026 : 30/30 vies ont bu, rejeu exact, 0,40 ms par pas ([résultat](studies/g2-first-falsifier/RESULTS.md)). Deux défauts relevés pour P1.1 |
 | P1.1 | Adopté (porte G2b, [résultat](studies/g2b-p11-heldout/RESULTS.md)) : non inférieur à P1, sans gain mesurable |
 | P1.2 | **Rejeté** par la porte G2c ([résultat](studies/g2c-p12-heldout/RESULTS.md)) : révision bien meilleure (69 contre 46, p = 0,0007) mais non-infériorité générale manquée d'une vie. Variante conservée dans la branche `i3/p1.2-variant` |
-| P1.3 | Prochaine étape : croyances révisables seules, puis évaluation sous sélection, sur graines réservées neuves |
+| P1.3 | **Adopté sur le substrat v2** par la porte G2e sous sélection ([résultat](studies/g2e-p13-v2/RESULTS.md)) : 478 survies sur 1 000 contre 364 (p = 4 × 10⁻⁹) ; révision après tarissement dans 60 % des vies contre 23 %. Cognition de référence : génome `i3-genome-v3` |
 | P2 Mondes | Non commencé |
 | P3 Lignée | Non commencé |
 | P4 Étude | Non commencé |
@@ -51,5 +51,6 @@ payment rules; they previously raised on most development worlds. They are still
 not validated or cost-matched comparators: that remains P2 work. See
 [COGNITIVE_FUNDING.md](COGNITIVE_FUNDING.md). Focused suite: 66 tests.
 
-Next: P1.3 on the same v2 substrate in both arms and P2 validation of existing
-world/probe tools. No selection pilot, new held-out evaluation or scientific GO.
+P1.3 has since been compared on the same v2 substrate in both arms (G2e, ADR-0015)
+and adopted; see the P1.3 row above. Next: P2 validation of existing world/probe
+tools (cost matching, condition separation), then the P3 pilot. No scientific GO.

@@ -38,3 +38,6 @@ raise under v2, and checks that every command pays `PROBE_WORK` first, that a
 motor command also leaves the next bill funded (otherwise the probe sleeps), and
 that an unpayable bill gives null commands with zero work. These checks make the
 probes executable; they do not validate them as comparators (P2).
+
+| Croyances révisables (P1.3) | `tests/i3/test_place_beliefs.py` : révision au rythme hérité, gène tiré en dernier, case visible = observation courante | Implémenté |
+| Porte sous sélection v2 | `lab/selection_gate_v2.py` (ADR-0015) ; G2e : P1.3 adopté | Implémenté |
