@@ -195,6 +195,7 @@ def classify_protocol_exposure(trace, diagnostic, *, factor_enabled):
         raise ValueError("complete aligned #990 trace/diagnostic required")
     first_failure, first_novel = None, None
     eligible, unknown_preboost, tags, passage_meals, safe_meals = [], [], [], [], []
+    whole_life_tags, whole_life_chosen_motor_credits = [], []
     numeric_score_rejections, other_blocking_gates = [], []
     offered_novel_gate_reasons = []
     visited_passage = False
@@ -202,6 +203,14 @@ def classify_protocol_exposure(trace, diagnostic, *, factor_enabled):
         tick = i + 1
         if event["tick"] != tick or gate["tick"] != tick:
             raise ValueError("unaligned native tick chronology")
+        if event["factor_tagged"]:
+            if not factor_enabled:
+                raise ValueError("v23 credit impossible for factor-off birth")
+            whole_life_tags.append(tick)
+        if event.get("factor_credited_chosen_motor"):
+            if not event["factor_tagged"]:
+                raise ValueError("chosen motor credit missing v23 frame provenance")
+            whole_life_chosen_motor_credits.append(tick)
         if _two_recent_failed_origin_meals(trace, i):
             if first_failure is None:
                 first_failure = tick
@@ -247,7 +256,10 @@ def classify_protocol_exposure(trace, diagnostic, *, factor_enabled):
         # establish this label. Never confuse an urgent reflex or a
         # missing frame with a measured ineligible score.
         flags.append("NO_SCORE_ELIGIBILITY")
-    if factor_enabled and not tags:
+    # Scope the preregistered inactivity verdict to the *whole life*.
+    # A later v23 tag outside the origin experiment is still an observed
+    # factor activation, even if no factor credit met the primary endpoint.
+    if factor_enabled and not whole_life_tags:
         flags.append("FACTOR_INACTIVE")
     if visited_passage and not passage_meals:
         flags.append("VISIT_WITHOUT_MEAL")
@@ -263,6 +275,9 @@ def classify_protocol_exposure(trace, diagnostic, *, factor_enabled):
         "other_blocking_gate_ticks": other_blocking_gates,
         "novel_offer_gate_reasons": offered_novel_gate_reasons,
         "factor_tag_ticks_after_exposure": tags,
+        "factor_tag_ticks_whole_life": whole_life_tags,
+        "factor_chosen_motor_credit_ticks_whole_life":
+            whole_life_chosen_motor_credits,
         "passage_meal_ticks": passage_meals,
         "single_meal_noninjurious_food_restoration_ticks": safe_meals,
         "independent_m11": False,
