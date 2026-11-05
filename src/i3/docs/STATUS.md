@@ -9,7 +9,8 @@ Décision : [ADR-0014](../../../docs/decisions/ADR-0014-i3-lignee-enjeu-de-soi.m
 | P0 Décision | Fait : ADR-0014 accepté, invariant de naissance reformulé |
 | P1 Noyau | Implémenté : monde séparé, corps à cinq canaux, monnaie vitale, capacités vulnérables, génome, cognition, rejeu exact |
 | G2 Porte | **Franchie** le 5 novembre 2026 : 30/30 vies ont bu, rejeu exact, 0,40 ms par pas ([résultat](studies/g2-first-falsifier/RESULTS.md)). Deux défauts relevés pour P1.1 |
-| P1.1 | Prochaine étape : projection de l'énergie vers sa restauration, exploration qui couvre l'espace |
+| P1.1 | Projection : le sommeil connu restaure énergie et vigilance. Porte G2b préinscrite ([G2B_P11_HELDOUT_PREREG.md](G2B_P11_HELDOUT_PREREG.md)) |
+| P1.2 | Défaut ouvert : couverture de l'espace par l'exploration |
 | P2 Mondes | Non commencé |
 | P3 Lignée | Non commencé |
 | P4 Étude | Non commencé |

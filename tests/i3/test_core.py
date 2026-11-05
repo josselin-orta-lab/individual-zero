@@ -161,3 +161,22 @@ class MindTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ProjectionTests(unittest.TestCase):
+    def test_known_sleep_restores_energy_in_projection(self):
+        m = Mind(G.midpoint(), 0)
+        for _ in range(5):
+            m.effects.observe(("dormir",), [3.0, -0.35, -0.4, 0.2, 4.0])
+            m.effects.observe(("attendre",), [-0.4, -0.22, -0.4, 0.2, -0.1])
+        tired = (5.0, 60.0, 60.0, 100.0, 100.0)
+        rested = (90.0, 60.0, 60.0, 100.0, 100.0)
+        _, end_tired = m.project(tired, m.drift())
+        _, end_rested = m.project(rested, m.drift())
+        self.assertGreaterEqual(end_tired[0], m.theta[0] - 1e-9)
+        self.assertLess(end_tired[1], end_rested[1])  # sleeping costs food
+
+    def test_without_sleep_experience_energy_is_held(self):
+        m = Mind(G.midpoint(), 0)
+        _, end = m.project((5.0, 60.0, 60.0, 100.0, 100.0), m.drift())
+        self.assertAlmostEqual(end[0], 5.0)

@@ -34,6 +34,18 @@ Le développement s'est fait sur `lab/dev_worlds.py`, jamais sur les mondes du t
 
 Autres écarts : le gène `v_s` est absorbé par `w.vigilance` (même rôle) ; le tempérament agit par l'exploration (β_u, κ₀), la sensibilité à la menace (λ_r) et la protection du but (inertie) — `reward_sensitivity` et `affiliation` n'ont pas d'effet en v1 ; le réflexe inné se limite à un veto de repas nocif quand l'intégrité est ≤ 10 (aucune action forcée) ; l'échec d'action lié à l'intégrité basse n'est pas encore implémenté ; les modules sont des fichiers de `modules/` plutôt que des dossiers.
 
+## P1.1 (après la porte G2)
+
+**Adopté sous réserve de la porte G2b** : dans l'auto-projection, l'énergie et la vigilance ne sont plus figées. Si le sommeil a déjà restauré l'énergie, la projection les ramène à leur seuil de détresse en payant le surcoût alimentaire du sommeil. P1 les figeait, si bien qu'un plan finissant fatigué paraissait coûteux pour toujours (cause probable de la mort du génome 8 dans G2).
+
+**Essayé puis rejeté sur les mondes de développement** (30 génomes par monde) :
+
+- *Projection d'habitude complète* (ravitaillement supposé aux sources connues) : « maison » 21/30 survivants contre 26/30 pour P1. Trop optimiste, elle fait repousser les trajets jusqu'à ce qu'ils deviennent impossibles.
+- *Frontière qui révèle le plus d'inconnu* : champ ouvert 2/10 qui boivent contre 7/10.
+- *Exploration en spirale depuis l'origine* : champ ouvert 1/30, « maison » 0/30 survivants. Avec une perception d'une case, les cases de bord gardent des voisines jamais observables et restent des frontières, ce qui fait tourner l'individu le long des bords.
+
+**Défaut ouvert (P1.2)** : l'exploration par la frontière la plus proche longe les murs et couvre mal l'espace ; aucune variante essayée ne fait mieux. Le grand champ de développement (eau à 9 cases hors de vue, 100 pas de réserve) reste à 0/30 pour toutes les versions et pourrait être infaisable pour toute stratégie avec cette perception et cette économie d'énergie.
+
 ## Hors v1
 
 Générateur de familles de mondes (P2), lignée et registre (P3), étude 2 × 2 et ablations (P4), allostasie (révision des seuils θ_c en cours de vie).

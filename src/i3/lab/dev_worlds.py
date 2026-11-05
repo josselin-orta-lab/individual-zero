@@ -29,4 +29,28 @@ def dev_long_corridor() -> WorldSpec:
     )
 
 
-DEV_WORLDS = (dev_open_field, dev_long_corridor)
+def dev_wide_field() -> WorldSpec:
+    """P1.1: water out of sight, many directions to choose from."""
+    return WorldSpec(
+        name="dev-wide-field", width=20, height=20, spawn=(4, 15),
+        body=(72.0, 50.0, 40.0, 90.0, 100.0),
+        water={(9, 11): WaterSource(gain=35.0)},
+        food={(5, 13): FoodPatch("ochre", 3, 3, restock_every=15),
+              (15, 4): FoodPatch("teal", 3, 3, restock_every=15)},
+        token_effects={"ochre": (12.0, 0.0), "teal": (8.0, -5.0)},
+    )
+
+
+def dev_far_home() -> WorldSpec:
+    """P1.1: water at home, food far away; staying alive needs returns."""
+    return WorldSpec(
+        name="dev-far-home", width=18, height=5, spawn=(1, 2),
+        body=(80.0, 40.0, 70.0, 95.0, 100.0),
+        water={(1, 2): WaterSource(gain=35.0)},
+        food={(15, 1): FoodPatch("plum", 4, 4, restock_every=10),
+              (16, 3): FoodPatch("plum", 4, 4, restock_every=10)},
+        token_effects={"plum": (14.0, 0.0)},
+    )
+
+
+DEV_WORLDS = (dev_open_field, dev_long_corridor, dev_wide_field, dev_far_home)

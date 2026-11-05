@@ -101,7 +101,7 @@ class Mind:
         self.intention: str | None = None
         self.buffer: deque = deque()
         self.last = None
-        self._drift = (0.0,) * 5
+        self._drift = ((0.0,) * 5, None)
         self.pending_replays = 0  # sleep replay is charged on the next step
 
     # ---- innate distress and learned value --------------------------------
@@ -118,31 +118,47 @@ class Mind:
         return w[0] * phi[1] + w[1] * phi[2] + w[2] * phi[3] + w[3] * phi[4] + w[4] * phi[5]
 
     def drift(self):
-        """Personally observed passive drift of the world-dependent channels.
+        """Personally observed passive drift, plus personally observed sleep.
 
-        Energy and vigilance are restored by sleep, an action always available
-        to the body, so the projection holds them where they are. Food, water
-        and integrity depend on the world and drift as personally observed
-        while waiting (else as the mean of any step).
+        Food, water and integrity drift as observed while waiting (else as
+        the mean of any step). Energy and vigilance are not frozen: if sleep
+        has ever restored energy, the projection lets sleep bring them back
+        up to their distress thresholds, paying sleep's extra food cost.
+        (P1 froze them, so any plan ending tired looked costly forever.)
         """
-        mean, _ = self.effects.predict(("attendre",))
-        return (0.0, mean[F], mean[W], mean[I], 0.0)
+        wait, _ = self.effects.predict(("attendre",))
+        sleep = self.effects.stats.get(("dormir",))
+        restore = None
+        if sleep and sleep[2] > 0 and sleep[1][E] > 0:
+            restore = (sleep[1][E], max(0.0, sleep[1][V]), sleep[1][F] - wait[F])
+        return (0.0, wait[F], wait[W], wait[I], 0.0), restore
 
     def project(self, b, drift):
-        """Innate self-projection: discounted distress if nothing changes.
+        """Innate self-projection over 255 future steps (chunks 1, 2, 4 ... 128).
 
-        Returns per-horizon discounted sums over 255 future steps, with death
-        (a vital channel reaching zero) counted as maximal distress forever.
+        Death (a vital channel at zero) counts as maximal distress forever.
         """
+        drift, restore = drift
+        th = self.theta
         b = list(b)
         ret = [0.0, 0.0, 0.0]
         disc = [1.0, 1.0, 1.0]
         dead = False
+        r = 0.0
         for run in self.proj_chunks:
             if not dead:
+                for c in (F, W, I):
+                    b[c] += run * drift[c]
+                if restore is not None:
+                    need = max(0.0, th[E] - b[E]) / restore[0]
+                    if restore[1] > 0.0:
+                        need = max(need, max(0.0, th[V] - b[V]) / restore[1])
+                    n = min(float(run), need)
+                    b[E] += n * restore[0]
+                    b[V] += n * restore[1]
+                    b[F] += n * restore[2]
                 for c in range(5):
-                    x = b[c] + run * drift[c]
-                    b[c] = 0.0 if x < 0.0 else 100.0 if x > 100.0 else x
+                    b[c] = 0.0 if b[c] < 0.0 else 100.0 if b[c] > 100.0 else b[c]
                 dead = b[F] <= 0.0 or b[W] <= 0.0 or b[I] <= 0.0
                 r = -self.d_max if dead else -self.distress(self.feats(b))
             for k, gk in enumerate(self.gammas):
@@ -363,7 +379,7 @@ class Mind:
         # Anticipated need: distress of channels without a known source, on the
         # body projected over the longest value horizon (capped at 255 steps).
         reach = min(255, int(1.0 / (1.0 - self.gammas[2])))
-        ahead = [min(100.0, max(0.0, body[c] + reach * self._drift[c])) for c in range(5)]
+        ahead = [min(100.0, max(0.0, body[c] + reach * self._drift[0][c])) for c in range(5)]
         phi_ahead = self.feats(ahead)
         need_w = self.w[W] * phi_ahead[1 + W] * (1.0 - p_water)
         need_f = self.w[F] * phi_ahead[1 + F] * (1.0 - p_food)
