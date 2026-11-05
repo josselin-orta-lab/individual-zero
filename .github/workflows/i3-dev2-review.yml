@@ -1,0 +1,87 @@
+name: I3 dev2 original history and probe review (one shot)
+on:
+  push:
+    branches: ['automation/i3-dev2-review-1008']
+permissions:
+  contents: write
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: transport
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 2b3371dd76107d5849d8548439554afe548140f6
+          path: candidate
+          fetch-depth: 30
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Reconstruct and verify all six original commit identities
+        working-directory: candidate
+        run: |
+          set -euo pipefail
+          python ../transport/.github/dev2-import/import_history.py
+          test "$(git rev-parse HEAD)" = b60aa7b209aab68cd28651d2c43a674271f67db8
+          python scripts/check_engine_repository.py --json
+          python -m unittest discover -s tests/i3 -p 'test_*.py' -v
+      - name: Recalculate historical verdict without executing lives
+        working-directory: candidate
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import importlib.util, json, hashlib
+          p = Path('src/i3/lab/selection_gate.py')
+          s = importlib.util.spec_from_file_location('gate', p)
+          gate = importlib.util.module_from_spec(s); s.loader.exec_module(gate)
+          d = Path('src/i3/docs/studies/g2d-selection')
+          arms = {a: json.loads((d / (a + '.json')).read_text()) for a in ('P1_1','P1_2','P1_3')}
+          g2 = {a: json.loads((d / ('g2-' + a + '.json')).read_text()) for a in arms}
+          saved = json.loads((d / 'verdict.json').read_text())
+          actual = gate.decide(arms['P1_1'], {a:arms[a] for a in ('P1_2','P1_3')}, g2, {'P1_1':29,'P1_2':31,'P1_3':30})
+          assert all(actual[k] == saved[k] for k in actual)
+          for a, report in arms.items():
+              assert len(report['ranking']) == 40
+              assert sorted(r['seed'] for r in report['ranking']) == list(range(6000,6040))
+              ordered = sorted(report['ranking'], key=lambda r:(-r['selection_alive'],-r['selection_steps'],r['seed']))
+              assert ordered == report['ranking']
+              assert [r['seed'] for r in ordered[:5]] == report['selected']
+              for family in ('R','dev'):
+                  assert [r['seed'] for r in report['evaluation'][family]] == list(range(1000100,1000200))
+                  assert all(type(r['selected_alive']) is int and 0 <= r['selected_alive'] <= 5 for r in report['evaluation'][family])
+              for label, file in [('body','src/i3/modules/body.py'),('world','src/i3/modules/world.py'),('worldgen','src/i3/lab/worldgen.py')]:
+                  assert hashlib.sha256(Path(file).read_bytes()).hexdigest() == report['hashes'][label]
+          for name in ('P1_2','P1_3'):
+              x = actual['comparisons'][name]['vs_base']['pooled']
+              print(name, x, 'unrounded_p', gate.sign_test(x['worlds_better'],x['worlds_worse']))
+          print('HISTORICAL_DATA_RECALCULATION_PASS; NO_HELDOUT_LIFE_EXECUTED')
+          PY
+      - name: Preserve exact original source branches without force
+        working-directory: candidate
+        run: |
+          set -euo pipefail
+          git push origin b60aa7b209aab68cd28651d2c43a674271f67db8:refs/heads/i3/p0-p1-core 9e160e626925d41a45178ba4ffb4862a8c9ec0ea:refs/heads/i3/p1.3-variant b60aa7b209aab68cd28651d2c43a674271f67db8:refs/heads/archive/i3-dev2-original-20261105
+      - name: Check exact probe PR 1007 on Python 3.11
+        working-directory: candidate
+        run: |
+          set -euo pipefail
+          git fetch origin 94347e76ef516f56ac40931a320eaaac2de7f3ec
+          git checkout --detach 94347e76ef516f56ac40931a320eaaac2de7f3ec
+          python scripts/check_engine_repository.py --json
+          python tools/check_repo_navigation.py --scope entrypoints
+          python -m unittest discover -s tests/i3 -p 'test_*.py' -v
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check exact probe PR 1007 on Python 3.12
+        working-directory: candidate
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = 94347e76ef516f56ac40931a320eaaac2de7f3ec
+          python -m unittest discover -s tests/i3 -p 'test_*.py' -v
+          git diff --exit-code
+          echo 'Original history retained; historical verdict recalculated; probe PR checked on Python 3.11/3.12. No main update, lineage, or held-out rerun.' >> "$GITHUB_STEP_SUMMARY"
