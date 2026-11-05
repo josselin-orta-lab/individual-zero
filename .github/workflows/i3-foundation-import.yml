@@ -1,0 +1,98 @@
+name: I3 foundation verified import (one shot)
+
+on:
+  push:
+    branches: [automation/i3-foundation-1003-20261105]
+
+permissions:
+  contents: write
+
+jobs:
+  verify-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout patch transport (never merged)
+        uses: actions/checkout@v4
+        with:
+          path: transport
+          persist-credentials: false
+      - name: Checkout exact baseline
+        uses: actions/checkout@v4
+        with:
+          ref: ac71bef28add28d01b2628e998e3626002cbcc98
+          path: candidate
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify original main baseline
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = ac71bef28add28d01b2628e998e3626002cbcc98
+          python scripts/check_engine_repository.py --json
+          python -m unittest discover -s tests/i3 -p 'test_*.py' -v
+      - name: Apply exact reviewed patch and verify all resulting blobs
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          from hashlib import sha256
+          import gzip
+          import subprocess
+          data = gzip.decompress(Path('../transport/.github/i3-foundation/changes.patch.gz').read_bytes())
+          assert sha256(data).hexdigest() == '0c58a6d009504d4f7ef919ce56bf04bc91b7705d1f8cda744cf7c3a5223091ae'
+          subprocess.run(['git', 'apply', '--check', '-'], input=data, check=True)
+          subprocess.run(['git', 'apply', '--index', '-'], input=data, check=True)
+          expected = {
+              'src/i3/docs/DEVELOPMENT_PLAN.md': '66e0ebd181ca134c51c162ed616af5f6a2b29cab',
+              'src/i3/docs/STATUS.md': 'e6b9a6da81b081816827477cc50b94cefd3f3050',
+              'src/i3/docs/TEST_PLAN.md': '77b6552842683d12e2d74b073e2873aa9b880b9e',
+              'src/i3/modules/body.py': '949b8099f977eb8d4a25d6a3df59bde293ec3c08',
+              'src/i3/modules/mind.py': 'b7606a932cbf78764531dea065a85bc8a45716c6',
+              'src/i3/modules/world.py': '1f25798b587bef84dad61c3dee26a90137a1fcb7',
+              'src/i3/runtime/life.py': '98372f5ec620774a5001a1dbe50e44795c939b06',
+              'src/i3/runtime/provenance.py': '96624cfda194253c275a1c3af171f484bcc725b8',
+              'tests/i3/test_foundation.py': 'be2e048ef8d45e0fb4a112c35582f2ce4182fb50',
+          }
+          changed = subprocess.check_output(['git', 'diff', '--cached', '--name-only'], text=True).splitlines()
+          assert sorted(changed) == sorted(expected), changed
+          for name, want in expected.items():
+              got = subprocess.check_output(['git', 'hash-object', name], text=True).strip()
+              assert got == want, (name, got, want)
+          PY
+          git diff --cached --check
+          git switch -c feat/i3-foundation-1003
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat(i3): expose cognitive accounting and reproducible life provenance'
+          echo "CANDIDATE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Candidate boundaries and I3 tests on Python 3.11
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/check_engine_repository.py --json
+          python -m unittest discover -s tests/i3 -p 'test_*.py' -v
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Candidate I3 tests on Python 3.12
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests/i3 -p 'test_*.py' -v
+          git diff --exit-code
+      - name: Publish only the tested candidate branch
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+          git push origin HEAD:refs/heads/feat/i3-foundation-1003
+          printf 'Candidate source: `%s`\n\nBaseline: `ac71bef28add28d01b2628e998e3626002cbcc98`.\n\nBaseline tests and structural guard passed. Candidate structural guard and I3 tests passed on Python 3.11 and 3.12. No held-out study or lineage executed.\n' "$CANDIDATE_SHA" >> "$GITHUB_STEP_SUMMARY"
