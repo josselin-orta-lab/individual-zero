@@ -1,4 +1,4 @@
-"""Static, zero-birth checks of proposed #990 manual evidence workflow.
+"""Static, zero-birth checks of INERT #990 manual workflow review template.
 
 These tests inspect an inert YAML file. They never contact GitHub, reserve
 the real protected tag, dispatch a job or instantiate NativePaidI2.
@@ -7,13 +7,19 @@ from pathlib import Path
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
-WORKFLOW = ROOT / ".github/workflows/i2-p4-990-manual-study.yml"
+WORKFLOW = ROOT / "src/i2/docs/templates/i2-p4-990-manual-study.yml.example"
 
 
 class I2P4990ManualWorkflowContract(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.source = WORKFLOW.read_text(encoding="utf-8")
+
+    def test_template_is_not_live_github_actions_workflow(self):
+        self.assertTrue(WORKFLOW.is_file())
+        self.assertFalse(
+            (ROOT / ".github/workflows/i2-p4-990-manual-study.yml").exists())
+        self.assertIn("INERT REVIEW TEMPLATE ONLY", self.source)
 
     def test_only_explicit_manual_dispatch_and_single_first_attempt(self):
         src = self.source
