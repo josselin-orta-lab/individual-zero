@@ -47,6 +47,15 @@ class I2P4990ManualWorkflowContract(unittest.TestCase):
         self.assertIn("CLAIM_CONSUMED", src)
         self.assertIn('test -s "$EVIDENCE/claim-receipt.json"', src)
 
+    def test_manifest_uses_portable_paths_and_checks_integrity(self):
+        src = self.source
+        self.assertIn('cd "$EVIDENCE"', src)
+        self.assertIn("sha256sum --check --status SHA256SUMS.txt", src)
+        self.assertIn("find . -type f ! -name 'SHA256SUMS.txt'", src)
+        self.assertIn("find . -type l -print -quit", src)
+        self.assertNotIn('find "$EVIDENCE" -type f', src)
+        self.assertIn("test -s SHA256SUMS.txt", src)
+
     def test_failure_artifacts_include_complete_and_partial_evidence(self):
         src = self.source
         self.assertGreaterEqual(src.count("if: ${{ always() }}"), 2)
