@@ -69,3 +69,15 @@ A filled illustrative example is available in [../../examples/adr-example.md](..
 - [ADR-0006: evidence-grounded aversion reappraisal](ADR-0006-evidence-grounded-aversion-reappraisal.md) (1 November 2026). A hidden payoff change is not learnable from an unchanged chosen-outcome history; stale +9 remains an artificial comparator.
 
 - [ADR-0007: separate physiological need, nutrition and aversion](ADR-0007-need-nutrition-aversion-scientific-design.md) (1 November 2026). Owner accepts the scientific model and four-arm research design in principle, NOT an executed or parameter-frozen study; G1-LIVE/M11 unchanged.
+
+- [ADR-0008: retire obsolete mandatory external G1 review for I2 prototyping](ADR-0008-remove-obsolete-i2-external-g1-review-gate.md) (1 November 2026). Supersedes earlier two-reviewer and G0-before-coding holds; authorizes autonomous isolated I2 implementation #664, with real technical/scientific safeguards and no automatic active-engine promotion.
+
+- [ADR-0009: I2 physiology and temperament comparability](ADR-0009-i2-physiology-temperament-parity.md) (2 November 2026). Physical and birth-trait parity is required before claiming cross-generation adaptation, without runtime dependence on I1.
+
+- [ADR-0010: stable-world prior and evidence-based associative memory](ADR-0010-stable-world-evidence-based-association.md) (3 November 2026). Unobserved world changes cannot be inferred from time; real targeted experiences accumulate without instant erasure, and innate need is kept distinct from learned resource efficacy.
+
+- [ADR-0011: I2 integrated spatial life, experienced place value and longitudinal priorities](ADR-0011-i2-integrated-spatial-life-priorities.md) (3 November 2026). Owner-approved P0-P5 priority, source-locked same-life return falsifier and no-heuristic-drift requirement, without activation or scientific GO.
+
+- [ADR-0012: I2 scientific development through integrated behavior, generalization and convergence](ADR-0012-i2-scientific-development-methodology.md) (3 November 2026). Owner-approved development method, with a single [I2 operational protocol](../../src/i2/docs/SCIENTIFIC_DEVELOPMENT_METHOD.md); no new experimental or engine authorization.
+
+- [ADR-0013: lived autonomy and experimental restraint](ADR-0013-lived-autonomy-and-experimental-restraint.md) (3 November 2026). Owner-approved research and architecture direction: build the conditions for an individual's own fallible behavior, not a prescribed successful life. The [I2 architecture/science plan](../../src/i2/docs/EMBODIED_AUTONOMY_RESEARCH_PLAN.md) translates it into falsifiable observations; the existing roadmap and method remain canonical.

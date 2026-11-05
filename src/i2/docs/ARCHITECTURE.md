@@ -1,14 +1,35 @@
-# I2 : architecture candidate autonome
+# I2: independent native research architecture
 
-**Statut actuel : G2 `TESTED_SYNTHETIC`, I2 `PROPOSAL_ONLY`, non enregistrée et non exécutable.** Il existe des composants cognitifs et un cycle SQLite **de test** ; il n'existe ni Lab/WorldBody vivant, ni runtime I2, ni identité née.
+**Verified snapshot: 4 November 2026, main `6c9157371be0034b90f9fa617d061f721ba4a080`.** [I2 engine contract](../engine.json) has **no registered entrypoint** and declares `NOT_REGISTERED_NOT_EXECUTABLE`; [registry](../../../config/engine-registry.json) still activates I1 only. Nevertheless, [NativePaidI2.create](../runtime/native_paid_cycle.py) starts an **independently born local SQLite research identity** whose internal actions have real modeled physiological consequences. Do not call this registered I2 activation, external actuation or independently authenticated M11.
 
-Chaque génération possède ses propres modules, runtime, Lab, UC, mémoire, contrôles et contrats. Aucun import de `i1lab` comme moteur I2. Le champ `parent: I1` indique une filiation scientifique, jamais une dépendance d'exécution. Norme obligatoire : [ADR-0001](../../../docs/decisions/ADR-0001-strict-generation-autonomy.md).
+Read [current status](STATUS.md), [single P0–P5 roadmap](INTEGRATED_BEHAVIOR_ROADMAP.md), [research method](SCIENTIFIC_DEVELOPMENT_METHOD.md) and [ADR-0013](../../../docs/decisions/ADR-0013-lived-autonomy-and-experimental-restraint.md) before changing behavior. Historical G1/G2 synthetic studies are comparison and negative evidence, not the sole current I2 implementation.
 
-## Sources normatives et état courant
+## Current native causal path and owners
 
-- [Contrat de recherche I2](../../../docs/architecture/proposals/i2-continuity-and-learning-contract-2026-10-31.md) : proposition G1, non revue indépendamment.
-- [Cycle cognitif v5](COGNITIVE_CONTROL_UNIFIED.md) : unique propriétaire SQLite synthétique du débit UC, de l'intention, Competition, Action Control et du terminal.
-- [Étude H2](DELAYED_CREDIT_STUDY.md) : apprentissage et crédit différé **expérimentaux**, pas de politique motrice prouvée.
-- [État actuel](STATUS.md) : portes G0 à G6, blocages, inventaire et liens vers les expériences.
+1. **One born owner:** [native runtime](../runtime/native_paid_cycle.py) binds immutable traits, source-local stock/quality laws, research identity, UC capacity and up to 128 committed modeled physical ticks to a single SQLite file. No import, fallback, memory or operational state from I1.
+2. **Body and endogenous needs:** [body contract](../modules/native_body_contract.py) models energy, food, water and integrity; [needs](../modules/native_physiological_needs.py), [temperament](../modules/native_birth_temperament.py) and embodied safety pressures contribute to current competition. Food may harm integrity while restoring food: **target benefit and whole-body injury are distinct observations**.
+3. **Physical space and resources:** [three-site graph](../modules/native_spatial_world.py) supports only adjacent paid movement and current/local observations. [Place experience](../modules/native_place_experience.py) extracts actual target-need consequences at visited sites. Birth-locked resource site/stock, food and water replenishment and an exogenous water-quality reversal are implemented in the **single native runtime**. No general planning oracle, promised hidden payoff or omniscient spatial memory.
+4. **First-person -> choice:** the observation claim includes only current body, local offers and causally previous committed outcomes. Paid [cognitive control](COGNITIVE_CONTROL_UNIFIED.md), learned/innate value sources, Competition and fresh Action Control determine admission. Experimental tie/food-credit switches are **researcher-defined hypotheses**, not proof of spontaneous intelligence. No rescue script may force a motor choice.
+5. **Atomic consequence and replay:** the [native physical journal](../runtime/native_physiology_journal.py) and v5 cognitive owner commit one action and physical/UC consequence in the **same SQLite transaction**. `NativePaidI2.inspect(path).audit()` independently replays physical and cognitive records and terminal constraints locally, but cannot certify external anti-rollback or independently witnessed M11. Recent audit-only optimizations [#962](https://github.com/josselin-orta-lab/individual-zero/pull/962) and [#966](https://github.com/josselin-orta-lab/individual-zero/pull/966) remove redundant work without granting new owner/action authority.
 
-Les anciens modes et les propriétaires transactionnels séparés ne sont plus supportés. Aucun héritage de données de vie, migration silencieuse, naissance ou activation I2 n'est autorisé.
+## What is implemented versus demonstrated
+
+| Capability | Source or observed result | Boundary |
+| --- | --- | --- |
+| P1 adjacent physical movement | [spatial owner](../modules/native_spatial_world.py), [P1 source-locked study](NATIVE_MINIMAL_SPATIAL_WORLD_P1.md) | 3 fixed sites; no global planner |
+| P2 experienced place relevance and return | [place memory](../modules/native_place_experience.py), [return results](NATIVE_PLACE_RETURN_RESULTS_924.md) | A paid remembered-site return occurred, but shuttling without renewed drinking gave no bodily survival advantage |
+| P3 local competing food/water offers | [site-bound food](NATIVE_SITE_BOUND_FOOD_P3_942.md), [restock](NATIVE_FOOD_RESTOCK_P3_944.md), [spatial evidence](NATIVE_SPATIAL_WATER_REFILL_EVIDENCE_945.md) | Actual stock and timing matter; exposure is not guaranteed, sleep is not a separate site-bound shelter ecology |
+| P4 history-dependent bodily choice | [food credit ablation](NATIVE_TARGET_FOOD_CREDIT_ABLATION_960.md), [eight-life panel](NATIVE_FOOD_CREDIT_HOLDOUT_963.md) | First causal motor divergence in one frozen severe-harm world; other paired worlds unchanged, all 96-step right-censored |
+| P4 long, vulnerable continuous lives | [six-life protocol](NATIVE_COMPETING_SURVIVAL_967.md), [PR #968](https://github.com/josselin-orta-lab/individual-zero/pull/968) | All six died from food exhaustion at tick 61 with zero food offers. Hidden water-quality reversal contacted at tick 49; neither ON nor OFF showed a survival advantage |
+
+The P0–P5 issue sequence remains a **research organization**, not a checklist of entirely unimplemented code. In particular **P1 exists**, **P2 and P3 are partially integrated**, and **P4 scientific generalization is not established**. The next useful investigation must separate failed access to food/alternatives from failed learned choice **before** adding another score adjustment. [Research roadmap](INTEGRATED_BEHAVIOR_ROADMAP.md) records evidence/priority and [ADR-0010](../../../docs/decisions/ADR-0010-stable-world-evidence-based-association.md) prohibits guesses about invisible environment changes.
+
+## Current v20 extension: optional origin novelty
+
+[Issue #969](https://github.com/josselin-orta-lab/individual-zero/issues/969) / [PR #970](https://github.com/josselin-orta-lab/individual-zero/pull/970) added an **innate, birth-hashed and default-OFF** novelty discriminator under research-only native genesis v20. It may distinguish an equally ranked, available and previously *unvisited* adjacent move from a known adjacent move by one score unit, provided exploration temperament is positive and no urgent reflex applies. It neither knows source rewards nor forces motor decisions. Source-locked learning-OFF paired lives showed one admitted source visit at tick 15 and two meals with food gain and integrity injury. It is **not learned place memory** or demonstrated autonomy; v19 historical lives remain separate.
+
+## Invariants and gates still missing
+
+I2 is **PROPOSAL_ONLY**, with no active registered engine, no independent signer/provider or M11 anti-rollback proof, no authorized external motor/actuation and no general G3/H2/H3/G4–G6 scientific GO. Physical and scientific comparability with I1 [#888](https://github.com/josselin-orta-lab/individual-zero/issues/888), independent lifecycle assurance [#926](https://github.com/josselin-orta-lab/individual-zero/issues/926) and long-life adaptation [#906](https://github.com/josselin-orta-lab/individual-zero/issues/906) require separate evidence. The [dream-like consolidation idea #902](https://github.com/josselin-orta-lab/individual-zero/issues/902) is deferred, not an implemented memory-reorganization claim.
+
+Original experiment protocols and [status history](STATUS_HISTORY.md) remain dated source records; do not rewrite them to match the newest implementation.

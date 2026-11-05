@@ -300,6 +300,8 @@ def recommendations(state: dict, program: dict, top: int = 5, generation: str = 
             status = "SOURCE_REVIEW_REQUIRED"
         elif blockers:
             status = "BLOCKED_GATE"
+        elif t["id"] == "I2-G1-REVIEW":
+            status = "RETIRED_PROCEDURAL_GATE"
         elif issue_state == "CLOSED":
             status = "CLOSED_ISSUE_RECONCILIATION_REQUIRED"
         else:
@@ -326,11 +328,14 @@ def recommendations(state: dict, program: dict, top: int = 5, generation: str = 
                                         "ordinal_information_gain": t["information_gain"],
                                         "ordinal_effort": t["effort"], "ordinal_risk": t["risk"],
                                         "not_a_scientific_probability": True},
-                          "authorization": "RECOMMENDATION_ONLY", "human_review_required": True})
+                          "authorization": "RECOMMENDATION_ONLY", "human_review_required": False if t["id"] in ("I2-G1-REVIEW", "I2-G3-CONTRACT") else True})
     order = {"REVIEW_CANDIDATE": 0, "CLOSED_ISSUE_RECONCILIATION_REQUIRED": 1,
-             "BLOCKED_GATE": 2, "SOURCE_REVIEW_REQUIRED": 3}
+             "BLOCKED_GATE": 2, "SOURCE_REVIEW_REQUIRED": 3,
+             "RETIRED_PROCEDURAL_GATE": 4}
     proposals.sort(key=lambda p: (order[p["stage"]], -p["heuristic"]["score"], p["id"]))
-    next_step = next((p for p in proposals if p["stage"] == "REVIEW_CANDIDATE"), None)
+    next_step = next((p for p in proposals if p["id"] == "I2-G3-CONTRACT" and p["stage"] == "REVIEW_CANDIDATE"), None)
+    if next_step is None:
+        next_step = next((p for p in proposals if p["stage"] == "REVIEW_CANDIDATE"), None)
     return {"status": "PROVISIONAL_RESEARCH_ADVICE", "head_sha": state["head_sha"],
             "active_generation": state["active_generation"],
             "recommended_next": next_step, "proposals": proposals[:top],

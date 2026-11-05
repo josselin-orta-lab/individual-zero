@@ -64,7 +64,8 @@ class ResearchCoordinatorTests(unittest.TestCase):
     def test_next_action_is_review_not_experiment(self):
         state = rc.research_state(self.root, at_sha=self.sha)
         ranked = rc.recommendations(state, self.program, 8)
-        self.assertIn(ranked["recommended_next"]["id"], ("I2-G1-REVIEW","I1-G0-ARCHIVE"))
+        self.assertEqual(ranked["recommended_next"]["id"], "I2-G3-CONTRACT")
+        self.assertFalse(ranked["recommended_next"]["human_review_required"])
         self.assertEqual(ranked["execution"], "NOT_PERFORMED")
         self.assertEqual(ranked["promotion"], "NOT_AUTHORIZED")
         compare = next(x for x in ranked["proposals"] if x["id"] == "I2-G5-COMPARISON")
@@ -76,7 +77,7 @@ class ResearchCoordinatorTests(unittest.TestCase):
         state = rc.research_state(self.root, at_sha=self.sha)
         self.assertEqual(state["status"], "SOURCE_REVIEW_REQUIRED")
         ranked = rc.recommendations(state, self.program, 8)
-        self.assertNotEqual(ranked["recommended_next"]["id"], "I2-G1-REVIEW")
+        self.assertNotEqual(ranked["recommended_next"]["id"], "I2-G3-CONTRACT")
         self.assertTrue(any(p["stage"] == "SOURCE_REVIEW_REQUIRED" for p in ranked["proposals"]))
 
     def test_snapshot_cannot_prove_approval_even_if_issue_closed(self):
@@ -115,7 +116,8 @@ class ResearchCoordinatorTests(unittest.TestCase):
 
     def test_dependency_graph_and_cli(self):
         diagram = rc.graph(self.program)
-        self.assertIn("I2_G1 --> I2_G3", diagram)
+        self.assertNotIn("I2_G1 --> I2_G3", diagram)
+        self.assertIn("I2_G3 --> I2_G4", diagram)
         self.assertIn("I2_G5 --> I2_G6", diagram)
         self.assertEqual(rc.main(["audit"],self.root), 0)
         self.assertEqual(rc.main(["recommend","--top","2","--at-sha",self.sha,

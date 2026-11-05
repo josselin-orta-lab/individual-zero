@@ -1,0 +1,8 @@
+# I2 native sleep-linked consolidation
+
+Owner decision 2026-11-02, ADR-0009 / issue #888. Sleep is an admitted paid physical action and may also stabilize past experiences.
+After a committed sleep, repeated actually chosen outcomes observed BEFORE that sleep may be summarized by their bounded mean, using the existing declared chosen-result offset. At least two observations of the same action are required. A newer chosen result overrides that summary.
+No imaginary reward, no hidden world knowledge, no new memory owner or motor authority is allowed. The source is the same existing SQLite journal, and cold birth replay recalculates score provenance marked sleep-consolidated.
+The born sleep_consolidation flag permits paired active and disabled ablations separate from the learning flag. Native sleep still consumes food and water and recovers energy and integrity according to the existing body physics. The following Competition remains paid.
+The new v2 genesis does not migrate earlier life databases. This averaging heuristic is not proof of natural biological memory consolidation or improved survival, and it has no external M11 attestation.
+Tests cover repeated pre-sleep outcomes, no pre-sleep or disabled consolidation, new observed outcomes superseding older summaries, and identical initial body/traits under the two settings. Full autonomous behavioral survival validation is still required.

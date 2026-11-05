@@ -1,31 +1,30 @@
 # I2: current proposal status
 
-**Snapshot: 1 November 2026. PROPOSAL_ONLY / NOT_REGISTERED / NOT_EXECUTABLE / NOT_BORN.**
-I1 remains the active generation. I2 has no declared birth/runtime entrypoints or living authority. Verify actual HEAD, [engine contract](../engine.json), registry and exact-SHA tests before acting. This is an engineering summary, **not** a scientific GO.
+**Snapshot: 4 November 2026; checked against main `6c9157371be0034b90f9fa617d061f721ba4a080`. Registry: PROPOSAL_ONLY / NOT_REGISTERED / NOT_EXECUTABLE / NOT_BORN (no *registered* engine birth).** The independent [native research runtime](../runtime/native_paid_cycle.py) **does** create bounded local SQLite research lives with internally paid, admitted physical actions. Such a research birth is not an activated I2 engine, public motor authority or independently witnessed M11 continuity. Check the latest [registry](../../../config/engine-registry.json), [I2 contract](../engine.json), source and exact-head CI before relying on this dated snapshot.
 
-## Scientific and architectural gates
+## Scientific and engineering gates
 
-| Gate | Maintained interpretation |
+| Gate | Evidence-based interpretation |
 | --- | --- |
-| G0 / I1 baseline | Reference source pinned; independent M11/archive custody, the preserved negative results and independent reproducibility audit remain to be established |
-| G1 | Architectural and scientific review still required; proposed intent, authority, COMMIT, crash and witness contracts are not accepted living architecture |
-| G2 | Independent **synthetic** research fixtures and a local SQLite v5 cognition/H2 cycle with targeted non-living tests |
-| G3 | **NOT_ESTABLISHED**: no independently authenticated living M11, UC Scheduler, physical WorldBody, birth, irreversible living death or motor authority |
-| G4–G6 | **NOT_STARTED**: no I2 confirmatory study, living comparative cohort or scientific promotion |
+| G0 / I1 source | I1 is separately active; it is a research comparator, never live code or memory inherited by I2 |
+| G1 | **EXTERNAL_REVIEW_GATE_RETIRED** by ADR-0008: isolated prototyping does not await a mandatory two-reviewer queue |
+| G2 | Independent **synthetic** research fixtures **and** an I2-owned local born SQLite runtime: four body reserves, temperament, physical positions, resource offers, paid choice/admission, committed consequences and independent cold replay |
+| G3 | **NOT_ESTABLISHED**: no independently authenticated living M11, registered active I2 birth/engine or external actuation; local replay cannot prove independent anti-rollback |
+| G4–G6 | **NOT_ESTABLISHED**: no I2 confirmatory study establishing general autonomous learning, long-horizon survival advantage or cross-generation superiority. Frozen diagnostic/held-out panels are evidence, not general GO |
 
-## Current G2 software boundaries
+## What exists in native I2 now
 
-- [Unified synthetic v5 cycle](COGNITIVE_CONTROL_UNIFIED.md): a single SQLite test owner with cognition, local event chain, synthetic UC, H2 feedback, candidate opinions and synthetic terminal rejection. No direct physical effect or I1 runtime inheritance.
-- [Delayed credit](DELAYED_CREDIT_STUDY.md), [synthetic test plan](TEST_PLAN.md) and [local uncertain-COMMIT inspection](COGNITIVE_CONTROL_UNIFIED.md): controlled demonstrations and negative cases, **not** an established learning benefit or replay/retry authorization.
-- [External witness and uncertain-commit checks](LIFECYCLE_EXTERNAL_WITNESS.md) compare local journals with **injected** witness responses, declared previous bounds and verified local prefixes, including a second local audit after refusals. These are fail-closed local diagnostics, not an independently authenticated global witness or linearizable M11.
-- [Operator file witness](OPERATOR_FILE_WITNESS.md) and local challenge/nonce modules test canonicalization, per-instance reuse rejection, append-only local custody, restart/corruption guards and file-identity checks. Whole-domain rollback, coordinated file substitution, missing independent signer and trust anchor remain limitations.
+- [Single native owner](../runtime/native_paid_cycle.py) and [physical journal](../runtime/native_physiology_journal.py): immutable per-life birth parameters, energy/food/water/integrity, bodily pressures, born temperament, paid cognitive decisions, fresh admission, physical outcomes and terminal-aware cold checks. The **128-step maximum is a technical bound**, not proof of ecological survival.
+- [P1 spatial graph](../modules/native_spatial_world.py): **three traversable sites** (camp, passage, source), local site/neighbor observations and only adjacent, physically charged moves. This is not a general planner or omniscient map.
+- [P2 personally lived site outcomes](../modules/native_place_experience.py): need-conditioned remembered place evidence can influence a *paid* choice. [Source-locked return observations](NATIVE_PLACE_RETURN_RESULTS_924.md) show a chosen remembered-site revisit, **but not always a later drink or improved survival**. No site is guaranteed to remain stocked.
+- [P3 bounded ecology](NATIVE_SITE_BOUND_FOOD_P3_942.md), [local food replenishment](NATIVE_FOOD_RESTOCK_P3_944.md), [spatial water evidence](NATIVE_SPATIAL_WATER_REFILL_EVIDENCE_945.md): food and water may be site-bound, depleted and independently replenished; hidden quality is revealed only by actually paid contact. **This is partial ecology**, not a validated durable adaptive life or complete contextual rest/shelter system.
+- [P4 food-credit ablation](NATIVE_TARGET_FOOD_CREDIT_ABLATION_960.md) and [eight-life held-out panel](NATIVE_FOOD_CREDIT_HOLDOUT_963.md), [#963](https://github.com/josselin-orta-lab/individual-zero/issues/963): in one severe-harm world, ON/OFF diverged at tick 17 after the same personal history; the other three world pairs did not diverge. All eight lives were right-censored at tick 96 without biological death; **no generalized advantage** was established.
+- [P4 six-life competing-needs panel](NATIVE_COMPETING_SURVIVAL_967.md), [#967](https://github.com/josselin-orta-lab/individual-zero/issues/967), [PR #968](https://github.com/josselin-orta-lab/individual-zero/pull/968): both Python versions reproduced six paid, independently born lives; **all reached biological food exhaustion at tick 61, with no physically offered meal and identical food-credit ON/OFF actions**. The hidden water-quality change was physically encountered at tick 49 in the affected worlds. These are important negative/identifiability outcomes, **not failed software tests**.
+- [P3 v20 innate origin novelty](NATIVE_ORIGIN_NOVELTY_969.md), [PR #970](https://github.com/josselin-orta-lab/individual-zero/pull/970), [#969](https://github.com/josselin-orta-lab/individual-zero/issues/969): **born-locked opt-in (default OFF)**, one-point distinction between equally ranked already-visited and unvisited adjacent movements, without a future-food oracle. In an independently born learning-OFF 64-tick pair, ON actually entered source at tick 15 and consumed two meals; OFF remained without source contact. Food increased but integrity fell from harmful meals. This is **innate exploratory discrimination**, not acquired learning or a survival advantage.
+- [Longitudinal results #906](NATIVE_RECURRENT_NEED_RESULTS_906.md) and the [original negative cohorts](NATIVE_STABLE_RESOURCE_RESULTS_906.md) remain relevant. No single short life certifies an individual's generalized learning.
 
-**All G2 findings are non-living and local to the tested fixture.** They grant no motor admission, real-world consequence, birth, retry, recovery, M11 authentication or permission to promote I2.
+## Next agent decision
 
-## Next reviewed work
+Use the [P0–P5 roadmap](INTEGRATED_BEHAVIOR_ROADMAP.md), [scientific development method](SCIENTIFIC_DEVELOPMENT_METHOD.md), accepted [ADR-0012](../../../docs/decisions/ADR-0012-i2-scientific-development-methodology.md) and [ADR-0013](../../../docs/decisions/ADR-0013-lived-autonomy-and-experimental-restraint.md). **P1 is technically implemented, P2 and P3 have partial behavioral substrates, and P4 is under falsifiable study.** Open issues are not a claim that their entire implementation is absent. Prioritize real exposure to feasible alternatives, same-life strategy revision and controlled negative outcomes over new scoring rules, duplicate owners or CI churn. Classify `NO_EXPOSURE`, biological death, horizon censoring and a genuine learned failure separately. Dream-like replay remains deferred [#902](https://github.com/josselin-orta-lab/individual-zero/issues/902).
 
-Investigate [G1 continuity and learning contract](../../../docs/architecture/proposals/i2-continuity-and-learning-contract-2026-10-31.md), [G1 crash/publication boundaries](../../../docs/architecture/proposals/i2-publication-boundaries-g1-review-2026-10-31.md), and [the I1-to-I2 transition gates](../../../docs/architecture/proposals/i2-transition-and-scientific-gates-2026-10-31.md). Independently review issue #662 (G1) and issue #661 (I1 G0 provenance) before proposing living G3 work. See [engine promotion rules](../../../docs/engineering/ENGINE_PROMOTION.md). **Do not instantiate an I2 individual.**
-
-## History and provenance
-
-The [historical development ledger](STATUS_HISTORY.md) retains dated G2 implementation details, superseded schema descriptions and the **full previous status snapshot** from Git blob `5f9cdfc2f56e642890f2838e9152547d95ce5b00` at repository commit `cececc67e3c620e11d66aca20adb21ff25199e1c`. Consult the individual mechanism docs and exact-source code for present software behavior. Historical test successes do not establish scientific acceptance.
+[Architecture](ARCHITECTURE.md) owns the current source map. [STATUS_HISTORY.md](STATUS_HISTORY.md) preserves dated historical notes, without retroactively changing experiment claims. This STATUS file is source-pinned by `config/research-program.json` and `config/research-dossiers.json`: update **both blob pins and their markers** whenever its bytes change. Never convert structural navigation PASS or local source verification into scientific GO.

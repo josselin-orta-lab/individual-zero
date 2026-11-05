@@ -14,6 +14,8 @@
 | [I2 minimal living-loop G1 review brief (2026-11-01)](i2-g1-minimal-living-loop-review-brief-2026-11-01.md) | **REVIEW_REQUIRED**: short current-SHA independent-review handoff, proposed integrated sequence and explicit G3 critical path after two external reviews, not an acceptance or runtime |
 | [I2 G1 single-owner WorldBody publication candidate (2026-11-01)](i2-g1-single-owner-world-publication-candidate-2026-11-01.md) | **PROPOSED / REVIEW_REQUIRED**: R1-R4/R7 design alternative plus explicit **R6 first-person H2 timing** (no feedback before later observed, attested outcome), public visibility/fencing and C0-C11 counterexamples. Not accepted or executable |
 
+**ADR-0008 supersession:** the external two-reviewer G1 hold described in the dated rows above is retired. Those documents remain useful historical C0-C11 falsifier inputs, not current human approval prerequisites. #664 isolated I2 development is authorized now; active registration and scientific claims are still unestablished.
+
 I2's **live proposal software status** is owned by [`src/i2/docs/STATUS.md`](../../../src/i2/docs/STATUS.md) and [I2's engine contract](../../../src/i2/engine.json). An I2 synthetic G2 test cannot satisfy G1 architectural approval or G3 authenticated mortality and persistence.
 
 ## Historical I1 isolation and MVP migration material

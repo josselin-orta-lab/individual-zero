@@ -1,6 +1,6 @@
 # Architecture atlas for development agents
 
-**Scope:** navigation and intervention map, not a new runtime specification or proof of learning. Baseline: 31 October 2026. **Verify the live HEAD, registry and generation contracts before every change.** This index deliberately avoids restating the mechanisms documented beside source.
+**Scope:** navigation and intervention map, not a new runtime specification or proof of learning. Baseline updated: 4 November 2026 (main `c6d6f8ec`). **Verify the live HEAD, registry and generation contracts before every change.** This index deliberately avoids restating the mechanisms documented beside source.
 
 ## 1. Find the owning generation in 30 seconds
 
@@ -8,7 +8,7 @@
 | --- | --- | --- | --- |
 | I0 | Frozen reference and reproducible archive | [I0 source](../../src/i0/), [archive inventory](../../config/archives/i0-20261017.json) | Not an active engine |
 | I1 | **Active** embodied artificial individual | [I1 engine contract](../../src/i1/engine.json), [handbook](../../src/i1/docs/README.md), [current status](../../src/i1/docs/STATUS.md) | Only by its declared, tested birth and M11 contracts |
-| I2 | Independent research proposal with G2 **synthetic** fixtures | [I2 contract](../../src/i2/engine.json), [research handbook](../../src/i2/docs/README.md), [current status](../../src/i2/docs/STATUS.md) | **NO: not registered, executable or born** |
+| I2 | Unregistered proposal with **synthetic fixtures and local born SQLite physical research lives** | [I2 contract](../../src/i2/engine.json), [research handbook](../../src/i2/docs/README.md), [current status](../../src/i2/docs/STATUS.md) | **No registered birth/engine**; yes, bounded internal research births |
 
 The [active registry](../../config/engine-registry.json) determines activation, not a folder name, experimental success or this table. The `parent` field records **comparative lineage**, never a live dependency. [ADR-0001](../decisions/ADR-0001-strict-generation-autonomy.md) requires each successor to own its cognition, Lab/WorldBody, UC, persistence, death and identity. The existing I1-specific generated `i1lab` namespace does not authorize importing an obsolete engine.
 
@@ -17,12 +17,12 @@ flowchart TB
   R["Engine registry: active generation"]
   I0["I0: immutable historical source and archive"]
   I1["I1: active own Lab + cognition + M11"]
-  I2["I2: isolated synthetic G2 proposal"]
+  I2["I2: proposal + local native research births"]
   R --> I1
   I0 -. "research lineage only" .-> I1
   I1 -. "research lineage only" .-> I2
   I1 --> D1["I1-owned docs / tests / evidence"]
-  I2 --> D2["I2-owned docs / synthetic tests"]
+  I2 --> D2["I2-owned docs / native and synthetic tests"]
 ```
 
 This is a **repository ownership map**, not a runtime call graph or a claim that I2 is registered.
@@ -63,15 +63,15 @@ The arrows express **causal responsibilities**, not a complete mandatory call or
 
 ## 3. I2 research: distinguish fixtures from life
 
-The [I2 architecture](../../src/i2/docs/ARCHITECTURE.md) and [test plan](../../src/i2/docs/TEST_PLAN.md) describe **non-living software**. The [unified SQLite v5 cognitive cycle](../../src/i2/docs/COGNITIVE_CONTROL_UNIFIED.md), [intention continuity](../../src/i2/docs/INTENTION_CONTINUITY.md), [delayed-credit research](../../src/i2/docs/DELAYED_CREDIT_STUDY.md), [external witness](../../src/i2/docs/LIFECYCLE_EXTERNAL_WITNESS.md) and [G1 proposals](proposals/README.md) are not born-world integrations.
+The [I2 architecture](../../src/i2/docs/ARCHITECTURE.md) and [status](../../src/i2/docs/STATUS.md) describe both historic synthetic v5 research **and a local native SQLite world/body loop** with three traversable sites, paid actions, bodily consequences and cold replay. [Unified cognitive control](../../src/i2/docs/COGNITIVE_CONTROL_UNIFIED.md), [intention continuity](../../src/i2/docs/INTENTION_CONTINUITY.md), [site experience](../../src/i2/modules/native_place_experience.py) and [physical journal](../../src/i2/runtime/native_physiology_journal.py) are distinct responsibilities under one research owner. [External witness diagnostics](../../src/i2/docs/LIFECYCLE_EXTERNAL_WITNESS.md) and historic [G1 proposals](proposals/README.md) are **not** independent M11 proof or an engine promotion.
 
 | Demonstrated in a synthetic test | **Not established or authorized** |
 | --- | --- |
-| Local journals, synthetic UC accounting, identity/terminal rejection cases, read-only witness comparisons | Real UC Scheduler/WorldBody, physiological consequence, independently authenticated M11 |
+| Synthetic journals **and native local bodily/position/UC changes**, terminal rejection, read-only cold witnesses | Registered living-engine UC Scheduler/WorldBody, independent M11 or public actuation |
 | Synthetic feedback/H2 replay and negative cases | Preregistered confirmatory adaptive advantage or a living recovery |
 | Injected witness/challenge ports and some detected rollback conditions | Independent signer/provider, global anti-rollback, motor authority, retry, resurrection or promotion |
 
-No I2 entrypoint appears in its engine contract; never call a fixture's success a real life. G1 review, G3 proof and G4–G6 science remain separate gates. See the [current proposal record](proposals/README.md) and the [promotion process](../engineering/ENGINE_PROMOTION.md). Older proposal diagrams may depict obsolete schemas; **their dates and review state matter**.
+No registered I2 entrypoint appears in its engine contract; do not confuse local born research lives with authorized engine activation. The retired external G1 reviewer hold is not a present blocker; G3 independent M11 and G4–G6 science remain separate unpassed gates. See the [current proposal record](proposals/README.md) and the [promotion process](../engineering/ENGINE_PROMOTION.md). Older proposal diagrams may depict obsolete schemas; **their dates and review state matter**.
 
 ## 4. Select a validation layer, not a green badge
 
@@ -79,7 +79,7 @@ No I2 entrypoint appears in its engine contract; never call a fixture's success 
 | --- | --- | --- |
 | Is the component registered and callable? | [Registry](../../config/engine-registry.json), `engine.json` and actual code | Adaptive performance |
 | Is a change structurally permitted? | [ADR-0001](../decisions/ADR-0001-strict-generation-autonomy.md), contracts and [promotion rules](../engineering/ENGINE_PROMOTION.md) | That it was executed |
-| Does the implementation pass software tests? | [I1 test matrix](../../src/i1/docs/TEST_PLAN.md) or [I2 synthetic tests](../../src/i2/docs/TEST_PLAN.md), CI **on the exact SHA** | Scientific GO |
+| Does the implementation pass software tests? | [I1 test matrix](../../src/i1/docs/TEST_PLAN.md) or [I2 native and synthetic tests](../../src/i2/docs/TEST_PLAN.md), CI **on the exact SHA** | Scientific GO |
 | Has meaningful behavior been observed? | [I1 evidence matrix](../../src/i1/docs/EVIDENCE_MATRIX.md), original traces, seed, identity, world and comparator | Generalization without controls |
 | Is natural autonomous learning established? | Reviewed preregistered independent results and explicit scientific gate | Never infer from unit tests or an architecture diagram |
 

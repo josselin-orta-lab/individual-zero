@@ -1,27 +1,37 @@
 # I2 research handbook (proposal only)
 
-**I2 is an independent architectural proposal, not an active artificial individual.** Its modules, fixtures and SQLite journal are **synthetic research software**. There is no I2 birth, living WorldBody, registered runtime, authenticated M11 continuity or scientific GO.
+**I2 remains an unregistered, inactive architectural proposal.** Besides historical synthetic G2 fixtures, it contains an independent *locally born native SQLite research prototype* with paid, admitted physical actions, a three-site physical graph, site-bound food/water, lived outcome/need associations, controlled experimental learning and cold replay. Its local births are **not** registered living-engine I2 activation, authenticated M11 continuity, public motor authority or a scientific GO.
 
-## Reading order for a new agent
+**Current priority (4 November 2026):** consult [current native status](STATUS.md), [architecture](ARCHITECTURE.md), [owner-approved P0–P5 roadmap](INTEGRATED_BEHAVIOR_ROADMAP.md), [ADR-0011](../../../docs/decisions/ADR-0011-i2-integrated-spatial-life-priorities.md) and [master #921](https://github.com/josselin-orta-lab/individual-zero/issues/921). Do **not** restart P1: its physical graph/paid movement exists. P2/P3 have partial integrated behavior; P4 [#906](https://github.com/josselin-orta-lab/individual-zero/issues/906), [#963](https://github.com/josselin-orta-lab/individual-zero/issues/963) and [#967](https://github.com/josselin-orta-lab/individual-zero/issues/967) retain both null and lethal findings. P5 #926/#888 remains separate. The historic reading order below is secondary to current evidence.
 
-1. [Current status and blocked gates](STATUS.md): **short, maintained summary only**; [append-only development ledger](STATUS_HISTORY.md) retains dated iterations and the complete pre-rationalization status snapshot. Prefer adding new G2 implementation notes to the ledger or owner-specific mechanism guide instead of growing this entrypoint. A change to current STATUS requires explicit review of its scientific source pins.
+**Method for every I2 research agent:** [scientific development method](SCIENTIFIC_DEVELOPMENT_METHOD.md), grounded in accepted [ADR-0012](../../../docs/decisions/ADR-0012-i2-scientific-development-methodology.md). It governs falsification, lived-body observations, held-out generalization, evidence labels and convergence without changing P0-P5 or creating a second roadmap.
+
+**Research and architecture purpose:** [ADR-0013: lived autonomy rather than prescribed success](../../../docs/decisions/ADR-0013-lived-autonomy-and-experimental-restraint.md) and the [embodied autonomy architecture/scientific plan](EMBODIED_AUTONOMY_RESEARCH_PLAN.md) explain the principal P3/P4 research challenge (one life, several strategies), scientific individuality controls, interpretation of valid mistakes, and hard first-person/action boundaries. They do not replace the P0-P5 roadmap or the single scientific method.
+
+## Historical mechanisms and deeper reading
+
+1. [Current status and remaining evidence gaps](STATUS.md): **short, maintained summary only**; [append-only development ledger](STATUS_HISTORY.md) retains dated iterations and the complete pre-rationalization status snapshot. Prefer adding new G2 implementation notes to the ledger or owner-specific mechanism guide instead of growing this entrypoint. A change to current STATUS requires explicit review of its scientific source pins.
 2. [Architecture and boundaries](ARCHITECTURE.md): generation autonomy, ownership and permissions.
 3. [Unified synthetic cognitive control v5](COGNITIVE_CONTROL_UNIFIED.md): one SQLite test owner, UC test charges, Competition opinions, H2 transition and local replay.
 4. [Intention continuity](INTENTION_CONTINUITY.md) and [option reconstruction](OPTION_RECONSTRUCTION.md): semantics without carried motor rights.
 5. [Delayed-credit study](DELAYED_CREDIT_STUDY.md), [UC allocation study](UC_ALLOCATION_STUDY.md) and [Competition preview](COMPETITION_PREVIEW.md): explicit hypotheses and limitations.
 6. [Intention ingress](INTENTION_INGRESS.md), [Action Control boundary](ACTION_CONTROL_BOUNDARY.md): declared ports, veto, admission restrictions.
 7. [External witness](LIFECYCLE_EXTERNAL_WITNESS.md) and [operator file witness](OPERATOR_FILE_WITNESS.md): adversarial diagnostics, **not** independent M11 proof.
-8. [G1-LAB experimental loop](../lab/README.md): one internal SQLite state owner and a no-learning comparator, not a born I2.\n9. [Evidence-based aversion correction](../../../docs/research/studies/i2-g1lab-aversion-reappraisal-2026-11-01/README.md): invisible payoff recovery versus memory of harm, ADR-0006.
-10. [Test plan](TEST_PLAN.md): fast synthetic checks and unpassed scientific gates.
+8. [G1-LAB experimental loop](../lab/README.md): one internal SQLite state owner, not a born I2.
+9. [Evidence-based aversion correction](../../../docs/research/studies/i2-g1lab-aversion-reappraisal-2026-11-01/README.md): evidence-limited recovery, ADR-0006.
+10. [Completed one-shot need/aversion factorial](../../../docs/research/studies/i2-g1lab-need-aversion-protocol-2026-11-01/execution-report.md): 16 non-living research arms, 128 modeled captures, full negative/null readout and no natural-learning GO; the original approved parameter-lock blob is preserved.
+11. [Test plan](TEST_PLAN.md): synthetic software checks and still-unpassed scientific gates.
 
-## External authority
+
 
 - [I2 agent instructions](../AGENTS.md) and [I2 proposal contract](../engine.json).
 - [Research contract / falsification](../../../docs/architecture/proposals/i2-continuity-and-learning-contract-2026-10-31.md).
 - [Transition gates and I1 evidence limits](../../../docs/architecture/proposals/i2-transition-and-scientific-gates-2026-10-31.md).
 - [Proposed G1 publication/crash review](../../../docs/architecture/proposals/i2-publication-boundaries-g1-review-2026-10-31.md), not yet an approved living-system contract.
-- [Minimal living-loop G1 review brief](../../../docs/architecture/proposals/i2-g1-minimal-living-loop-review-brief-2026-11-01.md): concise independent-review handoff and minimal post-G1 integrated target under ADR-0004, **not approval**.
+- [Historical minimal living-loop G1 review brief](../../../docs/architecture/proposals/i2-g1-minimal-living-loop-review-brief-2026-11-01.md): concise independent-review handoff and minimal post-G1 integrated target under ADR-0004, **not approval**.
 - [Current-source G1 review delta and counterexample matrix](../../../docs/architecture/proposals/i2-g1-current-review-delta-2026-11-01.md): corrects dated G1 ownership diagrams to unified v5 and requests independent R1-R8 decisions. **Review packet only, not gate approval.**
 - [Independent-generation requirement](../../../docs/decisions/ADR-0001-strict-generation-autonomy.md).
 
 The `parent` field means comparative lineage, never live code or state inheritance. Validate synthetic software with `python -m unittest discover -s tests/i2 -p 'test_*.py' -v`. A passing test never registers I2 or establishes adaptive autonomous learning.
+
+**Current owner routing:** [ADR-0008](../../../docs/decisions/ADR-0008-remove-obsolete-i2-external-g1-review-gate.md) retires the mandatory external G1 reviewer hold. Implement and test an isolated I2-only prototype for #664 now, without claiming M11/scientific GO or registering I2. The minimum isolated native local loop was built under closed #664; follow the new P0-P5 spatial integration roadmap rather than restarting that closed ticket. Earlier review packets remain historical contract/falsifier references.

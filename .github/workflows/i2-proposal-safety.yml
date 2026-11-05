@@ -11,6 +11,7 @@ on:
       - '!src/i2/README.md'
       - '!src/i2/AGENTS.md'
       - 'tests/i2/**'
+      - 'tools/i2_ci_shards.py'
       - 'tools/assess_engine_proposal.py'
       # Structural policy changes must be validated without an I1 birth.
       - 'scripts/check_engine_repository.py'
@@ -28,7 +29,13 @@ jobs:
   inert-proposal:
     name: I2 inactive proposal (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    # Two processes per runner schedule ALL discovered tests exactly once.
+    # Preserve the full source-locked 3.11/3.12 suite and all gate checks.
+    # Source-locked #985 second full attempt: Python 3.11 PASS 812/812
+    # plus six boundaries and inert engine at ~27 min; Python 3.12
+    # shard 0 PASS 384/384 in 1126 s but shard 1 still running at 30m.
+    # Exhaustive guards and cohort stay unchanged; only the job timeout grows.
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -45,7 +52,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Isolated I2 policy and scaffold tests (no birth)
         run: |
-          python -m unittest discover -s tests/i2 -p 'test_*.py' -v
+          python tools/i2_ci_shards.py
           python -m compileall -q src/i2 tests/i2
       - name: Registered generation boundaries (static only, no I1 runtime)
         run: |
@@ -59,9 +66,9 @@ jobs:
           from pathlib import Path
           r = json.loads(Path("i2-assessment.json").read_text())
           # A pure policy exists, but there is still no living Lab or runtime.
-          expected_missing = {"runtime_implementation_present"}
+          expected_missing = set()
           assert r["checks"]["lab_implementation_present"] is True, r
-          assert r["status"] == "BLOCKED", r
+          assert r["status"] == "STRUCTURE_PRESENT_REVIEW_REQUIRED", r
           assert set(r["blocked_by"]) == expected_missing, r["blocked_by"]
           assert r["checks"]["cognition_implementation_present"] is True, r
           assert r["checks"]["independent_tests_present"] is True, r
