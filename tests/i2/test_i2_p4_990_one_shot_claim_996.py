@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from tools.i2_p4_990_one_shot_claim import (
     API_URL, CONSUMED_REF, CONFIRMATION,
     WORKFLOW_REF, REPOSITORY, ClaimRefused, check_preflight, claim_once,
+    verify_marker_ruleset,
 )
 
 SHA = "a" * 40
@@ -27,9 +28,22 @@ def environment(**updates):
         "GITHUB_RUN_NUMBER": "1",
         "GITHUB_RUN_ID": "424242",
         "GITHUB_TOKEN": "synthetic-test-only",
+        "I2_P4_990_TAG_RULESET_ID": "1234",
     }
     env.update(updates)
     return env
+
+
+def good_ruleset():
+    return {
+        "id": 1234, "source": REPOSITORY,
+        "target": "tag", "source_type": "Repository",
+        "enforcement": "active",
+        "conditions": {"ref_name": {"include": [CONSUMED_REF],
+                                     "exclude": []}},
+        "rules": [{"type": "deletion"}, {"type": "update"}],
+        "bypass_actors": [],
+    }
 
 
 class Reply:
@@ -48,8 +62,11 @@ class Reply:
 
 
 class FakeGitHub:
-    def __init__(self, *, fail_post=None, move_main=False):
+    def __init__(self, *, fail_post=None, move_main=False,
+                 ruleset=None, change_ruleset_after_post=False):
         self.refs = {}
+        self.ruleset = ruleset
+        self.change_ruleset_after_post = change_ruleset_after_post
         self.calls = []
         self.fail_post = fail_post
         self.move_main = move_main
@@ -57,6 +74,11 @@ class FakeGitHub:
     def __call__(self, request, timeout):
         self.calls.append((request.get_method(), request.full_url))
         if request.get_method() == "GET":
+            if request.full_url.endswith("/rulesets/1234"):
+                rule = self.ruleset if self.ruleset is not None else good_ruleset()
+                if self.change_ruleset_after_post and self.refs:
+                    rule = dict(rule, enforcement="disabled")
+                return Reply(200, rule)
             self._assert_get(request)
             return Reply(200, {
                 "object": {"sha": "b" * 40 if self.move_main else SHA}
@@ -142,7 +164,7 @@ class SingleUseClaimContract(unittest.TestCase):
         fake = FakeGitHub(move_main=True)
         with self.assertRaisesRegex(ClaimRefused, "main moved"):
             claim_once(SHA, CONFIRMATION, environ=environment(), opener=fake)
-        self.assertEqual([m for m, _ in fake.calls], ["GET"])
+        self.assertEqual([m for m, _ in fake.calls], ["GET", "GET"])
 
     def test_ambiguous_post_never_retried(self):
         for failure in ("timeout", "unprocessable", "server"):
@@ -152,7 +174,47 @@ class SingleUseClaimContract(unittest.TestCase):
                                             "verification refused"):
                     claim_once(SHA, CONFIRMATION, environ=environment(),
                                opener=fake)
-                self.assertEqual([m for m, _ in fake.calls], ["GET", "POST"])
+                self.assertEqual([m for m, _ in fake.calls], ["GET", "GET", "POST"])
+
+    def test_ruleset_missing_is_refused_before_network(self):
+        fake = FakeGitHub()
+        with self.assertRaisesRegex(ClaimRefused, "ruleset id required"):
+            claim_once(SHA, CONFIRMATION,
+                       environ=environment(I2_P4_990_TAG_RULESET_ID=""),
+                       opener=fake)
+        self.assertEqual(fake.calls, [])
+
+    def test_wrong_or_bypassable_ruleset_refused_before_tag_creation(self):
+        invalid = [
+            dict(good_ruleset(), id=4321),
+            dict(good_ruleset(), source="different/repository"),
+            dict(good_ruleset(), target="branch"),
+            dict(good_ruleset(), enforcement="evaluate"),
+            dict(good_ruleset(), rules=[{"type": "deletion"}]),
+            dict(good_ruleset(), bypass_actors=[{
+                "actor_id": 5, "actor_type": "RepositoryRole",
+                "bypass_mode": "always"}]),
+            dict(good_ruleset(), conditions={"ref_name": {
+                "include": ["refs/tags/*"], "exclude": []}}),
+            dict(good_ruleset(), conditions={"ref_name": {
+                "include": [CONSUMED_REF], "exclude": ["refs/tags/*"]}}),
+        ]
+        for rule in invalid:
+            with self.subTest(rule=rule):
+                fake = FakeGitHub(ruleset=rule)
+                with self.assertRaisesRegex(ClaimRefused, "not protected"):
+                    claim_once(SHA, CONFIRMATION,
+                               environ=environment(), opener=fake)
+                self.assertEqual([m for m, _ in fake.calls], ["GET"])
+                self.assertFalse(fake.refs)
+
+    def test_ruleset_disabled_after_marker_creation_refuses_birth(self):
+        fake = FakeGitHub(change_ruleset_after_post=True)
+        with self.assertRaisesRegex(ClaimRefused, "not protected"):
+            claim_once(SHA, CONFIRMATION, environ=environment(), opener=fake)
+        self.assertEqual(fake.refs, {CONSUMED_REF: SHA})
+        self.assertEqual([m for m, _ in fake.calls],
+                         ["GET", "GET", "POST", "GET"])
 
     def test_idempotent_no_birth_no_chosen_actions_no_secrets_in_receipt(self):
         fake = FakeGitHub()
