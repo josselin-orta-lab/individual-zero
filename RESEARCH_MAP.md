@@ -38,6 +38,7 @@ The [curated dossier register](docs/engineering/RESEARCH_DOSSIERS.md) records se
 - [I1 evidence matrix](src/i1/docs/EVIDENCE_MATRIX.md) distinguishes implementation, observed behavior and scientific limits.
 - [I1 current status](src/i1/docs/STATUS.md) records the latest maintained local assessment; original protocols, traces and independent conclusions must still be inspected at their exact SHAs.
 - [I2 proposal status](src/i2/docs/STATUS.md) and [the I1 → I2 gate decision](docs/architecture/proposals/i2-transition-and-scientific-gates-2026-10-31.md) describe the unpromoted generation and required scientific reviews.
+- [I3 proposal status](src/i3/docs/STATUS.md), [original held-out preregistrations and recorded outcomes](src/i3/docs/README.md), and [accepted ADR-0014](docs/decisions/ADR-0014-i3-lignee-enjeu-de-soi.md) document the independent, unregistered I3 research line. The P1.2 variant failed its general non-inferiority gate and remains unpromoted.
 - [Research records](docs/research/README.md), [formal EXP conventions](experiments/README.md) and [live GitHub issues](https://github.com/josselin-orta-lab/individual-zero/issues) provide broader historical and operational context.
 
 An experiment, an architectural proposal and an accepted ADR answer different questions. No GitHub label, green software test or closed issue alone establishes a scientific result.
