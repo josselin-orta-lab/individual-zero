@@ -16,3 +16,17 @@ independent of learned updates, and full-world/source manifests. Four original
 development-fixture hashes check behavioral parity. These are not held-out
 scientific evaluations. See [development plan](DEVELOPMENT_PLAN.md) for the
 open funding gap and the approved P1.3/P2/P3/P4 sequence.
+
+## Funded substrate v2 (#1004)
+
+`test_funded_cognition.py` adds pre-computation allowance, strict physical debit,
+transaction rollback, exhaustion/inactivity, immediate bounded replay and
+no-postmortem-work checks. `test_foundation.py` now expects overdraft rejection
+and v2 phase evidence rather than the historical observer-only shortfall and
+pending-replay behavior. Historical v1 hashes are retained but are not v2 parity
+targets. No historical result is rewritten to make tests pass.
+
+Current focused suite: 62 tests. The [funding contract](COGNITIVE_FUNDING.md)
+records exact model limits and a development-only adverse differential. Engine
+activation, a 1 ms performance guarantee, learning benefit and lineage outcomes
+are NOT established by these checks.

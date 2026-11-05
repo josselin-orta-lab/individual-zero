@@ -65,7 +65,7 @@ def build_manifest(genome, spec, life_seed, horizon, protocol):
     if type(protocol) is not str or not protocol.strip():
         raise ValueError("nonempty protocol identifier required")
     world = world_snapshot(spec)
-    return {"schema": "i3-life-manifest/v1", "protocol": protocol,
+    return {"schema": "i3-life-manifest/v2", "execution_model": "i3-funded-v2", "protocol": protocol,
             "source": source_snapshot(),
             "python": {"implementation": platform.python_implementation(),
                        "version": platform.python_version()},

@@ -13,7 +13,20 @@ away every death. Correct physical/evidence defects before adding cognition.
 I1 stays active; I3 stays unregistered. Original G2/G2b/G2c records remain
 unchanged and tied to their original source. P1.2 remains rejected.
 
-## Technical foundation (#1003)
+## Current funding correction (#1004)
+
+The [v2 funding contract](COGNITIVE_FUNDING.md) replaces the observation-only
+limits described below. Work is authorized within actual reserves before it
+executes; outcome learning/replay is prepaid in the same step. No forced sleep,
+new death cause or unpaid cognitive advantage is introduced. Development-only
+long-panel survival fell from 14/16 to 8/16; the adverse change is retained.
+The normal budgeted path has no pending replay and rejects overdraft requests.
+
+Next: isolate P1.3 belief revision against this SAME v2 substrate and complete
+P2 comparator/generator validation. No held-out or lineage study is run by this
+physical correction. Keep pilot size and experimental criteria prospective.
+
+## Technical foundation (#1003, historical v1 accounting slice)
 
 The first slice adds no cognitive score, innate preference or birth flag:
 
@@ -36,7 +49,7 @@ arbitrary monkey-patches. Git HEAD is not proof that a checkout is clean. The
 manifest is observer-only and never a mind input. `mean_step_ms` measures the
 engine loop, not manifest/hash overhead; `run_elapsed_ms` includes that overhead.
 
-### Confirmed limits, not silently repaired
+### Limits confirmed at #1003 (subsequently corrected by #1004)
 
 At energy 0.1, waiting plus ten cognitive cycles clamps energy to zero while
 0.2 cognitive energy cannot be debited. The new audit reports this shortfall;
@@ -49,7 +62,7 @@ Shortfall detection tolerates at most 1e-12 roundoff per step/channel; raw
 unpaid amounts are retained. This audits declared cognitive work, not every
 machine instruction or the entire motor-energy economy.
 
-**Next: [#1004](https://github.com/josselin-orta-lab/individual-zero/issues/1004),
+**Historical follow-up: [#1004](https://github.com/josselin-orta-lab/individual-zero/issues/1004),
 fund cognition and settle replay consistently before interpreting a selection
 pilot as genuinely paid cognition.** Do not use shortfalls as selective gains,
 claim this observation patch fixes them, or retroactively certify old studies.
@@ -82,7 +95,7 @@ checks never constitute an engine activation or scientific GO.
 Run `python -m unittest discover -s tests/i3 -p 'test_*.py' -v` and, in the full
 repository, `python scripts/check_engine_repository.py --json`.
 `test_foundation.py` covers accounting, sensorimotor controls and provenance.
-Four original development-fixture trajectory hashes at the baseline above
-are retained as differential tests; they are not scientific outcome targets.
+Four original development-fixture trajectory hashes are retained as historical
+differentials, not current v2 parity requirements or scientific outcome targets.
 No reserved G2/G2b/G2c seeds are used. The PR records exact source SHA and CI
 results; local checks alone do not certify a different commit.

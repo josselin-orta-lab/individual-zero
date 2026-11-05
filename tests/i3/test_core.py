@@ -152,10 +152,11 @@ class MindTests(unittest.TestCase):
         winner, _ = m._compete([("attendre", -1.0), ("boire", 0.5), ("dormir", -0.8)], 4)
         self.assertEqual(winner, "boire")
 
-    def test_every_life_acts_and_is_fast(self):
+    def test_development_runs_have_funded_physical_steps_and_are_fast(self):
         for spec in (dev_open_field(), dev_long_corridor()):
             r = run_life(G.midpoint(), spec, 1, 100)
-            self.assertNotIn("NO_ACTION", r["actions"])
+            self.assertEqual(sum(r["actions"].values()), r["steps_lived"])
+            self.assertEqual(r["cognitive_accounting"]["status"], "SETTLED_FOR_DECLARED_WORK")
             self.assertLess(r["mean_step_ms"], 5.0)
 
 

@@ -1,6 +1,15 @@
-# I3 — Spécification v1 (référence exécutable)
+# I3 - Spécification et versions physiques
 
 **Décision :** [ADR-0014](../../../docs/decisions/ADR-0014-i3-lignee-enjeu-de-soi.md), accepté le 5 novembre 2026. La version illustrée et commentée de cette spécification vit dans le document partagé « I3 — ADR-0014 et spécification » ; ce fichier fixe ce que le code doit respecter et consigne les écarts d'implémentation.
+
+## Current executable funding model
+
+The v1 design and historical P1/P1.1/P1.2 notes below retain their original
+context. The current payment order and exhaustion behavior are versioned in
+[COGNITIVE_FUNDING.md](COGNITIVE_FUNDING.md), body laws v2. Decision work is
+bounded before execution, learned updates/replays are prepaid in the same tick,
+and physical exhaustion can produce a null motor command (not tie abstention).
+Do not interpret historical v1 outcomes as observations under v2.
 
 ## Objet
 
