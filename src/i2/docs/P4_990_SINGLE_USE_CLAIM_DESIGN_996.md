@@ -13,6 +13,12 @@ This branch is an isolated proposal for the *operational* blocker in preregister
 
 \`tests/i2/test_i2_p4_990_one_shot_claim_996.py\` uses a synthetic in-memory REST responder; tests first claim, repeated claim, run-number/attempt rejection, incorrect workflow context, missing token, changed source, HTTP 422/503 and ambiguous POST. These tests do **not** birth any I2 identity or call the real GitHub API.
 
+## Additional fail-closed tag protection checks (#997)
+
+The claim helper now refuses **before POST** unless the operator supplies a reviewed numeric `I2_P4_990_TAG_RULESET_ID` and the live GitHub detail endpoint confirms an **active repository tag ruleset**, with exactly `refs/tags/i2-p4-990-single-use-spent` as its sole include, no exclusions, both `deletion` and `update` protections, and **zero bypass actors**. A second live check **after** successful marker creation refuses if protection disappears. These checks run before births and are fail-closed on unavailable/malformed rulesets, but are **not atomic with rule administration**. The ruleset can be changed after the check by an administrator; this tool does not establish external immutability or M11.
+
+The repository currently only exposes an active **branch** ruleset for `main`, so the helper is expected to REFUSE. This child change is still design-only and is not wired to any runnable workflow. Never install a permissive tag ruleset just to force the check to PASS. Administrators must review whether a no-bypass tag ruleset is operationally enforceable and whether this token can create the initial tag under it. Validate with harmless mock markers and real repository policy inspection, without creating any I2 life.
+
 ## Critical open security and science gates
 
 **The fixed Git tag is not unforgeable or immutable by itself.** A repository administrator or token with tag deletion privileges can delete the ref and allow a later claim. A GitHub repository **ruleset preventing delete/update of the spent tag**, with independently reviewed bypass permissions, must exist *before* enabling the birth workflow. The workflow also requires a dedicated minimal-permission token capable of creating exactly that marker, while restricting source and artifact access. This repo-credential/ruleset configuration is **not implemented by this PR**. An actual workflow must not be added/merged/dispatchable until reviewed protections are in place.
