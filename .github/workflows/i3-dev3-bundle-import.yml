@@ -1,0 +1,39 @@
+name: Import uploaded I3 dev3 Git bundle (one-shot)
+on:
+  push:
+    branches:
+      - automation/i3-dev3-bundle-import-20261105
+    paths:
+      - .github/workflows/i3-dev3-bundle-import.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  import-original-branches:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout staging ref with full Git history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Recover and validate exact uploaded bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 -d import/i3-dev3.bundle.b64 > "$RUNNER_TEMP/i3-dev3.bundle"
+          echo "f1bb95fc2952feea528f4327e319c4002601b8f3018f590e86e813a9f46e7008  $RUNNER_TEMP/i3-dev3.bundle" | sha256sum -c -
+          git cat-file -e eb12a0f8a8795ac653fb9cafd31fe75c0987f205^{commit}
+          git bundle verify "$RUNNER_TEMP/i3-dev3.bundle"
+      - name: Import original historical branch tips and verify
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch "$RUNNER_TEMP/i3-dev3.bundle" refs/heads/i3/dev3:refs/heads/i3/dev3 refs/heads/i3/p1.3-v2:refs/heads/i3/p1.3-v2
+          test "$(git rev-parse refs/heads/i3/dev3)" = "9f9fd17585e6b633b686a1efdc3891005a19fec0"
+          test "$(git rev-parse refs/heads/i3/p1.3-v2)" = "474259d0cdbbb4de610cb5039afa4a161caad1ee"
+          git merge-base --is-ancestor eb12a0f8a8795ac653fb9cafd31fe75c0987f205 refs/heads/i3/dev3
+          git push origin refs/heads/i3/dev3:refs/heads/i3/dev3 refs/heads/i3/p1.3-v2:refs/heads/i3/p1.3-v2
