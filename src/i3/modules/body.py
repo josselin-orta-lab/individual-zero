@@ -56,6 +56,34 @@ class CognitiveWork:
     memory_items: int = 0
     replays: int = 0
 
+    def __post_init__(self):
+        for name in ("cycles", "simulated_steps", "memory_items", "replays"):
+            value = getattr(self, name)
+            if type(value) is not int or value < 0:
+                raise ValueError(f"{name} must be a nonnegative integer")
+
+
+def cognitive_cost(laws: BodyLaws, work: CognitiveWork) -> tuple[float, float]:
+    """The declared energy/vigilance bill, not a compute-budget allocator."""
+    if not isinstance(work, CognitiveWork):
+        raise TypeError("CognitiveWork required")
+    rates = (laws.energy_per_cycle, laws.energy_per_simulated_step,
+             laws.energy_per_memory_item, laws.energy_per_replay,
+             laws.vigilance_per_cycle, laws.vigilance_per_simulated_step,
+             laws.vigilance_per_replay)
+    if any(not isfinite(rate) or rate < 0 for rate in rates):
+        raise ValueError("cognitive cost rates must be finite and nonnegative")
+    try:
+        energy = (rates[0] * work.cycles + rates[1] * work.simulated_steps
+                  + rates[2] * work.memory_items + rates[3] * work.replays)
+        vigilance = (rates[4] * work.cycles + rates[5] * work.simulated_steps
+                     + rates[6] * work.replays)
+    except OverflowError as exc:
+        raise ValueError("cognitive bill is not finite") from exc
+    if not isfinite(energy) or not isfinite(vigilance):
+        raise ValueError("cognitive bill is not finite")
+    return energy, vigilance
+
 
 def _clamp(x: float) -> float:
     return 0.0 if x < 0.0 else 100.0 if x > 100.0 else x
@@ -72,7 +100,8 @@ def validate_body(body) -> tuple:
 
 def transition(body: tuple, action: str, laws: BodyLaws, work: CognitiveWork, *,
                food_gain: float = 0.0, integrity_delta: float = 0.0,
-               water_gain: float = 0.0) -> tuple[tuple, tuple[str, ...]]:
+               water_gain: float = 0.0,
+               accounting: dict | None = None) -> tuple[tuple, tuple[str, ...]]:
     """Pure one-step body physics after an admitted action.
 
     Returns (next_body, death_reasons). Same ordering as I2/I1-v4: decay,
@@ -85,6 +114,7 @@ def transition(body: tuple, action: str, laws: BodyLaws, work: CognitiveWork, *,
         raise ValueError("food consequence only follows an applied eat")
     if action != "boire" and water_gain:
         raise ValueError("water consequence only follows an applied drink")
+    cost_energy, cost_vigilance = cognitive_cost(laws, work)
     energy, food, water, integrity, vigilance = body
     food = _clamp(food - laws.food_decay)
     water = _clamp(water - laws.water_decay)
@@ -107,13 +137,17 @@ def transition(body: tuple, action: str, laws: BodyLaws, work: CognitiveWork, *,
         integrity += integrity_delta
     elif action == "boire":
         water += water_gain
-    energy -= (laws.energy_per_cycle * work.cycles
-               + laws.energy_per_simulated_step * work.simulated_steps
-               + laws.energy_per_memory_item * work.memory_items
-               + laws.energy_per_replay * work.replays)
-    vigilance -= (laws.vigilance_per_cycle * work.cycles
-                  + laws.vigilance_per_simulated_step * work.simulated_steps
-                  + laws.vigilance_per_replay * work.replays)
+    if accounting is not None:
+        # Observe the existing v1 debit order without hiding saturation at zero.
+        # This is not an overdraft policy or evidence that all work was paid.
+        accounting.clear()
+        for name, available, requested in (("energy", energy, cost_energy),
+                                            ("vigilance", vigilance, cost_vigilance)):
+            paid = min(max(0.0, available), requested)
+            accounting[name] = {"requested": requested, "paid": paid,
+                                "unpaid": requested - paid}
+    energy -= cost_energy
+    vigilance -= cost_vigilance
     nxt = (_clamp(energy), _clamp(food), _clamp(water), _clamp(integrity),
            _clamp(vigilance))
     reasons = tuple(name for name, idx in (("zero_food", F), ("zero_water", W),
