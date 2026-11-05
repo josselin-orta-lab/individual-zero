@@ -90,7 +90,10 @@ def verify_marker_ruleset(opener, base, token, ruleset_id):
     names = conditions.get("ref_name") or {}
     types = {item.get("type") for item in ruleset.get("rules", [])
              if isinstance(item, dict)}
-    if (ruleset.get("target") != "tag" or
+    if (type(ruleset.get("id")) is not int or
+            ruleset["id"] != int(ruleset_id) or
+            ruleset.get("source") != REPOSITORY or
+            ruleset.get("target") != "tag" or
             ruleset.get("source_type") != "Repository" or
             ruleset.get("enforcement") != "active" or
             names.get("include") != [CONSUMED_REF] or
