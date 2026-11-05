@@ -1,0 +1,13 @@
+name: I3 structure (example, NOT installed)
+on:
+  pull_request:
+    paths:
+      - 'src/i3/**'
+      - 'tests/i3/**'
+jobs:
+  structure:
+    uses: ./.github/workflows/engine-structural.yml
+    with:
+      engine: I3
+# Install under .github/workflows ONLY after the engine is registered
+# and its structural and full lifecycle gates are implemented.

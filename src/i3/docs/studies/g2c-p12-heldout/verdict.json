@@ -1,0 +1,46 @@
+{
+ "R": {
+  "alive_p11": 46,
+  "alive_p12": 69,
+  "p11_only": 13,
+  "p12_only": 36,
+  "reference_alive": 90,
+  "sign_test_p": 0.000701,
+  "used_far_well_p11": 45,
+  "used_far_well_p12": 70
+ },
+ "criteria": {
+  "A_revision_superiority": true,
+  "B_general_non_inferiority": false,
+  "C_g2_regression": true,
+  "D_budget": true,
+  "D_budget_ms": 0.8517,
+  "D_replay": true
+ },
+ "decision": "REJECT_P1_2_KEEP_P1_1",
+ "dev": {
+  "alive_p11": 64,
+  "alive_p12": 58,
+  "p11_only": 25,
+  "p12_only": 19,
+  "reference_alive": 70,
+  "selected_alive_p11": 66,
+  "selected_alive_p12": 73,
+  "sign_test_p": 0.854392
+ },
+ "g2_regression_detail": {
+  "g2-i1-foraging-like": [
+   8,
+   8
+  ],
+  "g2-i2-native-A-like": [
+   10,
+   10
+  ],
+  "g2-i2-native-B-like": [
+   10,
+   10
+  ]
+ },
+ "same_worldgen": true
+}

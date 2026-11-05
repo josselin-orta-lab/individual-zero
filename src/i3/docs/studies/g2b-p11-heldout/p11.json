@@ -1,0 +1,2965 @@
+{
+ "engine_src": "/home/claude/individual-zero/src",
+ "genome_seeds": [
+  201,
+  202,
+  203,
+  204,
+  205,
+  206,
+  207,
+  208,
+  209,
+  210,
+  211,
+  212,
+  213,
+  214,
+  215,
+  216,
+  217,
+  218,
+  219,
+  220,
+  221,
+  222,
+  223,
+  224,
+  225,
+  226,
+  227,
+  228,
+  229,
+  230
+ ],
+ "horizon": 400,
+ "lives": [
+  {
+   "actions": {
+    "attendre": 21,
+    "collecter": 8,
+    "dormir": 30,
+    "manger": 8,
+    "se_deplacer": 46
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 0,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    41.885,
+    98.99,
+    0.0,
+    100.0,
+    99.608
+   ],
+   "first_drink_step": null,
+   "genome": "6dadc1d0e6c03c9cc3c53b456b07b11649bd33c95964ea39e699ab6b51b89d4f",
+   "genome_seed": 201,
+   "horizon": 400,
+   "life_seed": 2201,
+   "meals": 8,
+   "mean_step_ms": 0.4894,
+   "replay_identical": true,
+   "steps_lived": 113,
+   "terminal": "dead",
+   "trace_head": "e56ee9c03074b31936b906c2d4fe018968de4980a80a29f784a3b1852ab2cdb5",
+   "world": "g2b-h1-hidden-spring"
+  },
+  {
+   "actions": {
+    "attendre": 6,
+    "collecter": 2,
+    "dormir": 33,
+    "manger": 2,
+    "se_deplacer": 70
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 0,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    17.1056,
+    45.69,
+    0.0,
+    97.6,
+    99.704
+   ],
+   "first_drink_step": null,
+   "genome": "ce53ae5794e169c50d280525340ae9eea509cd545c7881b6d97a9c591c9b95b0",
+   "genome_seed": 202,
+   "horizon": 400,
+   "life_seed": 2202,
+   "meals": 2,
+   "mean_step_ms": 0.5133,
+   "replay_identical": true,
+   "steps_lived": 113,
+   "terminal": "dead",
+   "trace_head": "dfd155b55bcf29084f461662f3c898d280255cc31f987d15044f9e9f36962ea6",
+   "world": "g2b-h1-hidden-spring"
+  },
+  {
+   "actions": {
+    "attendre": 28,
+    "boire": 12,
+    "dormir": 61,
+    "se_deplacer": 99
+   },
+   "death_causes": [
+    "zero_food"
+   ],
+   "drinks": 12,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    18.2984,
+    0.0,
+    97.6,
+    100.0,
+    99.77
+   ],
+   "first_drink_step": 5,
+   "genome": "28cef99e74334e4df3e7429ca46030b804a5b87666d0b17c4c58bd4e381cc8b8",
+   "genome_seed": 203,
+   "horizon": 400,
+   "life_seed": 2203,
+   "meals": 0,
+   "mean_step_ms": 0.6055,
+   "replay_identical": true,
+   "steps_lived": 200,
+   "terminal": "dead",
+   "trace_head": "19255acc8d5f20892616a10cc95abff2a5c978213e3baa2e38d041dcc6cbcdee",
+   "world": "g2b-h1-hidden-spring"
+  },
+  {
+   "actions": {
+    "attendre": 35,
+    "boire": 3,
+    "dormir": 66,
+    "se_deplacer": 92
+   },
+   "death_causes": [
+    "zero_food"
+   ],
+   "drinks": 3,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    43.946,
+    0.0,
+    29.2,
+    100.0,
+    99.33
+   ],
+   "first_drink_step": 5,
+   "genome": "0590b220f1df8411b833f95ae07ff97b78a80c9c6a2d9b2009c17110d7fc49d6",
+   "genome_seed": 204,
+   "horizon": 400,
+   "life_seed": 2204,
+   "meals": 0,
+   "mean_step_ms": 0.6821,
+   "replay_identical": true,
+   "steps_lived": 196,
+   "terminal": "dead",
+   "trace_head": "ee95cb58645fbfcbc89652f04c0c465d334ce9965d8e25dd53d04d9509e493bd",
+   "world": "g2b-h1-hidden-spring"
+  },
+  {
+   "actions": {
+    "attendre": 3,
+    "collecter": 2,
+    "dormir": 39,
+    "manger": 2,
+    "se_deplacer": 67
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 0,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    40.2494,
+    44.71,
+    0.0,
+    98.4,
+    99.604
+   ],
+   "first_drink_step": null,
+   "genome": "9e040701728f52db5169a59ea08fac6ed9b7567fed658317c5e5195b70ea0728",
+   "genome_seed": 205,
+   "horizon": 400,
+   "life_seed": 2205,
+   "meals": 2,
+   "mean_step_ms": 0.5929,
+   "replay_identical": true,
+   "steps_lived": 113,
+   "terminal": "dead",
+   "trace_head": "dbcb2ce868fa19ae80e566d81b80af93e14b80b7c20f3c129a95393a3a909b87",
+   "world": "g2b-h1-hidden-spring"
+  },
+  {
+   "actions": {
+    "attendre": 8,
+    "dormir": 34,
+    "se_deplacer": 71
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 0,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    21.6282,
+    21.46,
+    0.0,
+    98.4,
+    99.776
+   ],
+   "first_drink_step": null,
+   "genome": "a079f770158e999c1908508e63859b60e8794a4710c8c58a7dd69c9a3aa47ab4",
+   "genome_seed": 206,
+   "horizon": 400,
+   "life_seed": 2206,
+   "meals": 0,
+   "mean_step_ms": 0.4644,
+   "replay_identical": true,
+   "steps_lived": 113,
+   "terminal": "dead",
+   "trace_head": "053c8411715c25a02d49f866dedd9173de387fbf88cae2455846d486a799c77a",
+   "world": "g2b-h1-hidden-spring"
+  },
+  {
+   "actions": {
+    "attendre": 10,
+    "collecter": 10,
+    "dormir": 24,
+    "manger": 9,
+    "se_deplacer": 60
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 0,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    0.0,
+    99.8,
+    0.0,
+    96.6,
+    99.604
+   ],
+   "first_drink_step": null,
+   "genome": "6d72828795b948ca63c9e90b0a297844e27be212be9f06586b2166309a0108f4",
+   "genome_seed": 207,
+   "horizon": 400,
+   "life_seed": 2207,
+   "meals": 9,
+   "mean_step_ms": 0.4168,
+   "replay_identical": true,
+   "steps_lived": 113,
+   "terminal": "dead",
+   "trace_head": "36e359880aea1f13bd83d3063150f254b06b0d5a315b90402091c2863728f5b3",
+   "world": "g2b-h1-hidden-spring"
+  },
+  {
+   "actions": {
+    "attendre": 26,
+    "dormir": 28,
+    "se_deplacer": 59
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 0,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    22.3634,
+    22.2,
+    0.0,
+    100.0,
+    99.776
+   ],
+   "first_drink_step": null,
+   "genome": "e4bed6808cb9572591494c2b4a18dd6a20b08c15dc47b151cfa814407df061b2",
+   "genome_seed": 208,
+   "horizon": 400,
+   "life_seed": 2208,
+   "meals": 0,
+   "mean_step_ms": 0.4086,
+   "replay_identical": true,
+   "steps_lived": 113,
+   "terminal": "dead",
+   "trace_head": "2cd0cebc38af380a92f08ba8476c7208596b7dbf845a7c2d9da84c28b0a497f6",
+   "world": "g2b-h1-hidden-spring"
+  },
+  {
+   "actions": {
+    "attendre": 11,
+    "collecter": 5,
+    "dormir": 26,
+    "manger": 2,
+    "se_deplacer": 69
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 0,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    0.0,
+    46.78,
+    0.0,
+    97.2,
+    99.598
+   ],
+   "first_drink_step": null,
+   "genome": "9b382baf3d964661902e4392122532bc8cfe63c01ba6d87f4ee46cd2607d59ca",
+   "genome_seed": 209,
+   "horizon": 400,
+   "life_seed": 2209,
+   "meals": 2,
+   "mean_step_ms": 0.4046,
+   "replay_identical": true,
+   "steps_lived": 113,
+   "terminal": "dead",
+   "trace_head": "80901e2e8140da9e9cf59f4f086bec7c7957117a2c293e766200214e84b5fa8b",
+   "world": "g2b-h1-hidden-spring"
+  },
+  {
+   "actions": {
+    "attendre": 5,
+    "collecter": 3,
+    "dormir": 29,
+    "manger": 1,
+    "se_deplacer": 75
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 0,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    0.0,
+    34.37,
+    0.0,
+    96.8,
+    99.45
+   ],
+   "first_drink_step": null,
+   "genome": "fcdb0fca196ceb3686417bd160a67b140bdd33b65099fbf68f106236ee9f6baa",
+   "genome_seed": 210,
+   "horizon": 400,
+   "life_seed": 2210,
+   "meals": 1,
+   "mean_step_ms": 0.4412,
+   "replay_identical": true,
+   "steps_lived": 113,
+   "terminal": "dead",
+   "trace_head": "a0c34d0dafe93379d0060ff8550ddcaaa708b307c53fa76018beff482a9551da",
+   "world": "g2b-h1-hidden-spring"
+  },
+  {
+   "actions": {
+    "attendre": 13,
+    "boire": 16,
+    "dormir": 60,
+    "se_deplacer": 111
+   },
+   "death_causes": [
+    "zero_food"
+   ],
+   "drinks": 16,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    0.0,
+    0.0,
+    97.6,
+    100.0,
+    99.434
+   ],
+   "first_drink_step": 5,
+   "genome": "107b0b6302148529bc3083c61be28a504e0d56686591057bb0559bf0fdc3bc20",
+   "genome_seed": 211,
+   "horizon": 400,
+   "life_seed": 2211,
+   "meals": 0,
+   "mean_step_ms": 0.5052,
+   "replay_identical": true,
+   "steps_lived": 200,
+   "terminal": "dead",
+   "trace_head": "c9171e392a082705c9fc9204694c6c5615142154b48f95e0af231accba84b5cc",
+   "world": "g2b-h1-hidden-spring"
+  },
+  {
+   "actions": {
+    "attendre": 3,
+    "collecter": 2,
+    "dormir": 35,
+    "manger": 2,
+    "se_deplacer": 71
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 0,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    21.5868,
+    45.41,
+    0.0,
+    97.4,
+    99.726
+   ],
+   "first_drink_step": null,
+   "genome": "59532f0329adb2f1e849409ec1dfa83c7497cd3cab81d19af8c150f5ee519441",
+   "genome_seed": 212,
+   "horizon": 400,
+   "life_seed": 2212,
+   "meals": 2,
+   "mean_step_ms": 0.4799,
+   "replay_identical": true,
+   "steps_lived": 113,
+   "terminal": "dead",
+   "trace_head": "784f89a3ddfba43bfe74ce5e9a348b62cb8a313d72c7eb87b4f9ba47658c6fcd",
+   "world": "g2b-h1-hidden-spring"
+  },
+  {
+   "actions": {
+    "attendre": 15,
+    "collecter": 5,
+    "dormir": 33,
+    "manger": 5,
+    "se_deplacer": 55
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 0,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    39.1472,
+    81.51,
+    0.0,
+    99.4,
+    98.89
+   ],
+   "first_drink_step": null,
+   "genome": "85ec3a56b26c62fd4b5a780cfd6eaba8dff89f89f0187c840cdeec53d45522ef",
+   "genome_seed": 213,
+   "horizon": 400,
+   "life_seed": 2213,
+   "meals": 5,
+   "mean_step_ms": 0.4926,
+   "replay_identical": true,
+   "steps_lived": 113,
+   "terminal": "dead",
+   "trace_head": "7e56a70de70bdcb4d585bbacf8b577e8f43c1049649d7d6cf25c327dfdcec722",
+   "world": "g2b-h1-hidden-spring"
+  },
+  {
+   "actions": {
+    "attendre": 30,
+    "boire": 6,
+    "dormir": 61,
+    "se_deplacer": 103
+   },
+   "death_causes": [
+    "zero_food"
+   ],
+   "drinks": 6,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    12.496,
+    0.0,
+    98.0,
+    100.0,
+    99.722
+   ],
+   "first_drink_step": 6,
+   "genome": "d6dcc4b205ff46e726f933e9c40aa0b01cc00b27f61b16ee2a6d9435652f5fb6",
+   "genome_seed": 214,
+   "horizon": 400,
+   "life_seed": 2214,
+   "meals": 0,
+   "mean_step_ms": 0.6178,
+   "replay_identical": true,
+   "steps_lived": 200,
+   "terminal": "dead",
+   "trace_head": "e72ce482524e1aa1daf83bebb7884de2fefe92bab159d8f3de60105d2f60baad",
+   "world": "g2b-h1-hidden-spring"
+  },
+  {
+   "actions": {
+    "attendre": 26,
+    "dormir": 32,
+    "se_deplacer": 55
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 0,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    40.9934,
+    21.6,
+    0.0,
+    100.0,
+    99.726
+   ],
+   "first_drink_step": null,
+   "genome": "c32b3379559cd064b62f0a101f83be1e07284235c70100209b4a9da59a9e0bed",
+   "genome_seed": 215,
+   "horizon": 400,
+   "life_seed": 2215,
+   "meals": 0,
+   "mean_step_ms": 0.4317,
+   "replay_identical": true,
+   "steps_lived": 113,
+   "terminal": "dead",
+   "trace_head": "7ffe761bb2492312823ffc8bad1a27928ce9b9d260c9c175f226d102210e1255",
+   "world": "g2b-h1-hidden-spring"
+  },
+  {
+   "actions": {
+    "attendre": 3,
+    "collecter": 6,
+    "dormir": 30,
+    "manger": 2,
+    "se_deplacer": 72
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 0,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    2.4558,
+    46.24,
+    0.0,
+    96.6,
+    99.542
+   ],
+   "first_drink_step": null,
+   "genome": "10df02faa3fae87a936a5729d3d8cf18f03c3dda2eb495955435f96902b111be",
+   "genome_seed": 216,
+   "horizon": 400,
+   "life_seed": 2216,
+   "meals": 2,
+   "mean_step_ms": 0.4826,
+   "replay_identical": true,
+   "steps_lived": 113,
+   "terminal": "dead",
+   "trace_head": "e6209e12dee7cba692655104529e864ddfb4d847f87dfdb1f7e86fd9ac6e80d8",
+   "world": "g2b-h1-hidden-spring"
+  },
+  {
+   "actions": {
+    "attendre": 16,
+    "collecter": 7,
+    "dormir": 33,
+    "manger": 7,
+    "se_deplacer": 50
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 0,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    44.8004,
+    99.21,
+    0.0,
+    99.6,
+    99.724
+   ],
+   "first_drink_step": null,
+   "genome": "d71ec49c13b8e452be974eb0e08f523b812767d6fdcc5c6c8e7117cb37800652",
+   "genome_seed": 217,
+   "horizon": 400,
+   "life_seed": 2217,
+   "meals": 7,
+   "mean_step_ms": 0.5418,
+   "replay_identical": true,
+   "steps_lived": 113,
+   "terminal": "dead",
+   "trace_head": "72735133b4626837c28745e07bb14679aad7cce6193c49d34a664bcad0b703dd",
+   "world": "g2b-h1-hidden-spring"
+  },
+  {
+   "actions": {
+    "attendre": 5,
+    "collecter": 2,
+    "dormir": 35,
+    "manger": 2,
+    "se_deplacer": 69
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 0,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    23.4922,
+    45.37,
+    0.0,
+    97.8,
+    99.772
+   ],
+   "first_drink_step": null,
+   "genome": "32124828fd1adceb1336eca3cb2d98530115bae767017965488a33503f583c81",
+   "genome_seed": 218,
+   "horizon": 400,
+   "life_seed": 2218,
+   "meals": 2,
+   "mean_step_ms": 0.5774,
+   "replay_identical": true,
+   "steps_lived": 113,
+   "terminal": "dead",
+   "trace_head": "59b29582ac6a52eedd08ceb22ee5cb1e5545cd65f87427283e460410e806edba",
+   "world": "g2b-h1-hidden-spring"
+  },
+  {
+   "actions": {
+    "attendre": 11,
+    "dormir": 32,
+    "se_deplacer": 70
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 0,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    14.726,
+    21.76,
+    0.0,
+    98.4,
+    99.662
+   ],
+   "first_drink_step": null,
+   "genome": "42479182192db7dd53aaac5f2b4d7045911a915c0104c5c33fa21a9b6029fc4e",
+   "genome_seed": 219,
+   "horizon": 400,
+   "life_seed": 2219,
+   "meals": 0,
+   "mean_step_ms": 0.5229,
+   "replay_identical": true,
+   "steps_lived": 113,
+   "terminal": "dead",
+   "trace_head": "1dc690aa93b7c40692bf3f91dab46b64a54ff0f9e997648e2ae468405c1a0ee4",
+   "world": "g2b-h1-hidden-spring"
+  },
+  {
+   "actions": {
+    "attendre": 12,
+    "dormir": 34,
+    "se_deplacer": 67
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 0,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    27.5442,
+    21.38,
+    0.0,
+    99.2,
+    99.614
+   ],
+   "first_drink_step": null,
+   "genome": "5d1c35990b32081f9f72aedbb5a8a0618c16ad7695093ca3764d8fa4e65d9731",
+   "genome_seed": 220,
+   "horizon": 400,
+   "life_seed": 2220,
+   "meals": 0,
+   "mean_step_ms": 0.4639,
+   "replay_identical": true,
+   "steps_lived": 113,
+   "terminal": "dead",
+   "trace_head": "033adf679898c5a3c019e6be690cf54e683df76e8b5ef8f586635fefe3baa3df",
+   "world": "g2b-h1-hidden-spring"
+  },
+  {
+   "actions": {
+    "attendre": 23,
+    "boire": 14,
+    "dormir": 59,
+    "se_deplacer": 105
+   },
+   "death_causes": [
+    "zero_food"
+   ],
+   "drinks": 14,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    1.9262,
+    0.0,
+    76.4,
+    100.0,
+    100.0
+   ],
+   "first_drink_step": 5,
+   "genome": "785b323e99e3e3a35b499db5c733ecad33a04fbf83b785b50db2b6c55321c2b6",
+   "genome_seed": 221,
+   "horizon": 400,
+   "life_seed": 2221,
+   "meals": 0,
+   "mean_step_ms": 0.5971,
+   "replay_identical": true,
+   "steps_lived": 201,
+   "terminal": "dead",
+   "trace_head": "681dc3aed8dafd841e35dd70a661a86697347bf00dc391785f209d3d22b93ad2",
+   "world": "g2b-h1-hidden-spring"
+  },
+  {
+   "actions": {
+    "attendre": 12,
+    "collecter": 7,
+    "dormir": 37,
+    "manger": 7,
+    "se_deplacer": 50
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 0,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    57.7398,
+    99.8,
+    0.0,
+    99.6,
+    99.656
+   ],
+   "first_drink_step": null,
+   "genome": "87ff0366b7e8703e9cf62d1b3b20745c617b86f3597a39b9c60f1c40f0ae7dcf",
+   "genome_seed": 222,
+   "horizon": 400,
+   "life_seed": 2222,
+   "meals": 7,
+   "mean_step_ms": 0.5615,
+   "replay_identical": true,
+   "steps_lived": 113,
+   "terminal": "dead",
+   "trace_head": "73a3e9348b32b406fb56292c140387bbc8d0de4325ffbdb465bed476060eb0b7",
+   "world": "g2b-h1-hidden-spring"
+  },
+  {
+   "actions": {
+    "attendre": 29,
+    "boire": 18,
+    "dormir": 58,
+    "se_deplacer": 97
+   },
+   "death_causes": [
+    "zero_food"
+   ],
+   "drinks": 18,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    7.3092,
+    0.0,
+    98.8,
+    100.0,
+    99.272
+   ],
+   "first_drink_step": 5,
+   "genome": "f44e00127887a8cf478124b585dfe0ca45ccf43fdc47a744867b3f9c43f102f2",
+   "genome_seed": 223,
+   "horizon": 400,
+   "life_seed": 2223,
+   "meals": 0,
+   "mean_step_ms": 0.6245,
+   "replay_identical": true,
+   "steps_lived": 202,
+   "terminal": "dead",
+   "trace_head": "95ffe12b1cddbb4c60e250f5d1178e7b84be083272c95cf5a3db5ee75b2a185d",
+   "world": "g2b-h1-hidden-spring"
+  },
+  {
+   "actions": {
+    "attendre": 20,
+    "boire": 2,
+    "dormir": 64,
+    "se_deplacer": 111
+   },
+   "death_causes": [
+    "zero_food"
+   ],
+   "drinks": 2,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    5.7994,
+    0.0,
+    23.6,
+    100.0,
+    99.58
+   ],
+   "first_drink_step": 5,
+   "genome": "06792a70e53b9944bee210fc42e2264196019b6f5454f2cc9e6b45de01029490",
+   "genome_seed": 224,
+   "horizon": 400,
+   "life_seed": 2224,
+   "meals": 0,
+   "mean_step_ms": 0.694,
+   "replay_identical": true,
+   "steps_lived": 197,
+   "terminal": "dead",
+   "trace_head": "81591fbad19a5e7dc286f7cbf722b38ed560aa80a176f48473e6917d1bb3809e",
+   "world": "g2b-h1-hidden-spring"
+  },
+  {
+   "actions": {
+    "attendre": 14,
+    "collecter": 2,
+    "dormir": 26,
+    "manger": 2,
+    "se_deplacer": 69
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 0,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    0.0,
+    46.72,
+    0.0,
+    97.8,
+    99.38
+   ],
+   "first_drink_step": null,
+   "genome": "0ec6b77e4ce5400c016e18d93eaf7b2f9c070badf6e9698e395fddb6779e46db",
+   "genome_seed": 225,
+   "horizon": 400,
+   "life_seed": 2225,
+   "meals": 2,
+   "mean_step_ms": 0.4323,
+   "replay_identical": true,
+   "steps_lived": 113,
+   "terminal": "dead",
+   "trace_head": "41670db01abfb1859ef8e349054ca9f8a87c767d294958f2a9c3075e52b9dfca",
+   "world": "g2b-h1-hidden-spring"
+  },
+  {
+   "actions": {
+    "attendre": 3,
+    "collecter": 2,
+    "dormir": 36,
+    "manger": 2,
+    "se_deplacer": 70
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 0,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    25.0906,
+    45.22,
+    0.0,
+    97.8,
+    99.21
+   ],
+   "first_drink_step": null,
+   "genome": "4d196426f96d7f9b6a0a4c5ba34326548a0102b3b02c891fcf979eb80d0c8e13",
+   "genome_seed": 226,
+   "horizon": 400,
+   "life_seed": 2226,
+   "meals": 2,
+   "mean_step_ms": 0.5358,
+   "replay_identical": true,
+   "steps_lived": 113,
+   "terminal": "dead",
+   "trace_head": "53dc7f784e3874a1ec8c68e0a3a4c6eafbd143f776e3b12a50683d0fe6780f89",
+   "world": "g2b-h1-hidden-spring"
+  },
+  {
+   "actions": {
+    "attendre": 3,
+    "boire": 6,
+    "dormir": 66,
+    "se_deplacer": 121
+   },
+   "death_causes": [
+    "zero_food"
+   ],
+   "drinks": 6,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    0.5144,
+    0.0,
+    98.8,
+    100.0,
+    97.328
+   ],
+   "first_drink_step": 5,
+   "genome": "cd3f8c4f04ab88c9ce8021a06fb54f7bd628369716ff924c967b5d2e208a83b1",
+   "genome_seed": 227,
+   "horizon": 400,
+   "life_seed": 2227,
+   "meals": 0,
+   "mean_step_ms": 0.6791,
+   "replay_identical": true,
+   "steps_lived": 196,
+   "terminal": "dead",
+   "trace_head": "f2bfcfe29926f64e86e6a1e35ab16ad2c5896f50d565042e245c331242af3ec0",
+   "world": "g2b-h1-hidden-spring"
+  },
+  {
+   "actions": {
+    "attendre": 4,
+    "collecter": 6,
+    "dormir": 31,
+    "manger": 4,
+    "se_deplacer": 68
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 0,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    10.613,
+    70.05,
+    0.0,
+    97.0,
+    98.894
+   ],
+   "first_drink_step": null,
+   "genome": "87bb9284e2438992d9b8682c2e08d906e2c6715631f312f14ce922e567ed85ea",
+   "genome_seed": 228,
+   "horizon": 400,
+   "life_seed": 2228,
+   "meals": 4,
+   "mean_step_ms": 0.497,
+   "replay_identical": true,
+   "steps_lived": 113,
+   "terminal": "dead",
+   "trace_head": "02285a036d5ea7f9994a502667d478dccb1122ff742767c40b73a557aea78bb4",
+   "world": "g2b-h1-hidden-spring"
+  },
+  {
+   "actions": {
+    "attendre": 9,
+    "collecter": 8,
+    "dormir": 33,
+    "manger": 5,
+    "se_deplacer": 58
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 0,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    32.3734,
+    81.61,
+    0.0,
+    98.4,
+    99.644
+   ],
+   "first_drink_step": null,
+   "genome": "fb26a9397e5d211b93697a18b722ab48b970167a352f0249d1f01b60d6ff853d",
+   "genome_seed": 229,
+   "horizon": 400,
+   "life_seed": 2229,
+   "meals": 5,
+   "mean_step_ms": 0.485,
+   "replay_identical": true,
+   "steps_lived": 113,
+   "terminal": "dead",
+   "trace_head": "037107b0d7072388e27948d7acd692de0a4a3de401d15a7d157f88647c4edabd",
+   "world": "g2b-h1-hidden-spring"
+  },
+  {
+   "actions": {
+    "attendre": 7,
+    "boire": 3,
+    "dormir": 71,
+    "se_deplacer": 111
+   },
+   "death_causes": [
+    "zero_food"
+   ],
+   "drinks": 3,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    38.043,
+    0.0,
+    60.8,
+    100.0,
+    98.552
+   ],
+   "first_drink_step": 5,
+   "genome": "6b047391ecb2748b352827cd7a45d1a0cbf43e4c84c42a933be5340ba8a0f272",
+   "genome_seed": 230,
+   "horizon": 400,
+   "life_seed": 2230,
+   "meals": 0,
+   "mean_step_ms": 0.6359,
+   "replay_identical": true,
+   "steps_lived": 192,
+   "terminal": "dead",
+   "trace_head": "4102bc9d4ac3d91faced3d53ff100c4742a83aa4d3ff46118859ffe66fd41ce2",
+   "world": "g2b-h1-hidden-spring"
+  },
+  {
+   "actions": {
+    "attendre": 51,
+    "boire": 35,
+    "collecter": 31,
+    "dormir": 120,
+    "manger": 31,
+    "se_deplacer": 132
+   },
+   "death_causes": [],
+   "drinks": 35,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    35.494,
+    95.3,
+    99.6,
+    100.0,
+    100.0
+   ],
+   "first_drink_step": 38,
+   "genome": "6dadc1d0e6c03c9cc3c53b456b07b11649bd33c95964ea39e699ab6b51b89d4f",
+   "genome_seed": 201,
+   "horizon": 400,
+   "life_seed": 2201,
+   "meals": 31,
+   "mean_step_ms": 0.6617,
+   "replay_identical": true,
+   "steps_lived": 400,
+   "terminal": "censored",
+   "trace_head": "2da9cecfcadf48cbe5c312b58732d609f906d55f31534001e298cb70204cc23d",
+   "world": "g2b-h2-round-trip"
+  },
+  {
+   "actions": {
+    "attendre": 100,
+    "boire": 48,
+    "collecter": 25,
+    "dormir": 102,
+    "manger": 25,
+    "se_deplacer": 100
+   },
+   "death_causes": [],
+   "drinks": 48,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    34.5484,
+    99.8,
+    20.4,
+    100.0,
+    99.044
+   ],
+   "first_drink_step": 11,
+   "genome": "ce53ae5794e169c50d280525340ae9eea509cd545c7881b6d97a9c591c9b95b0",
+   "genome_seed": 202,
+   "horizon": 400,
+   "life_seed": 2202,
+   "meals": 25,
+   "mean_step_ms": 0.6404,
+   "replay_identical": true,
+   "steps_lived": 400,
+   "terminal": "censored",
+   "trace_head": "2e2ad35144c0c1824a2f10776ad007a85097c6ea36b2fe6aa0a6e361b35537e3",
+   "world": "g2b-h2-round-trip"
+  },
+  {
+   "actions": {
+    "attendre": 90,
+    "boire": 86,
+    "collecter": 16,
+    "dormir": 91,
+    "manger": 16,
+    "se_deplacer": 101
+   },
+   "death_causes": [],
+   "drinks": 86,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    0.7236,
+    58.55,
+    88.8,
+    100.0,
+    99.738
+   ],
+   "first_drink_step": 5,
+   "genome": "28cef99e74334e4df3e7429ca46030b804a5b87666d0b17c4c58bd4e381cc8b8",
+   "genome_seed": 203,
+   "horizon": 400,
+   "life_seed": 2203,
+   "meals": 16,
+   "mean_step_ms": 0.5965,
+   "replay_identical": true,
+   "steps_lived": 400,
+   "terminal": "censored",
+   "trace_head": "76017e929cd371a39244a94ec2be5c2b04106a195081363ae8c300085131bda9",
+   "world": "g2b-h2-round-trip"
+  },
+  {
+   "actions": {
+    "attendre": 118,
+    "boire": 61,
+    "collecter": 6,
+    "dormir": 104,
+    "manger": 6,
+    "se_deplacer": 105
+   },
+   "death_causes": [],
+   "drinks": 61,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    27.9148,
+    28.9,
+    79.6,
+    100.0,
+    99.48
+   ],
+   "first_drink_step": 5,
+   "genome": "0590b220f1df8411b833f95ae07ff97b78a80c9c6a2d9b2009c17110d7fc49d6",
+   "genome_seed": 204,
+   "horizon": 400,
+   "life_seed": 2204,
+   "meals": 6,
+   "mean_step_ms": 0.6188,
+   "replay_identical": true,
+   "steps_lived": 400,
+   "terminal": "censored",
+   "trace_head": "a988b3aed5fa0fead6b406355b6a6ad03c0e37bfe486d8bec722985ded27149f",
+   "world": "g2b-h2-round-trip"
+  },
+  {
+   "actions": {
+    "attendre": 42,
+    "boire": 174,
+    "collecter": 10,
+    "dormir": 94,
+    "manger": 10,
+    "se_deplacer": 70
+   },
+   "death_causes": [],
+   "drinks": 174,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    38.3394,
+    89.81,
+    72.0,
+    100.0,
+    100.0
+   ],
+   "first_drink_step": 3,
+   "genome": "9e040701728f52db5169a59ea08fac6ed9b7567fed658317c5e5195b70ea0728",
+   "genome_seed": 205,
+   "horizon": 400,
+   "life_seed": 2205,
+   "meals": 10,
+   "mean_step_ms": 0.6605,
+   "replay_identical": true,
+   "steps_lived": 400,
+   "terminal": "censored",
+   "trace_head": "2aedae33ae0265eeac6723ce8a706b6a6a2147f3cdcefb5f407785e62b2810fa",
+   "world": "g2b-h2-round-trip"
+  },
+  {
+   "actions": {
+    "attendre": 94,
+    "boire": 55,
+    "collecter": 17,
+    "dormir": 106,
+    "manger": 13,
+    "se_deplacer": 115
+   },
+   "death_causes": [],
+   "drinks": 55,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    37.9628,
+    78.45,
+    34.0,
+    100.0,
+    99.708
+   ],
+   "first_drink_step": 13,
+   "genome": "a079f770158e999c1908508e63859b60e8794a4710c8c58a7dd69c9a3aa47ab4",
+   "genome_seed": 206,
+   "horizon": 400,
+   "life_seed": 2206,
+   "meals": 13,
+   "mean_step_ms": 0.6269,
+   "replay_identical": true,
+   "steps_lived": 400,
+   "terminal": "censored",
+   "trace_head": "3fc93d9b735fc08583040d3ca09477c13dc49da41b19f37d1f2009dd8a6e07cf",
+   "world": "g2b-h2-round-trip"
+  },
+  {
+   "actions": {
+    "attendre": 92,
+    "boire": 71,
+    "collecter": 15,
+    "dormir": 95,
+    "manger": 15,
+    "se_deplacer": 112
+   },
+   "death_causes": [],
+   "drinks": 71,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    0.0,
+    82.05,
+    84.8,
+    100.0,
+    95.406
+   ],
+   "first_drink_step": 13,
+   "genome": "6d72828795b948ca63c9e90b0a297844e27be212be9f06586b2166309a0108f4",
+   "genome_seed": 207,
+   "horizon": 400,
+   "life_seed": 2207,
+   "meals": 15,
+   "mean_step_ms": 0.5924,
+   "replay_identical": true,
+   "steps_lived": 400,
+   "terminal": "censored",
+   "trace_head": "39414c5d74984e49629395d36079ddde7d0b6133e2ce57c67b67c5c72bca34a9",
+   "world": "g2b-h2-round-trip"
+  },
+  {
+   "actions": {
+    "attendre": 113,
+    "boire": 74,
+    "collecter": 9,
+    "dormir": 96,
+    "manger": 9,
+    "se_deplacer": 99
+   },
+   "death_causes": [],
+   "drinks": 74,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    26.9732,
+    75.1,
+    64.0,
+    100.0,
+    99.666
+   ],
+   "first_drink_step": 25,
+   "genome": "e4bed6808cb9572591494c2b4a18dd6a20b08c15dc47b151cfa814407df061b2",
+   "genome_seed": 208,
+   "horizon": 400,
+   "life_seed": 2208,
+   "meals": 9,
+   "mean_step_ms": 0.6116,
+   "replay_identical": true,
+   "steps_lived": 400,
+   "terminal": "censored",
+   "trace_head": "b3e3549af3c5b848c7fd18a51de022f57b50ea519c34784b795a3052c79484e3",
+   "world": "g2b-h2-round-trip"
+  },
+  {
+   "actions": {
+    "attendre": 94,
+    "boire": 58,
+    "collecter": 18,
+    "dormir": 109,
+    "manger": 9,
+    "se_deplacer": 112
+   },
+   "death_causes": [],
+   "drinks": 58,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    28.349,
+    73.15,
+    100.0,
+    100.0,
+    99.6
+   ],
+   "first_drink_step": 3,
+   "genome": "9b382baf3d964661902e4392122532bc8cfe63c01ba6d87f4ee46cd2607d59ca",
+   "genome_seed": 209,
+   "horizon": 400,
+   "life_seed": 2209,
+   "meals": 9,
+   "mean_step_ms": 0.6735,
+   "replay_identical": true,
+   "steps_lived": 400,
+   "terminal": "censored",
+   "trace_head": "c9fe8b5297019213170ab095aff500c96a06d17a6b4dd69c5ed310d38bf46c49",
+   "world": "g2b-h2-round-trip"
+  },
+  {
+   "actions": {
+    "attendre": 89,
+    "boire": 109,
+    "collecter": 12,
+    "dormir": 93,
+    "manger": 9,
+    "se_deplacer": 88
+   },
+   "death_causes": [],
+   "drinks": 109,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    26.7074,
+    75.55,
+    58.0,
+    100.0,
+    99.6
+   ],
+   "first_drink_step": 3,
+   "genome": "fcdb0fca196ceb3686417bd160a67b140bdd33b65099fbf68f106236ee9f6baa",
+   "genome_seed": 210,
+   "horizon": 400,
+   "life_seed": 2210,
+   "meals": 9,
+   "mean_step_ms": 0.604,
+   "replay_identical": true,
+   "steps_lived": 400,
+   "terminal": "censored",
+   "trace_head": "c8625ea413cc838db50167d8dfb89dd5747bcdd7337df94efc1392f7373b8d0b",
+   "world": "g2b-h2-round-trip"
+  },
+  {
+   "actions": {
+    "attendre": 112,
+    "boire": 118,
+    "collecter": 8,
+    "dormir": 85,
+    "manger": 8,
+    "se_deplacer": 69
+   },
+   "death_causes": [],
+   "drinks": 118,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    31.9756,
+    61.75,
+    44.8,
+    100.0,
+    99.686
+   ],
+   "first_drink_step": 11,
+   "genome": "107b0b6302148529bc3083c61be28a504e0d56686591057bb0559bf0fdc3bc20",
+   "genome_seed": 211,
+   "horizon": 400,
+   "life_seed": 2211,
+   "meals": 8,
+   "mean_step_ms": 0.5823,
+   "replay_identical": true,
+   "steps_lived": 400,
+   "terminal": "censored",
+   "trace_head": "0aa5f48aa7e7c16adba2c7ded3a5d0b4196d6c1516157810934e12fbf482eb78",
+   "world": "g2b-h2-round-trip"
+  },
+  {
+   "actions": {
+    "attendre": 100,
+    "boire": 67,
+    "collecter": 15,
+    "dormir": 105,
+    "manger": 10,
+    "se_deplacer": 103
+   },
+   "death_causes": [],
+   "drinks": 67,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    34.2804,
+    88.75,
+    98.8,
+    100.0,
+    100.0
+   ],
+   "first_drink_step": 5,
+   "genome": "59532f0329adb2f1e849409ec1dfa83c7497cd3cab81d19af8c150f5ee519441",
+   "genome_seed": 212,
+   "horizon": 400,
+   "life_seed": 2212,
+   "meals": 10,
+   "mean_step_ms": 0.6885,
+   "replay_identical": true,
+   "steps_lived": 400,
+   "terminal": "censored",
+   "trace_head": "fd40b99700b63ff5a67e49f60ed4249a507885b7eae1ca50e86dddff9dff4ed0",
+   "world": "g2b-h2-round-trip"
+  },
+  {
+   "actions": {
+    "attendre": 96,
+    "boire": 92,
+    "collecter": 10,
+    "dormir": 100,
+    "manger": 10,
+    "se_deplacer": 92
+   },
+   "death_causes": [],
+   "drinks": 92,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    46.7824,
+    42.9,
+    98.4,
+    100.0,
+    99.28
+   ],
+   "first_drink_step": 1,
+   "genome": "85ec3a56b26c62fd4b5a780cfd6eaba8dff89f89f0187c840cdeec53d45522ef",
+   "genome_seed": 213,
+   "horizon": 400,
+   "life_seed": 2213,
+   "meals": 10,
+   "mean_step_ms": 0.5716,
+   "replay_identical": true,
+   "steps_lived": 400,
+   "terminal": "censored",
+   "trace_head": "b973a165adb461155dab8f52f8f07b443534e01fc61db61b722945e6a7e088d9",
+   "world": "g2b-h2-round-trip"
+  },
+  {
+   "actions": {
+    "attendre": 99,
+    "boire": 63,
+    "collecter": 20,
+    "dormir": 103,
+    "manger": 20,
+    "se_deplacer": 95
+   },
+   "death_causes": [],
+   "drinks": 63,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    37.8904,
+    99.65,
+    58.4,
+    100.0,
+    100.0
+   ],
+   "first_drink_step": 7,
+   "genome": "d6dcc4b205ff46e726f933e9c40aa0b01cc00b27f61b16ee2a6d9435652f5fb6",
+   "genome_seed": 214,
+   "horizon": 400,
+   "life_seed": 2214,
+   "meals": 20,
+   "mean_step_ms": 0.6035,
+   "replay_identical": true,
+   "steps_lived": 400,
+   "terminal": "censored",
+   "trace_head": "e64d050fba56cd9101956f8a17e15cd868e6d61ae8244b466d1fd71646873390",
+   "world": "g2b-h2-round-trip"
+  },
+  {
+   "actions": {
+    "attendre": 130,
+    "boire": 58,
+    "collecter": 8,
+    "dormir": 97,
+    "manger": 8,
+    "se_deplacer": 99
+   },
+   "death_causes": [],
+   "drinks": 58,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    30.9884,
+    59.95,
+    48.4,
+    100.0,
+    100.0
+   ],
+   "first_drink_step": 5,
+   "genome": "c32b3379559cd064b62f0a101f83be1e07284235c70100209b4a9da59a9e0bed",
+   "genome_seed": 215,
+   "horizon": 400,
+   "life_seed": 2215,
+   "meals": 8,
+   "mean_step_ms": 0.5973,
+   "replay_identical": true,
+   "steps_lived": 400,
+   "terminal": "censored",
+   "trace_head": "b02de579d77aa85292ea9427714383021159d0257cc05f19f7dea204049dad5e",
+   "world": "g2b-h2-round-trip"
+  },
+  {
+   "actions": {
+    "attendre": 106,
+    "boire": 129,
+    "collecter": 6,
+    "dormir": 81,
+    "manger": 6,
+    "se_deplacer": 72
+   },
+   "death_causes": [],
+   "drinks": 129,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    21.035,
+    32.35,
+    100.0,
+    100.0,
+    99.688
+   ],
+   "first_drink_step": 7,
+   "genome": "10df02faa3fae87a936a5729d3d8cf18f03c3dda2eb495955435f96902b111be",
+   "genome_seed": 216,
+   "horizon": 400,
+   "life_seed": 2216,
+   "meals": 6,
+   "mean_step_ms": 0.5708,
+   "replay_identical": true,
+   "steps_lived": 400,
+   "terminal": "censored",
+   "trace_head": "4fcb706720dee6116ded86f4680e24c300150a32dba0f99bfb4cc045215640ff",
+   "world": "g2b-h2-round-trip"
+  },
+  {
+   "actions": {
+    "attendre": 82,
+    "boire": 68,
+    "collecter": 17,
+    "dormir": 102,
+    "manger": 17,
+    "se_deplacer": 114
+   },
+   "death_causes": [],
+   "drinks": 68,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    2.9932,
+    77.7,
+    100.0,
+    100.0,
+    98.688
+   ],
+   "first_drink_step": 45,
+   "genome": "d71ec49c13b8e452be974eb0e08f523b812767d6fdcc5c6c8e7117cb37800652",
+   "genome_seed": 217,
+   "horizon": 400,
+   "life_seed": 2217,
+   "meals": 17,
+   "mean_step_ms": 0.6667,
+   "replay_identical": true,
+   "steps_lived": 400,
+   "terminal": "censored",
+   "trace_head": "ba509c37c1410851ce6e8ec2b587e6e50d2e1422fed0cf469901c5240521ff0c",
+   "world": "g2b-h2-round-trip"
+  },
+  {
+   "actions": {
+    "attendre": 58,
+    "boire": 33,
+    "collecter": 23,
+    "dormir": 124,
+    "manger": 22,
+    "se_deplacer": 140
+   },
+   "death_causes": [],
+   "drinks": 33,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    44.0892,
+    97.75,
+    30.0,
+    100.0,
+    99.708
+   ],
+   "first_drink_step": 5,
+   "genome": "32124828fd1adceb1336eca3cb2d98530115bae767017965488a33503f583c81",
+   "genome_seed": 218,
+   "horizon": 400,
+   "life_seed": 2218,
+   "meals": 22,
+   "mean_step_ms": 0.6481,
+   "replay_identical": true,
+   "steps_lived": 400,
+   "terminal": "censored",
+   "trace_head": "e3e79be7efea5fef05c3b8c7f7053192725c2da27c778450e966a79ed4c23d3c",
+   "world": "g2b-h2-round-trip"
+  },
+  {
+   "actions": {
+    "attendre": 174,
+    "boire": 60,
+    "collecter": 11,
+    "dormir": 59,
+    "manger": 11,
+    "se_deplacer": 85
+   },
+   "death_causes": [],
+   "drinks": 60,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    2.8722,
+    50.55,
+    44.8,
+    100.0,
+    100.0
+   ],
+   "first_drink_step": 5,
+   "genome": "42479182192db7dd53aaac5f2b4d7045911a915c0104c5c33fa21a9b6029fc4e",
+   "genome_seed": 219,
+   "horizon": 400,
+   "life_seed": 2219,
+   "meals": 11,
+   "mean_step_ms": 0.3739,
+   "replay_identical": true,
+   "steps_lived": 400,
+   "terminal": "censored",
+   "trace_head": "c032216dcd4ee0aa424ae74d7c7abf0c7153eba594669447e79ed8068bae3ea6",
+   "world": "g2b-h2-round-trip"
+  },
+  {
+   "actions": {
+    "attendre": 129,
+    "boire": 53,
+    "collecter": 11,
+    "dormir": 103,
+    "manger": 11,
+    "se_deplacer": 93
+   },
+   "death_causes": [],
+   "drinks": 53,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    34.1162,
+    35.05,
+    80.8,
+    100.0,
+    100.0
+   ],
+   "first_drink_step": 7,
+   "genome": "5d1c35990b32081f9f72aedbb5a8a0618c16ad7695093ca3764d8fa4e65d9731",
+   "genome_seed": 220,
+   "horizon": 400,
+   "life_seed": 2220,
+   "meals": 11,
+   "mean_step_ms": 0.6104,
+   "replay_identical": true,
+   "steps_lived": 400,
+   "terminal": "censored",
+   "trace_head": "6f4e0d1e8ed51c37ac1de649c61de2cef1dcf0829b0c0894f246348893dee40d",
+   "world": "g2b-h2-round-trip"
+  },
+  {
+   "actions": {
+    "attendre": 84,
+    "boire": 74,
+    "collecter": 21,
+    "dormir": 95,
+    "manger": 20,
+    "se_deplacer": 106
+   },
+   "death_causes": [],
+   "drinks": 74,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    14.3022,
+    97.2,
+    35.6,
+    100.0,
+    99.762
+   ],
+   "first_drink_step": 9,
+   "genome": "785b323e99e3e3a35b499db5c733ecad33a04fbf83b785b50db2b6c55321c2b6",
+   "genome_seed": 221,
+   "horizon": 400,
+   "life_seed": 2221,
+   "meals": 20,
+   "mean_step_ms": 0.58,
+   "replay_identical": true,
+   "steps_lived": 400,
+   "terminal": "censored",
+   "trace_head": "2a09016aa72b5e24c483484ed5be36b4c424279caac759dfd3d19fbcc3e44c8c",
+   "world": "g2b-h2-round-trip"
+  },
+  {
+   "actions": {
+    "attendre": 89,
+    "boire": 54,
+    "collecter": 21,
+    "dormir": 109,
+    "manger": 21,
+    "se_deplacer": 106
+   },
+   "death_causes": [],
+   "drinks": 54,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    45.1452,
+    99.65,
+    60.8,
+    100.0,
+    100.0
+   ],
+   "first_drink_step": 9,
+   "genome": "87ff0366b7e8703e9cf62d1b3b20745c617b86f3597a39b9c60f1c40f0ae7dcf",
+   "genome_seed": 222,
+   "horizon": 400,
+   "life_seed": 2222,
+   "meals": 21,
+   "mean_step_ms": 0.6662,
+   "replay_identical": true,
+   "steps_lived": 400,
+   "terminal": "censored",
+   "trace_head": "02fe6f1e8abaca45c16e3a9c4053e1cef204d797855d906bc90e63c4b7b4da2a",
+   "world": "g2b-h2-round-trip"
+  },
+  {
+   "actions": {
+    "attendre": 12,
+    "boire": 9,
+    "dormir": 38,
+    "se_deplacer": 86
+   },
+   "death_causes": [
+    "zero_food"
+   ],
+   "drinks": 9,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    0.0,
+    0.0,
+    86.8,
+    100.0,
+    99.588
+   ],
+   "first_drink_step": 7,
+   "genome": "f44e00127887a8cf478124b585dfe0ca45ccf43fdc47a744867b3f9c43f102f2",
+   "genome_seed": 223,
+   "horizon": 400,
+   "life_seed": 2223,
+   "meals": 0,
+   "mean_step_ms": 0.4733,
+   "replay_identical": true,
+   "steps_lived": 145,
+   "terminal": "dead",
+   "trace_head": "b8159bc47bebd223a4cb3f6fae36d36a7248ef6c70bd8390af96e1234b6e9aa7",
+   "world": "g2b-h2-round-trip"
+  },
+  {
+   "actions": {
+    "attendre": 92,
+    "boire": 39,
+    "collecter": 9,
+    "dormir": 119,
+    "manger": 9,
+    "se_deplacer": 132
+   },
+   "death_causes": [],
+   "drinks": 39,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    31.059,
+    33.05,
+    66.0,
+    100.0,
+    99.432
+   ],
+   "first_drink_step": 90,
+   "genome": "06792a70e53b9944bee210fc42e2264196019b6f5454f2cc9e6b45de01029490",
+   "genome_seed": 224,
+   "horizon": 400,
+   "life_seed": 2224,
+   "meals": 9,
+   "mean_step_ms": 0.7264,
+   "replay_identical": true,
+   "steps_lived": 400,
+   "terminal": "censored",
+   "trace_head": "90a110b10b57ba9cf0e83cdd808077ac9005d057b5e88f1b6ccb5dc3981571c3",
+   "world": "g2b-h2-round-trip"
+  },
+  {
+   "actions": {
+    "attendre": 89,
+    "boire": 37,
+    "collecter": 27,
+    "dormir": 103,
+    "manger": 26,
+    "se_deplacer": 118
+   },
+   "death_causes": [],
+   "drinks": 37,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    11.0028,
+    98.05,
+    3.6,
+    100.0,
+    98.842
+   ],
+   "first_drink_step": 5,
+   "genome": "0ec6b77e4ce5400c016e18d93eaf7b2f9c070badf6e9698e395fddb6779e46db",
+   "genome_seed": 225,
+   "horizon": 400,
+   "life_seed": 2225,
+   "meals": 26,
+   "mean_step_ms": 0.6168,
+   "replay_identical": true,
+   "steps_lived": 400,
+   "terminal": "censored",
+   "trace_head": "17c6857a8e72ec29fe60233ebcf9412e533acd4b6734df5fbafea3b268ab0aef",
+   "world": "g2b-h2-round-trip"
+  },
+  {
+   "actions": {
+    "attendre": 79,
+    "boire": 22,
+    "collecter": 23,
+    "dormir": 119,
+    "manger": 23,
+    "se_deplacer": 134
+   },
+   "death_causes": [],
+   "drinks": 22,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    26.054,
+    100.0,
+    47.2,
+    100.0,
+    99.284
+   ],
+   "first_drink_step": 21,
+   "genome": "4d196426f96d7f9b6a0a4c5ba34326548a0102b3b02c891fcf979eb80d0c8e13",
+   "genome_seed": 226,
+   "horizon": 400,
+   "life_seed": 2226,
+   "meals": 23,
+   "mean_step_ms": 0.6681,
+   "replay_identical": true,
+   "steps_lived": 400,
+   "terminal": "censored",
+   "trace_head": "9ad51a40e291350d878284094e88f89340f2f824f46a71f5450a530bf159a8da",
+   "world": "g2b-h2-round-trip"
+  },
+  {
+   "actions": {
+    "attendre": 90,
+    "boire": 203,
+    "collecter": 5,
+    "dormir": 33,
+    "manger": 5,
+    "se_deplacer": 64
+   },
+   "death_causes": [],
+   "drinks": 203,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    3.5424,
+    24.55,
+    91.2,
+    100.0,
+    100.0
+   ],
+   "first_drink_step": 9,
+   "genome": "cd3f8c4f04ab88c9ce8021a06fb54f7bd628369716ff924c967b5d2e208a83b1",
+   "genome_seed": 227,
+   "horizon": 400,
+   "life_seed": 2227,
+   "meals": 5,
+   "mean_step_ms": 0.2768,
+   "replay_identical": true,
+   "steps_lived": 400,
+   "terminal": "censored",
+   "trace_head": "f632f8e479778bee4dfd2144eb5706d896845e9f88a50a6a8df8be349f54d3fe",
+   "world": "g2b-h2-round-trip"
+  },
+  {
+   "actions": {
+    "attendre": 80,
+    "boire": 53,
+    "collecter": 27,
+    "dormir": 108,
+    "manger": 25,
+    "se_deplacer": 107
+   },
+   "death_causes": [],
+   "drinks": 53,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    36.13,
+    99.65,
+    30.8,
+    100.0,
+    100.0
+   ],
+   "first_drink_step": 3,
+   "genome": "87bb9284e2438992d9b8682c2e08d906e2c6715631f312f14ce922e567ed85ea",
+   "genome_seed": 228,
+   "horizon": 400,
+   "life_seed": 2228,
+   "meals": 25,
+   "mean_step_ms": 0.6524,
+   "replay_identical": true,
+   "steps_lived": 400,
+   "terminal": "censored",
+   "trace_head": "c222fc367165277c2f68f1ad28802f97689a0b16fd8ee22393eb236137f61f1a",
+   "world": "g2b-h2-round-trip"
+  },
+  {
+   "actions": {
+    "attendre": 33,
+    "collecter": 14,
+    "dormir": 49,
+    "manger": 6,
+    "se_deplacer": 74
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 0,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    21.8758,
+    79.95,
+    0.0,
+    100.0,
+    99.332
+   ],
+   "first_drink_step": null,
+   "genome": "fb26a9397e5d211b93697a18b722ab48b970167a352f0249d1f01b60d6ff853d",
+   "genome_seed": 229,
+   "horizon": 400,
+   "life_seed": 2229,
+   "meals": 6,
+   "mean_step_ms": 0.5688,
+   "replay_identical": true,
+   "steps_lived": 176,
+   "terminal": "dead",
+   "trace_head": "4f9515cecabeb8f44e9ea106064b08dd9c936ca7dc10cf2cbe397d212e3782f5",
+   "world": "g2b-h2-round-trip"
+  },
+  {
+   "actions": {
+    "attendre": 85,
+    "boire": 75,
+    "collecter": 19,
+    "dormir": 88,
+    "manger": 13,
+    "se_deplacer": 120
+   },
+   "death_causes": [],
+   "drinks": 75,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    0.0,
+    93.6,
+    100.0,
+    100.0,
+    96.824
+   ],
+   "first_drink_step": 5,
+   "genome": "6b047391ecb2748b352827cd7a45d1a0cbf43e4c84c42a933be5340ba8a0f272",
+   "genome_seed": 230,
+   "horizon": 400,
+   "life_seed": 2230,
+   "meals": 13,
+   "mean_step_ms": 0.5476,
+   "replay_identical": true,
+   "steps_lived": 400,
+   "terminal": "censored",
+   "trace_head": "09386940b6c0f50e989f1afc45e6c2f05e1347e89ce3a3ede7471df3bd087bf2",
+   "world": "g2b-h2-round-trip"
+  },
+  {
+   "actions": {
+    "attendre": 22,
+    "boire": 4,
+    "collecter": 7,
+    "dormir": 93,
+    "manger": 7,
+    "se_deplacer": 153
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 4,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    0.5988,
+    41.22,
+    0.0,
+    100.0,
+    99.694
+   ],
+   "first_drink_step": 4,
+   "genome": "6dadc1d0e6c03c9cc3c53b456b07b11649bd33c95964ea39e699ab6b51b89d4f",
+   "genome_seed": 201,
+   "horizon": 400,
+   "life_seed": 2201,
+   "meals": 7,
+   "mean_step_ms": 0.5524,
+   "replay_identical": true,
+   "steps_lived": 286,
+   "terminal": "dead",
+   "trace_head": "ecea7bcbec65afbcbd01e47de3936149b49fa5546d9de0ad769ba8b1f74a720a",
+   "world": "g2b-h3-dried-spring"
+  },
+  {
+   "actions": {
+    "attendre": 26,
+    "boire": 4,
+    "collecter": 4,
+    "dormir": 88,
+    "manger": 4,
+    "se_deplacer": 148
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 4,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    1.0434,
+    39.5,
+    0.0,
+    100.0,
+    99.766
+   ],
+   "first_drink_step": 2,
+   "genome": "ce53ae5794e169c50d280525340ae9eea509cd545c7881b6d97a9c591c9b95b0",
+   "genome_seed": 202,
+   "horizon": 400,
+   "life_seed": 2202,
+   "meals": 4,
+   "mean_step_ms": 0.5563,
+   "replay_identical": true,
+   "steps_lived": 274,
+   "terminal": "dead",
+   "trace_head": "4803186a455299ec9cacd886b8adb83961f63c55f693f5523945e1e6c4a20ada",
+   "world": "g2b-h3-dried-spring"
+  },
+  {
+   "actions": {
+    "attendre": 16,
+    "boire": 4,
+    "collecter": 6,
+    "dormir": 94,
+    "manger": 6,
+    "se_deplacer": 158
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 4,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    0.3876,
+    41.07,
+    0.0,
+    100.0,
+    99.696
+   ],
+   "first_drink_step": 4,
+   "genome": "28cef99e74334e4df3e7429ca46030b804a5b87666d0b17c4c58bd4e381cc8b8",
+   "genome_seed": 203,
+   "horizon": 400,
+   "life_seed": 2203,
+   "meals": 6,
+   "mean_step_ms": 0.5032,
+   "replay_identical": true,
+   "steps_lived": 284,
+   "terminal": "dead",
+   "trace_head": "4de6acce7262bbb9dedb2a21523f0b776cea5c0a0112e21f6914bcb5eababeb6",
+   "world": "g2b-h3-dried-spring"
+  },
+  {
+   "actions": {
+    "attendre": 16,
+    "boire": 4,
+    "dormir": 78,
+    "se_deplacer": 141
+   },
+   "death_causes": [
+    "zero_food"
+   ],
+   "drinks": 4,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    0.473,
+    0.0,
+    14.0,
+    100.0,
+    99.72
+   ],
+   "first_drink_step": 2,
+   "genome": "0590b220f1df8411b833f95ae07ff97b78a80c9c6a2d9b2009c17110d7fc49d6",
+   "genome_seed": 204,
+   "horizon": 400,
+   "life_seed": 2204,
+   "meals": 0,
+   "mean_step_ms": 0.4765,
+   "replay_identical": true,
+   "steps_lived": 239,
+   "terminal": "dead",
+   "trace_head": "f78c5be4c7d3214d88fa7cf9dff62395feb836946e85c7346a33ec7bf31b191b",
+   "world": "g2b-h3-dried-spring"
+  },
+  {
+   "actions": {
+    "attendre": 3,
+    "boire": 4,
+    "collecter": 3,
+    "dormir": 130,
+    "manger": 3,
+    "se_deplacer": 205
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 4,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    0.187,
+    6.4,
+    0.0,
+    100.0,
+    99.716
+   ],
+   "first_drink_step": 2,
+   "genome": "9e040701728f52db5169a59ea08fac6ed9b7567fed658317c5e5195b70ea0728",
+   "genome_seed": 205,
+   "horizon": 400,
+   "life_seed": 2205,
+   "meals": 3,
+   "mean_step_ms": 0.6893,
+   "replay_identical": true,
+   "steps_lived": 348,
+   "terminal": "dead",
+   "trace_head": "50e08ad56f53b062ec9b7dc71aa35310b7327ef27524ae593fd6a3c75e387d56",
+   "world": "g2b-h3-dried-spring"
+  },
+  {
+   "actions": {
+    "attendre": 40,
+    "boire": 4,
+    "dormir": 72,
+    "se_deplacer": 128
+   },
+   "death_causes": [
+    "zero_food"
+   ],
+   "drinks": 4,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    1.226,
+    0.0,
+    8.8,
+    100.0,
+    99.77
+   ],
+   "first_drink_step": 2,
+   "genome": "a079f770158e999c1908508e63859b60e8794a4710c8c58a7dd69c9a3aa47ab4",
+   "genome_seed": 206,
+   "horizon": 400,
+   "life_seed": 2206,
+   "meals": 0,
+   "mean_step_ms": 0.5021,
+   "replay_identical": true,
+   "steps_lived": 244,
+   "terminal": "dead",
+   "trace_head": "8514c5c6dd833f1641db2351b64cf89804c23ae7d86100af48ab12eb1ad3149a",
+   "world": "g2b-h3-dried-spring"
+  },
+  {
+   "actions": {
+    "attendre": 29,
+    "boire": 4,
+    "collecter": 5,
+    "dormir": 88,
+    "manger": 5,
+    "se_deplacer": 146
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 4,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    0.0,
+    39.64,
+    0.0,
+    100.0,
+    99.636
+   ],
+   "first_drink_step": 5,
+   "genome": "6d72828795b948ca63c9e90b0a297844e27be212be9f06586b2166309a0108f4",
+   "genome_seed": 207,
+   "horizon": 400,
+   "life_seed": 2207,
+   "meals": 5,
+   "mean_step_ms": 0.5401,
+   "replay_identical": true,
+   "steps_lived": 277,
+   "terminal": "dead",
+   "trace_head": "f16b2bb2115f08efccb788fcaf1939d7ac0e725b0f7d67beea32dd745166fd35",
+   "world": "g2b-h3-dried-spring"
+  },
+  {
+   "actions": {
+    "attendre": 34,
+    "boire": 4,
+    "collecter": 3,
+    "dormir": 85,
+    "manger": 3,
+    "se_deplacer": 139
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 4,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    7.0,
+    29.15,
+    0.0,
+    100.0,
+    99.77
+   ],
+   "first_drink_step": 4,
+   "genome": "e4bed6808cb9572591494c2b4a18dd6a20b08c15dc47b151cfa814407df061b2",
+   "genome_seed": 208,
+   "horizon": 400,
+   "life_seed": 2208,
+   "meals": 3,
+   "mean_step_ms": 0.6046,
+   "replay_identical": true,
+   "steps_lived": 268,
+   "terminal": "dead",
+   "trace_head": "9b5983ce0a2f01ca902006be71b7d5757bebb4f3c305b8500849fda6fc4e9b67",
+   "world": "g2b-h3-dried-spring"
+  },
+  {
+   "actions": {
+    "attendre": 6,
+    "boire": 4,
+    "collecter": 3,
+    "dormir": 89,
+    "manger": 3,
+    "se_deplacer": 158
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 4,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    0.0112,
+    29.55,
+    0.0,
+    100.0,
+    99.642
+   ],
+   "first_drink_step": 2,
+   "genome": "9b382baf3d964661902e4392122532bc8cfe63c01ba6d87f4ee46cd2607d59ca",
+   "genome_seed": 209,
+   "horizon": 400,
+   "life_seed": 2209,
+   "meals": 3,
+   "mean_step_ms": 0.4928,
+   "replay_identical": true,
+   "steps_lived": 263,
+   "terminal": "dead",
+   "trace_head": "107195c56f05211956ef99bfb9bbb5ca17be8cb93c5ce2ae36d265ac044299de",
+   "world": "g2b-h3-dried-spring"
+  },
+  {
+   "actions": {
+    "attendre": 14,
+    "boire": 4,
+    "dormir": 78,
+    "se_deplacer": 143
+   },
+   "death_causes": [
+    "zero_food"
+   ],
+   "drinks": 4,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    2.0104,
+    0.0,
+    10.4,
+    100.0,
+    99.774
+   ],
+   "first_drink_step": 2,
+   "genome": "fcdb0fca196ceb3686417bd160a67b140bdd33b65099fbf68f106236ee9f6baa",
+   "genome_seed": 210,
+   "horizon": 400,
+   "life_seed": 2210,
+   "meals": 0,
+   "mean_step_ms": 0.4626,
+   "replay_identical": true,
+   "steps_lived": 239,
+   "terminal": "dead",
+   "trace_head": "85f6813f26276fab594bcb3a51938907298d2fd447cfdadbc28ab143e14da8f7",
+   "world": "g2b-h3-dried-spring"
+  },
+  {
+   "actions": {
+    "attendre": 47,
+    "boire": 4,
+    "collecter": 8,
+    "dormir": 86,
+    "manger": 5,
+    "se_deplacer": 138
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 4,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    0.0,
+    49.0,
+    0.0,
+    100.0,
+    99.52
+   ],
+   "first_drink_step": 6,
+   "genome": "107b0b6302148529bc3083c61be28a504e0d56686591057bb0559bf0fdc3bc20",
+   "genome_seed": 211,
+   "horizon": 400,
+   "life_seed": 2211,
+   "meals": 5,
+   "mean_step_ms": 0.5697,
+   "replay_identical": true,
+   "steps_lived": 288,
+   "terminal": "dead",
+   "trace_head": "4a8136b6073a9b629656ed7dfe29afffd7d852080ef08872e457aac7abcd2940",
+   "world": "g2b-h3-dried-spring"
+  },
+  {
+   "actions": {
+    "attendre": 17,
+    "boire": 4,
+    "dormir": 79,
+    "se_deplacer": 139
+   },
+   "death_causes": [
+    "zero_food"
+   ],
+   "drinks": 4,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    0.3358,
+    0.0,
+    28.4,
+    100.0,
+    99.6
+   ],
+   "first_drink_step": 2,
+   "genome": "59532f0329adb2f1e849409ec1dfa83c7497cd3cab81d19af8c150f5ee519441",
+   "genome_seed": 212,
+   "horizon": 400,
+   "life_seed": 2212,
+   "meals": 0,
+   "mean_step_ms": 0.6269,
+   "replay_identical": true,
+   "steps_lived": 239,
+   "terminal": "dead",
+   "trace_head": "8eb2bd0e58a163d491c7d3aed0e7d6f6250f5fe4b27487841117ec3140aa38ce",
+   "world": "g2b-h3-dried-spring"
+  },
+  {
+   "actions": {
+    "attendre": 36,
+    "boire": 4,
+    "dormir": 73,
+    "se_deplacer": 130
+   },
+   "death_causes": [
+    "zero_food"
+   ],
+   "drinks": 4,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    1.991,
+    0.0,
+    9.6,
+    100.0,
+    99.77
+   ],
+   "first_drink_step": 2,
+   "genome": "85ec3a56b26c62fd4b5a780cfd6eaba8dff89f89f0187c840cdeec53d45522ef",
+   "genome_seed": 213,
+   "horizon": 400,
+   "life_seed": 2213,
+   "meals": 0,
+   "mean_step_ms": 0.4566,
+   "replay_identical": true,
+   "steps_lived": 243,
+   "terminal": "dead",
+   "trace_head": "f908a5fd63819c1bd39dc50579944477c4917bc48406d665bdd0b804b72e01bf",
+   "world": "g2b-h3-dried-spring"
+  },
+  {
+   "actions": {
+    "attendre": 14,
+    "boire": 4,
+    "collecter": 6,
+    "dormir": 105,
+    "manger": 6,
+    "se_deplacer": 173
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 4,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    0.7198,
+    39.21,
+    0.0,
+    100.0,
+    99.77
+   ],
+   "first_drink_step": 4,
+   "genome": "d6dcc4b205ff46e726f933e9c40aa0b01cc00b27f61b16ee2a6d9435652f5fb6",
+   "genome_seed": 214,
+   "horizon": 400,
+   "life_seed": 2214,
+   "meals": 6,
+   "mean_step_ms": 0.5094,
+   "replay_identical": true,
+   "steps_lived": 308,
+   "terminal": "dead",
+   "trace_head": "62a686ad9078628476a1cc464e05f2f7d1246f05a5d280d407a7872d5f8e7cc8",
+   "world": "g2b-h3-dried-spring"
+  },
+  {
+   "actions": {
+    "attendre": 28,
+    "boire": 4,
+    "dormir": 77,
+    "se_deplacer": 131
+   },
+   "death_causes": [
+    "zero_food"
+   ],
+   "drinks": 4,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    2.198,
+    0.0,
+    80.0,
+    100.0,
+    100.0
+   ],
+   "first_drink_step": 2,
+   "genome": "c32b3379559cd064b62f0a101f83be1e07284235c70100209b4a9da59a9e0bed",
+   "genome_seed": 215,
+   "horizon": 400,
+   "life_seed": 2215,
+   "meals": 0,
+   "mean_step_ms": 0.6098,
+   "replay_identical": true,
+   "steps_lived": 240,
+   "terminal": "dead",
+   "trace_head": "583ba5810db49f5ccdc955c5c35cc0a5bd74633b0e38cac8d5b002e1cef6c93d",
+   "world": "g2b-h3-dried-spring"
+  },
+  {
+   "actions": {
+    "attendre": 8,
+    "boire": 4,
+    "dormir": 83,
+    "se_deplacer": 141
+   },
+   "death_causes": [
+    "zero_food"
+   ],
+   "drinks": 4,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    16.149,
+    0.0,
+    10.4,
+    100.0,
+    99.774
+   ],
+   "first_drink_step": 2,
+   "genome": "10df02faa3fae87a936a5729d3d8cf18f03c3dda2eb495955435f96902b111be",
+   "genome_seed": 216,
+   "horizon": 400,
+   "life_seed": 2216,
+   "meals": 0,
+   "mean_step_ms": 0.5701,
+   "replay_identical": true,
+   "steps_lived": 236,
+   "terminal": "dead",
+   "trace_head": "92afc796fd117502c7d3c4caa2c8a33b4d2d6dbbc94aa45843c8a6c24bff22d9",
+   "world": "g2b-h3-dried-spring"
+  },
+  {
+   "actions": {
+    "attendre": 29,
+    "boire": 4,
+    "collecter": 3,
+    "dormir": 86,
+    "manger": 3,
+    "se_deplacer": 142
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 4,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    0.7536,
+    29.2,
+    0.0,
+    100.0,
+    99.766
+   ],
+   "first_drink_step": 2,
+   "genome": "d71ec49c13b8e452be974eb0e08f523b812767d6fdcc5c6c8e7117cb37800652",
+   "genome_seed": 217,
+   "horizon": 400,
+   "life_seed": 2217,
+   "meals": 3,
+   "mean_step_ms": 0.5961,
+   "replay_identical": true,
+   "steps_lived": 267,
+   "terminal": "dead",
+   "trace_head": "34f38ced2fe1e10c9794c65ecb289ab596c84bc67970e11e924dab5059e01366",
+   "world": "g2b-h3-dried-spring"
+  },
+  {
+   "actions": {
+    "attendre": 4,
+    "boire": 4,
+    "collecter": 2,
+    "dormir": 120,
+    "manger": 2,
+    "se_deplacer": 196
+   },
+   "death_causes": [
+    "zero_food"
+   ],
+   "drinks": 4,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    1.383,
+    0.0,
+    2.0,
+    100.0,
+    100.0
+   ],
+   "first_drink_step": 2,
+   "genome": "32124828fd1adceb1336eca3cb2d98530115bae767017965488a33503f583c81",
+   "genome_seed": 218,
+   "horizon": 400,
+   "life_seed": 2218,
+   "meals": 2,
+   "mean_step_ms": 0.6111,
+   "replay_identical": true,
+   "steps_lived": 328,
+   "terminal": "dead",
+   "trace_head": "68f3642f143693c63c37b60922e39bf5b9c6a198b7808d88cea29b6bbe20176b",
+   "world": "g2b-h3-dried-spring"
+  },
+  {
+   "actions": {
+    "attendre": 11,
+    "boire": 4,
+    "collecter": 4,
+    "dormir": 112,
+    "manger": 4,
+    "se_deplacer": 185
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 4,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    0.0,
+    26.7,
+    0.0,
+    100.0,
+    99.562
+   ],
+   "first_drink_step": 2,
+   "genome": "42479182192db7dd53aaac5f2b4d7045911a915c0104c5c33fa21a9b6029fc4e",
+   "genome_seed": 219,
+   "horizon": 400,
+   "life_seed": 2219,
+   "meals": 4,
+   "mean_step_ms": 0.5485,
+   "replay_identical": true,
+   "steps_lived": 320,
+   "terminal": "dead",
+   "trace_head": "40cb320fad1fc07faf2c35ba23ed9181928d75d420712a03747f1b755aad0ee7",
+   "world": "g2b-h3-dried-spring"
+  },
+  {
+   "actions": {
+    "attendre": 27,
+    "boire": 4,
+    "collecter": 4,
+    "dormir": 84,
+    "manger": 3,
+    "se_deplacer": 141
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 4,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    0.296,
+    30.3,
+    0.0,
+    100.0,
+    99.686
+   ],
+   "first_drink_step": 2,
+   "genome": "5d1c35990b32081f9f72aedbb5a8a0618c16ad7695093ca3764d8fa4e65d9731",
+   "genome_seed": 220,
+   "horizon": 400,
+   "life_seed": 2220,
+   "meals": 3,
+   "mean_step_ms": 0.5257,
+   "replay_identical": true,
+   "steps_lived": 263,
+   "terminal": "dead",
+   "trace_head": "dbcd14cc054d0162579a27e6266078cc231bceb1bbc7294666a71606ca830bef",
+   "world": "g2b-h3-dried-spring"
+  },
+  {
+   "actions": {
+    "attendre": 17,
+    "boire": 4,
+    "collecter": 6,
+    "dormir": 89,
+    "manger": 5,
+    "se_deplacer": 152
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 4,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    0.0,
+    51.55,
+    0.0,
+    100.0,
+    99.706
+   ],
+   "first_drink_step": 2,
+   "genome": "785b323e99e3e3a35b499db5c733ecad33a04fbf83b785b50db2b6c55321c2b6",
+   "genome_seed": 221,
+   "horizon": 400,
+   "life_seed": 2221,
+   "meals": 5,
+   "mean_step_ms": 0.5343,
+   "replay_identical": true,
+   "steps_lived": 273,
+   "terminal": "dead",
+   "trace_head": "4bb4680df94de05b843a9be8d387081214b7a8b69758bd092fda76b4d07146f2",
+   "world": "g2b-h3-dried-spring"
+  },
+  {
+   "actions": {
+    "attendre": 27,
+    "boire": 4,
+    "dormir": 78,
+    "se_deplacer": 130
+   },
+   "death_causes": [
+    "zero_food"
+   ],
+   "drinks": 4,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    12.2464,
+    0.0,
+    48.0,
+    100.0,
+    97.358
+   ],
+   "first_drink_step": 6,
+   "genome": "87ff0366b7e8703e9cf62d1b3b20745c617b86f3597a39b9c60f1c40f0ae7dcf",
+   "genome_seed": 222,
+   "horizon": 400,
+   "life_seed": 2222,
+   "meals": 0,
+   "mean_step_ms": 0.6091,
+   "replay_identical": true,
+   "steps_lived": 239,
+   "terminal": "dead",
+   "trace_head": "02d1d438a67b9e1f47743a2b0c8efd8b7d8106a19717c8cd36eb0259af479787",
+   "world": "g2b-h3-dried-spring"
+  },
+  {
+   "actions": {
+    "attendre": 13,
+    "boire": 4,
+    "dormir": 79,
+    "se_deplacer": 143
+   },
+   "death_causes": [
+    "zero_food"
+   ],
+   "drinks": 4,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    1.2044,
+    0.0,
+    12.4,
+    100.0,
+    99.774
+   ],
+   "first_drink_step": 2,
+   "genome": "f44e00127887a8cf478124b585dfe0ca45ccf43fdc47a744867b3f9c43f102f2",
+   "genome_seed": 223,
+   "horizon": 400,
+   "life_seed": 2223,
+   "meals": 0,
+   "mean_step_ms": 0.4674,
+   "replay_identical": true,
+   "steps_lived": 239,
+   "terminal": "dead",
+   "trace_head": "c621dc4a447210cb61dbe20fd6bb616a9608f1ef94a67ada047aa87dee86aa90",
+   "world": "g2b-h3-dried-spring"
+  },
+  {
+   "actions": {
+    "attendre": 23,
+    "boire": 4,
+    "dormir": 78,
+    "se_deplacer": 134
+   },
+   "death_causes": [
+    "zero_food"
+   ],
+   "drinks": 4,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    3.102,
+    0.0,
+    9.6,
+    100.0,
+    99.704
+   ],
+   "first_drink_step": 2,
+   "genome": "06792a70e53b9944bee210fc42e2264196019b6f5454f2cc9e6b45de01029490",
+   "genome_seed": 224,
+   "horizon": 400,
+   "life_seed": 2224,
+   "meals": 0,
+   "mean_step_ms": 0.5583,
+   "replay_identical": true,
+   "steps_lived": 239,
+   "terminal": "dead",
+   "trace_head": "ca72b470c071320f0722b078eda985f462d1df4cacbfd2be36b8e5b2491f31cd",
+   "world": "g2b-h3-dried-spring"
+  },
+  {
+   "actions": {
+    "attendre": 72,
+    "boire": 59,
+    "collecter": 38,
+    "dormir": 109,
+    "manger": 38,
+    "se_deplacer": 84
+   },
+   "death_causes": [],
+   "drinks": 59,
+   "drinks_at_far_spring": 58,
+   "final_body": [
+    60.3242,
+    98.3,
+    99.6,
+    100.0,
+    99.392
+   ],
+   "first_drink_step": 4,
+   "genome": "0ec6b77e4ce5400c016e18d93eaf7b2f9c070badf6e9698e395fddb6779e46db",
+   "genome_seed": 225,
+   "horizon": 400,
+   "life_seed": 2225,
+   "meals": 38,
+   "mean_step_ms": 0.693,
+   "replay_identical": true,
+   "steps_lived": 400,
+   "terminal": "censored",
+   "trace_head": "8bfef5b670e6b616e2728a2b837f0f1a6f03733ccc673af7dc5ceb2531bc140c",
+   "world": "g2b-h3-dried-spring"
+  },
+  {
+   "actions": {
+    "attendre": 14,
+    "boire": 4,
+    "collecter": 8,
+    "dormir": 101,
+    "manger": 8,
+    "se_deplacer": 161
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 4,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    4.7098,
+    42.43,
+    0.0,
+    100.0,
+    99.77
+   ],
+   "first_drink_step": 6,
+   "genome": "4d196426f96d7f9b6a0a4c5ba34326548a0102b3b02c891fcf979eb80d0c8e13",
+   "genome_seed": 226,
+   "horizon": 400,
+   "life_seed": 2226,
+   "meals": 8,
+   "mean_step_ms": 0.5768,
+   "replay_identical": true,
+   "steps_lived": 296,
+   "terminal": "dead",
+   "trace_head": "4617d23b134b286da5c44b73a4a038e301c57e6a6e0415aea902097bd0565c46",
+   "world": "g2b-h3-dried-spring"
+  },
+  {
+   "actions": {
+    "attendre": 55,
+    "boire": 4,
+    "collecter": 5,
+    "dormir": 139,
+    "manger": 5,
+    "se_deplacer": 192
+   },
+   "death_causes": [],
+   "drinks": 4,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    14.851,
+    18.65,
+    8.8,
+    100.0,
+    98.49
+   ],
+   "first_drink_step": 4,
+   "genome": "cd3f8c4f04ab88c9ce8021a06fb54f7bd628369716ff924c967b5d2e208a83b1",
+   "genome_seed": 227,
+   "horizon": 400,
+   "life_seed": 2227,
+   "meals": 5,
+   "mean_step_ms": 0.8,
+   "replay_identical": true,
+   "steps_lived": 400,
+   "terminal": "censored",
+   "trace_head": "d88c3c81dbf48cb980b4e8609f01df67a6f06207f3b189827daf8a432ac5fc1e",
+   "world": "g2b-h3-dried-spring"
+  },
+  {
+   "actions": {
+    "attendre": 12,
+    "boire": 4,
+    "dormir": 79,
+    "se_deplacer": 144
+   },
+   "death_causes": [
+    "zero_food"
+   ],
+   "drinks": 4,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    0.8884,
+    0.0,
+    13.6,
+    100.0,
+    99.77
+   ],
+   "first_drink_step": 2,
+   "genome": "87bb9284e2438992d9b8682c2e08d906e2c6715631f312f14ce922e567ed85ea",
+   "genome_seed": 228,
+   "horizon": 400,
+   "life_seed": 2228,
+   "meals": 0,
+   "mean_step_ms": 0.4604,
+   "replay_identical": true,
+   "steps_lived": 239,
+   "terminal": "dead",
+   "trace_head": "a657d2a87c80d1aae164ed993265c0f1a92e39f9cedc65971223f5417a852c3b",
+   "world": "g2b-h3-dried-spring"
+  },
+  {
+   "actions": {
+    "attendre": 57,
+    "boire": 4,
+    "collecter": 11,
+    "dormir": 89,
+    "manger": 9,
+    "se_deplacer": 121
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 4,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    23.4596,
+    77.1,
+    0.0,
+    100.0,
+    99.246
+   ],
+   "first_drink_step": 34,
+   "genome": "fb26a9397e5d211b93697a18b722ab48b970167a352f0249d1f01b60d6ff853d",
+   "genome_seed": 229,
+   "horizon": 400,
+   "life_seed": 2229,
+   "meals": 9,
+   "mean_step_ms": 0.5822,
+   "replay_identical": true,
+   "steps_lived": 291,
+   "terminal": "dead",
+   "trace_head": "c9114e316d670cb7f350631a1bb2f44e7a172a24e209a4037957517cc66cbb7e",
+   "world": "g2b-h3-dried-spring"
+  },
+  {
+   "actions": {
+    "attendre": 37,
+    "boire": 4,
+    "collecter": 3,
+    "dormir": 115,
+    "manger": 3,
+    "se_deplacer": 179
+   },
+   "death_causes": [
+    "zero_water"
+   ],
+   "drinks": 4,
+   "drinks_at_far_spring": 0,
+   "final_body": [
+    0.4338,
+    10.05,
+    0.0,
+    100.0,
+    99.696
+   ],
+   "first_drink_step": 2,
+   "genome": "6b047391ecb2748b352827cd7a45d1a0cbf43e4c84c42a933be5340ba8a0f272",
+   "genome_seed": 230,
+   "horizon": 400,
+   "life_seed": 2230,
+   "meals": 3,
+   "mean_step_ms": 0.645,
+   "replay_identical": true,
+   "steps_lived": 341,
+   "terminal": "dead",
+   "trace_head": "f2cc6772e05e8a6b552e0487caf4cc167c5279a4daa50429682f9915cf8b6f61",
+   "world": "g2b-h3-dried-spring"
+  }
+ ],
+ "protocol": "i3-g2b-p11-heldout-v1"
+}
