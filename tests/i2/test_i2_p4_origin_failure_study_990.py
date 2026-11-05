@@ -306,6 +306,41 @@ class P4OriginFailure990Contract(unittest.TestCase):
         self.assertEqual(report["numeric_score_rejection_ticks"], [4])
         self.assertEqual(report["other_blocking_gate_ticks"], [3])
 
+    def test_v23_tag_outside_origin_window_is_not_whole_life_inactive(self):
+        # A tag on a real signed frame later in the life must not disappear
+        # just because the preregistered origin-exposure gate was never met.
+        trace = [dict(frame("attendre", factor_tagged=True), tick=1)]
+        diag = {"ticks": [{
+            "tick": 1, "failed_channels": [], "unknown_offered": [],
+            "reason": "NO_FAILED_CURRENT_NEED",
+        }]}
+        result = classify_protocol_exposure(
+            trace, diag, factor_enabled=True)
+        self.assertIn("NO_DOUBLE_FAILURE_EXPOSURE", result["labels"])
+        self.assertNotIn("FACTOR_INACTIVE", result["labels"])
+        self.assertEqual(result["factor_tag_ticks_whole_life"], [1])
+        self.assertEqual(result["factor_tag_ticks_after_exposure"], [])
+        self.assertEqual(
+            result["factor_chosen_motor_credit_ticks_whole_life"], [])
+
+    def test_factor_off_birth_cannot_have_signed_v23_tag(self):
+        trace = [dict(frame("attendre", factor_tagged=True), tick=1)]
+        diag = {"ticks": [{
+            "tick": 1, "failed_channels": [], "unknown_offered": [],
+            "reason": "NO_FAILED_CURRENT_NEED",
+        }]}
+        with self.assertRaisesRegex(ValueError, "factor-off"):
+            classify_protocol_exposure(trace, diag, factor_enabled=False)
+
+    def test_chosen_factor_credit_requires_recorded_frame_tag(self):
+        trace = [dict(frame("attendre", chosen_motor_credited=True), tick=1)]
+        diag = {"ticks": [{
+            "tick": 1, "failed_channels": [], "unknown_offered": [],
+            "reason": "NO_FAILED_CURRENT_NEED",
+        }]}
+        with self.assertRaisesRegex(ValueError, "missing v23"):
+            classify_protocol_exposure(trace, diag, factor_enabled=True)
+
     def test_visit_without_eating_retains_negative_outcome(self):
         trace = [dict(frame("se_deplacer_vers_passage",
                             site="camp"), tick=1, site_after="passage"),
