@@ -12,4 +12,4 @@ Aucun import de I0, I1 ou I2 (ADR-0001). La transition corporelle est recopiée 
 | `lab/dev_worlds.py` | Mondes de développement (jamais ceux d'un test préinscrit) |
 | `lab/first_falsifier.py` | Porte G2 préinscrite |
 
-Boucle d'un pas : `World.capture()` → `Mind.decide()` → `World.step(action, travail cognitif)` → `Mind.learn()`. Le travail cognitif d'un pas est facturé par le monde dans la même transition ; le rejeu de sommeil est facturé au pas suivant.
+Boucle d'un pas : `World.capture()` → `Mind.decide(capture, allowance)` → `World.step(action, travail cognitif)` → `Mind.observe_outcome()` → `Mind.prepare_learning()` → `World.pay_cognition()` → `Mind.learn_from_outcome()`. La physique v2 paie la décision avant l'action, puis prépaie l'apprentissage et les rejeux abordables dans le même pas. Aucun rejeu n'est reporté après le décès ou la fin d'observation. Voir [COGNITIVE_FUNDING.md](COGNITIVE_FUNDING.md) pour l'ordre causal et les limites du modèle.

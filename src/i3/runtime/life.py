@@ -11,7 +11,7 @@ from hashlib import sha256
 import json
 import time
 
-from i3.modules.body import CognitiveWork, cognitive_cost
+from i3.modules.body import CognitiveBudget, CognitiveWork
 from i3.modules.genome import digest as genome_digest
 from i3.runtime.provenance import build_manifest, digest
 from i3.modules.mind import Mind
@@ -39,18 +39,51 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
     drinks = meals = 0
     first_drink = None
     elapsed = 0.0
+    learning_updates = replays_done = inactive_steps = 0
     while world.t < horizon and not world.dead:
         t0 = time.perf_counter()
-        action, param, work, info = mind.decide(world.capture())
+        allowance = CognitiveBudget(world.body, world.laws)
+        action, param, work, info = mind.decide(world.capture(), allowance)
+        if work != allowance.work:
+            raise ValueError("declared decision bill does not match consumed allowance")
         result = world.step(action, param, work)
-        mind.learn(result)
-        accounting = result["cognitive_accounting"]
+        before_learning = result["body"]
+        learning = CognitiveBudget(before_learning, world.laws)
+        replay_limit = None
+        if not result["dead"] and mind.last is not None:
+            # Included in the prepaid control block, not in a learning ablation.
+            mind.observe_outcome(result)
+            replay_limit = mind.prepare_learning(result, learning)
+        if replay_limit is not None:
+            post_audit = world.pay_cognition(learning.work)
+            result["body"] = world.body
+            replays = mind.learn_from_outcome(result, replay_limit=replay_limit)
+            if replays != replay_limit:
+                raise RuntimeError("executed replay count differs from prepaid count")
+            learning_updates += 1
+            replays_done += replays
+        else:
+            post_audit = {c: {k: 0.0 for k in ("requested", "paid", "unpaid")}
+                          for c in totals}
+        phases = {
+            "decision": {"work": asdict(work), "accounting": result["cognitive_accounting"],
+                         "body_before": list(allowance.body),
+                         "body_after_debit": list(allowance.remaining)},
+            "learning": {"work": asdict(learning.work), "accounting": post_audit,
+                         "body_before": list(before_learning),
+                         "body_after_debit": list(world.body)},
+        }
+        accounting = {c: {k: result["cognitive_accounting"][c][k] + post_audit[c][k]
+                           for k in totals[c]} for c in totals}
+        work = CognitiveWork(*(getattr(work, k) + getattr(learning.work, k)
+                               for k in ("cycles", "simulated_steps", "memory_items", "replays")))
         shortfall_steps += any(accounting[c]["unpaid"] > 1e-12 for c in totals)
         for channel in totals:
             for key in totals[channel]:
                 totals[channel][key] += accounting[channel][key]
         elapsed += time.perf_counter() - t0
-        actions[action] += 1
+        actions[action if action is not None else "physical_inactivity"] += 1
+        inactive_steps += action is None
         if action == "boire":
             drinks += 1
             first_drink = first_drink or world.t
@@ -62,26 +95,26 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
         head = sha256((head + json.dumps(record, separators=(",", ":"),
                                          sort_keys=True)).encode()).hexdigest()
         evidence_head = digest({"previous": evidence_head, "record": record,
-                                "work": asdict(work), "accounting": accounting})
+                                "work": asdict(work), "accounting": accounting,
+                                "funding_phases": phases})
         if keep_trace:
             record["cognitive_work"] = asdict(work)
             record["cognitive_accounting"] = accounting
+            record["funding_phases"] = phases
             record["info"] = info
             trace.append(record)
     steps = world.t
-    pending_energy, pending_vigilance = cognitive_cost(
-        spec.laws, CognitiveWork(replays=mind.pending_replays))
-    payment_status = ("SHORTFALL" if shortfall_steps else
-                      "PENDING_REPLAY" if mind.pending_replays else
-                      "SETTLED_FOR_DECLARED_WORK")
     out = {
         "manifest": manifest, "manifest_id": manifest_id,
         "evidence_head": evidence_head,
-        "cognitive_accounting": {"totals": totals, "shortfall_steps": shortfall_steps,
-                                 "pending_replays": mind.pending_replays,
-                                 "pending_energy": pending_energy,
-                                 "pending_vigilance": pending_vigilance,
-                                 "status": payment_status},
+        "cognitive_accounting": {"schema": "i3-cognitive-funding/v2",
+                                 "totals": totals, "shortfall_steps": shortfall_steps,
+                                 "pending_replays": 0, "pending_energy": 0.0,
+                                 "pending_vigilance": 0.0,
+                                 "learning_updates": learning_updates,
+                                 "replays_executed": replays_done,
+                                 "inactive_steps": inactive_steps,
+                                 "status": "SETTLED_FOR_DECLARED_WORK"},
         "world": spec.name, "life_seed": life_seed, "horizon": horizon,
         "genome": genome_digest(genome),
         "steps_lived": steps,

@@ -52,38 +52,31 @@ class CognitiveAccountingTests(unittest.TestCase):
         for channel, bill in zip(("energy", "vigilance"), cognitive_cost(BodyLaws(), work)):
             self.assertEqual(audit[channel], {"requested": bill, "paid": bill, "unpaid": 0.})
 
-    def test_exhausted_energy_is_not_reported_as_paid(self):
-        audit = {}
-        out, _ = transition((0.1, 60., 40., 90., 50.), "attendre", BodyLaws(),
-                            CognitiveWork(cycles=10), accounting=audit)
-        self.assertEqual(out[0], 0.)
-        self.assertEqual(audit["energy"], {"requested": 0.2, "paid": 0., "unpaid": 0.2})
+    def test_exhausted_energy_is_rejected_before_payment(self):
+        audit = {"untouched": True}
+        with self.assertRaises(ValueError):
+            transition((0.1, 60., 40., 90., 50.), "attendre", BodyLaws(),
+                       CognitiveWork(cycles=10), accounting=audit)
+        self.assertEqual(audit, {"untouched": True})
 
-    def test_vigilance_shortfall_is_reported_separately(self):
-        audit = {}
-        transition((50., 60., 40., 90., 0.1), "attendre", BodyLaws(),
-                   CognitiveWork(cycles=10), accounting=audit)
-        self.assertAlmostEqual(audit["vigilance"]["unpaid"], 0.4)
-        self.assertEqual(audit["energy"]["unpaid"], 0.)
+    def test_vigilance_shortfall_is_rejected(self):
+        with self.assertRaises(ValueError):
+            transition((50., 60., 40., 90., 0.1), "attendre", BodyLaws(),
+                       CognitiveWork(cycles=10))
 
-    def test_zero_work_has_no_cognitive_debt(self):
+    def test_zero_work_inactivity_has_no_cognitive_debt(self):
         audit = {}
-        transition((0., 60., 40., 90., 0.), "attendre", BodyLaws(),
+        transition((0., 60., 40., 90., 0.), None, BodyLaws(),
                    CognitiveWork(), accounting=audit)
         for values in audit.values():
             self.assertEqual(values, {"requested": 0., "paid": 0., "unpaid": 0.})
 
-    def test_runtime_marks_shortfall_instead_of_claiming_full_payment(self):
-        def oversized(mind, cap):
+    def test_runtime_rejects_a_forged_bill_instead_of_returning_a_life_score(self):
+        def oversized(mind, cap, budget):
             mind.last = (cap["body"], ("attendre",), "attendre", None)
             return "attendre", None, CognitiveWork(cycles=100000), {"option": "unit-wait"}
-        with patch.object(Mind, "decide", oversized):
-            result = run_life(midpoint(), dev_open_field(), 1, 1)
-        audit = result["cognitive_accounting"]
-        self.assertEqual(audit["status"], "SHORTFALL")
-        self.assertEqual(audit["shortfall_steps"], 1)
-        self.assertGreater(audit["totals"]["energy"]["unpaid"], 0.)
-        self.assertEqual(result["terminal"], "censored")  # Not an invented death cause.
+        with patch.object(Mind, "decide", oversized), self.assertRaises(ValueError):
+            run_life(midpoint(), dev_open_field(), 1, 1)
 
     def test_accounting_is_not_in_first_person_capture(self):
         world = World(dev_open_field())
@@ -188,19 +181,20 @@ class ProvenanceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             run_life(midpoint(), dev_open_field(), True, 1)
 
-    def test_evidence_chain_includes_work_accounting_and_final_pending_bill(self):
+    def test_evidence_chain_includes_both_funded_phases_and_final_settlement(self):
         result = run_life(generation_zero(2), dev_open_field(), 4, 100, keep_trace=True)
         head = digest(result["manifest"])
         for row in result["trace"]:
             record = {k: v for k, v in row.items()
-                      if k not in ("info", "cognitive_work", "cognitive_accounting")}
+                      if k not in ("info", "cognitive_work", "cognitive_accounting", "funding_phases")}
             head = digest({"previous": head, "record": record,
-                           "work": row["cognitive_work"], "accounting": row["cognitive_accounting"]})
+                           "work": row["cognitive_work"], "accounting": row["cognitive_accounting"],
+                           "funding_phases": row["funding_phases"]})
         head = digest({"previous": head, "terminal": result["terminal"],
                        "accounting": result["cognitive_accounting"]})
         self.assertEqual(head, result["evidence_head"])
-        self.assertEqual(result["cognitive_accounting"]["status"], "PENDING_REPLAY")
-        self.assertGreater(result["cognitive_accounting"]["pending_energy"], 0.)
+        self.assertEqual(result["cognitive_accounting"]["status"], "SETTLED_FOR_DECLARED_WORK")
+        self.assertEqual(result["cognitive_accounting"]["pending_energy"], 0.)
 
     def test_observer_trace_and_protocol_do_not_change_decisions(self):
         a = run_life(midpoint(), dev_open_field(), 1, 20, keep_trace=True, protocol="unit-A")
@@ -211,8 +205,8 @@ class ProvenanceTests(unittest.TestCase):
         self.assertEqual(a["evidence_head"], c["evidence_head"])
 
 
-class BaselineParityTests(unittest.TestCase):
-    def test_original_development_trajectories_are_unchanged(self):
+class VersionedPhysicsTests(unittest.TestCase):
+    def test_v1_differentials_are_not_mislabelled_as_v2_parity(self):
         # Generated from ac71bef2 source BEFORE this refactor. No held-out seeds.
         cases = [(dev_open_field, 2, "b9d9812f3091d5b0a8d7d0a0e7e449d9b78743220e71d63460f0c349b4afe981"),
                  (dev_open_field, 9, "edb6a9007a302fbf27e83750b9069b5da11b9edca5137d87780526fa44526ad5"),
@@ -221,7 +215,10 @@ class BaselineParityTests(unittest.TestCase):
         for factory, seed, expected in cases:
             with self.subTest(world=factory.__name__, seed=seed):
                 result = run_life(generation_zero(seed), factory(), 4, 100)
-                self.assertEqual(result["trace_head"], expected)
+                self.assertEqual(result["manifest"]["execution_model"], "i3-funded-v2")
+                self.assertEqual(result["manifest"]["world"]["laws"]["version"], "i3-body-laws-v2")
+                self.assertEqual(len(expected), 64)  # Historical hash retained, not a target.
+                self.assertEqual(result["cognitive_accounting"]["shortfall_steps"], 0)
 
 
 if __name__ == "__main__":

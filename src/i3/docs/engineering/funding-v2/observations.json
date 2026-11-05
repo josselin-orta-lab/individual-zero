@@ -1,0 +1,1966 @@
+{
+  "baseline_lives": [
+    {
+      "actions": {
+        "attendre": 14,
+        "boire": 13,
+        "collecter": 3,
+        "dormir": 17,
+        "manger": 3,
+        "se_deplacer": 50
+      },
+      "cognitive_accounting": {
+        "pending_energy": 0.08,
+        "pending_replays": 16,
+        "pending_vigilance": 0.16,
+        "shortfall_steps": 0,
+        "status": "PENDING_REPLAY",
+        "totals": {
+          "energy": {
+            "paid": 10.647600000000002,
+            "requested": 10.647600000000002,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 16.20600000000001,
+            "requested": 16.20600000000001,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [],
+      "final_body": [
+        4.4524,
+        49.83,
+        81.2,
+        72.2,
+        100.0
+      ],
+      "genome_seed": 2,
+      "horizon": 100,
+      "life_seed": 4,
+      "mean_step_ms": 0.5801,
+      "steps_lived": 100,
+      "terminal": "censored",
+      "trace_head": "b9d9812f3091d5b0a8d7d0a0e7e449d9b78743220e71d63460f0c349b4afe981",
+      "world": "dev-open-field"
+    },
+    {
+      "actions": {
+        "attendre": 11,
+        "boire": 4,
+        "dormir": 26,
+        "se_deplacer": 59
+      },
+      "cognitive_accounting": {
+        "pending_energy": 0.0,
+        "pending_replays": 0,
+        "pending_vigilance": 0.0,
+        "shortfall_steps": 0,
+        "status": "SETTLED_FOR_DECLARED_WORK",
+        "totals": {
+          "energy": {
+            "paid": 9.907799999999996,
+            "requested": 9.907799999999996,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 13.355999999999998,
+            "requested": 13.355999999999998,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [],
+      "final_body": [
+        24.2422,
+        30.36,
+        69.2,
+        97.4,
+        99.768
+      ],
+      "genome_seed": 9,
+      "horizon": 100,
+      "life_seed": 4,
+      "mean_step_ms": 0.637,
+      "steps_lived": 100,
+      "terminal": "censored",
+      "trace_head": "edb6a9007a302fbf27e83750b9069b5da11b9edca5137d87780526fa44526ad5",
+      "world": "dev-open-field"
+    },
+    {
+      "actions": {
+        "attendre": 22,
+        "boire": 2,
+        "collecter": 10,
+        "dormir": 27,
+        "manger": 6,
+        "se_deplacer": 33
+      },
+      "cognitive_accounting": {
+        "pending_energy": 0.08,
+        "pending_replays": 16,
+        "pending_vigilance": 0.16,
+        "shortfall_steps": 0,
+        "status": "PENDING_REPLAY",
+        "totals": {
+          "energy": {
+            "paid": 10.325,
+            "requested": 10.325,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 17.95400000000001,
+            "requested": 17.95400000000001,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [],
+      "final_body": [
+        57.975,
+        99.65,
+        65.0,
+        100.0,
+        100.0
+      ],
+      "genome_seed": 2,
+      "horizon": 100,
+      "life_seed": 4,
+      "mean_step_ms": 0.5002,
+      "steps_lived": 100,
+      "terminal": "censored",
+      "trace_head": "3e8631fc3e62a34ea4881d572a5e4a53e26cd88657b8997989ae49896fb35894",
+      "world": "dev-long-corridor"
+    },
+    {
+      "actions": {
+        "attendre": 24,
+        "boire": 11,
+        "collecter": 9,
+        "dormir": 24,
+        "manger": 9,
+        "se_deplacer": 23
+      },
+      "cognitive_accounting": {
+        "pending_energy": 0.08,
+        "pending_replays": 16,
+        "pending_vigilance": 0.16,
+        "shortfall_steps": 0,
+        "status": "PENDING_REPLAY",
+        "totals": {
+          "energy": {
+            "paid": 8.940399999999999,
+            "requested": 8.940399999999999,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 15.064000000000018,
+            "requested": 15.064000000000018,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [],
+      "final_body": [
+        64.6596,
+        96.45,
+        98.8,
+        100.0,
+        100.0
+      ],
+      "genome_seed": 9,
+      "horizon": 100,
+      "life_seed": 4,
+      "mean_step_ms": 0.4466,
+      "steps_lived": 100,
+      "terminal": "censored",
+      "trace_head": "8440caa65a1f19a1dfef6de7b8a99776231da7c0009e336ca931fb141fd2d2b3",
+      "world": "dev-long-corridor"
+    },
+    {
+      "actions": {
+        "attendre": 63,
+        "boire": 51,
+        "collecter": 14,
+        "dormir": 127,
+        "manger": 13,
+        "se_deplacer": 132
+      },
+      "cognitive_accounting": {
+        "pending_energy": 0.08,
+        "pending_replays": 16,
+        "pending_vigilance": 0.16,
+        "shortfall_steps": 0,
+        "status": "PENDING_REPLAY",
+        "totals": {
+          "energy": {
+            "paid": 61.86559999999997,
+            "requested": 61.86559999999997,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 85.53799999999994,
+            "requested": 85.53799999999994,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [],
+      "final_body": [
+        67.0844,
+        30.15,
+        68.8,
+        24.0,
+        100.0
+      ],
+      "genome_seed": 0,
+      "horizon": 400,
+      "life_seed": 4,
+      "mean_step_ms": 0.7779,
+      "steps_lived": 400,
+      "terminal": "censored",
+      "trace_head": "eea4947f8096cc16699e1df66c5c7b81bcc16083bdb33d70744a30b6ddf104e1",
+      "world": "dev-open-field"
+    },
+    {
+      "actions": {
+        "attendre": 34,
+        "dormir": 39,
+        "se_deplacer": 53
+      },
+      "cognitive_accounting": {
+        "pending_energy": 0.0,
+        "pending_replays": 0,
+        "pending_vigilance": 0.0,
+        "shortfall_steps": 0,
+        "status": "SETTLED_FOR_DECLARED_WORK",
+        "totals": {
+          "energy": {
+            "paid": 13.393800000000002,
+            "requested": 13.393800000000002,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 18.940000000000033,
+            "requested": 18.940000000000033,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [
+        "zero_water"
+      ],
+      "final_body": [
+        62.7062,
+        23.1,
+        0.0,
+        100.0,
+        99.776
+      ],
+      "genome_seed": 1,
+      "horizon": 400,
+      "life_seed": 4,
+      "mean_step_ms": 0.5765,
+      "steps_lived": 126,
+      "terminal": "dead",
+      "trace_head": "d29153197a694bc26287e285944f4e99d5da5dfb97636376ec664590dec4a7f7",
+      "world": "dev-open-field"
+    },
+    {
+      "actions": {
+        "attendre": 156,
+        "boire": 123,
+        "collecter": 11,
+        "dormir": 35,
+        "manger": 11,
+        "se_deplacer": 64
+      },
+      "cognitive_accounting": {
+        "pending_energy": 0.08,
+        "pending_replays": 16,
+        "pending_vigilance": 0.16,
+        "shortfall_steps": 232,
+        "status": "SHORTFALL",
+        "totals": {
+          "energy": {
+            "paid": 19.443399999999986,
+            "requested": 40.63060000000013,
+            "unpaid": 21.187200000000075
+          },
+          "vigilance": {
+            "paid": 36.37199999999995,
+            "requested": 36.37199999999995,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [],
+      "final_body": [
+        2.9006,
+        31.93,
+        83.6,
+        40.2,
+        100.0
+      ],
+      "genome_seed": 2,
+      "horizon": 400,
+      "life_seed": 4,
+      "mean_step_ms": 0.3489,
+      "steps_lived": 400,
+      "terminal": "censored",
+      "trace_head": "177a8ad2182cfd909d1b200d6bf29209c385d730b2655509a0f794904fcd9b14",
+      "world": "dev-open-field"
+    },
+    {
+      "actions": {
+        "attendre": 97,
+        "boire": 67,
+        "collecter": 12,
+        "dormir": 102,
+        "manger": 12,
+        "se_deplacer": 110
+      },
+      "cognitive_accounting": {
+        "pending_energy": 0.0,
+        "pending_replays": 0,
+        "pending_vigilance": 0.0,
+        "shortfall_steps": 0,
+        "status": "SETTLED_FOR_DECLARED_WORK",
+        "totals": {
+          "energy": {
+            "paid": 58.746599999999994,
+            "requested": 58.746599999999994,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 84.15200000000003,
+            "requested": 84.15200000000003,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [],
+      "final_body": [
+        21.8034,
+        51.72,
+        5.2,
+        65.8,
+        99.434
+      ],
+      "genome_seed": 3,
+      "horizon": 400,
+      "life_seed": 4,
+      "mean_step_ms": 0.7446,
+      "steps_lived": 400,
+      "terminal": "censored",
+      "trace_head": "4cfe597056e238417812fdab62091d7c5653e2fa9c75cd5e66de99089a0dc198",
+      "world": "dev-open-field"
+    },
+    {
+      "actions": {
+        "attendre": 153,
+        "boire": 2,
+        "collecter": 4,
+        "dormir": 35,
+        "manger": 4,
+        "se_deplacer": 78
+      },
+      "cognitive_accounting": {
+        "pending_energy": 0.08,
+        "pending_replays": 16,
+        "pending_vigilance": 0.16,
+        "shortfall_steps": 143,
+        "status": "SHORTFALL",
+        "totals": {
+          "energy": {
+            "paid": 14.269400000000001,
+            "requested": 29.367799999999992,
+            "unpaid": 15.0984
+          },
+          "vigilance": {
+            "paid": 25.211999999999787,
+            "requested": 25.211999999999787,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [
+        "zero_water"
+      ],
+      "final_body": [
+        0.0,
+        14.98,
+        0.0,
+        95.2,
+        100.0
+      ],
+      "genome_seed": 4,
+      "horizon": 400,
+      "life_seed": 4,
+      "mean_step_ms": 0.3374,
+      "steps_lived": 276,
+      "terminal": "dead",
+      "trace_head": "4add6c51aa46f18f9fff95f81f5ec4d960e810f2c9c848ef2f9d162221a62f2c",
+      "world": "dev-open-field"
+    },
+    {
+      "actions": {
+        "attendre": 181,
+        "boire": 59,
+        "collecter": 8,
+        "dormir": 53,
+        "manger": 8,
+        "se_deplacer": 91
+      },
+      "cognitive_accounting": {
+        "pending_energy": 0.0,
+        "pending_replays": 0,
+        "pending_vigilance": 0.0,
+        "shortfall_steps": 185,
+        "status": "SHORTFALL",
+        "totals": {
+          "energy": {
+            "paid": 25.1076,
+            "requested": 47.71400000000008,
+            "unpaid": 22.60639999999994
+          },
+          "vigilance": {
+            "paid": 36.0799999999996,
+            "requested": 36.0799999999996,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [],
+      "final_body": [
+        0.0,
+        10.37,
+        100.0,
+        72.8,
+        96.712
+      ],
+      "genome_seed": 5,
+      "horizon": 400,
+      "life_seed": 4,
+      "mean_step_ms": 0.3968,
+      "steps_lived": 400,
+      "terminal": "censored",
+      "trace_head": "f7ebfd91cdc8ff83da17bdb13619e841fde92aa9f94497cd9a540150405879cd",
+      "world": "dev-open-field"
+    },
+    {
+      "actions": {
+        "attendre": 89,
+        "boire": 56,
+        "collecter": 12,
+        "dormir": 120,
+        "manger": 12,
+        "se_deplacer": 111
+      },
+      "cognitive_accounting": {
+        "pending_energy": 0.08,
+        "pending_replays": 16,
+        "pending_vigilance": 0.16,
+        "shortfall_steps": 0,
+        "status": "PENDING_REPLAY",
+        "totals": {
+          "energy": {
+            "paid": 68.57360000000001,
+            "requested": 68.57360000000001,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 83.90199999999999,
+            "requested": 83.90199999999999,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [],
+      "final_body": [
+        72.2764,
+        24.82,
+        27.6,
+        35.8,
+        100.0
+      ],
+      "genome_seed": 6,
+      "horizon": 400,
+      "life_seed": 4,
+      "mean_step_ms": 0.9177,
+      "steps_lived": 400,
+      "terminal": "censored",
+      "trace_head": "fbae2e66bcd26c07a4a9c92fe0287df3de9192ad1252952b370e69c0db8c472e",
+      "world": "dev-open-field"
+    },
+    {
+      "actions": {
+        "attendre": 118,
+        "boire": 47,
+        "collecter": 14,
+        "dormir": 107,
+        "manger": 13,
+        "se_deplacer": 101
+      },
+      "cognitive_accounting": {
+        "pending_energy": 0.0,
+        "pending_replays": 0,
+        "pending_vigilance": 0.0,
+        "shortfall_steps": 0,
+        "status": "SETTLED_FOR_DECLARED_WORK",
+        "totals": {
+          "energy": {
+            "paid": 56.58419999999995,
+            "requested": 56.58419999999995,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 83.40599999999995,
+            "requested": 83.40599999999995,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [],
+      "final_body": [
+        57.1158,
+        32.45,
+        99.6,
+        31.0,
+        99.306
+      ],
+      "genome_seed": 7,
+      "horizon": 400,
+      "life_seed": 4,
+      "mean_step_ms": 0.846,
+      "steps_lived": 400,
+      "terminal": "censored",
+      "trace_head": "3fe0e595e77ee76512928833c8341664c15a24afbafbfe25aac4534898fed3e4",
+      "world": "dev-open-field"
+    },
+    {
+      "actions": {
+        "attendre": 105,
+        "boire": 36,
+        "collecter": 12,
+        "dormir": 120,
+        "manger": 12,
+        "se_deplacer": 115
+      },
+      "cognitive_accounting": {
+        "pending_energy": 0.0,
+        "pending_replays": 0,
+        "pending_vigilance": 0.0,
+        "shortfall_steps": 0,
+        "status": "SETTLED_FOR_DECLARED_WORK",
+        "totals": {
+          "energy": {
+            "paid": 49.83440000000008,
+            "requested": 49.83440000000008,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 74.52799999999984,
+            "requested": 74.52799999999984,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [],
+      "final_body": [
+        82.4156,
+        45.3,
+        100.0,
+        100.0,
+        99.602
+      ],
+      "genome_seed": 0,
+      "horizon": 400,
+      "life_seed": 4,
+      "mean_step_ms": 0.5536,
+      "steps_lived": 400,
+      "terminal": "censored",
+      "trace_head": "ed4bf26df409bf9988055cf81391522bcd53106624e781159dd77673514ed4c8",
+      "world": "dev-long-corridor"
+    },
+    {
+      "actions": {
+        "attendre": 88,
+        "boire": 36,
+        "collecter": 32,
+        "dormir": 109,
+        "manger": 32,
+        "se_deplacer": 103
+      },
+      "cognitive_accounting": {
+        "pending_energy": 0.08,
+        "pending_replays": 16,
+        "pending_vigilance": 0.16,
+        "shortfall_steps": 0,
+        "status": "PENDING_REPLAY",
+        "totals": {
+          "energy": {
+            "paid": 49.19779999999982,
+            "requested": 49.19779999999982,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 69.82199999999995,
+            "requested": 69.82199999999995,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [],
+      "final_body": [
+        50.0022,
+        98.7,
+        99.2,
+        100.0,
+        100.0
+      ],
+      "genome_seed": 1,
+      "horizon": 400,
+      "life_seed": 4,
+      "mean_step_ms": 0.5144,
+      "steps_lived": 400,
+      "terminal": "censored",
+      "trace_head": "aef4a6a6b76521bcc400da7980e32d9c78b960f233135937f238e7f1678e4e93",
+      "world": "dev-long-corridor"
+    },
+    {
+      "actions": {
+        "attendre": 106,
+        "boire": 19,
+        "collecter": 33,
+        "dormir": 122,
+        "manger": 13,
+        "se_deplacer": 107
+      },
+      "cognitive_accounting": {
+        "pending_energy": 0.0,
+        "pending_replays": 0,
+        "pending_vigilance": 0.0,
+        "shortfall_steps": 0,
+        "status": "SETTLED_FOR_DECLARED_WORK",
+        "totals": {
+          "energy": {
+            "paid": 54.66800000000009,
+            "requested": 54.66800000000009,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 79.50200000000002,
+            "requested": 79.50200000000002,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [],
+      "final_body": [
+        86.232,
+        99.45,
+        89.6,
+        100.0,
+        99.724
+      ],
+      "genome_seed": 2,
+      "horizon": 400,
+      "life_seed": 4,
+      "mean_step_ms": 0.5933,
+      "steps_lived": 400,
+      "terminal": "censored",
+      "trace_head": "bf69ab3cae0c04e4f65f836e065528004c03e39f6b0aa977bd40322471e3dbab",
+      "world": "dev-long-corridor"
+    },
+    {
+      "actions": {
+        "attendre": 102,
+        "boire": 36,
+        "collecter": 27,
+        "dormir": 116,
+        "manger": 10,
+        "se_deplacer": 109
+      },
+      "cognitive_accounting": {
+        "pending_energy": 0.0,
+        "pending_replays": 0,
+        "pending_vigilance": 0.0,
+        "shortfall_steps": 0,
+        "status": "SETTLED_FOR_DECLARED_WORK",
+        "totals": {
+          "energy": {
+            "paid": 54.89839999999985,
+            "requested": 54.89839999999985,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 91.93999999999983,
+            "requested": 91.93999999999983,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [],
+      "final_body": [
+        64.4016,
+        79.55,
+        100.0,
+        100.0,
+        99.224
+      ],
+      "genome_seed": 3,
+      "horizon": 400,
+      "life_seed": 4,
+      "mean_step_ms": 0.5727,
+      "steps_lived": 400,
+      "terminal": "censored",
+      "trace_head": "93a08273c62e6989689462dbf236d161877cb475acbb3b23331a21d496880342",
+      "world": "dev-long-corridor"
+    },
+    {
+      "actions": {
+        "attendre": 106,
+        "boire": 29,
+        "collecter": 36,
+        "dormir": 117,
+        "manger": 11,
+        "se_deplacer": 101
+      },
+      "cognitive_accounting": {
+        "pending_energy": 0.08,
+        "pending_replays": 16,
+        "pending_vigilance": 0.16,
+        "shortfall_steps": 0,
+        "status": "PENDING_REPLAY",
+        "totals": {
+          "energy": {
+            "paid": 59.77840000000002,
+            "requested": 59.77840000000002,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 88.67199999999977,
+            "requested": 88.67199999999977,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [],
+      "final_body": [
+        71.1216,
+        92.3,
+        94.0,
+        100.0,
+        100.0
+      ],
+      "genome_seed": 4,
+      "horizon": 400,
+      "life_seed": 4,
+      "mean_step_ms": 0.5606,
+      "steps_lived": 400,
+      "terminal": "censored",
+      "trace_head": "7b9cf49e7ab1ca9401dff5cbad66b6f0cfa03f49079aab235201b6f13366e405",
+      "world": "dev-long-corridor"
+    },
+    {
+      "actions": {
+        "attendre": 110,
+        "boire": 36,
+        "collecter": 16,
+        "dormir": 110,
+        "manger": 16,
+        "se_deplacer": 112
+      },
+      "cognitive_accounting": {
+        "pending_energy": 0.0,
+        "pending_replays": 0,
+        "pending_vigilance": 0.0,
+        "shortfall_steps": 0,
+        "status": "SETTLED_FOR_DECLARED_WORK",
+        "totals": {
+          "energy": {
+            "paid": 52.93539999999997,
+            "requested": 52.93539999999997,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 72.87199999999993,
+            "requested": 72.87199999999993,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [],
+      "final_body": [
+        47.5646,
+        96.05,
+        98.8,
+        100.0,
+        99.512
+      ],
+      "genome_seed": 5,
+      "horizon": 400,
+      "life_seed": 4,
+      "mean_step_ms": 0.5487,
+      "steps_lived": 400,
+      "terminal": "censored",
+      "trace_head": "35cb4523ae3e8d8f9658d3eef58be1e750f3d646c542d31fd113b17a0d300ddd",
+      "world": "dev-long-corridor"
+    },
+    {
+      "actions": {
+        "attendre": 308,
+        "boire": 15,
+        "collecter": 3,
+        "dormir": 19,
+        "manger": 3,
+        "se_deplacer": 52
+      },
+      "cognitive_accounting": {
+        "pending_energy": 0.0,
+        "pending_replays": 0,
+        "pending_vigilance": 0.0,
+        "shortfall_steps": 286,
+        "status": "SHORTFALL",
+        "totals": {
+          "energy": {
+            "paid": 8.8048,
+            "requested": 31.958000000000006,
+            "unpaid": 23.153200000000005
+          },
+          "vigilance": {
+            "paid": 28.909999999999656,
+            "requested": 28.909999999999656,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [],
+      "final_body": [
+        0.0,
+        11.65,
+        12.4,
+        100.0,
+        87.806
+      ],
+      "genome_seed": 6,
+      "horizon": 400,
+      "life_seed": 4,
+      "mean_step_ms": 0.242,
+      "steps_lived": 400,
+      "terminal": "censored",
+      "trace_head": "5d76353fe5a0c576870914c8da741b0a13f424027b13bbd1aa5f437eb7289cdb",
+      "world": "dev-long-corridor"
+    },
+    {
+      "actions": {
+        "attendre": 101,
+        "boire": 35,
+        "collecter": 11,
+        "dormir": 117,
+        "manger": 9,
+        "se_deplacer": 127
+      },
+      "cognitive_accounting": {
+        "pending_energy": 0.0,
+        "pending_replays": 0,
+        "pending_vigilance": 0.0,
+        "shortfall_steps": 0,
+        "status": "SETTLED_FOR_DECLARED_WORK",
+        "totals": {
+          "energy": {
+            "paid": 46.91780000000005,
+            "requested": 46.91780000000005,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 85.40200000000004,
+            "requested": 85.40200000000004,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [],
+      "final_body": [
+        56.7322,
+        86.95,
+        99.2,
+        100.0,
+        99.674
+      ],
+      "genome_seed": 7,
+      "horizon": 400,
+      "life_seed": 4,
+      "mean_step_ms": 0.5697,
+      "steps_lived": 400,
+      "terminal": "censored",
+      "trace_head": "0e451e0df2bd9d598e02fe0e516ba535f55c3cf2f49f18d977e348b28bc1539e",
+      "world": "dev-long-corridor"
+    }
+  ],
+  "baseline_remote_commit": "57d07cfbcb55ab31969422977acc4ffba1de7f6e",
+  "baseline_source_digest": "56af3fae91c30878f420fbe557dd4f38c32179151328c635e186bbfde1768acf",
+  "baseline_source_files": {
+    "config/__init__.py": "ce99dc4160ef4de11692297e2bb02d361208390ed143380d8ce8d6cd47d5f6a2",
+    "lab/__init__.py": "7a2e29f85bb7fb848c6487cfda64b651f07f922be5ff0e904b396f21e37f7317",
+    "lab/dev_worlds.py": "708d65066bc7b510f90be5b7ecae2fb1d0d6671cde35216cc1f0e1c41d838b5f",
+    "lab/first_falsifier.py": "62e6421d32966d96ca02da5d91f442b2060abf07f9f5ef9723b0683f6d40621e",
+    "lab/heldout_p11.py": "48b2f008fd3713e716ff0b941a84471746d51c2859e1f4f2ad2347366ea8746c",
+    "lab/heldout_p12.py": "cca75404768ed53204bd8433b37c51a3aa6f9c57118a1cd823e2b0ad15f24543",
+    "lab/probes.py": "2df51dfbfefe302a2487ffb4ff22deb30ba5fe7ff23995124ad6521c551df3af",
+    "lab/worldgen.py": "49e75c73216d20a855d177512c13892d2ff0f90ed019fe5b195f5ab0adb87692",
+    "modules/__init__.py": "399b8f81ea4ee626684d6bccd0d3f4c922d6b52146be8313a9da6395c473bdf5",
+    "modules/body.py": "9d4369d8c7cd450780e9e6f6acab85a6a6783ea66e22b56937c847e17f714613",
+    "modules/genome.py": "4984f3750b65cdfbf0959b5e06f44933b49db2515b33ffbf871a6c05b30a45a5",
+    "modules/mind.py": "15994b64c8a5dc1fbb1ee66f4cacd1f10fef879316e964c766c33429a1d2e2e7",
+    "modules/world.py": "7382fd83cc225363480c3ee6d33937a5e3955197943d8d927750de4edaf36e45",
+    "runtime/__init__.py": "2fb9064525c020b4bc856b23003a425fb9d1f54f08175b86bc336f105a5a7445",
+    "runtime/life.py": "70cca9e6d13ee7b390c6d831cf63073959524d27be525e9fb7904956702a7121",
+    "runtime/provenance.py": "0330a76b7130abae1804a7f09140be6379a6fce6333de4256765ad00b5bbe13b"
+  },
+  "candidate_lives": [
+    {
+      "actions": {
+        "attendre": 7,
+        "boire": 8,
+        "collecter": 3,
+        "dormir": 25,
+        "manger": 2,
+        "physical_inactivity": 9,
+        "se_deplacer": 46
+      },
+      "cognitive_accounting": {
+        "inactive_steps": 9,
+        "learning_updates": 91,
+        "pending_energy": 0.0,
+        "pending_replays": 0,
+        "pending_vigilance": 0.0,
+        "replays_executed": 400,
+        "schema": "i3-cognitive-funding/v2",
+        "shortfall_steps": 0,
+        "status": "SETTLED_FOR_DECLARED_WORK",
+        "totals": {
+          "energy": {
+            "paid": 52.45980000000001,
+            "requested": 52.45980000000001,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 68.73200000000004,
+            "requested": 68.73200000000004,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [],
+      "final_body": [
+        0.0902,
+        42.61,
+        80.8,
+        80.4,
+        98.22
+      ],
+      "genome_seed": 2,
+      "horizon": 100,
+      "life_seed": 4,
+      "mean_step_ms": 0.831,
+      "steps_lived": 100,
+      "terminal": "censored",
+      "trace_head": "feceb417631529caed199991ec1cee3cfc7c41e4f142817c4a61c226f052ceae",
+      "world": "dev-open-field"
+    },
+    {
+      "actions": {
+        "attendre": 10,
+        "boire": 4,
+        "dormir": 33,
+        "se_deplacer": 53
+      },
+      "cognitive_accounting": {
+        "inactive_steps": 0,
+        "learning_updates": 100,
+        "pending_energy": 0.0,
+        "pending_replays": 0,
+        "pending_vigilance": 0.0,
+        "replays_executed": 515,
+        "schema": "i3-cognitive-funding/v2",
+        "shortfall_steps": 0,
+        "status": "SETTLED_FOR_DECLARED_WORK",
+        "totals": {
+          "energy": {
+            "paid": 57.186600000000006,
+            "requested": 57.186600000000006,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 72.73399999999994,
+            "requested": 72.73399999999994,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [],
+      "final_body": [
+        10.3134,
+        29.19,
+        69.2,
+        98.6,
+        99.196
+      ],
+      "genome_seed": 9,
+      "horizon": 100,
+      "life_seed": 4,
+      "mean_step_ms": 0.9161,
+      "steps_lived": 100,
+      "terminal": "censored",
+      "trace_head": "69ab69d4b2f71bde0daf27eb2b73317e436cf829ec54b11c51029cdd2f8e6bc2",
+      "world": "dev-open-field"
+    },
+    {
+      "actions": {
+        "attendre": 21,
+        "boire": 2,
+        "collecter": 8,
+        "dormir": 34,
+        "manger": 6,
+        "se_deplacer": 29
+      },
+      "cognitive_accounting": {
+        "inactive_steps": 0,
+        "learning_updates": 100,
+        "pending_energy": 0.0,
+        "pending_replays": 0,
+        "pending_vigilance": 0.0,
+        "replays_executed": 541,
+        "schema": "i3-cognitive-funding/v2",
+        "shortfall_steps": 0,
+        "status": "SETTLED_FOR_DECLARED_WORK",
+        "totals": {
+          "energy": {
+            "paid": 56.716599999999985,
+            "requested": 56.716599999999985,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 77.17199999999995,
+            "requested": 77.17199999999995,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [],
+      "final_body": [
+        42.9334,
+        94.45,
+        65.0,
+        100.0,
+        99.196
+      ],
+      "genome_seed": 2,
+      "horizon": 100,
+      "life_seed": 4,
+      "mean_step_ms": 0.9816,
+      "steps_lived": 100,
+      "terminal": "censored",
+      "trace_head": "8b08d7def42dc7011b14191bfef09abc4666137ab5f7329f4c8c6a2529f1fc18",
+      "world": "dev-long-corridor"
+    },
+    {
+      "actions": {
+        "attendre": 22,
+        "boire": 11,
+        "collecter": 9,
+        "dormir": 28,
+        "manger": 9,
+        "se_deplacer": 21
+      },
+      "cognitive_accounting": {
+        "inactive_steps": 0,
+        "learning_updates": 100,
+        "pending_energy": 0.0,
+        "pending_replays": 0,
+        "pending_vigilance": 0.0,
+        "replays_executed": 444,
+        "schema": "i3-cognitive-funding/v2",
+        "shortfall_steps": 0,
+        "status": "SETTLED_FOR_DECLARED_WORK",
+        "totals": {
+          "energy": {
+            "paid": 49.37560000000002,
+            "requested": 49.37560000000002,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 68.524,
+            "requested": 68.524,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [],
+      "final_body": [
+        40.9244,
+        95.35,
+        99.6,
+        100.0,
+        99.196
+      ],
+      "genome_seed": 9,
+      "horizon": 100,
+      "life_seed": 4,
+      "mean_step_ms": 0.7301,
+      "steps_lived": 100,
+      "terminal": "censored",
+      "trace_head": "040d642e258a81236620d7219c914204ca0c1dfdfa19db170601e9150ddf7ca9",
+      "world": "dev-long-corridor"
+    },
+    {
+      "actions": {
+        "attendre": 77,
+        "boire": 47,
+        "collecter": 15,
+        "dormir": 172,
+        "manger": 15,
+        "se_deplacer": 74
+      },
+      "cognitive_accounting": {
+        "inactive_steps": 0,
+        "learning_updates": 400,
+        "pending_energy": 0.0,
+        "pending_replays": 0,
+        "pending_vigilance": 0.0,
+        "replays_executed": 2747,
+        "schema": "i3-cognitive-funding/v2",
+        "shortfall_steps": 0,
+        "status": "SETTLED_FOR_DECLARED_WORK",
+        "totals": {
+          "energy": {
+            "paid": 298.72640000000035,
+            "requested": 298.72640000000035,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 366.7759999999999,
+            "requested": 366.7759999999999,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [],
+      "final_body": [
+        76.3236,
+        34.22,
+        73.6,
+        19.8,
+        98.0
+      ],
+      "genome_seed": 0,
+      "horizon": 400,
+      "life_seed": 4,
+      "mean_step_ms": 1.2438,
+      "steps_lived": 400,
+      "terminal": "censored",
+      "trace_head": "de34a59aaefba8158a0acb7cdd4f1c764b15d26dd8d356fe426c5dd3471d4767",
+      "world": "dev-open-field"
+    },
+    {
+      "actions": {
+        "attendre": 26,
+        "dormir": 43,
+        "se_deplacer": 57
+      },
+      "cognitive_accounting": {
+        "inactive_steps": 0,
+        "learning_updates": 125,
+        "pending_energy": 0.0,
+        "pending_replays": 0,
+        "pending_vigilance": 0.0,
+        "replays_executed": 662,
+        "schema": "i3-cognitive-funding/v2",
+        "shortfall_steps": 0,
+        "status": "SETTLED_FOR_DECLARED_WORK",
+        "totals": {
+          "energy": {
+            "paid": 69.39400000000002,
+            "requested": 69.39400000000002,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 89.55599999999993,
+            "requested": 89.55599999999993,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [
+        "zero_water"
+      ],
+      "final_body": [
+        16.506,
+        22.35,
+        0.0,
+        100.0,
+        98.458
+      ],
+      "genome_seed": 1,
+      "horizon": 400,
+      "life_seed": 4,
+      "mean_step_ms": 0.856,
+      "steps_lived": 126,
+      "terminal": "dead",
+      "trace_head": "c92252c53ca7f29926a7f8f8a813064eacefab122f542f2a6e231223434962af",
+      "world": "dev-open-field"
+    },
+    {
+      "actions": {
+        "attendre": 7,
+        "boire": 8,
+        "collecter": 3,
+        "dormir": 25,
+        "manger": 2,
+        "physical_inactivity": 211,
+        "se_deplacer": 46
+      },
+      "cognitive_accounting": {
+        "inactive_steps": 211,
+        "learning_updates": 91,
+        "pending_energy": 0.0,
+        "pending_replays": 0,
+        "pending_vigilance": 0.0,
+        "replays_executed": 400,
+        "schema": "i3-cognitive-funding/v2",
+        "shortfall_steps": 0,
+        "status": "SETTLED_FOR_DECLARED_WORK",
+        "totals": {
+          "energy": {
+            "paid": 52.45980000000001,
+            "requested": 52.45980000000001,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 68.73200000000004,
+            "requested": 68.73200000000004,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [
+        "zero_water"
+      ],
+      "final_body": [
+        0.0902,
+        2.21,
+        0.0,
+        80.4,
+        98.22
+      ],
+      "genome_seed": 2,
+      "horizon": 400,
+      "life_seed": 4,
+      "mean_step_ms": 0.3432,
+      "steps_lived": 302,
+      "terminal": "dead",
+      "trace_head": "0581f0b28628da6f3802eb715ccc69db9c072ce6cb48ebcd38a46be02b7a3b22",
+      "world": "dev-open-field"
+    },
+    {
+      "actions": {
+        "attendre": 62,
+        "boire": 51,
+        "collecter": 7,
+        "dormir": 140,
+        "manger": 7,
+        "se_deplacer": 93
+      },
+      "cognitive_accounting": {
+        "inactive_steps": 0,
+        "learning_updates": 359,
+        "pending_energy": 0.0,
+        "pending_replays": 0,
+        "pending_vigilance": 0.0,
+        "replays_executed": 2238,
+        "schema": "i3-cognitive-funding/v2",
+        "shortfall_steps": 0,
+        "status": "SETTLED_FOR_DECLARED_WORK",
+        "totals": {
+          "energy": {
+            "paid": 256.0702,
+            "requested": 256.0702,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 316.3380000000002,
+            "requested": 316.3380000000002,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [
+        "zero_food"
+      ],
+      "final_body": [
+        0.2298,
+        0.0,
+        73.6,
+        74.4,
+        98.102
+      ],
+      "genome_seed": 3,
+      "horizon": 400,
+      "life_seed": 4,
+      "mean_step_ms": 1.5943,
+      "steps_lived": 360,
+      "terminal": "dead",
+      "trace_head": "cf50a5bc8b447b32950895538af72a1f3c78d85a247fa266c3d2066cf8fdcce5",
+      "world": "dev-open-field"
+    },
+    {
+      "actions": {
+        "attendre": 1,
+        "physical_inactivity": 91,
+        "se_deplacer": 34
+      },
+      "cognitive_accounting": {
+        "inactive_steps": 91,
+        "learning_updates": 35,
+        "pending_energy": 0.0,
+        "pending_replays": 0,
+        "pending_vigilance": 0.0,
+        "replays_executed": 0,
+        "schema": "i3-cognitive-funding/v2",
+        "shortfall_steps": 0,
+        "status": "SETTLED_FOR_DECLARED_WORK",
+        "totals": {
+          "energy": {
+            "paid": 11.633399999999995,
+            "requested": 11.633399999999995,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 17.679999999999982,
+            "requested": 17.679999999999982,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [
+        "zero_water"
+      ],
+      "final_body": [
+        0.0166,
+        29.78,
+        0.0,
+        90.2,
+        82.32
+      ],
+      "genome_seed": 4,
+      "horizon": 400,
+      "life_seed": 4,
+      "mean_step_ms": 0.2581,
+      "steps_lived": 126,
+      "terminal": "dead",
+      "trace_head": "d216d14109b08335f58c4284d719fb591e600df18438d82ef438527965c32d12",
+      "world": "dev-open-field"
+    },
+    {
+      "actions": {
+        "attendre": 23,
+        "dormir": 46,
+        "se_deplacer": 57
+      },
+      "cognitive_accounting": {
+        "inactive_steps": 0,
+        "learning_updates": 125,
+        "pending_energy": 0.0,
+        "pending_replays": 0,
+        "pending_vigilance": 0.0,
+        "replays_executed": 733,
+        "schema": "i3-cognitive-funding/v2",
+        "shortfall_steps": 0,
+        "status": "SETTLED_FOR_DECLARED_WORK",
+        "totals": {
+          "energy": {
+            "paid": 72.74960000000002,
+            "requested": 72.74960000000002,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 90.55199999999988,
+            "requested": 90.55199999999988,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [
+        "zero_water"
+      ],
+      "final_body": [
+        20.2004,
+        22.05,
+        0.0,
+        100.0,
+        98.98
+      ],
+      "genome_seed": 5,
+      "horizon": 400,
+      "life_seed": 4,
+      "mean_step_ms": 0.9867,
+      "steps_lived": 126,
+      "terminal": "dead",
+      "trace_head": "484bb055433c327e508229a2c86b83441f50f485d49f946769805515f8734a72",
+      "world": "dev-open-field"
+    },
+    {
+      "actions": {
+        "attendre": 24,
+        "boire": 7,
+        "collecter": 3,
+        "dormir": 65,
+        "manger": 3,
+        "physical_inactivity": 119,
+        "se_deplacer": 71
+      },
+      "cognitive_accounting": {
+        "inactive_steps": 119,
+        "learning_updates": 172,
+        "pending_energy": 0.0,
+        "pending_replays": 0,
+        "pending_vigilance": 0.0,
+        "replays_executed": 1040,
+        "schema": "i3-cognitive-funding/v2",
+        "shortfall_steps": 0,
+        "status": "SETTLED_FOR_DECLARED_WORK",
+        "totals": {
+          "energy": {
+            "paid": 116.52280000000003,
+            "requested": 116.52280000000003,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 144.58199999999988,
+            "requested": 144.58199999999988,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [
+        "zero_water"
+      ],
+      "final_body": [
+        0.0772,
+        3.07,
+        0.0,
+        83.8,
+        98.774
+      ],
+      "genome_seed": 6,
+      "horizon": 400,
+      "life_seed": 4,
+      "mean_step_ms": 0.8928,
+      "steps_lived": 292,
+      "terminal": "dead",
+      "trace_head": "b28156880cf98b7818b7b4d9eafae10b2832b57cee28386eeed2b579a854fec4",
+      "world": "dev-open-field"
+    },
+    {
+      "actions": {
+        "attendre": 41,
+        "boire": 33,
+        "collecter": 6,
+        "dormir": 115,
+        "manger": 6,
+        "physical_inactivity": 62,
+        "se_deplacer": 91
+      },
+      "cognitive_accounting": {
+        "inactive_steps": 62,
+        "learning_updates": 291,
+        "pending_energy": 0.0,
+        "pending_replays": 0,
+        "pending_vigilance": 0.0,
+        "replays_executed": 1840,
+        "schema": "i3-cognitive-funding/v2",
+        "shortfall_steps": 0,
+        "status": "SETTLED_FOR_DECLARED_WORK",
+        "totals": {
+          "energy": {
+            "paid": 203.08399999999997,
+            "requested": 203.08399999999997,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 260.86599999999993,
+            "requested": 260.86599999999993,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [
+        "zero_food"
+      ],
+      "final_body": [
+        0.066,
+        0.0,
+        3.6,
+        73.2,
+        98.77
+      ],
+      "genome_seed": 7,
+      "horizon": 400,
+      "life_seed": 4,
+      "mean_step_ms": 1.2652,
+      "steps_lived": 354,
+      "terminal": "dead",
+      "trace_head": "0d5fcbc574c4d66cd5ff37058751d45026ca2e52e2c5107613dcb8b30cb95253",
+      "world": "dev-open-field"
+    },
+    {
+      "actions": {
+        "attendre": 92,
+        "boire": 33,
+        "collecter": 10,
+        "dormir": 166,
+        "manger": 10,
+        "se_deplacer": 89
+      },
+      "cognitive_accounting": {
+        "inactive_steps": 0,
+        "learning_updates": 400,
+        "pending_energy": 0.0,
+        "pending_replays": 0,
+        "pending_vigilance": 0.0,
+        "replays_executed": 2655,
+        "schema": "i3-cognitive-funding/v2",
+        "shortfall_steps": 0,
+        "status": "SETTLED_FOR_DECLARED_WORK",
+        "totals": {
+          "energy": {
+            "paid": 250.01460000000003,
+            "requested": 250.01460000000003,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 320.1680000000005,
+            "requested": 320.1680000000005,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [],
+      "final_body": [
+        81.2854,
+        43.55,
+        98.4,
+        100.0,
+        98.664
+      ],
+      "genome_seed": 0,
+      "horizon": 400,
+      "life_seed": 4,
+      "mean_step_ms": 1.0081,
+      "steps_lived": 400,
+      "terminal": "censored",
+      "trace_head": "502a58b21b4ea408946a27bb142c4a69a70c368ead56a1aff5d96aa467c33947",
+      "world": "dev-long-corridor"
+    },
+    {
+      "actions": {
+        "attendre": 87,
+        "boire": 36,
+        "collecter": 27,
+        "dormir": 150,
+        "manger": 27,
+        "se_deplacer": 73
+      },
+      "cognitive_accounting": {
+        "inactive_steps": 0,
+        "learning_updates": 400,
+        "pending_energy": 0.0,
+        "pending_replays": 0,
+        "pending_vigilance": 0.0,
+        "replays_executed": 2396,
+        "schema": "i3-cognitive-funding/v2",
+        "shortfall_steps": 0,
+        "status": "SETTLED_FOR_DECLARED_WORK",
+        "totals": {
+          "energy": {
+            "paid": 239.30920000000032,
+            "requested": 239.30920000000032,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 304.88000000000056,
+            "requested": 304.88000000000056,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [],
+      "final_body": [
+        50.7408,
+        93.55,
+        98.8,
+        100.0,
+        98.72
+      ],
+      "genome_seed": 1,
+      "horizon": 400,
+      "life_seed": 4,
+      "mean_step_ms": 0.913,
+      "steps_lived": 400,
+      "terminal": "censored",
+      "trace_head": "0a0d8acc39ad8b65814b9d3359ef5f2b38d3fe88f8941d659e70cab1c9fd4366",
+      "world": "dev-long-corridor"
+    },
+    {
+      "actions": {
+        "attendre": 115,
+        "boire": 23,
+        "collecter": 24,
+        "dormir": 160,
+        "manger": 13,
+        "se_deplacer": 65
+      },
+      "cognitive_accounting": {
+        "inactive_steps": 0,
+        "learning_updates": 400,
+        "pending_energy": 0.0,
+        "pending_replays": 0,
+        "pending_vigilance": 0.0,
+        "replays_executed": 2557,
+        "schema": "i3-cognitive-funding/v2",
+        "shortfall_steps": 0,
+        "status": "SETTLED_FOR_DECLARED_WORK",
+        "totals": {
+          "energy": {
+            "paid": 259.64120000000014,
+            "requested": 259.64120000000014,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 328.3940000000009,
+            "requested": 328.3940000000009,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [],
+      "final_body": [
+        83.1088,
+        92.55,
+        82.4,
+        100.0,
+        98.176
+      ],
+      "genome_seed": 2,
+      "horizon": 400,
+      "life_seed": 4,
+      "mean_step_ms": 1.1399,
+      "steps_lived": 400,
+      "terminal": "censored",
+      "trace_head": "72893c80964e83b886cde0f21a794d66f450a4e230a9e3bfc6940193565b9afb",
+      "world": "dev-long-corridor"
+    },
+    {
+      "actions": {
+        "attendre": 109,
+        "boire": 33,
+        "collecter": 20,
+        "dormir": 150,
+        "manger": 20,
+        "se_deplacer": 68
+      },
+      "cognitive_accounting": {
+        "inactive_steps": 0,
+        "learning_updates": 400,
+        "pending_energy": 0.0,
+        "pending_replays": 0,
+        "pending_vigilance": 0.0,
+        "replays_executed": 2396,
+        "schema": "i3-cognitive-funding/v2",
+        "shortfall_steps": 0,
+        "status": "SETTLED_FOR_DECLARED_WORK",
+        "totals": {
+          "energy": {
+            "paid": 243.91100000000023,
+            "requested": 243.91100000000023,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 326.1920000000007,
+            "requested": 326.1920000000007,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [],
+      "final_body": [
+        60.439,
+        94.6,
+        98.8,
+        100.0,
+        98.144
+      ],
+      "genome_seed": 3,
+      "horizon": 400,
+      "life_seed": 4,
+      "mean_step_ms": 0.9566,
+      "steps_lived": 400,
+      "terminal": "censored",
+      "trace_head": "0f773d6798ac8a92874338c484a78382087d4092a8c72d9d3ad72a96b7e9eca0",
+      "world": "dev-long-corridor"
+    },
+    {
+      "actions": {
+        "attendre": 104,
+        "boire": 30,
+        "collecter": 29,
+        "dormir": 158,
+        "manger": 13,
+        "se_deplacer": 66
+      },
+      "cognitive_accounting": {
+        "inactive_steps": 0,
+        "learning_updates": 400,
+        "pending_energy": 0.0,
+        "pending_replays": 0,
+        "pending_vigilance": 0.0,
+        "replays_executed": 2524,
+        "schema": "i3-cognitive-funding/v2",
+        "shortfall_steps": 0,
+        "status": "SETTLED_FOR_DECLARED_WORK",
+        "totals": {
+          "energy": {
+            "paid": 261.6934,
+            "requested": 261.6934,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 329.21400000000074,
+            "requested": 329.21400000000074,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [],
+      "final_body": [
+        68.4066,
+        99.8,
+        95.2,
+        100.0,
+        97.996
+      ],
+      "genome_seed": 4,
+      "horizon": 400,
+      "life_seed": 4,
+      "mean_step_ms": 0.9441,
+      "steps_lived": 400,
+      "terminal": "censored",
+      "trace_head": "04ed42fa0f61948d3361f64cbece7dff7d22a9119c68ac66ddd376b394c6afb5",
+      "world": "dev-long-corridor"
+    },
+    {
+      "actions": {
+        "attendre": 104,
+        "boire": 36,
+        "collecter": 13,
+        "dormir": 149,
+        "manger": 13,
+        "se_deplacer": 85
+      },
+      "cognitive_accounting": {
+        "inactive_steps": 0,
+        "learning_updates": 400,
+        "pending_energy": 0.0,
+        "pending_replays": 0,
+        "pending_vigilance": 0.0,
+        "replays_executed": 2369,
+        "schema": "i3-cognitive-funding/v2",
+        "shortfall_steps": 0,
+        "status": "SETTLED_FOR_DECLARED_WORK",
+        "totals": {
+          "energy": {
+            "paid": 245.40779999999992,
+            "requested": 245.40779999999992,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 307.6520000000004,
+            "requested": 307.6520000000004,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [],
+      "final_body": [
+        32.6922,
+        87.85,
+        99.6,
+        100.0,
+        99.196
+      ],
+      "genome_seed": 5,
+      "horizon": 400,
+      "life_seed": 4,
+      "mean_step_ms": 0.9578,
+      "steps_lived": 400,
+      "terminal": "censored",
+      "trace_head": "59d623eb3ae8c8cb8920b03f3c1b06a26b7b46660d2261c36bce4eb2f1cd7076",
+      "world": "dev-long-corridor"
+    },
+    {
+      "actions": {
+        "attendre": 20,
+        "boire": 9,
+        "collecter": 4,
+        "dormir": 24,
+        "manger": 4,
+        "physical_inactivity": 245,
+        "se_deplacer": 41
+      },
+      "cognitive_accounting": {
+        "inactive_steps": 245,
+        "learning_updates": 102,
+        "pending_energy": 0.0,
+        "pending_replays": 0,
+        "pending_vigilance": 0.0,
+        "replays_executed": 384,
+        "schema": "i3-cognitive-funding/v2",
+        "shortfall_steps": 0,
+        "status": "SETTLED_FOR_DECLARED_WORK",
+        "totals": {
+          "energy": {
+            "paid": 47.4406,
+            "requested": 47.4406,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 65.45200000000003,
+            "requested": 65.45200000000003,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [
+        "zero_water"
+      ],
+      "final_body": [
+        0.0594,
+        36.5,
+        0.0,
+        100.0,
+        95.46
+      ],
+      "genome_seed": 6,
+      "horizon": 400,
+      "life_seed": 4,
+      "mean_step_ms": 0.2769,
+      "steps_lived": 347,
+      "terminal": "dead",
+      "trace_head": "8a4d76b5fb7aea59ff5264972aa8e6722b9e6f2fd46b74f906a5b94328f3c364",
+      "world": "dev-long-corridor"
+    },
+    {
+      "actions": {
+        "attendre": 108,
+        "boire": 36,
+        "collecter": 9,
+        "dormir": 151,
+        "manger": 9,
+        "se_deplacer": 87
+      },
+      "cognitive_accounting": {
+        "inactive_steps": 0,
+        "learning_updates": 400,
+        "pending_energy": 0.0,
+        "pending_replays": 0,
+        "pending_vigilance": 0.0,
+        "replays_executed": 2412,
+        "schema": "i3-cognitive-funding/v2",
+        "shortfall_steps": 0,
+        "status": "SETTLED_FOR_DECLARED_WORK",
+        "totals": {
+          "energy": {
+            "paid": 231.2614000000003,
+            "requested": 231.2614000000003,
+            "unpaid": 0.0
+          },
+          "vigilance": {
+            "paid": 322.38200000000074,
+            "requested": 322.38200000000074,
+            "unpaid": 0.0
+          }
+        }
+      },
+      "death_causes": [],
+      "final_body": [
+        53.4386,
+        81.85,
+        99.2,
+        100.0,
+        98.67
+      ],
+      "genome_seed": 7,
+      "horizon": 400,
+      "life_seed": 4,
+      "mean_step_ms": 0.9881,
+      "steps_lived": 400,
+      "terminal": "censored",
+      "trace_head": "b33002fa60cf54560aeb8e9e70f8a3163308ab62de134bf88f27588bb914705b",
+      "world": "dev-long-corridor"
+    }
+  ],
+  "candidate_source_digest": "11011d5014e25ac809b8ef2f775e3e04165a54dcf3ca6ac4791dc80d3c9e305b",
+  "candidate_source_files": {
+    "config/__init__.py": "ce99dc4160ef4de11692297e2bb02d361208390ed143380d8ce8d6cd47d5f6a2",
+    "lab/__init__.py": "7a2e29f85bb7fb848c6487cfda64b651f07f922be5ff0e904b396f21e37f7317",
+    "lab/dev_worlds.py": "708d65066bc7b510f90be5b7ecae2fb1d0d6671cde35216cc1f0e1c41d838b5f",
+    "lab/first_falsifier.py": "62e6421d32966d96ca02da5d91f442b2060abf07f9f5ef9723b0683f6d40621e",
+    "lab/heldout_p11.py": "48b2f008fd3713e716ff0b941a84471746d51c2859e1f4f2ad2347366ea8746c",
+    "lab/heldout_p12.py": "cca75404768ed53204bd8433b37c51a3aa6f9c57118a1cd823e2b0ad15f24543",
+    "lab/probes.py": "2df51dfbfefe302a2487ffb4ff22deb30ba5fe7ff23995124ad6521c551df3af",
+    "lab/worldgen.py": "49e75c73216d20a855d177512c13892d2ff0f90ed019fe5b195f5ab0adb87692",
+    "modules/__init__.py": "399b8f81ea4ee626684d6bccd0d3f4c922d6b52146be8313a9da6395c473bdf5",
+    "modules/body.py": "af6de9b2a0ed346ca6a1c9a65e8704d607b63bb9347e3698dac02a03efdb5e10",
+    "modules/genome.py": "4984f3750b65cdfbf0959b5e06f44933b49db2515b33ffbf871a6c05b30a45a5",
+    "modules/mind.py": "51d59fce7af72313cbe2779c5cad8b93475a8b1581a9798bd6740dea249c813c",
+    "modules/world.py": "979d3a3b803600fcbfb409a17126f7a573d72d494d91ad5519fa068d7f8c6990",
+    "runtime/__init__.py": "2fb9064525c020b4bc856b23003a425fb9d1f54f08175b86bc336f105a5a7445",
+    "runtime/life.py": "df00d2ef06920c754898db6e9b25d17540b15d25347fefa5250f8d4f9fcc8174",
+    "runtime/provenance.py": "d68d32ef7bbceca2d4435ce7295f4adc9d9e7188a8c3f8d5bb488cc6cc73a553"
+  },
+  "classification": "ENGINEERING_DIFFERENTIAL_NOT_CONFIRMATORY",
+  "conditions": {
+    "life_seed": 4,
+    "long": {
+      "genome_seeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "horizon": 400
+    },
+    "short": {
+      "genome_seeds": [
+        2,
+        9
+      ],
+      "horizon": 100
+    },
+    "worlds": [
+      "dev-open-field",
+      "dev-long-corridor"
+    ]
+  },
+  "python": "3.13.5",
+  "schema": "i3-funding-development-comparison/v1",
+  "selection_or_heldout_used": false,
+  "source_provenance_note": "Partial local exports; baseline I3 module/runtime Git blobs verified against main. Source byte hashes, not local reconstruction commits, identify the compared implementations."
+}

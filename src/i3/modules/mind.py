@@ -15,7 +15,8 @@ from collections import deque
 from math import sqrt, tanh
 import random
 
-from .body import ACTION_COSTS, CognitiveWork, E, F, W, I, V, capacities
+from .body import (ACTION_COSTS, CognitiveBudget, CognitiveFundingError,
+                   CognitiveWork, E, F, W, I, V, capacities)
 from .genome import channel_vector, validate
 from .world import DIRECTIONS
 
@@ -90,6 +91,7 @@ class Mind:
         self.values = [[0.0] * 6 for _ in self.gammas]
         self.proj_chunks = PROJECTION_CHUNKS
         self.rng = random.Random(f"i3-life:{life_seed}")
+        self._budget_rng = random.Random(f"i3-budget-order:{life_seed}")
         self.effects = EffectsModel()
         self.map: dict[tuple, tuple] = {}   # rel pos -> last (water, tokens) | None for edge
         self.hist: dict[tuple, list] = {}   # rel pos -> [observations, water seen, {token: seen}]
@@ -102,7 +104,6 @@ class Mind:
         self.buffer: deque = deque()
         self.last = None
         self._drift = ((0.0,) * 5, None)
-        self.pending_replays = 0  # sleep replay is charged on the next step
 
     # ---- innate distress and learned value --------------------------------
     def feats(self, b):
@@ -133,11 +134,14 @@ class Mind:
             restore = (sleep[1][E], max(0.0, sleep[1][V]), sleep[1][F] - wait[F])
         return (0.0, wait[F], wait[W], wait[I], 0.0), restore
 
-    def project(self, b, drift):
+    def project(self, b, drift, budget=None):
         """Innate self-projection over 255 future steps (chunks 1, 2, 4 ... 128).
 
         Death (a vital channel at zero) counts as maximal distress forever.
         """
+        if budget is not None:
+            # One paid model integration unit per geometric projection chunk.
+            budget.spend(CognitiveWork(simulated_steps=len(self.proj_chunks)))
         drift, restore = drift
         th = self.theta
         b = list(b)
@@ -322,7 +326,7 @@ class Mind:
                         p_food = max(p_food, self.presence(q, t))
         return p_water, p_food
 
-    def simulate(self, body, plan, horizon):
+    def simulate(self, body, plan, horizon, budget):
         """Predicted normalised discounted distress (negated) per horizon, steps used.
 
         Consecutive travel moves are simulated as chunks of at most ``horizon``
@@ -338,6 +342,7 @@ class Mind:
         u_max = 0.0
         i, n = 0, len(plan)
         while i < n and steps < horizon:
+            budget.spend(CognitiveWork(simulated_steps=1))
             key = plan[i]
             run = 1
             if key[0] == "se_deplacer":
@@ -360,7 +365,7 @@ class Mind:
             if dead:
                 break
         phi = self.feats(b)
-        proj = None if dead else self.project(b, self._drift)[0]
+        proj = None if dead else self.project(b, self._drift, budget)[0]
         out = 0.0
         for k, gk in enumerate(self.gammas):
             boot = -self.d_max / (1.0 - gk) if dead else self.value(k, phi, proj)
@@ -368,11 +373,25 @@ class Mind:
         return out / 3.0, steps, u_max
 
     # ---- decision -------------------------------------------------------------
-    def decide(self, cap):
+    def decide(self, cap, budget: CognitiveBudget):
         body = cap["body"]
+        if tuple(body) != budget.body or budget.work != CognitiveWork():
+            raise ValueError("fresh allowance must match the perceived body")
+        self.last = None
+        # Three block allocations: perception/memory service, option/model
+        # preparation, and control/outcome bookkeeping. Not CPU instructions.
+        slots = (len(self.buffer) + 2 * len(self.map) + len(self.effects.stats)
+                 + len(self.tokens) + len(self.external) + len(self.acc)
+                 + sum(len(v) for v in self.values) + 12
+                 + len(cap["inventory"]) + sum(len(c[1]) for c in
+                   (cap["here"], *cap["neighbors"]) if c is not None))
+        if not budget.try_spend(CognitiveWork(cycles=3, memory_items=slots)):
+            return None, None, budget.work, {"option": None, "funding": "NO_PROCESSING_BUDGET"}
         cycles, horizon, miss = capacities(body, self.n_base, self.h_max)
         inv = self.perceive(cap, miss)
         opts = self.options(inv, body, horizon)
+        # No privileged default when the budget covers only a subset.
+        self._budget_rng.shuffle(opts)
         p_water, p_food = self._sources(inv)
         phi_now = self.feats(body)
         self._drift = self.drift()
@@ -390,14 +409,17 @@ class Mind:
         scored = []
         sim_steps = 0
         for oid, plan, _ in opts:
-            j, steps, u = self.simulate(body, plan, horizon)
-            sim_steps += steps
-            if oid in self._presence:
-                # Expected value: the place may be empty on arrival.
-                pr, travel = self._presence[oid]
-                j_fail, steps_fail, _ = self.simulate(body, travel, horizon)
-                sim_steps += steps_fail
-                j = pr * j + (1.0 - pr) * j_fail
+            try:
+                j, steps, u = self.simulate(body, plan, horizon, budget)
+                sim_steps += steps
+                if oid in self._presence:
+                    # A plan is usable only when both branches were funded.
+                    pr, travel = self._presence[oid]
+                    j_fail, steps_fail, _ = self.simulate(body, travel, horizon, budget)
+                    sim_steps += steps_fail
+                    j = pr * j + (1.0 - pr) * j_fail
+            except CognitiveFundingError:
+                break  # Partial computation stays paid; no uncomputed score.
             # Need-relevant curiosity: only what could answer an unmet need is
             # boosted by that need; other uncertainty gets general curiosity.
             if oid.startswith("explorer:"):
@@ -416,26 +438,28 @@ class Mind:
                 # channel: an unknown meal matters more when integrity is low.
                 bonus -= self.lambda_r * u * (self.w[I] * phi_now[1 + I] + self.kappa0)
             scored.append((oid, j + bonus))
-        winner, used = self._compete(scored, cycles)
+        if not scored:
+            return None, None, budget.work, {"option": None, "funding": "NO_FUNDED_SCORE"}
+        winner, used = self._compete(scored, cycles, budget)
         ranked = [winner] + [o for o, _ in sorted(scored, key=lambda x: -x[1]) if o != winner]
         by_id = {o[0]: o for o in opts}
         for oid in ranked:
-            action, param = self._admit(by_id[oid], inv, body)
+            action, param = self._admit(by_id[oid], inv, budget.remaining)
             if action is not None:
                 break
+        else:
+            return None, None, budget.work, {"option": None, "funding": "NO_FUNDED_MOTOR"}
         self.intention = oid if len(by_id[oid][1]) > 1 else None
-        work = CognitiveWork(cycles=used, simulated_steps=sim_steps,
-                             memory_items=len(self.buffer) + len(self.map) + len(self.effects.stats),
-                             replays=self.pending_replays)
-        self.pending_replays = 0
+        work = budget.work
         key = by_id[oid][1][0]
         self.last = (body, key, action, param)
         info = {"option": oid, "cycles": used, "horizon": horizon,
-                "simulated": sim_steps, "urgency": round(urgency, 6),
+                "simulated": work.simulated_steps, "urgency": round(urgency, 6),
+                "funding": "FUNDED", "scored_options": len(scored),
                 "top": sorted(((round(s, 6), o) for o, s in scored), reverse=True)[:3]}
         return action, param, work, info
 
-    def _compete(self, scored, cycles):
+    def _compete(self, scored, cycles, budget=None):
         vals = [s for _, s in scored]
         mean = sum(vals) / len(vals)
         sd = sqrt(sum((v - mean) ** 2 for v in vals) / len(vals))
@@ -444,6 +468,8 @@ class Mind:
         winner = None
         used = 0
         for _ in range(cycles):
+            if budget is not None and not budget.try_spend(CognitiveWork(cycles=1)):
+                break
             used += 1
             crossed = []
             for o, _s in scored:
@@ -475,6 +501,8 @@ class Mind:
         """Action Control: physical admissibility + innate integrity veto."""
         oid, plan, first = opt
         key = plan[0]
+        if key[0] != "dormir" and body[E] < ACTION_COSTS[key[0]]:
+            return None, None
         carried = {t for t, n in inv if n > 0}
         here = self.map[self.pos]
         if key[0] == "se_deplacer":
@@ -498,10 +526,42 @@ class Mind:
         return key[0], None
 
     # ---- learning -------------------------------------------------------------
-    def learn(self, result):
-        """Normal outcome pipeline; controls must not skip sensorimotor tracking."""
+    def prepare_learning(self, result, budget: CognitiveBudget):
+        """Allocate learned updates and replay BEFORE any of them execute.
+
+        Return None if the base update cannot be paid. Replay is optional work,
+        limited by both actual reserves and available memories. Runtime debits
+        this allowance before calling the pure learned-update helper below.
+        """
+        if result["dead"] or self.last is None:
+            return None
+        if tuple(result["body"]) != budget.body or budget.work != CognitiveWork():
+            raise ValueError("learning allowance must match the current body")
+        # Effects/TD update and memory/forgetting service, with both projections.
+        base = CognitiveWork(cycles=2, simulated_steps=2 * len(self.proj_chunks),
+                             memory_items=len(self.buffer) + len(self.effects.stats) + 1)
+        if not budget.try_spend(base):
+            return None
+        limit = min(REPLAYS_PER_SLEEP, self.m_max, len(self.buffer) + 1)
+        replays = 0
+        if self.last[2] == "dormir":
+            for _ in range(limit):
+                if not budget.try_spend(CognitiveWork(
+                        simulated_steps=2 * len(self.proj_chunks), replays=1)):
+                    break
+                replays += 1
+        return replays
+
+    def learn(self, result, *, replay_limit=0):
+        """Pure outcome pipeline; runtime must prepay the learned-update block.
+
+        Position bookkeeping belongs to the already-funded control block.
+        The helper alone is not a laboratory execution or payment authority.
+        """
+        if result["dead"] or self.last is None:
+            return 0
         self.observe_outcome(result)
-        return self.learn_from_outcome(result)
+        return self.learn_from_outcome(result, replay_limit=replay_limit)
 
     def observe_outcome(self, result):
         """Update position from the paid movement outcome, independently of learning."""
@@ -510,8 +570,12 @@ class Mind:
             dx, dy = {n: (a, b) for n, a, b in DIRS}[param]
             self.pos = (self.pos[0] + dx, self.pos[1] + dy)
 
-    def learn_from_outcome(self, result):
-        """Learned updates only; a future ablation needs its own cost control."""
+    def learn_from_outcome(self, result, *, replay_limit=0):
+        """Prepaid learned updates only; controls must retain orientation."""
+        if type(replay_limit) is not int or not 0 <= replay_limit <= REPLAYS_PER_SLEEP:
+            raise ValueError("invalid prepaid replay count")
+        if result["dead"] or self.last is None:
+            return 0
         before, key, action, param = self.last
         after = result["body"]
         real_key = key if action != "se_deplacer" else ("se_deplacer",)
@@ -524,13 +588,12 @@ class Mind:
         replays = 0
         if action == "dormir":
             best = sorted(range(len(self.buffer)), key=lambda i: -self.buffer[i][0])
-            for i in best[:REPLAYS_PER_SLEEP]:
+            for i in best[:replay_limit]:
                 _, a, b, d = self.buffer[i]
                 self.buffer[i] = (abs(self._td(a, b, d)), a, b, d)
                 replays += 1
         if after[V] < 50.0:
             self.effects.forget(1.0 - 0.02 * (1.0 - after[V] / 50.0))
-        self.pending_replays = replays
         return replays
 
     def _td(self, b0, b1, dead):

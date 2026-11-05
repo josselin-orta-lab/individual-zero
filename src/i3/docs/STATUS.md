@@ -26,9 +26,25 @@ The first technical slice separates sensorimotor bookkeeping from learning,
 adds observer-only life provenance and exposes requested/paid/unpaid cognition.
 Negative work counters are rejected; normal P1.1 decision rules are unchanged.
 
-**Open validity gap:** zero-clamping can hide unfunded cognitive work, and
-sleep replay may remain unbilled at death/censoring. Reporting these gaps is
-not a physical fix. Resolve
-[#1004](https://github.com/josselin-orta-lab/individual-zero/issues/1004) before
-interpreting a selection pilot as genuinely funded cognition. No new held-out
-result or lineage experiment is claimed. Historical results above are unchanged.
+**Gap identified by the first slice (historical v1):** zero-clamping hid
+unfunded work, and replay could remain unbilled at death/censoring. The v2
+correction below addresses these defects; merely reporting them in #1003 did
+not. No new held-out result or lineage experiment is claimed. Historical
+results above remain tied to their original v1 source.
+
+## Funded physical substrate v2 (#1004)
+
+Current execution uses [the v2 cognitive funding contract](COGNITIVE_FUNDING.md):
+advance decision allowances, strict reserve debits, post-action learning/replay
+prepaid in the same tick, no cognition after death, and transactional motor
+admission. Exhaustion can produce passive inactivity, never forced sleep.
+P1.1 cognitive score rules remain the reference, but its old v1 measurements
+cannot certify this changed substrate. Historical G2/G2b/G2c files stay intact.
+
+Development comparison (not a held-out study): 4/4 short lives survive in both
+versions; at 400 steps, 8/16 survive versus 14/16 in v1. All v2 declared work is
+settled with no pending replay. This adverse outcome is retained. The focused
+suite has 62 tests; exact CI status belongs to the implementation PR.
+
+Next: P1.3 on the same v2 substrate in both arms and P2 validation of existing
+world/probe tools. No selection pilot, new held-out evaluation or scientific GO.

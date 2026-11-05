@@ -42,7 +42,7 @@ class BodyLaws:
     vigilance_per_simulated_step: float = 0.002
     vigilance_per_replay: float = 0.01
     sleep_vigilance_gain: float = 4.0
-    version: str = "i3-body-laws-v1"
+    version: str = "i3-body-laws-v2"
 
     def as_dict(self) -> dict:
         return asdict(self)
@@ -98,24 +98,91 @@ def validate_body(body) -> tuple:
     return body
 
 
-def transition(body: tuple, action: str, laws: BodyLaws, work: CognitiveWork, *,
+
+class CognitiveFundingError(ValueError):
+    """The requested model-level work is not funded; no life outcome is implied."""
+
+
+def validate_laws(laws: BodyLaws) -> None:
+    if not isinstance(laws, BodyLaws) or laws.version != "i3-body-laws-v2":
+        raise ValueError("current i3-body-laws-v2 required; no silent physics migration")
+    for name, value in laws.as_dict().items():
+        if name == "version":
+            continue
+        if type(value) not in (int, float) or not isfinite(value) or value < 0:
+            raise ValueError(f"invalid body law: {name}")
+    if laws.sleep_food_cost_per_energy <= 0 or laws.rest_food_cost_per_integrity <= 0:
+        raise ValueError("metabolic conversion costs must be positive")
+
+
+def debit_cognition(body, laws: BodyLaws, work: CognitiveWork):
+    """Strict, pure debit. Never borrows from future recovery or clips a deficit."""
+    values = list(validate_body(body))
+    energy, vigilance = cognitive_cost(laws, work)
+    if energy > values[E] or vigilance > values[V]:
+        raise CognitiveFundingError("cognitive work exceeds available energy/vigilance")
+    values[E] -= energy
+    values[V] -= vigilance
+    audit = {name: {"requested": cost, "paid": cost, "unpaid": 0.0}
+             for name, cost in (("energy", energy), ("vigilance", vigilance))}
+    return tuple(values), audit
+
+
+class CognitiveBudget:
+    """Finite advance allowance for one cognitive phase, with no hidden-world data.
+
+    Each successful spend authorizes the corresponding computation before it
+    happens. Its cumulative bill is debited by World from the SAME starting
+    body. Failed spends do not change the allowance. Model blocks, not CPU
+    instructions, are the unit of accounting.
+    """
+    def __init__(self, body, laws: BodyLaws):
+        validate_laws(laws)
+        self.body = validate_body(body)
+        self.laws = laws
+        self.work = CognitiveWork()
+        self.remaining = self.body
+
+    def try_spend(self, work: CognitiveWork) -> bool:
+        if not isinstance(work, CognitiveWork):
+            raise TypeError("CognitiveWork required")
+        total = CognitiveWork(*(getattr(self.work, k) + getattr(work, k)
+                                for k in ("cycles", "simulated_steps", "memory_items", "replays")))
+        try:
+            remaining, _ = debit_cognition(self.body, self.laws, total)
+        except CognitiveFundingError:
+            return False
+        self.work, self.remaining = total, remaining
+        return True
+
+    def spend(self, work: CognitiveWork) -> None:
+        if not self.try_spend(work):
+            raise CognitiveFundingError("cognitive allowance exhausted")
+
+def transition(body: tuple, action: str | None, laws: BodyLaws, work: CognitiveWork, *,
                food_gain: float = 0.0, integrity_delta: float = 0.0,
                water_gain: float = 0.0,
                accounting: dict | None = None) -> tuple[tuple, tuple[str, ...]]:
     """Pure one-step body physics after an admitted action.
 
-    Returns (next_body, death_reasons). Same ordering as I2/I1-v4: decay,
-    sleep or action cost, rest repair, then consumption. Cognitive work is
-    charged after the action, from the same energy reserve.
+    v2: fund declared cognition from the initial body BEFORE any motor effect
+    or sleep gain; then apply the existing passive/action physiology. None
+    means physical inactivity, not a chosen wait or a forced recovery action.
+    An unfunded request is an engineering error, never a new cause of death.
     """
-    if action not in ACTION_COSTS:
+    if action is not None and action not in ACTION_COSTS:
         raise ValueError("unknown physical action")
     if action != "manger" and (food_gain or integrity_delta):
         raise ValueError("food consequence only follows an applied eat")
     if action != "boire" and water_gain:
         raise ValueError("water consequence only follows an applied drink")
-    cost_energy, cost_vigilance = cognitive_cost(laws, work)
-    energy, food, water, integrity, vigilance = body
+    validate_laws(laws)
+    funded, bill = debit_cognition(body, laws, work)
+    energy, food, water, integrity, vigilance = funded
+    if action not in (None, "dormir") and energy < ACTION_COSTS[action]:
+        raise CognitiveFundingError("motor energy unavailable after cognition")
+    if any(not isfinite(v) for v in (food_gain, integrity_delta, water_gain)):
+        raise ValueError("physical effects must be finite")
     food = _clamp(food - laws.food_decay)
     water = _clamp(water - laws.water_decay)
     hydrated = water >= laws.min_water_for_metabolism
@@ -125,7 +192,7 @@ def transition(body: tuple, action: str, laws: BodyLaws, work: CognitiveWork, *,
         energy += gained
         food -= gained * laws.sleep_food_cost_per_energy
         vigilance += laws.sleep_vigilance_gain
-    else:
+    elif action is not None:
         energy -= ACTION_COSTS[action]
     if action in ("attendre", "dormir") and hydrated:
         repair = min(laws.rest_integrity_gain, max(0.0, 100.0 - integrity),
@@ -138,16 +205,8 @@ def transition(body: tuple, action: str, laws: BodyLaws, work: CognitiveWork, *,
     elif action == "boire":
         water += water_gain
     if accounting is not None:
-        # Observe the existing v1 debit order without hiding saturation at zero.
-        # This is not an overdraft policy or evidence that all work was paid.
         accounting.clear()
-        for name, available, requested in (("energy", energy, cost_energy),
-                                            ("vigilance", vigilance, cost_vigilance)):
-            paid = min(max(0.0, available), requested)
-            accounting[name] = {"requested": requested, "paid": paid,
-                                "unpaid": requested - paid}
-    energy -= cost_energy
-    vigilance -= cost_vigilance
+        accounting.update(bill)
     nxt = (_clamp(energy), _clamp(food), _clamp(water), _clamp(integrity),
            _clamp(vigilance))
     reasons = tuple(name for name, idx in (("zero_food", F), ("zero_water", W),

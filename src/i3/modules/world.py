@@ -8,8 +8,10 @@ four adjacent cells. Hidden token effects and scheduled changes stay here
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from copy import copy
 
-from .body import ACTION_COSTS, BodyLaws, CognitiveWork, cognitive_cost, transition, validate_body
+from .body import (ACTION_COSTS, BodyLaws, CognitiveWork, cognitive_cost,
+                   debit_cognition, transition, validate_body, validate_laws)
 
 DIRECTIONS = (("N", 0, -1), ("E", 1, 0), ("S", 0, 1), ("W", -1, 0))
 DELTA = {name: (dx, dy) for name, dx, dy in DIRECTIONS}
@@ -50,6 +52,7 @@ class World:
     def __init__(self, spec: WorldSpec):
         self.spec = spec
         self.laws = spec.laws
+        validate_laws(self.laws)
         self.t = 0
         self.pos = tuple(spec.spawn)
         self.body = validate_body(spec.body)
@@ -59,7 +62,9 @@ class World:
         self.food = {p: FoodPatch(f.token, f.quantity, f.max_quantity, f.restock_every)
                      for p, f in spec.food.items()}
         self.effects = dict(spec.token_effects)
-        self.dead: tuple[str, ...] = ()
+        self.dead = tuple(name for name, idx in (("zero_food", 1), ("zero_water", 2),
+                                                  ("zero_integrity", 3))
+                          if self.body[idx] <= 0.0)
         if not (0 <= self.pos[0] < spec.width and 0 <= self.pos[1] < spec.height):
             raise ValueError("spawn outside the world")
 
@@ -106,11 +111,41 @@ class World:
             if patch.restock_every and self.t % patch.restock_every == 0:
                 patch.quantity = min(patch.max_quantity, patch.quantity + 1)
 
-    def step(self, action: str, param, work: CognitiveWork) -> dict:
-        """Apply one admitted action. An inadmissible command is a defect."""
+    def step(self, action: str | None, param, work: CognitiveWork) -> dict:
+        """Transactionally apply funded computation, one motor effect and time.
+
+        Invalid commands, changed resource availability and unfunded bills do
+        not partially advance time, apply scheduled events or consume stock.
+        A null command advances passive physiology without sleep or repair.
+        """
         if self.dead:
             raise RuntimeError("death is irreversible: no action after death")
-        cognitive_cost(self.laws, work)  # Reject invalid bills before any world effect.
+        cognitive_cost(self.laws, work)
+        staged = copy(self)
+        staged.inventory = dict(self.inventory)
+        staged.water = {p: copy(v) for p, v in self.water.items()}
+        staged.food = {p: copy(v) for p, v in self.food.items()}
+        staged.effects = dict(self.effects)
+        result = staged._step(action, param, work)
+        self.__dict__.update(staged.__dict__)
+        return result
+
+    def pay_cognition(self, work: CognitiveWork) -> dict:
+        """Pay outcome learning/replay now, before computation, without a new tick."""
+        if self.dead:
+            raise RuntimeError("no cognition after death")
+        body, audit = debit_cognition(self.body, self.laws, work)
+        self.body = body
+        return audit
+
+    def _step(self, action: str | None, param, work: CognitiveWork) -> dict:
+        if self.dead:
+            raise RuntimeError("death is irreversible: no action after death")
+        funded, _ = debit_cognition(self.body, self.laws, work)
+        if action not in (None, "dormir") and (action not in ACTION_COSTS or funded[0] < ACTION_COSTS[action]):
+            raise ValueError("unfunded or unknown motor command")
+        if action in (None, "attendre", "dormir", "boire") and param is not None:
+            raise ValueError("this motor command takes no parameter")
         self.t += 1
         self._apply_changes()
         kw = {}
@@ -139,7 +174,7 @@ class World:
             if src.stock is not None:
                 src.stock -= 1
             kw["water_gain"] = src.gain
-        elif action not in ("dormir", "attendre"):
+        elif action not in (None, "dormir", "attendre"):
             raise ValueError("unknown action")
         accounting = {}
         self.body, reasons = transition(self.body, action, self.laws, work,
