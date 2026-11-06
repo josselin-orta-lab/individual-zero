@@ -1,0 +1,55 @@
+name: I3 P3 preregistered selection pilot (one-shot)
+on:
+  push:
+    branches: [automation/i3-p3-selection-once-20261106]
+    paths: [.github/workflows/i3-p3-selection-one-shot.yml]
+permissions:
+  contents: read
+jobs:
+  preregistered-p3-selection:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      I3_P3_SOURCE_SHA: 52476fec3f39a7fd70bf611877b01d9c13d26009
+      I3_P3_SCHEDULE_SHA: 230cd653f0a8e580682b351fa3474b9f4dbd9f3e98e7eec1fa61361c0e7289db
+      I3_P3_APPROVED_PROTOCOL: i3-p3-mutation-pilot-v1
+    steps:
+      - name: Checkout exactly the preregistered tested P3 code
+        uses: actions/checkout@v4
+        with:
+          ref: 52476fec3f39a7fd70bf611877b01d9c13d26009
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Configure Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify preregistration already merged into main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git merge-base --is-ancestor 86bc43e8d4f1f17e1df09da9313dfa716be4172c origin/main
+          test "$(git rev-parse HEAD)" = "$I3_P3_SOURCE_SHA"
+      - name: Verify source tests and opportunity schedule before execution
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests/i3 -p 'test_*.py' -q
+          python scripts/check_engine_repository.py --json
+          PYTHONPATH=src python -m i3.lab.p3_pilot --preflight
+      - name: Execute exact P3 SELECTION cohort once and retain full evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          PYTHONPATH=src python -m i3.lab.p3_pilot --run out/i3-p3-selection-full.json | tee out/i3-p3-selection-summary.json
+          sha256sum out/i3-p3-selection-full.json out/i3-p3-selection-summary.json | tee out/SHA256SUMS.txt
+      - name: Archive original P3 run output even if a later step fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-p3-selection-predeclared-original
+          path: out/
+          if-no-files-found: warn
+          retention-days: 90
