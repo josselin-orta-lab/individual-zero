@@ -16,7 +16,8 @@ from i3.modules.genome import generation_zero, digest as genome_digest
 from i3.runtime.life import run_life
 
 SCHEMA = "i3-p5b-development-readout-diagnostics-v1"
-MODES = ("full", "blind_predictions", "blind_sources", "blind_all")
+MODES = ("full", "blind_predictions", "blind_action_predictions",
+         "blind_sleep_forecast", "blind_sources", "blind_all")
 GENOME_SEEDS = (901, 902)
 FAMILIES = p2_ecologies.FAMILIES
 REPEATS = (0, 1)
