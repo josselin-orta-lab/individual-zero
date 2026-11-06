@@ -17,7 +17,7 @@ jobs:
       - name: Checkout pinned P5c engineering source
         uses: actions/checkout@v4
         with:
-          ref: d56b5da25211e3c303da1bd86876ff9b5e9fd98f
+          ref: 674f4f05ddab8ebcc5412632d0caed7df299a8bd
           persist-credentials: false
       - name: Setup Python
         uses: actions/setup-python@v5
