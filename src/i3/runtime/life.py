@@ -60,7 +60,11 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
         "no_processing_budget": 0, "no_funded_score": 0,
         "control_rejected": 0, "action_admitted": 0,
         "offered_options": 0, "scored_options": 0,
-        "rejected_controls": 0}
+        "rejected_controls": 0,
+        "offered_families": {k: 0 for k in
+            ("resource", "movement", "exploration", "rest")},
+        "scored_families": {k: 0 for k in
+            ("resource", "movement", "exploration", "rest")}}
     while world.t < horizon and not world.dead:
         t0 = time.perf_counter()
         allowance = CognitiveBudget(world.body, world.laws)
@@ -70,6 +74,9 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
             observer_counts[diagnostic["decision_outcome"]] += 1
             for item in ("offered_options", "scored_options", "rejected_controls"):
                 observer_counts[item] += diagnostic[item]
+            for kind in ("offered_families", "scored_families"):
+                for family, value in diagnostic[kind].items():
+                    observer_counts[kind][family] += value
         if work != allowance.work:
             raise ValueError("declared decision bill does not match consumed allowance")
         result = world.step(action, param, work)
