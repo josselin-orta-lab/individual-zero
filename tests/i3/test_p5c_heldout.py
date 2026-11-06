@@ -42,12 +42,6 @@ class P5cSealedProspectiveTests(unittest.TestCase):
     def test_receipt_dev_life_paid_and_tampering_rejected(self):
         spec = p2_ecologies.world_for("stable", "development", 19)
         gene = generation_zero(761)
-        life = run_life(gene, spec, 1326, 120, keep_trace=True,
-                        observer_mind_digest=True,
-                        observer_decision_diagnostics=True,
-                        score_addend_mode="discard_curiosity_bonus")
-        # P5c fixed horizon is 400, so a short fixture may only be used
-        # for receipt validation after a 400-step run.
         life = run_life(gene, spec, 1326, 400, keep_trace=True,
                         observer_mind_digest=True,
                         observer_decision_diagnostics=True,
