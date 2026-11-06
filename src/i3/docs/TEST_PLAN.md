@@ -4,7 +4,7 @@
 | --- | --- | --- |
 | Contrat logiciel | `tests/i3/test_core.py` : génome fermé, physique v4, monnaie vitale, capacités, capture locale, mort irréversible, nouveau-né vierge, rejeu exact, invariance par renommage, pas d'abstention par défaut, `attendre` non privilégié, budget de temps | Implémenté |
 | Porte G2 | Falsificateur comportemental préinscrit + rejeu + ≤ 1 ms/pas | Préinscrit |
-| P2 | Générateur de familles, sonde de faisabilité, test dynamique d'invariance sur mondes générés | À faire |
+| P2 | Trois écologies mécanistiquement distinctes, quatre cohortes étanches, réserve scellée, sondes financées en deux phases, contrôle de coût exact et tarif statique calibré en développement | Tests logiciels implémentés ; validation scientifique non établie |
 | P3 | Lignée, registre, test de non-transmission entre générations | À faire |
 | P4 | Plan 2 × 2 et ablations d'enjeu, préinscrits à la porte G4 | À faire |
 
@@ -41,3 +41,14 @@ probes executable; they do not validate them as comparators (P2).
 
 | Croyances révisables (P1.3) | `tests/i3/test_place_beliefs.py` : révision au rythme hérité, gène tiré en dernier, case visible = observation courante | Implémenté |
 | Porte sous sélection v2 | `lab/selection_gate_v2.py` (ADR-0015) ; G2e : P1.3 adopté | Implémenté |
+
+## P2 controlled engineering validation
+
+`test_p2_ecologies.py` checks source-stable world replay, distinct ecology mechanisms,
+world invariants, no hidden capture, historical cohort exclusion, reserve locking,
+individual-to-probe paid-work receipts and rejection of altered frozen tariffs.
+`lab/p2_validation.py` offers a development-only diagnostic and a development-
+calibrated static tariff. Neither output is a selection result nor a held-out
+comparison. For prospective studies, report full paid-cost coverage instead
+of calling any heuristic an optimal ceiling. See
+[P2 contract](P2_ECOLOGY_AND_PROBE_CONTRACT.md).
