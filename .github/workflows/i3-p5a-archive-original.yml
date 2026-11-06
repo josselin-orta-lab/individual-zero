@@ -30,7 +30,7 @@ jobs:
           run-id: 42192100293
           github-token: ${{ github.token }}
           path: out
-      - name: Verify 1152 lives and archive immutable original result
+      - name: Verify 1152 lives with corrected hash semantics and archive original
         shell: bash
         run: |
           set -euo pipefail
