@@ -14,4 +14,10 @@ Read these in order, consulting the original git commit pinned in each preregist
 
 The non-adopted P1.2 implementation is preserved on branch `i3/p1.2-variant`. Do not retroactively change existing held-out gates, reuse their evaluation seeds for model selection, or describe an engineering PASS as scientific confirmation.
 
+The first I3 lineage pilot is [prospectively preregistered](P3_PILOT_PREREG.md) and its
+[complete mixed results, frozen G2 genomes and unaltered evidence](studies/p3-mutation-pilot/RESULTS.md)
+are archived. Selection outcomes are **not** held-out validation and do not
+prove an evolutionary advantage. P4 must use fresh, independently reserved
+validation conditions under a new frozen protocol.
+
 The existing focused tests are `python -m unittest discover -s tests/i3 -p 'test_*.py' -v`. Any future scientific study needs a prospective preregistration and newly reserved environments.
