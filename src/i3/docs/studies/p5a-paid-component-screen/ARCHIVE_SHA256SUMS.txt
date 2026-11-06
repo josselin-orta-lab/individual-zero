@@ -1,0 +1,4 @@
+7e9c47cd62e7f8bfcc99813833d2f68bbb5a7d58b0dd79347c3ac77aba32ec84  src/i3/docs/studies/p5a-paid-component-screen/ORIGINAL_SHA256SUMS.txt
+c5c526f3ca67b2f1d84c9dce2b7806b8a4d07a7f2d86bd1eb2c0f2bae7cc2123  src/i3/docs/studies/p5a-paid-component-screen/independent-custody.json
+e4c3732d62ea12679af1489cb9a0fd55b9812b496f1a326d8ca443c26e886991  src/i3/docs/studies/p5a-paid-component-screen/mechanisms-full.json.gz
+362c0dce5116d7b1148f4deae0016b096960872fd747f351fafca8cfa14808ff  src/i3/docs/studies/p5a-paid-component-screen/mechanisms-summary.json

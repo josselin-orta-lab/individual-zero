@@ -1,0 +1,470 @@
+{
+  "comparisons": {
+    "discard_effects": {
+      "causal_scope": "retention_intervention_with_downstream_cognitive_economy",
+      "exact_sign_flip_two_sided_p": 0.125,
+      "exploratory_95pct_t_interval_lives": [
+        11.210270655036545,
+        44.789729344963455
+      ],
+      "exploratory_holm_adjusted_p": 0.375,
+      "mean_difference_lives_per_population_of_72": 28.0,
+      "per_population_difference_in_censored_lives": [
+        17,
+        36,
+        21,
+        38
+      ]
+    },
+    "discard_replay": {
+      "causal_scope": "retention_intervention_with_downstream_cognitive_economy",
+      "exact_sign_flip_two_sided_p": 0.5,
+      "exploratory_95pct_t_interval_lives": [
+        -8.7916493892129,
+        5.291649389212901
+      ],
+      "exploratory_holm_adjusted_p": 1.0,
+      "mean_difference_lives_per_population_of_72": -1.75,
+      "per_population_difference_in_censored_lives": [
+        1,
+        -5,
+        3,
+        -6
+      ]
+    },
+    "discard_values": {
+      "causal_scope": "retention_intervention_with_downstream_cognitive_economy",
+      "exact_sign_flip_two_sided_p": 0.625,
+      "exploratory_95pct_t_interval_lives": [
+        -7.531469703532308,
+        5.031469703532308
+      ],
+      "exploratory_holm_adjusted_p": 1.0,
+      "mean_difference_lives_per_population_of_72": -1.25,
+      "per_population_difference_in_censored_lives": [
+        2,
+        -3,
+        2,
+        -6
+      ]
+    }
+  },
+  "original_canonical_sha256": "06217b9f96da28c2ba34034f43b4800005346abeca4c88cc5b47184a3597bd96",
+  "paired_genomes_modes": 288,
+  "population_results": [
+    {
+      "contrasts": {
+        "discard_effects": 17,
+        "discard_replay": 1,
+        "discard_values": 2
+      },
+      "modes": {
+        "discard_effects": {
+          "censored": 0,
+          "dead": 72,
+          "inactive_steps": 10742,
+          "learning_computations": 3896,
+          "lived_steps": 14665,
+          "lives_with_replay": 69,
+          "paid": {
+            "energy": 1721.1328,
+            "vigilance": 2517.136
+          },
+          "phase_paid": {
+            "decision": {
+              "energy": 1098.732,
+              "vigilance": 1640.194
+            },
+            "learning": {
+              "energy": 622.4008,
+              "vigilance": 876.942
+            }
+          },
+          "replays_executed": 8635
+        },
+        "discard_replay": {
+          "censored": 16,
+          "dead": 56,
+          "inactive_steps": 3861,
+          "learning_computations": 13836,
+          "lived_steps": 17738,
+          "lives_with_replay": 69,
+          "paid": {
+            "energy": 9393.4872,
+            "vigilance": 11447.398
+          },
+          "phase_paid": {
+            "decision": {
+              "energy": 4930.3402,
+              "vigilance": 6090.022
+            },
+            "learning": {
+              "energy": 4463.147,
+              "vigilance": 5357.376
+            }
+          },
+          "replays_executed": 84072
+        },
+        "discard_values": {
+          "censored": 15,
+          "dead": 57,
+          "inactive_steps": 4042,
+          "learning_computations": 13509,
+          "lived_steps": 17585,
+          "lives_with_replay": 68,
+          "paid": {
+            "energy": 9109.3036,
+            "vigilance": 11121.958
+          },
+          "phase_paid": {
+            "decision": {
+              "energy": 4764.942,
+              "vigilance": 5903.884
+            },
+            "learning": {
+              "energy": 4344.3616,
+              "vigilance": 5218.074
+            }
+          },
+          "replays_executed": 81783
+        },
+        "normal": {
+          "censored": 17,
+          "dead": 55,
+          "inactive_steps": 4087,
+          "learning_computations": 13939,
+          "lived_steps": 18057,
+          "lives_with_replay": 69,
+          "paid": {
+            "energy": 9407.817,
+            "vigilance": 11477.508
+          },
+          "phase_paid": {
+            "decision": {
+              "energy": 4990.169,
+              "vigilance": 6175.08
+            },
+            "learning": {
+              "energy": 4417.648,
+              "vigilance": 5302.428
+            }
+          },
+          "replays_executed": 82440
+        }
+      },
+      "population": 0
+    },
+    {
+      "contrasts": {
+        "discard_effects": 36,
+        "discard_replay": -5,
+        "discard_values": -3
+      },
+      "modes": {
+        "discard_effects": {
+          "censored": 0,
+          "dead": 72,
+          "inactive_steps": 8086,
+          "learning_computations": 3642,
+          "lived_steps": 11764,
+          "lives_with_replay": 69,
+          "paid": {
+            "energy": 1605.2704,
+            "vigilance": 2327.33
+          },
+          "phase_paid": {
+            "decision": {
+              "energy": 1043.4422,
+              "vigilance": 1528.982
+            },
+            "learning": {
+              "energy": 561.8282,
+              "vigilance": 798.348
+            }
+          },
+          "replays_executed": 7562
+        },
+        "discard_replay": {
+          "censored": 41,
+          "dead": 31,
+          "inactive_steps": 1273,
+          "learning_computations": 20606,
+          "lived_steps": 21900,
+          "lives_with_replay": 70,
+          "paid": {
+            "energy": 14848.6078,
+            "vigilance": 17605.02
+          },
+          "phase_paid": {
+            "decision": {
+              "energy": 7900.2278,
+              "vigilance": 9549.138
+            },
+            "learning": {
+              "energy": 6948.38,
+              "vigilance": 8055.882
+            }
+          },
+          "replays_executed": 127045
+        },
+        "discard_values": {
+          "censored": 39,
+          "dead": 33,
+          "inactive_steps": 1495,
+          "learning_computations": 20417,
+          "lived_steps": 21932,
+          "lives_with_replay": 71,
+          "paid": {
+            "energy": 14834.5572,
+            "vigilance": 17579.216
+          },
+          "phase_paid": {
+            "decision": {
+              "energy": 7891.2866,
+              "vigilance": 9528.794
+            },
+            "learning": {
+              "energy": 6943.2706,
+              "vigilance": 8050.422
+            }
+          },
+          "replays_executed": 127509
+        },
+        "normal": {
+          "censored": 36,
+          "dead": 36,
+          "inactive_steps": 3378,
+          "learning_computations": 18657,
+          "lived_steps": 22055,
+          "lives_with_replay": 70,
+          "paid": {
+            "energy": 13345.5654,
+            "vigilance": 15961.714
+          },
+          "phase_paid": {
+            "decision": {
+              "energy": 7069.4132,
+              "vigilance": 8638.876
+            },
+            "learning": {
+              "energy": 6276.1522,
+              "vigilance": 7322.838
+            }
+          },
+          "replays_executed": 115717
+        }
+      },
+      "population": 1
+    },
+    {
+      "contrasts": {
+        "discard_effects": 21,
+        "discard_replay": 3,
+        "discard_values": 2
+      },
+      "modes": {
+        "discard_effects": {
+          "censored": 0,
+          "dead": 72,
+          "inactive_steps": 8290,
+          "learning_computations": 4047,
+          "lived_steps": 12365,
+          "lives_with_replay": 72,
+          "paid": {
+            "energy": 1839.6548,
+            "vigilance": 2630.976
+          },
+          "phase_paid": {
+            "decision": {
+              "energy": 1158.2036,
+              "vigilance": 1680.972
+            },
+            "learning": {
+              "energy": 681.4512,
+              "vigilance": 950.004
+            }
+          },
+          "replays_executed": 9900
+        },
+        "discard_replay": {
+          "censored": 18,
+          "dead": 54,
+          "inactive_steps": 3906,
+          "learning_computations": 13349,
+          "lived_steps": 17281,
+          "lives_with_replay": 66,
+          "paid": {
+            "energy": 9120.0042,
+            "vigilance": 11340.47
+          },
+          "phase_paid": {
+            "decision": {
+              "energy": 4842.156,
+              "vigilance": 6239.402
+            },
+            "learning": {
+              "energy": 4277.8482,
+              "vigilance": 5101.068
+            }
+          },
+          "replays_executed": 79500
+        },
+        "discard_values": {
+          "censored": 19,
+          "dead": 53,
+          "inactive_steps": 3939,
+          "learning_computations": 13482,
+          "lived_steps": 17445,
+          "lives_with_replay": 66,
+          "paid": {
+            "energy": 9202.2534,
+            "vigilance": 11379.328
+          },
+          "phase_paid": {
+            "decision": {
+              "energy": 4860.5218,
+              "vigilance": 6196.108
+            },
+            "learning": {
+              "energy": 4341.7316,
+              "vigilance": 5183.22
+            }
+          },
+          "replays_executed": 81038
+        },
+        "normal": {
+          "censored": 21,
+          "dead": 51,
+          "inactive_steps": 3751,
+          "learning_computations": 13912,
+          "lived_steps": 17690,
+          "lives_with_replay": 66,
+          "paid": {
+            "energy": 9762.4462,
+            "vigilance": 12128.536
+          },
+          "phase_paid": {
+            "decision": {
+              "energy": 5293.3652,
+              "vigilance": 6796.156
+            },
+            "learning": {
+              "energy": 4469.081,
+              "vigilance": 5332.38
+            }
+          },
+          "replays_executed": 83238
+        }
+      },
+      "population": 2
+    },
+    {
+      "contrasts": {
+        "discard_effects": 38,
+        "discard_replay": -6,
+        "discard_values": -6
+      },
+      "modes": {
+        "discard_effects": {
+          "censored": 0,
+          "dead": 72,
+          "inactive_steps": 12175,
+          "learning_computations": 3258,
+          "lived_steps": 15458,
+          "lives_with_replay": 57,
+          "paid": {
+            "energy": 1402.4964,
+            "vigilance": 2035.53
+          },
+          "phase_paid": {
+            "decision": {
+              "energy": 955.6382,
+              "vigilance": 1382.706
+            },
+            "learning": {
+              "energy": 446.8582,
+              "vigilance": 652.824
+            }
+          },
+          "replays_executed": 5304
+        },
+        "discard_replay": {
+          "censored": 44,
+          "dead": 28,
+          "inactive_steps": 2273,
+          "learning_computations": 20582,
+          "lived_steps": 22871,
+          "lives_with_replay": 69,
+          "paid": {
+            "energy": 15400.1954,
+            "vigilance": 18384.282
+          },
+          "phase_paid": {
+            "decision": {
+              "energy": 8313.7982,
+              "vigilance": 10132.572
+            },
+            "learning": {
+              "energy": 7086.3972,
+              "vigilance": 8251.71
+            }
+          },
+          "replays_executed": 131783
+        },
+        "discard_values": {
+          "censored": 44,
+          "dead": 28,
+          "inactive_steps": 2366,
+          "learning_computations": 20482,
+          "lived_steps": 22866,
+          "lives_with_replay": 69,
+          "paid": {
+            "energy": 15334.1048,
+            "vigilance": 18294.658
+          },
+          "phase_paid": {
+            "decision": {
+              "energy": 8268.6368,
+              "vigilance": 10069.63
+            },
+            "learning": {
+              "energy": 7065.468,
+              "vigilance": 8225.028
+            }
+          },
+          "replays_executed": 131462
+        },
+        "normal": {
+          "censored": 38,
+          "dead": 34,
+          "inactive_steps": 4664,
+          "learning_computations": 17722,
+          "lived_steps": 22407,
+          "lives_with_replay": 69,
+          "paid": {
+            "energy": 13231.953,
+            "vigilance": 16085.132
+          },
+          "phase_paid": {
+            "decision": {
+              "energy": 7307.2014,
+              "vigilance": 9128.852
+            },
+            "learning": {
+              "energy": 5924.7516,
+              "vigilance": 6956.28
+            }
+          },
+          "replays_executed": 109928
+        }
+      },
+      "population": 3
+    }
+  ],
+  "protocol": "i3-p5a-paid-component-screen-v1",
+  "schedule_sha256": "2e176df5c1ebf9435d2ad4d83e97334d63634024ead074781eed3841b846bb7a",
+  "source_sha": "ee2e97b1949fd94548fe6c5908ff411d37cb3f76",
+  "status": "ORIGINAL_VERIFIED_NO_NEW_LIVES",
+  "total_lives": 1152,
+  "worlds": 24
+}
