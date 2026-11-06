@@ -51,11 +51,21 @@ class EngineToolingTests(unittest.TestCase):
 
         active = "i1-current-ci.yml"
         workflows = [Path(".github/workflows/" + name) for name in
-                     ("i1-current-ci.yml", "i2-proposal-safety.yml",
+                     ("i1-current-ci.yml", "i2-proposal-safety.yml", "i3-proposal-checks.yml",
                       "engine-structural.yml", "agent-context-static.yml",
                       "stage9-historical.yml")]
         self.assertEqual(unexpected_workflows(workflows, active_ci=active),
                          ["stage9-historical.yml"])
+
+    def test_i3_proposal_allowance_does_not_admit_arbitrary_studies(self):
+        from scripts.check_engine_repository import unexpected_workflows
+
+        rejected = ["i3-activation.yml", "i3-proposal-checks-extra.yml",
+                    "i3-scientific-study.yml", "stage9-historical.yml"]
+        paths = [Path(".github/workflows/" + name)
+                 for name in ["i3-proposal-checks.yml", *rejected]]
+        self.assertEqual(unexpected_workflows(paths, active_ci="i1-current-ci.yml"),
+                         sorted(rejected))
 
     def test_static_agent_navigation_is_not_historical_runtime_ci(self):
         from scripts.check_engine_repository import unexpected_workflows

@@ -1,0 +1,52 @@
+name: I3 proposal software checks
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/i3/**/*.py'
+      - 'src/i3/engine.json'
+      - 'tests/i3/**'
+      - 'scripts/check_engine_repository.py'
+      - 'tests/test_engine_repository.py'
+      - '.github/workflows/i3-proposal-checks.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: i3-proposal-checks-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  software:
+    name: I3 software (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Checkout exact candidate, including history for generation guards
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Verify engine contracts and immutable generation ownership
+        run: |
+          python scripts/check_engine_contracts.py --json
+          python scripts/check_engine_repository.py --json
+          python -m unittest discover -s tests -p test_engine_repository.py -v
+      - name: Run I3 software tests, not scientific study entrypoints
+        run: python -m unittest discover -s tests/i3 -p 'test_*.py' -v
+      - name: Check current navigation
+        if: matrix.python-version == '3.11'
+        run: python tools/check_repo_navigation.py --scope entrypoints
