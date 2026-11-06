@@ -138,11 +138,35 @@ signals and body states cannot confer perfect hidden-outcome information.
 
 No automatic prior, World input, action command, learned-state mutation or new
 genome. Mind.decide and run_life do not call it; existing curiosity/prudence and
-the reference remain unchanged. A live policy and its personal-belief builder
-are still to implement. Budget consumption is not a physical settlement receipt;
+the reference remain unchanged. The personal builder below is now implemented;
+the live policy is not. Budget consumption is not a physical settlement receipt;
 the ordinary runtime must debit it. Zero perceived cost still requires payment.
 
 Software tests include actual Mind projection/World debit and unchanged
 reference-life behavior on a development fixture. Exact results belong to the
 implementation PR. No new scientific study, held-out exposure, activation or
 survival/generalization finding. #1060, #1061, #1026 and #1054 remain open.
+
+## Stage 1: paid personal empirical hypotheses
+
+`modules/personal_outcomes.py` records a bounded private history from applied
+pre-decision/post-physics bodily outcomes, correcting only known own decision
+cognition. Recording and constructing hypotheses consume real allowance; the
+ordinary world owner must settle it. Exact-key recent experience precedes
+same-action transfer to a new token. Unknown actions remain NO_PERSONAL_SUPPORT.
+Two/three empirical hypotheses and their same-key persistence assumption feed
+the unchanged kernel; body-only signals never expose sample identities.
+
+These are fallible recent empirical hypotheses, not calibrated uncertainty,
+true hidden effects or a new innate favorable prior. Extra storage is not yet
+wired into the normal lifetime's memory budget. The software integration uses
+fixed development fixtures with actual Mind decisions, World steps, new paid
+recording and physical settlement. It is not a reference-cost-parity or survival
+study. Existing Mind/run_life, genome, physics and historical evidence remain
+unchanged; no selection/validation/reserve exposure or scientific GO.
+
+Next: the smallest integrated experimental scoring path, including explicit
+newborn ignorance, memory-capacity accounting and first-person continuation
+admissibility. Spatial exploration, live ablations and source-locked prospective
+survival/revision evaluation remain open; do not mistake this constructor for
+a completed Stage 1 or expand generic instrumentation instead.

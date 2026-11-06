@@ -108,6 +108,21 @@ observations cannot provide hidden-outcome information. Costs enter forecasts;
 a zero-perceived-cost diagnostic still pays the same actual work.
 
 This kernel is not connected to live choice and supplies no unknown-outcome
-prior. It does not yet replace the reference's curiosity/prudence. Next: build
-personal outcome beliefs and the isolated experimental score path, then freeze
-the prospective gate. Stage 0 and its open questions are not declared complete.
+prior. The paid personal-outcome constructor below now supplies empirical
+hypotheses; an isolated live score path still must replace curiosity/prudence.
+Stage 0 and its open questions are not declared complete.
+
+## Stage-1 personal-outcome construction
+
+`modules/personal_outcomes.py` connects a private bounded history of applied
+bodily consequences to the existing kernel. Only the known own decision debit
+is removed; recording, retrieval and construction are themselves paid. Latest
+up to three exact-key outcomes, otherwise same-action experience, define an
+explicit empirical approximation. No support remains unknown, not optimistic.
+Same-key persistence and body-only signals are documented in the
+[Stage-1 contract](STAGE1_INFORMATION_VALUE.md#personal-outcome-constructor).
+
+This is not a calibrated posterior, spatial exploration model or live-policy
+replacement. Next: integrated choice with an explicit newborn/unknown path,
+first-person admissible continuations and a real replacement of the old score,
+then a prospective gate. Do not add another generic observation framework.
