@@ -1,0 +1,114 @@
+name: I3 P5d temporary paid-development verification
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/i3-p5d-transport.yml'
+      - 'src/i3/**'
+      - 'tests/i3/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: i3-p5d-transport-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  software:
+    name: P5d exact-source and generation guards (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Source head and candidate
+        shell: bash
+        run: |
+          git rev-parse HEAD
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          test -f .github/workflows/i3-p5d-transport.yml
+      - name: Complete I3 focused test suite
+        run: PYTHONPATH=src python -m unittest discover -s tests/i3 -p 'test_*.py'
+      - name: Generation isolation minus this temporary transport workflow
+        shell: bash
+        run: |
+          rm .github/workflows/i3-p5d-transport.yml
+          test ! -e .github/workflows/i3-p5d-transport.yml
+          python scripts/check_engine_repository.py --json
+          python scripts/check_engine_contracts.py --json
+
+  development:
+    name: Original 24 P5d engineering lives (Python 3.11)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    needs: [software]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Exact source and fixed development-only allocation
+        shell: bash
+        run: |
+          git rev-parse HEAD
+          PYTHONPATH=src python -m i3.lab.p5d_development --manifest > p5d-plan.json
+          python - <<'PY'
+          import json
+          plan=json.load(open("p5d-plan.json"))
+          assert plan["cohort"] == "DEVELOPMENT_ONLY"
+          assert plan["validation"] == "NOT_OPENED" and plan["reserve"] == "LOCKED"
+          assert {a["development_index"] for a in plan["allocation"]} == set(range(32,38))
+          assert len(plan["allocation"]) == 6
+          assert plan["modes"] == ["normal", "discard_curiosity_bonus"]
+          assert plan["genome_seeds"] == [901,902]
+          assert plan["horizon"] == 120
+          print("P5D_DEV_SCHEDULE_SHA256",plan["sha256"])
+          PY
+      - name: Execute one original development-only 24-life panel
+        shell: bash
+        run: |
+          PYTHONPATH=src python -m i3.lab.p5d_development --run-development > p5d-original.json
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          raw=Path("p5d-original.json").read_bytes()
+          result=json.loads(raw)
+          assert result["status"] == "DEVELOPMENT_ONLY_NOT_HELDOUT_NOT_CAUSAL_MEDIATION"
+          assert result["validation"] == "NOT_OPENED" and result["reserve"] == "LOCKED"
+          assert len(result["receipts"]) == 24
+          assert len(result["paired_chronology"]) == 12
+          assert {r["development_index"] for r in result["receipts"]} == set(range(32,38))
+          assert {r["mode"] for r in result["receipts"]} == {"normal","discard_curiosity_bonus"}
+          assert len({(r["development_index"],r["genome_seed"],r["mode"]) for r in result["receipts"]}) == 24
+          assert len({r["genome_sha256"] for r in result["receipts"]}) == 2
+          for r in result["receipts"]:
+              assert len(r["steps"]) == r["steps_lived"]
+              assert r["summary"]["physical_resource_contacts"] == sum(r["summary"]["physical_resource_commands"].values())
+          print("P5D_ORIGINAL_SHA256",hashlib.sha256(raw).hexdigest())
+          print("P5D_ORIGINAL_BYTES",len(raw))
+          print("P5D_PLAN_SHA256",result["manifest"]["sha256"])
+          print("P5D_SUMMARY",json.dumps(result["summary"],sort_keys=True))
+          print("P5D_PAIRED",json.dumps(result["paired_chronology"],sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i3-p5d-development-original
+          path: |
+            p5d-plan.json
+            p5d-original.json
+          if-no-files-found: error
+          retention-days: 90
