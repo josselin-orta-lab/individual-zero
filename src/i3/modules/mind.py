@@ -79,8 +79,9 @@ class Mind:
         if type(observer_decision_diagnostics) is not bool:
             raise TypeError("observer diagnostics flag must be bool")
         self.observer_decision_diagnostics = observer_decision_diagnostics
-        if effect_readout not in ("full", "blind_predictions",
-                                  "blind_sources", "blind_all"):
+        if effect_readout not in (
+                "full", "blind_predictions", "blind_action_predictions",
+                "blind_sleep_forecast", "blind_sources", "blind_all"):
             raise ValueError("unknown effect-model readout intervention")
         self.effect_readout = effect_readout
         validate(genome)
@@ -142,6 +143,12 @@ class Mind:
             return (0.0,) * 5, 1.0
         return self.effects.predict(key)
 
+    def _read_plan_prediction(self, key):
+        """Mask only simulated action transitions, not passive/sleep drift."""
+        if self.effect_readout == "blind_action_predictions":
+            return (0.0,) * 5, 1.0
+        return self._read_effect_prediction(key)
+
     def _read_source_sign(self, key, channel) -> bool:
         if self.effect_readout in ("blind_sources", "blind_all"):
             return False
@@ -157,7 +164,8 @@ class Mind:
         (P1 froze them, so any plan ending tired looked costly forever.)
         """
         wait, _ = self._read_effect_prediction(("attendre",))
-        sleep = (None if self.effect_readout in ("blind_predictions", "blind_all")
+        sleep = (None if self.effect_readout in (
+                     "blind_predictions", "blind_sleep_forecast", "blind_all")
                  else self.effects.stats.get(("dormir",)))
         restore = None
         if sleep and sleep[2] > 0 and sleep[1][E] > 0:
@@ -388,7 +396,7 @@ class Mind:
                 while i + run < n and plan[i + run] == key and run < horizon:
                     run += 1
             i += run
-            mean, u = self._read_effect_prediction(key)
+            mean, u = self._read_plan_prediction(key)
             u_max = max(u_max, u)
             for c in range(5):
                 x = b[c] + run * mean[c]
