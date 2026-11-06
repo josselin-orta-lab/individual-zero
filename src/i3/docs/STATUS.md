@@ -141,3 +141,14 @@ paid first-12-step observations before first physical-action divergence.
 not a scientific replication or automatic GO.**
 [CI 42222555975](https://github.com/josselin-orta-lab/individual-zero/actions/runs/42222555975)
 passed 167 tests on Python 3.11/3.12; zero new scientific lives.
+
+## P5c bounded score-addend engineering (6 November 2026)
+
+[Paid score addend contract and development diagnostics](P5C_PAID_SCORE_ADDENDS.md)
+separate the curiosity bonus and uncertain-meal risk penalty while
+retaining the original genuinely computed and priced action forecasts.
+On 48 G0 engineering lives in development indices 26–31, 120-step
+censoring is normal 11/12, curiosity-blind 7/12, risk-penalty-blind
+12/12, both-blind 7/12. Early choices and funded scores change,
+but none of these effects is independent-population scientific evidence.
+P5c validation NOT_RUN, I1 active, I3 unregistered, P4 reserve sealed.
