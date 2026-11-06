@@ -90,6 +90,19 @@ full-knowledge oracle remains an **existential feasibility witness only if
 it succeeds**, not an optimal or matched performance ceiling even if paid.
 The capture-only searcher is a heuristic comparator, not an optimal searcher.
 
+## Full-horizon diagnostic (after initial P2 integration)
+
+See [P2_COST_AUDIT_RESULTS.md](P2_COST_AUDIT_RESULTS.md): 36 development
+lives at 400 ticks yield 31 deaths, 5 censored, 0/7,729 exact matches
+between the actual individual work vectors and the static tariff.
+The reference pays its full fixed tariff through horizon in only 4/12
+worlds, the omniscient probe in 12/12; this does not prove oracle optimality.
+An initial pulse-world exception exposed premature exogenous changes;
+scheduled world events now apply after the previously admitted action and
+before the next capture. All invalid commands still fail transactionally.
+The strict cost-equivalence claim remains **false**. This is an adverse
+engineering observation, not a scientific GO.
+
 ## P2 gates before P3
 
 - Generator replay and source hashes reproduce the same worlds; ecology
