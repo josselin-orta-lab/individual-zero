@@ -202,3 +202,18 @@ paired panel is implemented for indices 32–37 with two G0 engineering seeds
 and normal vs paid curiosity-score masking. **No P5d scientific validation
 was run or authorized by this implementation.** I1 remains active, I3
 unregistered and P4 reserve locked.
+
+## P5d original-only post-hoc inventory and voluntary waiting (6 November 2026)
+
+[Original verified read-only analysis](P5D_POSTHOC_COLLECTION_CONSUMPTION.md)
+reconstructs inventory conservation from the [permanently archived original
+24 development lives](studies/p5d-resource-acquisition/) without any new life.
+[Independent custody CI 42282747266](https://github.com/josselin-orta-lab/individual-zero/actions/runs/42282747266)
+passed dual-Python 191-test I3 checks, generation guards, original-byte and
+six adversarial receipt tamper checks. With curiosity discarded, individuals
+issued **761 deliberate wait commands vs 134 normal**, moved **193 vs 627**
+times, collected **11 vs 10** food units but consumed **0 vs 7**. All 11
+unconsumed units remain conserved in two censored development lives. This
+distinguishes chosen waiting from zero null motor commands, but does not
+identify the cause of reduced ingestion or establish survival generalization.
+No reserve or validation exposure; I1 remains active, I3 unregistered.
