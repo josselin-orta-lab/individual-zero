@@ -73,3 +73,14 @@ funding-status differences across 12 matched engineering lives per readout.
 The action-agnostic prior first diverges in action at step 4 and its earliest
 funding-status divergence is step 33 across the fixture; these are minima
 across pairs, not a causal claim. **No P5b held-out study has run.**
+
+### P5b funded option-score witness (development only)
+
+The [matched-body paid-score diagnostic](P5B_FUNDED_SCORE_WITNESS.md)
+records only scores, first predicted action deltas and bonuses actually
+computed and paid by the living decision loop. At matching pre-decision
+body states, the same named option can receive a different score as
+early as step 2 under action-blind or action-agnostic readouts; the
+earliest observed physical action divergence is step 4. These are
+minimum observations across small paired development lives, not
+proof of generalized survival causality. P5b held-out NOT_RUN.
