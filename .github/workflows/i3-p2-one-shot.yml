@@ -1,0 +1,31 @@
+name: I3 P2 isolated verification (one-shot)
+on:
+  push:
+    branches: [automation/i3-p2-check-20261106]
+    paths: [.github/workflows/i3-p2-one-shot.yml]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - name: Checkout exact P2 candidate
+        uses: actions/checkout@v4
+        with:
+          ref: 68ae8d6d12800911a703b80a1e1ba09024c3e1bf
+          persist-credentials: false
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: I3 tests
+        run: python -m unittest discover -s tests/i3 -p 'test_*.py' -v
+      - name: Repository boundaries
+        run: python scripts/check_engine_repository.py --json
+      - name: P2 development diagnostic
+        run: PYTHONPATH=src python -m i3.lab.p2_validation > /tmp/i3-p2-development-diagnostic.json
