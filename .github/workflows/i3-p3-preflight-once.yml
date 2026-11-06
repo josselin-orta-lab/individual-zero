@@ -1,0 +1,31 @@
+name: I3 P3 implementation preflight (one-shot NO selection)
+on:
+  push:
+    branches: [automation/i3-p3-pilot-verify-20261106]
+    paths: [.github/workflows/i3-p3-preflight-once.yml]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - name: Checkout exact prospective runner
+        uses: actions/checkout@v4
+        with:
+          ref: 52476fec3f39a7fd70bf611877b01d9c13d26009
+          persist-credentials: false
+      - name: Configure Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run I3 tests (all, no selection)
+        run: python -m unittest discover -s tests/i3 -p 'test_*.py' -v
+      - name: Run cross-generation guard
+        run: python scripts/check_engine_repository.py --json
+      - name: P3 preflight, no worlds instantiated
+        run: PYTHONPATH=src python -m i3.lab.p3_pilot --preflight
