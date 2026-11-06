@@ -103,6 +103,15 @@ before the next capture. All invalid commands still fail transactionally.
 The strict cost-equivalence claim remains **false**. This is an adverse
 engineering observation, not a scientific GO.
 
+## Decision on P2 exit methodology
+
+[Equal-opportunity decision](P2_EXIT_EQUAL_OPPORTUNITY.md) formally separates
+identical starting world/body/charging laws from variable, measured cognitive
+spending. The static-tariff reference stays descriptive: zero exact work-vector
+matches in the 400-step development audit is NOT converted into a pass.
+P3's randomized-parent control shares opportunities rather than forcing
+identical realized cognition. P3 has not yet been executed.
+
 ## P2 gates before P3
 
 - Generator replay and source hashes reproduce the same worlds; ecology
