@@ -14,7 +14,7 @@ jobs:
       - name: Checkout custody verifier only
         uses: actions/checkout@v4
         with:
-          ref: f2cd236d99cdaee00731167acb6cd5d9e449401e
+          ref: 4342840ee947e598a391a390375dbaafd0204179
           fetch-depth: 0
           persist-credentials: false
       - name: Configure Python
