@@ -17,7 +17,8 @@ from i3.runtime.life import run_life
 
 SCHEMA = "i3-p5b-development-readout-diagnostics-v1"
 MODES = ("full", "blind_predictions", "blind_action_predictions",
-         "blind_sleep_forecast", "blind_sources", "blind_all")
+         "blind_sleep_forecast", "blind_sources", "blind_all",
+         "action_agnostic_prior")
 GENOME_SEEDS = (901, 902)
 FAMILIES = p2_ecologies.FAMILIES
 REPEATS = (0, 1)
