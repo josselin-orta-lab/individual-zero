@@ -107,10 +107,9 @@ existing distress/projection and fully budgeted computation. Indistinguishable
 observations cannot provide hidden-outcome information. Costs enter forecasts;
 a zero-perceived-cost diagnostic still pays the same actual work.
 
-This kernel is not connected to live choice and supplies no unknown-outcome
-prior. The paid personal-outcome constructor below now supplies empirical
-hypotheses; an isolated live score path still must replace curiosity/prudence.
-Stage 0 and its open questions are not declared complete.
+The default reference does not call this kernel. The personal constructor
+below supplies empirical hypotheses; the opt-in local choice prototype below
+now uses them online. Neither Stage 0 nor the complete Stage 1 is concluded.
 
 ## Stage-1 personal-outcome construction
 
@@ -122,7 +121,20 @@ explicit empirical approximation. No support remains unknown, not optimistic.
 Same-key persistence and body-only signals are documented in the
 [Stage-1 contract](STAGE1_INFORMATION_VALUE.md#personal-outcome-constructor).
 
-This is not a calibrated posterior, spatial exploration model or live-policy
-replacement. Next: integrated choice with an explicit newborn/unknown path,
-first-person admissible continuations and a real replacement of the old score,
-then a prospective gate. Do not add another generic observation framework.
+This is not a calibrated posterior or spatial exploration model. Its original
+no-support behavior is unchanged; the local prototype explicitly supplies its
+own stationary-ignorance assumption rather than altering the constructor.
+
+## Stage-1 integrated local choice, opt-in only
+
+[Local choice contract](STAGE1_INFORMATION_VALUE.md): `run_life` now accepts the
+explicit `decision_policy="local_information_v1"`. Personal history, conditional
+forecasts, unchanged Competition and real motor execution are connected. The
+experimental score does not call additive curiosity/relevance/prudence. The
+default P1.3 reference remains unchanged and the policy is bound before birth.
+
+This prototype uses local primitive actions, a declared stationary unknown
+prior and a shared episodic-memory partition. It is not spatial information
+value or a clean one-mechanism survival gate. Next: a bounded prospective
+development diagnostic of its actual histories/failures and the missing spatial
+model, not more observers or a rescue rule. All original open gates remain open.

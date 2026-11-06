@@ -27,8 +27,15 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
              observer_decision_diagnostics: bool = False,
              score_addend_mode: str = "normal",
              observer_resource_acquisition: bool = False,
-             observer_full_competition: bool = False) -> dict:
+             observer_full_competition: bool = False,
+             decision_policy: str = "reference") -> dict:
     started = time.perf_counter()
+    if decision_policy not in ("reference", "local_information_v1"):
+        raise ValueError("unknown decision policy")
+    if decision_policy != "reference" and (
+            learning_mode != "normal" or effect_readout != "full" or
+            score_addend_mode != "normal"):
+        raise ValueError("local candidate does not implement historical ablation modes")
     if learning_mode not in (
             "normal", "shadow_discard", "discard_effects",
             "discard_values", "discard_replay"):
@@ -53,6 +60,10 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
     if type(horizon) is not int or horizon < 1:
         raise ValueError("positive integer horizon required")
     manifest = build_manifest(genome, spec, life_seed, horizon, protocol)
+    if decision_policy != "reference":
+        manifest["experimental_policy"] = {
+            "name": decision_policy, "unknown": "stationary_zero_delta_v1",
+            "episodic_partition": "half_td_half_effect_v1"}
     manifest_id = digest(manifest)
     evidence_head = manifest_id
     totals = {c: {k: 0.0 for k in ("requested", "paid", "unpaid")}
@@ -63,7 +74,11 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
     if observer_resource_acquisition:
         from i3.runtime.resource_observer import ResourceObserver
         resource_observer = ResourceObserver()
-    mind = Mind(genome, life_seed, effect_readout=effect_readout,
+    mind_type = Mind
+    if decision_policy == "local_information_v1":
+        from i3.modules.information_mind import InformationMind
+        mind_type = InformationMind
+    mind = mind_type(genome, life_seed, effect_readout=effect_readout,
                 observer_decision_diagnostics=(observer_decision_diagnostics or
                                                observer_resource_acquisition or
                                                observer_full_competition),
@@ -221,6 +236,17 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
         "mean_step_ms": round(1000.0 * elapsed / max(1, steps), 4),
         "trace_head": head,
     }
+    if decision_policy != "reference":
+        out["experimental_policy"] = dict(manifest["experimental_policy"])
+        out["personal_effect_memory"] = {
+            "capacity": mind.personal._samples.maxlen,
+            "retained": len(mind.personal._samples),
+            "recorded": mind.personal_records,
+            "td_capacity": mind.m_max,
+            "td_retained": len(mind.buffer)}
+        if observer_mind_digest:
+            out["personal_outcomes_sha256"] = digest(
+                [asdict(s) for s in mind.personal._samples])
     if effect_readout != "full" or observer_decision_diagnostics:
         out["effect_readout"] = effect_readout
     if score_addend_mode != "normal" or observer_decision_diagnostics:

@@ -32,7 +32,7 @@ broken Competition or resolve the P5d masked-arm case.** The supplied report's
 additional hunger/competing-needs interpretation is post-hoc and attributed to
 its author, not independently re-executed by this integration.
 
-## Accepted next direction, not implemented behavior
+## Accepted direction; implementation slices and limits below
 
 [ADR-0016](../../../docs/decisions/ADR-0016-i3-generalization-without-imposed-rules.md)
 and the single [development plan](DEVELOPMENT_PLAN.md) integrate the
@@ -137,9 +137,9 @@ the total computation cost enters the predicted body. Indistinguishable
 signals and body states cannot confer perfect hidden-outcome information.
 
 No automatic prior, World input, action command, learned-state mutation or new
-genome. Mind.decide and run_life do not call it; existing curiosity/prudence and
-the reference remain unchanged. The personal builder below is now implemented;
-the live policy is not. Budget consumption is not a physical settlement receipt;
+genome. The default reference does not call it; its curiosity/prudence remain
+unchanged. The personal builder and opt-in local online prototype below are
+implemented, not promoted. Budget consumption is not a physical settlement receipt;
 the ordinary runtime must debit it. Zero perceived cost still requires payment.
 
 Software tests include actual Mind projection/World debit and unchanged
@@ -158,15 +158,39 @@ Two/three empirical hypotheses and their same-key persistence assumption feed
 the unchanged kernel; body-only signals never expose sample identities.
 
 These are fallible recent empirical hypotheses, not calibrated uncertainty,
-true hidden effects or a new innate favorable prior. Extra storage is not yet
-wired into the normal lifetime's memory budget. The software integration uses
+true hidden effects or a new innate favorable prior. The default reference has
+no extra store; the opt-in prototype below shares its episodic budget. The
+original constructor software integration uses
 fixed development fixtures with actual Mind decisions, World steps, new paid
 recording and physical settlement. It is not a reference-cost-parity or survival
-study. Existing Mind/run_life, genome, physics and historical evidence remain
-unchanged; no selection/validation/reserve exposure or scientific GO.
+study. That constructor slice left existing executable source unchanged. The
+subsequent local integration below changes runtime dispatch only by explicit
+opt-in; genome, physics and historical evidence remain unchanged.
 
-Next: the smallest integrated experimental scoring path, including explicit
-newborn ignorance, memory-capacity accounting and first-person continuation
-admissibility. Spatial exploration, live ablations and source-locked prospective
-survival/revision evaluation remain open; do not mistake this constructor for
-a completed Stage 1 or expand generic instrumentation instead.
+## Stage 1: local online information choice, not reference promotion
+
+[Integrated local prototype](STAGE1_INFORMATION_VALUE.md): explicit run_life policy
+`local_information_v1` connects personal outcome recording, fully funded
+conditional forecasts and actually executed motor commands. Old additive
+curiosity/relevance/prudence do not enter this score; original Competition and
+motor control are reused. Default P1.3 behavior remains the reference.
+
+An explicit stationary zero-delta ignorance prior replaces missing support
+only in this prototype. It creates no positive resource gain but can be
+optimistic about unknown decay. Episodic m_max is split between TD/replay and
+personal effects, not enlarged. The complete batch has a common cost forecast;
+unused Competition-cycle ceilings are predicted, never billed. Actual recording
+is included once in the ordinary learning-phase debit. Policy identity enters
+the manifest before birth; unsupported historical ablations fail before birth.
+
+This changes the local planning repertoire and memory partition as well as
+scoring. It is not the full spatial mechanism or a one-mechanism scientific gate.
+Software checks include actual acquired-history use, a synthetic history-to-motor
+contrast, observer/RNG parity, exact receipts and pinned previous-runner default
+parity. Exact PASS/FAIL/NOT_RUN belongs to the implementation PR.
+
+Next: a bounded prospectively specified development diagnostic of its own
+histories and failures, then the missing first-person spatial information model.
+Do not tune a rescue prior or expand observers. Full live ablations and the
+source-locked survival/revision gate remain open; Stage 0, #1026 and #1054 are
+not resolved. No selection/validation/reserve exposure, activation or scientific GO.
