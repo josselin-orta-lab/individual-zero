@@ -189,3 +189,31 @@ no new lives, no new genetic/ecological independent
 replications, and no proof of complete lifelong
 resource-acquisition causality. [CI 42235312727](https://github.com/josselin-orta-lab/individual-zero/actions/runs/42235312727)
 passed 185 I3 tests on Python 3.11/3.12.
+
+## P5d external resource-acquisition instrumentation (engineering source)
+
+[The bounded P5d contract](P5D_RESOURCE_ACQUISITION.md) addresses [#1054](https://github.com/josselin-orta-lab/individual-zero/issues/1054).
+It distinguishes personal offered/scored resource plans from admitted physical
+commands, successfully collected/consumed inventory and **positive body uptake
+above metabolic drift**. Only the optional life-laboratory observer reads the
+actual post-action world outcome; Mind, world physics, cost rules and original
+life evidence chains remain unchanged. A fixed 24-life **development-only**
+paired panel is implemented for indices 32–37 with two G0 engineering seeds
+and normal vs paid curiosity-score masking. **No P5d scientific validation
+was run or authorized by this implementation.** I1 remains active, I3
+unregistered and P4 reserve locked.
+
+## P5d original-only post-hoc inventory and voluntary waiting (6 November 2026)
+
+[Original verified read-only analysis](P5D_POSTHOC_COLLECTION_CONSUMPTION.md)
+reconstructs inventory conservation from the [permanently archived original
+24 development lives](studies/p5d-resource-acquisition/) without any new life.
+[Independent custody CI 42282747266](https://github.com/josselin-orta-lab/individual-zero/actions/runs/42282747266)
+passed dual-Python 191-test I3 checks, generation guards, original-byte and
+six adversarial receipt tamper checks. With curiosity discarded, individuals
+issued **761 deliberate wait commands vs 134 normal**, moved **193 vs 627**
+times, collected **11 vs 10** food units but consumed **0 vs 7**. All 11
+unconsumed units remain conserved in two censored development lives. This
+distinguishes chosen waiting from zero null motor commands, but does not
+identify the cause of reduced ingestion or establish survival generalization.
+No reserve or validation exposure; I1 remains active, I3 unregistered.
