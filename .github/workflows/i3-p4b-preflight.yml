@@ -1,0 +1,31 @@
+name: I3 P4b shadow-learning code preflight (no new study lives)
+on:
+  push:
+    branches: [automation/i3-p4b-preflight-20261106]
+    paths: [.github/workflows/i3-p4b-preflight.yml]
+permissions:
+  contents: read
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - name: Checkout exact P4b draft source
+        uses: actions/checkout@v4
+        with:
+          ref: fda5ce482aaec151c3e9b4d5b4cdb8ea16ed523b
+          persist-credentials: false
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Test all I3 plus boundary guards without validation access
+        run: |
+          python -m unittest discover -s tests/i3 -p 'test_*.py' -q
+          python scripts/check_engine_repository.py --json
+      - name: P4b clean preflight without worlds
+        run: PYTHONPATH=src python -m i3.lab.p4b_validation --preflight
