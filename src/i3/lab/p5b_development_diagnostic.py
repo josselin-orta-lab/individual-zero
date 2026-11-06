@@ -74,8 +74,14 @@ def run():
                 if acc["shortfall_steps"] or acc["pending_replays"]:
                     raise RuntimeError("incomplete cognitive payment")
                 observer = life["observer_decision_diagnostics"]
+                # Pure post-life observer. Entries are exact physical
+                # post-step bodies and *actually paid* decision work. Never
+                # exposed to Mind, and never used to adjust its actions.
                 history = tuple(
-                    (step["action"], step["param"], step["info"]["funding"])
+                    (step["action"], step["param"], step["info"]["funding"],
+                     tuple(step["body"]),
+                     tuple(step["funding_phases"]["decision"]["accounting"][c]["paid"]
+                           for c in ("energy", "vigilance")))
                     for step in life["trace"])
                 histories[(index, gene_seed, mode)] = history
                 if (sum(observer[k] for k in
@@ -119,13 +125,24 @@ def run():
             for seed in GENOME_SEEDS:
                 control = histories[(index, seed, "full")]
                 treated = histories[(index, seed, mode)]
-                first = next((
-                    i + 1 for i in range(max(len(control), len(treated)))
-                    if (control[i][:2] if i < len(control) else None) !=
-                       (treated[i][:2] if i < len(treated) else None)
-                ), None)
-                cases.append({"development_index": index, "genome_seed": seed,
-                              "first_action_divergence_step": first})
+                def first_difference(parts):
+                    return next((
+                        i + 1 for i in range(max(len(control), len(treated)))
+                        if (tuple(control[i][j] for j in parts)
+                            if i < len(control) else None) !=
+                           (tuple(treated[i][j] for j in parts)
+                            if i < len(treated) else None)
+                    ), None)
+
+                # Chronology is descriptive. It cannot prove that a
+                # difference in realized cost *caused* the prior choice.
+                cases.append({
+                    "development_index": index, "genome_seed": seed,
+                    "first_action_divergence_step": first_difference((0, 1)),
+                    "first_decision_funding_divergence_step": first_difference((2,)),
+                    "first_post_step_body_divergence_step": first_difference((3,)),
+                    "first_paid_decision_work_divergence_step": first_difference((4,)),
+                })
         divergence[mode] = cases
     results = {}
     for mode in MODES:
