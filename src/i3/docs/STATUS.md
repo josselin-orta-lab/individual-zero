@@ -13,7 +13,7 @@ Décision : [ADR-0014](../../../docs/decisions/ADR-0014-i3-lignee-enjeu-de-soi.m
 | P1.2 | **Rejeté** par la porte G2c ([résultat](studies/g2c-p12-heldout/RESULTS.md)) : révision bien meilleure (69 contre 46, p = 0,0007) mais non-infériorité générale manquée d'une vie. Variante conservée dans la branche `i3/p1.2-variant` |
 | P1.3 | **Adopté sur le substrat v2** par la porte G2e sous sélection ([résultat](studies/g2e-p13-v2/RESULTS.md)) : 478 survies sur 1 000 contre 364 (p = 4 × 10⁻⁹) ; révision après tarissement dans 60 % des vies contre 23 %. Cognition de référence : génome `i3-genome-v3` |
 | P2 Mondes | Contrat d'opportunités égales et facturation validé en ingénierie ; **0/7729** correspondances exactes avec le tarif fixe des sondes : elles restent descriptives, sans équivalence de coût démontrée |
-| P3 Lignée | Calendrier déterministe préparé (72 clés de sélection, 24 de validation), non exécuté ; protocole prospectif à figer |
+| P3 Lignée | **Pilote de sélection exécuté et archivé** : 864 vies, 614 morts et 250 survivants censurés ; G2 50/144 sélection contre 45/144 aléatoire, contrastes +3,+3,-1,0 selon population. 48 génomes G2 gelés ; aucun GO scientifique ([résultat](studies/p3-mutation-pilot/RESULTS.md)) |
 | P4 Étude | Non commencé |
 
 Tests : `python -m unittest discover -s tests/i3 -p 'test_*.py' -v`. Une suite verte valide le logiciel au SHA exact, pas un comportement adaptatif.
