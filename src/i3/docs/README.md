@@ -63,7 +63,7 @@ paid planning interface and first-person learned effects intact. Its
 cases like the normal group, but showed **894 inactive steps versus
 109 normal**, with 891 no-processing-budget events. A generic learned
 magnitude did not restore action-specific activity; this is **not**
-a held-out scientific survival claim. P5b validation remains NOT_RUN.
+a held-out scientific survival claim by itself. The later independently preregistered P5b study is archived below.
 
 ### P5b matched decision chronology (development only)
 
@@ -72,7 +72,7 @@ the first physical action, body state, actually paid decision work and
 funding-status differences across 12 matched engineering lives per readout.
 The action-agnostic prior first diverges in action at step 4 and its earliest
 funding-status divergence is step 33 across the fixture; these are minima
-across pairs, not a causal claim. **No P5b held-out study has run.**
+across pairs, not a causal claim. The later P5b held-out study is archived below.
 
 ### P5b funded option-score witness (development only)
 
@@ -83,4 +83,19 @@ body states, the same named option can receive a different score as
 early as step 2 under action-blind or action-agnostic readouts; the
 earliest observed physical action divergence is step 4. These are
 minimum observations across small paired development lives, not
-proof of generalized survival causality. P5b held-out NOT_RUN.
+proof of generalized survival causality. The later P5b held-out study is archived below.
+
+## P5b prospectively registered action-readout held-out study
+
+[Preregistered protocol](P5B_HELDOUT_PREREG.md) and
+[original evidence and research findings](studies/p5b-paid-readout-heldout/RESULTS.md):
+**1152 first-pass lives** on 24 untouched validation worlds at indices
+72–95, all 48 frozen G2 genotypes, four genetic populations. Alive at
+400 steps: full readout **98/288**, no action-specific simulation
+readout **0/288**, personally learned global action-agnostic
+prior **0/288**, sleep-forecast-only masking **90/288**.
+The two action readout effects are consistent across four independent
+genetic populations but have exact n=4 two-sided sign-flip p=0.125,
+Holm-adjusted p=0.375; actual cognitive work and inactivity differ
+strongly. No information-only parity, statistically confirmatory GO
+or acquired individuality claim. [Next research handoff](P5B_HANDOFF.md).
