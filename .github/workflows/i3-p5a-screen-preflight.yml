@@ -17,7 +17,7 @@ jobs:
       - name: Checkout exact pre-exposure candidate
         uses: actions/checkout@v4
         with:
-          ref: 0ddc44ea19a26b49554ec6830a20103a103b7941
+          ref: ee2e97b1949fd94548fe6c5908ff411d37cb3f76
           persist-credentials: false
       - name: Configure Python
         uses: actions/setup-python@v5
