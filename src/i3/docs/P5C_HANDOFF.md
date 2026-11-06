@@ -105,3 +105,26 @@ not automatically established by curiosity-driven
 survival or different terminal state hashes.
 
 **No I3 activation, no general scientific GO.**
+
+## Original-data-only post-hoc active mortality diagnostic
+
+The subsequent [P5c post-hoc active-mortality and early-command
+audit](studies/p5c-paid-score-addends/POSTHOC_ACTIVE_MORTALITY.md)
+used only the unchanged 1152 original compact receipts and
+generated **no new life**. It found, across all 288 lives per
+mode, curiosity ablation produced **239 zero-water and 45
+zero-food deaths**, versus **146 and 32** normal; in
+the first 12 steps of each original life, only **132
+resource-related commands** were observed without curiosity
+versus **392** normal, while early rest/wait commands
+increased from 383 to 809. These are repeated observations,
+not new independent genetic populations, and the
+original compact receipts do **not** contain every later
+resource contact, successful consumption or full physical
+trajectory. The first scientific hypothesis is **actively
+choosing without sufficiently discovering/acquiring vital
+resources**, not mere paralysis or zero processing budget.
+A future diagnostic must prospectively record personally
+available and actually acquired resources with real costs;
+this post-hoc audit does not establish that mechanism
+causally or allow reusing old validation worlds.
