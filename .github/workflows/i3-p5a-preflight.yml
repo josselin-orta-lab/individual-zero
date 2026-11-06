@@ -1,0 +1,46 @@
+name: I3 P5a selective-retention preflight (development only)
+on:
+  push:
+    branches: [automation/i3-p5a-retention-preflight-20261106]
+    paths: [.github/workflows/i3-p5a-preflight.yml]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - name: Checkout exact P5a engineering candidate
+        uses: actions/checkout@v4
+        with:
+          ref: 5f6cf1698e000d956bdb42bbb26b882ac2fcca36
+          persist-credentials: false
+      - name: Configure Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Test I3 development code and old protected experiments
+        run: |
+          python -m unittest discover -s tests/i3 -p 'test_*.py' -q
+          python scripts/check_engine_repository.py --json
+      - name: Confirm historic P3 P4 evidence hashes, no study execution
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import gzip,hashlib
+          from pathlib import Path
+          root=Path("src/i3/docs/studies")
+          files={
+           "p4a-g2-heldout/validation-full.json.gz":"44adb1192d1aea87cf5d96a547f794de6f7fe33a566a5de90747a34429e8e8d6",
+           "p4b-paid-outcome-learning/learning-full.json.gz":"688463e4fbb71cb88d57d0cafbe70eb033adeafe8ae8551d42bec58dfa9e395c",
+          }
+          for path,digest in files.items():
+              original=gzip.decompress((root/path).read_bytes())
+              assert hashlib.sha256(original).hexdigest()==digest
+              print(path,"unchanged")
+          PY
