@@ -37,3 +37,18 @@ controls were followed by a separately [preregistered P5a mechanism screen](P5A_
 Future validation requires independent prospective preregistration, fresh
 allocation, adequate population-level replication and actual paid-cost
 mediation analysis. See [#1026](https://github.com/josselin-orta-lab/individual-zero/issues/1026).
+
+## P5b decision readout diagnostic (development only)
+
+[Readout-control contract](P5B_EFFECT_READOUT_CONTRACT.md) and
+[reproducible first diagnostic findings](P5B_DEVELOPMENT_FINDINGS.md)
+separate learned action predictions, learned sleep forecasts and
+learned source-positivity gates without removing the genuinely paid
+and retained effect model. The observer records offered/scored options,
+rejections and processing-budget losses but does not influence decisions.
+Across 12 matched engineering lives per condition, suppressing action
+predictions increased inactivity from 109 to 841 of 1370 lived steps;
+all conditions had 8/12 reach 120 steps. **Not a held-out scientific
+study or evidence of generalized survival benefit.** Next design question:
+which first-person uninformed effect interface is structurally sound?
+See [#1035](https://github.com/josselin-orta-lab/individual-zero/issues/1035).
