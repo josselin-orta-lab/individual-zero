@@ -12,7 +12,7 @@ Décision : [ADR-0014](../../../docs/decisions/ADR-0014-i3-lignee-enjeu-de-soi.m
 | P1.1 | Adopté (porte G2b, [résultat](studies/g2b-p11-heldout/RESULTS.md)) : non inférieur à P1, sans gain mesurable |
 | P1.2 | **Rejeté** par la porte G2c ([résultat](studies/g2c-p12-heldout/RESULTS.md)) : révision bien meilleure (69 contre 46, p = 0,0007) mais non-infériorité générale manquée d'une vie. Variante conservée dans la branche `i3/p1.2-variant` |
 | P1.3 | **Adopté sur le substrat v2** par la porte G2e sous sélection ([résultat](studies/g2e-p13-v2/RESULTS.md)) : 478 survies sur 1 000 contre 364 (p = 4 × 10⁻⁹) ; révision après tarissement dans 60 % des vies contre 23 %. Cognition de référence : génome `i3-genome-v3` |
-| P2 Mondes | Logiciel et mondes vérifiés (90 tests, Python 3.11/3.12) ; équivalence de coûts des sondes NON établie : 0/7729 correspondances exactes au tarif fixe sur 36 vies de développement à 400 pas. P3 NON_RUN |
+| P2 Mondes | Contrat d'opportunités égales et facturation validé en ingénierie ; **0/7729** correspondances exactes avec le tarif fixe des sondes : elles restent descriptives, sans équivalence de coût démontrée |
 | P3 Lignée | Calendrier déterministe préparé (72 clés de sélection, 24 de validation), non exécuté ; protocole prospectif à figer |
 | P4 Étude | Non commencé |
 
