@@ -1,0 +1,32 @@
+name: I3 P5d exact-source observer preflight
+on:
+  push:
+    branches: [automation/i3-p5d-resource-audit-20261106]
+    paths: [.github/workflows/i3-p5d-resource-audit.yml]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: 45d25aa6e8b8c9c5dce2207f6e67817a42bed371
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Focused P5d checks
+        run: python -m unittest discover -s tests/i3 -p 'test_p5d*.py' -v
+      - name: Complete I3 suite and generation boundaries
+        run: |
+          python -m unittest discover -s tests/i3 -p 'test_*.py' -q
+          python scripts/check_engine_repository.py --json
+      - name: Pure development allocation without running panel
+        run: PYTHONPATH=src python -m i3.lab.p5d_development --manifest
