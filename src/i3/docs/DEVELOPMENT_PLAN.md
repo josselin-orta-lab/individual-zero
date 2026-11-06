@@ -107,6 +107,17 @@ claim this observation patch fixes them, or retroactively certify old studies.
    matching and population-level uncertainty. Distinguish better innate
    behavior from improved use of experience, then test individuality from
    different histories of the same genome. Report null/adverse lives.
+   **First-pass experiments completed**: [P4a prereg](P4A_HELDOUT_PREREG.md)
+   and [inconclusive generalization result](studies/p4a-g2-heldout/RESULTS.md)
+   (288 lives; population differences -2,+9,-1,-1); [P4b prereg](P4B_LEARNING_PREREG.md)
+   and [paid shadow-learning result](studies/p4b-paid-outcome-learning/RESULTS.md)
+   (576 lives; 84/288 normal survivors versus 0/288 without retained
+   outcome learning; 144/144 same-genome pairs show divergent learned
+   outcome-model fingerprints). The ablation preserves spatial belief
+   learning and differs in realized cognition: this is a narrow mechanism
+   result, NOT a general proof of intelligence, optimum survival, or
+   subjective individuality. Larger independent populations and separately
+   registered effect/value/replay and cost-matched controls remain open.
 
 No lineage or new held-out study is executed by the foundation patch. Prefer
 one focused change and a falsifier to another general framework. Software
