@@ -1,0 +1,58 @@
+name: I3 P4 final complete-evidence audit (NO new lives)
+on:
+  push:
+    branches: [automation/i3-p4-final-audit-20261106]
+    paths: [.github/workflows/i3-p4-final-audit.yml]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - name: Checkout exact complete P4 archival candidate
+        uses: actions/checkout@v4
+        with:
+          ref: 8bf04494d4d1313485fc3b642c03b91ae315efb7
+          persist-credentials: false
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Verify all I3 tests and generation boundary guards
+        run: |
+          python -m unittest discover -s tests/i3 -p 'test_*.py' -q
+          python scripts/check_engine_repository.py --json
+      - name: Check both ORIGINAL full evidence archives with no study execution
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          from hashlib import sha256
+          import gzip,json,collections
+          root=Path("src/i3/docs/studies")
+          protocols=[
+            ("p4a-g2-heldout/validation-full.json.gz",
+             "44adb1192d1aea87cf5d96a547f794de6f7fe33a566a5de90747a34429e8e8d6",
+             "3fe21087283eeafb8e9b0fc2522b238ea700611029a7f02b1edf3b89b2a3b3c5",288,24),
+            ("p4b-paid-outcome-learning/learning-full.json.gz",
+             "688463e4fbb71cb88d57d0cafbe70eb033adeafe8ae8551d42bec58dfa9e395c",
+             "8fc34d37b7348e3f171a48879d7dd03b898547c4aaa5204c0727cc8006b0168b",576,24)
+          ]
+          for filename,raw_hash,canonical_hash,n,w in protocols:
+              raw=gzip.decompress((root/filename).read_bytes())
+              assert sha256(raw).hexdigest()==raw_hash
+              data=json.loads(raw)
+              payload={k:v for k,v in data.items() if k!="sha256"}
+              assert sha256(json.dumps(payload,sort_keys=True,separators=(",",":")).encode()).hexdigest()==canonical_hash==data["sha256"]
+              assert data["total_lives"]==len(data["lives"])==n
+              assert len(set((x["population"],x["family"],x["repeat"]) for x in data["lives"]))==w
+              assert len(set(x["evidence_head"] for x in data["lives"]))==n
+              assert len(set(x["source_sha256"] for x in data["lives"]))==1
+              print("PASS",filename,n,w,canonical_hash)
+          PY
