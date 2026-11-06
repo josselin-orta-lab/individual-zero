@@ -34,12 +34,12 @@ def _source_sha() -> str:
 
 
 def _preflight():
-    if _source_sha() != os.environ.get("I3_P5B_SOURCE_SHA", ""):
+    if _source_sha() != os.environ.get("I3_P5C_SOURCE_SHA", ""):
         raise RuntimeError("P5c exact source is not prospectively locked")
     schedule = p5c_schedule.manifest()
-    if schedule["sha256"] != os.environ.get("I3_P5B_SCHEDULE_SHA", ""):
+    if schedule["sha256"] != os.environ.get("I3_P5C_SCHEDULE_SHA", ""):
         raise RuntimeError("P5c world allocation is not prospectively locked")
-    if os.environ.get("I3_P5B_APPROVED_PROTOCOL", "") != PROTOCOL:
+    if os.environ.get("I3_P5C_APPROVED_PROTOCOL", "") != PROTOCOL:
         raise RuntimeError("P5c protocol has no prospective authorization")
     genomes = p4a_validation.verify_frozen_genomes()
     return schedule, genomes
@@ -186,7 +186,7 @@ def _early_pair(full: dict, intervention: dict) -> dict:
     This mechanism score-addend is descriptive and cannot by itself establish
     a controlled information-only causal contrast.
     """
-    first_action = first_score = first_base = None
+    first_action = first_score = first_base = first_curiosity = first_risk = None
     common_preaction_steps = 0
     a, b = full["early_witness"], intervention["early_witness"]
     for i in range(min(len(a), len(b))):
@@ -200,6 +200,14 @@ def _early_pair(full: dict, intervention: dict) -> dict:
                     first_score = i + 1
                 if first_base is None and abs(aa[option]["base_return"] - bb[option]["base_return"]) > 1e-9:
                     first_base = i + 1
+                if first_curiosity is None and abs(
+                        aa[option]["curiosity_applied"] -
+                        bb[option]["curiosity_applied"]) > 1e-9:
+                    first_curiosity = i + 1
+                if first_risk is None and abs(
+                        aa[option]["risk_applied"] -
+                        bb[option]["risk_applied"]) > 1e-9:
+                    first_risk = i + 1
         if (left["action"], left["param"]) != (right["action"], right["param"]):
             first_action = i + 1
             break
@@ -212,6 +220,8 @@ def _early_pair(full: dict, intervention: dict) -> dict:
         "first_action_difference_within_window": first_action,
         "first_shared_option_score_difference_before_action": first_score,
         "first_shared_option_base_return_difference_before_action": first_base,
+        "first_shared_option_curiosity_difference_before_action": first_curiosity,
+        "first_shared_option_risk_difference_before_action": first_risk,
         "matched_preaction_body_steps": common_preaction_steps,
     }
 
@@ -334,6 +344,12 @@ def summarize(raw: dict) -> dict:
             "pairs_with_preaction_common_option_base_return_change": sum(
                 x["first_shared_option_base_return_difference_before_action"] is not None
                 for x in pairs),
+            "pairs_with_preaction_common_option_curiosity_change": sum(
+                x["first_shared_option_curiosity_difference_before_action"] is not None
+                for x in pairs),
+            "pairs_with_preaction_common_option_risk_change": sum(
+                x["first_shared_option_risk_difference_before_action"] is not None
+                for x in pairs),
             "pairs_with_action_change_in_window": sum(
                 x["first_action_difference_within_window"] is not None for x in pairs),
             "first_score_divergence_steps": [
@@ -358,7 +374,7 @@ if __name__ == "__main__":
         allocation = p5c_schedule.manifest()
         genes = p4a_validation.verify_frozen_genomes()
         print(json.dumps({
-            "protocol": PROTOCOL, "status": "NO_P5B_VALIDATION_WORLD_OPENED",
+            "protocol": PROTOCOL, "status": "NO_P5C_VALIDATION_WORLD_OPENED",
             "allocation_sha256": allocation["sha256"],
             "worlds": len(allocation["exposure"]),
             "genomes": len(genes), "planned_lives": allocation["lives"],
