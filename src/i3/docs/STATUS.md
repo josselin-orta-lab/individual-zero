@@ -126,3 +126,23 @@ No new generator, observer hook, allocation or scientific cohort. Sidecar joins
 are consistency checks, not original-chain authentication. Next: bind the
 bounded Stage-1 candidate and these definitions to a prospective gate rather
 than expand the observer framework. Stage 0 and #1026/#1054 remain open.
+
+## Stage 1: paid information-value kernel, not a deployed cognitive candidate
+
+[Kernel contract](STAGE1_INFORMATION_VALUE.md): a new computational primitive
+compares one common continuation against observation-conditional re-planning
+across two/three subjective forecasts in the existing distress-return units.
+All branch scoring/projection and reduction work is funded before execution;
+the total computation cost enters the predicted body. Indistinguishable
+signals and body states cannot confer perfect hidden-outcome information.
+
+No automatic prior, World input, action command, learned-state mutation or new
+genome. Mind.decide and run_life do not call it; existing curiosity/prudence and
+the reference remain unchanged. A live policy and its personal-belief builder
+are still to implement. Budget consumption is not a physical settlement receipt;
+the ordinary runtime must debit it. Zero perceived cost still requires payment.
+
+Software tests include actual Mind projection/World debit and unchanged
+reference-life behavior on a development fixture. Exact results belong to the
+implementation PR. No new scientific study, held-out exposure, activation or
+survival/generalization finding. #1060, #1061, #1026 and #1054 remain open.
