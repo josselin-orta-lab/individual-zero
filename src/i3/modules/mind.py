@@ -81,7 +81,8 @@ class Mind:
         self.observer_decision_diagnostics = observer_decision_diagnostics
         if effect_readout not in (
                 "full", "blind_predictions", "blind_action_predictions",
-                "blind_sleep_forecast", "blind_sources", "blind_all"):
+                "blind_sleep_forecast", "blind_sources", "blind_all",
+                "action_agnostic_prior"):
             raise ValueError("unknown effect-model readout intervention")
         self.effect_readout = effect_readout
         validate(genome)
@@ -147,6 +148,14 @@ class Mind:
         """Mask only simulated action transitions, not passive/sleep drift."""
         if self.effect_readout == "blind_action_predictions":
             return (0.0,) * 5, 1.0
+        if self.effect_readout == "action_agnostic_prior":
+            # The existing global ('*',) running mean is updated from the
+            # individual's OWN paid lived outcomes. Its learned magnitude
+            # can support an intact forecast interface, but its value and
+            # uncertainty contain NO information about the proposed action
+            # label or token. No new estimate, heuristic, privileged facts,
+            # or unbilled work is introduced.
+            return self.effects.predict(("*",))
         return self._read_effect_prediction(key)
 
     def _read_source_sign(self, key, channel) -> bool:
