@@ -149,6 +149,28 @@ class P2PaidProbeTests(unittest.TestCase):
                              "partial_or_unfunded_not_a_fair_survival_ceiling")
         self.assertEqual(out["world_sha256"], eco.fingerprint(spec))
 
+    def test_static_tariff_is_deterministic_sealed_and_independent(self):
+        profile = val.calibrate_fixed_tariff()
+        self.assertEqual(profile["schema"], "i3-p2-static-tariff-v1")
+        self.assertEqual(profile, val.calibrate_fixed_tariff())
+        self.assertTrue(all(source["family"] in eco.FAMILIES and
+                            source["index"] in (0, 1)
+                            for source in profile["calibration"]))
+        world = eco.world_for("pulse", "development", 10)
+        first = val.run_fixed_tariff_probe(world, 18, profile)
+        again = val.run_fixed_tariff_probe(world, 18, profile)
+        self.assertEqual(first, again)
+        self.assertEqual(first["profile_sha256"], profile["sha256"])
+        self.assertEqual(first["scope"], "frozen_mean_work_tariff_not_exact_individual_work")
+        changed = copy.deepcopy(profile)
+        changed["tariff"]["decision"]["cycles"] += 1
+        with self.assertRaises(ValueError):
+            val.run_fixed_tariff_probe(world, 18, changed)
+        changed = copy.deepcopy(profile)
+        changed["cohort"] = "validation"
+        with self.assertRaises(ValueError):
+            val.run_fixed_tariff_probe(world, 18, changed)
+
     def test_no_hidden_world_info_in_reference_audit(self):
         spec = eco.world_for("depletion", "development", 9)
         out = val.assess_pair(generation_zero(6000), spec, 9, 15)
