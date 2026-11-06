@@ -151,4 +151,27 @@ On 48 G0 engineering lives in development indices 26–31, 120-step
 censoring is normal 11/12, curiosity-blind 7/12, risk-penalty-blind
 12/12, both-blind 7/12. Early choices and funded scores change,
 but none of these effects is independent-population scientific evidence.
-P5c validation NOT_RUN, I1 active, I3 unregistered, P4 reserve sealed.
+This section records the earlier development-only checkpoint;
+P5c validation was subsequently executed in a separately registered
+cohort described below. I1 remains active; P4 reserve sealed.
+
+## P5c prospective original curiosity/risk study, completed 6 November 2026
+
+[Prospective registration](P5C_HELDOUT_PREREG.md) was merged BEFORE
+[first original run 42232558602](https://github.com/josselin-orta-lab/individual-zero/actions/runs/42232558602).
+All **1152/1152** registered lives, 48 frozen G2 genotypes and
+24 untouched validation worlds indices 96–119 completed.
+[Original custody run 42233838959](https://github.com/josselin-orta-lab/individual-zero/actions/runs/42233838959)
+independently verified all bytes, 288 four-mode pairings and paid
+score components with **zero additional lives**.
+[Unfiltered full original report](studies/p5c-paid-score-addends/RESULTS.md):
+normal survival at 400 **110/288**, discard curiosity **4/288**,
+discard risk **105/288**, discard both **7/288**. Paired genetic
+population curiosity contrast **[+21,+41,+22,+22]** survivors/72,
+exact bilateral n=4 p=0.125 and 3-comparison exploratory Holm
+p=0.375, not conventional confirmatory significance. Curiosity
+ablation yielded 1.13% inactive lived steps vs 18.65% normal
+despite substantially worse survival. Realized work differs.
+[Research handoff](P5C_HANDOFF.md): distinguish active mortality
+pathways and need-weighted curiosity from generic uncertainty.
+No I3 activation, no general scientific GO; original P4 reserve locked.
