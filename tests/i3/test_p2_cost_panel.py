@@ -15,7 +15,7 @@ class P2CostPanelContractTests(unittest.TestCase):
     def test_panel_never_requests_selection_validation_or_reserve(self):
         self.assertEqual(panel.INDICES, (2, 3, 4, 5))
         self.assertEqual(panel.GENOME_SEEDS, (6000, 6001, 6002))
-        self.assertEqual(panel.HORIZON, 120)
+        self.assertEqual(panel.HORIZON, eco.HORIZON)
         self.assertEqual(set(eco.FAMILIES), {"stable", "depletion", "pulse"})
         self.assertEqual(panel.PROTOCOL, "i3-p2-development-charge-panel-v1")
         self.assertTrue(all(i not in (0, 1) for i in panel.INDICES))
