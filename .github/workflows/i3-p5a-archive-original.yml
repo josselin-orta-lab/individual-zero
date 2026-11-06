@@ -1,0 +1,69 @@
+name: I3 P5a original paid mechanism evidence archive (one-shot no new lives)
+on:
+  push:
+    branches: [automation/i3-p5a-archive-original-20261106]
+    paths: [.github/workflows/i3-p5a-archive-original.yml]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  custody:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout verified read-only custodian with push credentials
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Verify exact registration and custody algorithm already integrated
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor 8c65855d91529fb4d494a4bd1327912b3df24cd9 HEAD
+          git merge-base --is-ancestor a2886626c0a9dc02ed863a38ec9430bd9f8a59c6 HEAD
+      - name: Download unique original preregistered P5a study artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: i3-p5a-original-paid-mechanism-first-run
+          run-id: 42192100293
+          github-token: ${{ github.token }}
+          path: out
+      - name: Verify 1152 lives and archive immutable original result
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum -c out/SHA256SUMS.txt
+          test "$(sha256sum out/i3-p5a-full.json | cut -d ' ' -f1)" = "21719dcc89f83f3984ccc32b3d203d2152ff8c7dd8c2c8a76318ce84d60113d8"
+          test "$(sha256sum out/i3-p5a-summary.json | cut -d ' ' -f1)" = "362c0dce5116d7b1148f4deae0016b096960872fd747f351fafca8cfa14808ff"
+          PYTHONPATH=src python -m i3.lab.p5a_custody out/i3-p5a-full.json | tee out/i3-p5a-independent-custody.json
+          python - <<'PY'
+          import json
+          p=json.load(open("out/i3-p5a-independent-custody.json"))
+          assert p["original_canonical_sha256"]=="06217b9f96da28c2ba34034f43b4800005346abeca4c88cc5b47184a3597bd96"
+          assert p["total_lives"]==1152 and p["worlds"]==24 and p["paired_genomes_modes"]==288
+          assert p["status"]=="ORIGINAL_VERIFIED_NO_NEW_LIVES"
+          print("VERIFIED original P5a paid work and independent-population outcomes")
+          PY
+          folder=src/i3/docs/studies/p5a-paid-component-screen
+          mkdir -p "$folder"
+          gzip -n -9 -c out/i3-p5a-full.json > "$folder/mechanisms-full.json.gz"
+          cp out/i3-p5a-summary.json "$folder/mechanisms-summary.json"
+          cp out/i3-p5a-independent-custody.json "$folder/independent-custody.json"
+          cp out/SHA256SUMS.txt "$folder/ORIGINAL_SHA256SUMS.txt"
+          sha256sum "$folder"/* | tee "$folder/ARCHIVE_SHA256SUMS.txt"
+          git checkout -b i3/p5a-mechanism-evidence-20261106
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$folder"
+          git commit -m "research(i3 P5a): permanently archive first original 1152 paid mechanism lives"
+          git push origin HEAD:refs/heads/i3/p5a-mechanism-evidence-20261106
+      - name: Preserve independent verification record
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-p5a-first-original-and-independent-custody
+          path: out/
+          retention-days: 90
+          if-no-files-found: warn
