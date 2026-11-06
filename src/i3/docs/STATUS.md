@@ -129,3 +129,15 @@ but only 79/288 agnostic pairs differ in projected *base return*.
 [Handoff](P5B_HANDOFF.md) separates scored uncertainty/risk from
 prediction information. No general scientific GO; I1 active,
 I3 unregistered, original P4 reserve sealed.
+
+## P5b post-hoc score audit (original data only)
+
+[Score-term decomposition](studies/p5b-paid-readout-heldout/POSTHOC_SCORE_TERMS.md)
+finds 4,587 bonus-only and 650 base-only changed candidate
+scores for the personal action-agnostic readout, from already
+paid first-12-step observations before first physical-action divergence.
+273/288 experimental pairs had at least one bonus-only change.
+**Observations are dependent; analysis is post-hoc and descriptive,
+not a scientific replication or automatic GO.**
+[CI 42222555975](https://github.com/josselin-orta-lab/individual-zero/actions/runs/42222555975)
+passed 167 tests on Python 3.11/3.12; zero new scientific lives.
