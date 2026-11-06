@@ -141,3 +141,14 @@ less physically inactive** than normal despite catastrophic
 mortality, a different mechanism from the P5b action-prediction
 blinding collapse. [Scientific handoff](P5C_HANDOFF.md).
 No general scientific GO; I1 active, I3 unregistered, reserve sealed.
+
+### P5c post-hoc physical mortality and early resource commands
+
+[Original-only diagnostic](studies/p5c-paid-score-addends/POSTHOC_ACTIVE_MORTALITY.md)
+explores why curiosity-masked individuals can stay active
+yet die. Across 288 lives, 239 deaths without curiosity
+were labeled zero water, versus 146 normally; the
+first 12-step resource-related commands fell from 392
+normal to 132 without curiosity. This **post-hoc
+descriptive** finding uses 0 new lives, not independent
+replication or complete lifelong resource contacts.
