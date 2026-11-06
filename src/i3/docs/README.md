@@ -98,3 +98,16 @@ no exposure, failure and death remain explicit. Next: bind this definition and
 the bounded Stage-1 candidate to source/endpoint/margin/multiplicity locks and
 study-specific cases, rather than expand the observer framework.
 Lineage controls and the existing #1026/#1054 questions remain open.
+
+## Stage-1 first computational slice
+
+[Paid information-value kernel](STAGE1_INFORMATION_VALUE.md), issue #1061:
+two/three explicit subjective outcomes, observation-conditional re-planning,
+existing distress/projection and fully budgeted computation. Indistinguishable
+observations cannot provide hidden-outcome information. Costs enter forecasts;
+a zero-perceived-cost diagnostic still pays the same actual work.
+
+This kernel is not connected to live choice and supplies no unknown-outcome
+prior. It does not yet replace the reference's curiosity/prudence. Next: build
+personal outcome beliefs and the isolated experimental score path, then freeze
+the prospective gate. Stage 0 and its open questions are not declared complete.
