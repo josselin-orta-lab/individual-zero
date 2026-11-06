@@ -53,3 +53,16 @@ calibrated static tariff. Neither output is a selection result nor a held-out
 comparison. For prospective studies, report full paid-cost coverage instead
 of calling any heuristic an optimal ceiling. See
 [P2 contract](P2_ECOLOGY_AND_PROBE_CONTRACT.md).
+
+## P5b prospectively evaluated readout mechanism
+
+[Registered P5b source and design](P5B_HELDOUT_PREREG.md);
+[complete original evidence and costs](studies/p5b-paid-readout-heldout/RESULTS.md).
+All 48 fixed G2 genotypes, 24 novel world indices 72–95, four
+independent genetic populations, 1152 paid lives, no retry or reserve
+use. Full readout survival 98/288, action-specific prediction
+masked 0/288, action-agnostic personal prior 0/288,
+learned sleep forecast masked 90/288. Three predeclared
+population-level contrasts, n=4 exact p floor 0.125, no
+confirmatory significance. Phase-paid activity, score witnesses
+and original SHA custody verified. No global GO.
