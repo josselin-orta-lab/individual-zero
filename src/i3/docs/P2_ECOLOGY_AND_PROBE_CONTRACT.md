@@ -106,3 +106,29 @@ The capture-only searcher is a heuristic comparator, not an optimal searcher.
 
 P2 does not establish a scientifically fair prospective comparator merely
 through software tests. I1 remains active. I3 remains an unregistered proposal.
+
+## Independent static tariff for future comparators
+
+`lab/p2_validation.py::calibrate_fixed_tariff` now derives the phase-by-phase
+mean `CognitiveWork` counters from **six development lives only** (one
+generation-zero genome, two seeds from each ecology, horizon 120).
+It rounds each counter to an integer, records the inputs and manifestation
+IDs, and produces a SHA-256-sealed `i3-p2-static-tariff-v1` profile.
+
+`run_fixed_tariff_probe` accepts only an unchanged development profile and
+subjects every probe to the same decision and post-action bills on every tick.
+There is no per-world or per-individual work schedule supplied to this
+comparator. It reports exactly which ticks were actually paid and cannot
+present an underfunded comparator as fully funded. Its charge is a **fixed
+approximation to mean development work**, not exact parity with each
+individual's actual variable work. Full scientific cost comparability still
+requires reporting the distribution of actual individual work against that
+frozen profile, ideally with a matched charging intervention in P3/P4, not
+merely a close average.
+
+The diagnostic trace-replay mode remains useful for falsifying any *claim*
+that the existing probes already pay an individual's workload. Neither
+cost-fixing mode is permitted to use selection, validation or reserve worlds
+to calibrate the tariff. A frozen tariff from one source commit must be
+persisted with a study protocol; recalculating after observing validation
+outcomes would violate the partition.
