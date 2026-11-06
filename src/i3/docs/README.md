@@ -7,7 +7,7 @@ Read these in order, consulting the original git commit pinned in each preregist
 1. [Current proposal status](STATUS.md): P1.3 adopted on v2, P2 methodology and P3 selection pilot documented; **P4 still NOT_RUN**.
 2. [ADR-0014](../../../docs/decisions/ADR-0014-i3-lignee-enjeu-de-soi.md): selection on individual persistence and self-relevant vital accounting.
 3. [Specification](SPECIFICATION.md) and [architecture](ARCHITECTURE.md): generation-owned physical and cognitive boundaries.
-4. [Test plan](TEST_PLAN.md): focused software checks and the unimplemented P2-P4 validation work.
+4. [Test plan](TEST_PLAN.md): focused software checks and open P4 scientific validation.
 5. Original G2 [preregistration](G2_FIRST_FALSIFIER_PREREG.md) and [observations](studies/g2-first-falsifier/RESULTS.md).
 6. Original G2b P1.1 [preregistration](G2B_P11_HELDOUT_PREREG.md) and [observations](studies/g2b-p11-heldout/RESULTS.md).
 7. Original G2c P1.2 [preregistration](G2C_P12_HELDOUT_PREREG.md) and [negative result](studies/g2c-p12-heldout/RESULTS.md).
