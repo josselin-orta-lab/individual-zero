@@ -412,6 +412,21 @@ class Mind:
         return out / 3.0, steps, u_max
 
     # ---- decision -------------------------------------------------------------
+    @staticmethod
+    def _observer_option_families(options):
+        """Categorize first-person proposed/evaluated choices, read only."""
+        families = {"resource": 0, "movement": 0, "exploration": 0, "rest": 0}
+        for oid in options:
+            if oid in ("dormir", "attendre"):
+                families["rest"] += 1
+            elif oid.startswith("explorer:"):
+                families["exploration"] += 1
+            elif oid.startswith("move:"):
+                families["movement"] += 1
+            else:
+                families["resource"] += 1
+        return families
+
     def decide(self, cap, budget: CognitiveBudget):
         body = cap["body"]
         if tuple(body) != budget.body or budget.work != CognitiveWork():
@@ -429,12 +444,16 @@ class Mind:
             if self.observer_decision_diagnostics:
                 info["observer"] = {
                     "offered_options": 0, "scored_options": 0,
-                    "rejected_controls": 0, "decision_outcome": "no_processing_budget"}
+                    "rejected_controls": 0, "decision_outcome": "no_processing_budget",
+                    "offered_families": self._observer_option_families(()),
+                    "scored_families": self._observer_option_families(())}
             return None, None, budget.work, info
         cycles, horizon, miss = capacities(body, self.n_base, self.h_max)
         inv = self.perceive(cap, miss)
         opts = self.options(inv, body, horizon)
         observer_offered = len(opts)
+        observer_families = (self._observer_option_families(o[0] for o in opts)
+                             if self.observer_decision_diagnostics else None)
         # No privileged default when the budget covers only a subset.
         self._budget_rng.shuffle(opts)
         p_water, p_food = self._sources(inv)
@@ -488,7 +507,9 @@ class Mind:
             if self.observer_decision_diagnostics:
                 info["observer"] = {
                     "offered_options": observer_offered, "scored_options": 0,
-                    "rejected_controls": 0, "decision_outcome": "no_funded_score"}
+                    "rejected_controls": 0, "decision_outcome": "no_funded_score",
+                    "offered_families": observer_families,
+                    "scored_families": self._observer_option_families(())}
             return None, None, budget.work, info
         winner, used = self._compete(scored, cycles, budget)
         ranked = [winner] + [o for o, _ in sorted(scored, key=lambda x: -x[1]) if o != winner]
@@ -506,7 +527,9 @@ class Mind:
                     "offered_options": observer_offered,
                     "scored_options": len(scored),
                     "rejected_controls": rejected_controls,
-                    "decision_outcome": "control_rejected"}
+                    "decision_outcome": "control_rejected",
+                    "offered_families": observer_families,
+                    "scored_families": self._observer_option_families(o for o, _ in scored)}
             return None, None, budget.work, info
         self.intention = oid if len(by_id[oid][1]) > 1 else None
         work = budget.work
@@ -522,7 +545,9 @@ class Mind:
                 "scored_options": len(scored),
                 "rejected_controls": rejected_controls,
                 "decision_outcome": "action_admitted",
-                "admitted_action": action}
+                "admitted_action": action,
+                "offered_families": observer_families,
+                "scored_families": self._observer_option_families(o for o, _ in scored)}
         return action, param, work, info
 
     def _compete(self, scored, cycles, budget=None):
