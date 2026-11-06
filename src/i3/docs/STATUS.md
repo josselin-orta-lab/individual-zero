@@ -93,3 +93,15 @@ for the empirical prior, versus 109 and 109 for full learning.
 [CI 42212861394](https://github.com/josselin-orta-lab/individual-zero/actions/runs/42212861394)
 passed 151 I3 tests on Python 3.11/3.12 and checked unchanged original
 P4a/P4b/P5a evidence. **NOT a held-out study or scientific GO.**
+
+## P5b decision score readout diagnostics (development only)
+
+[Funded score witness](P5B_FUNDED_SCORE_WITNESS.md): no extra cognition,
+no oracle facts, observer only. In the same 12 paired development lives
+per condition, a shared option at an identical pre-decision body can
+receive a different actually paid score by step 2 when action-specific
+predictions are blinded or replaced with a personal global mean.
+Observed first action difference is step 4 across pairs.
+[CI 42215560744](https://github.com/josselin-orta-lab/individual-zero/actions/runs/42215560744)
+passed 152 tests on Python 3.11/3.12; original P4/P5a full evidence
+unchanged. P5b scientific validation NOT_RUN; reserve locked.
