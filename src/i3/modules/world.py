@@ -146,8 +146,11 @@ class World:
             raise ValueError("unfunded or unknown motor command")
         if action in (None, "attendre", "dormir", "boire") and param is not None:
             raise ValueError("this motor command takes no parameter")
+        # Resolve the command against the state actually perceived before this
+        # tick. Exogenous changes occur after action/metabolism and are first
+        # observable at the following capture; they must not invalidate a
+        # previously admissible command between perception and execution.
         self.t += 1
-        self._apply_changes()
         kw = {}
         moved = False
         if action == "se_deplacer":
@@ -180,6 +183,7 @@ class World:
         self.body, reasons = transition(self.body, action, self.laws, work,
                                         accounting=accounting, **kw)
         self._restock()
+        self._apply_changes()  # environment evolves after the action, before next capture
         self.dead = reasons
         return {"t": self.t, "body": self.body, "moved": moved, "dead": reasons,
                 "cognitive_accounting": accounting}
