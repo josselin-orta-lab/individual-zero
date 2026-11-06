@@ -22,7 +22,9 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
              *, keep_trace: bool = False,
              protocol: str = "UNREGISTERED_ENGINEERING",
              learning_mode: str = "normal",
-             observer_mind_digest: bool = False) -> dict:
+             observer_mind_digest: bool = False,
+             effect_readout: str = "full",
+             observer_decision_diagnostics: bool = False) -> dict:
     started = time.perf_counter()
     if learning_mode not in (
             "normal", "shadow_discard", "discard_effects",
@@ -30,6 +32,11 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
         raise ValueError("unknown P4b/P5a learning intervention")
     if type(observer_mind_digest) is not bool:
         raise TypeError("observer_mind_digest must be bool")
+    if type(observer_decision_diagnostics) is not bool:
+        raise TypeError("observer_decision_diagnostics must be bool")
+    if effect_readout not in (
+            "full", "blind_predictions", "blind_sources", "blind_all"):
+        raise ValueError("unknown P5b effect readout")
     if type(horizon) is not int or horizon < 1:
         raise ValueError("positive integer horizon required")
     manifest = build_manifest(genome, spec, life_seed, horizon, protocol)
@@ -39,7 +46,8 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
               for c in ("energy", "vigilance")}
     shortfall_steps = 0
     world = World(spec)
-    mind = Mind(genome, life_seed)
+    mind = Mind(genome, life_seed, effect_readout=effect_readout,
+                observer_decision_diagnostics=observer_decision_diagnostics)
     head = sha256(json.dumps([genome_digest(genome), spec.name, life_seed, horizon],
                              separators=(",", ":")).encode()).hexdigest()
     trace = []
@@ -48,10 +56,20 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
     first_drink = None
     elapsed = 0.0
     learning_updates = replays_done = inactive_steps = 0
+    observer_counts = {
+        "no_processing_budget": 0, "no_funded_score": 0,
+        "control_rejected": 0, "action_admitted": 0,
+        "offered_options": 0, "scored_options": 0,
+        "rejected_controls": 0}
     while world.t < horizon and not world.dead:
         t0 = time.perf_counter()
         allowance = CognitiveBudget(world.body, world.laws)
         action, param, work, info = mind.decide(world.capture(), allowance)
+        if observer_decision_diagnostics:
+            diagnostic = info["observer"]
+            observer_counts[diagnostic["decision_outcome"]] += 1
+            for item in ("offered_options", "scored_options", "rejected_controls"):
+                observer_counts[item] += diagnostic[item]
         if work != allowance.work:
             raise ValueError("declared decision bill does not match consumed allowance")
         result = world.step(action, param, work)
@@ -161,6 +179,10 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
         "mean_step_ms": round(1000.0 * elapsed / max(1, steps), 4),
         "trace_head": head,
     }
+    if effect_readout != "full" or observer_decision_diagnostics:
+        out["effect_readout"] = effect_readout
+    if observer_decision_diagnostics:
+        out["observer_decision_diagnostics"] = dict(observer_counts)
     if learning_mode != "normal" or observer_mind_digest:
         out["learning_intervention"] = learning_mode
         # Component ablations retain the base outcome pipeline and discard
