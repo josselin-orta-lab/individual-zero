@@ -98,6 +98,11 @@ claim this observation patch fixes them, or retroactively certify old studies.
    populations, lifetime-only selection and random-parent controls at equal
    budgets. Inherit generic genes only, never memories/maps/body states. Fix
    horizons and pilot size prospectively. Survivors are censored, not dead.
+   **Technically executed with prospective source lock:** [P3 prereg](P3_PILOT_PREREG.md),
+   [full evidence and mixed results](studies/p3-mutation-pilot/RESULTS.md):
+   864 lives, 48 G2 genomes frozen. G1 selection worse, G2 +5/144 overall
+   with independent population differences +3,+3,-1,0. No P3 scientific GO
+   and no validation or reserve worlds opened.
 4. P4: held-out comparisons and targeted learning controls, with explicit cost
    matching and population-level uncertainty. Distinguish better innate
    behavior from improved use of experience, then test individuality from
