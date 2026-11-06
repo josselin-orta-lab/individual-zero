@@ -74,7 +74,11 @@ class EffectsModel:
 
 class Mind:
     def __init__(self, genome: dict, life_seed: int,
-                 *, effect_readout: str = "full"):
+                 *, effect_readout: str = "full",
+                 observer_decision_diagnostics: bool = False):
+        if type(observer_decision_diagnostics) is not bool:
+            raise TypeError("observer diagnostics flag must be bool")
+        self.observer_decision_diagnostics = observer_decision_diagnostics
         if effect_readout not in ("full", "blind_predictions",
                                   "blind_sources", "blind_all"):
             raise ValueError("unknown effect-model readout intervention")
@@ -421,10 +425,16 @@ class Mind:
                  + len(cap["inventory"]) + sum(len(c[1]) for c in
                    (cap["here"], *cap["neighbors"]) if c is not None))
         if not budget.try_spend(CognitiveWork(cycles=3, memory_items=slots)):
-            return None, None, budget.work, {"option": None, "funding": "NO_PROCESSING_BUDGET"}
+            info = {"option": None, "funding": "NO_PROCESSING_BUDGET"}
+            if self.observer_decision_diagnostics:
+                info["observer"] = {
+                    "offered_options": 0, "scored_options": 0,
+                    "rejected_controls": 0, "decision_outcome": "no_processing_budget"}
+            return None, None, budget.work, info
         cycles, horizon, miss = capacities(body, self.n_base, self.h_max)
         inv = self.perceive(cap, miss)
         opts = self.options(inv, body, horizon)
+        observer_offered = len(opts)
         # No privileged default when the budget covers only a subset.
         self._budget_rng.shuffle(opts)
         p_water, p_food = self._sources(inv)
@@ -474,16 +484,30 @@ class Mind:
                 bonus -= self.lambda_r * u * (self.w[I] * phi_now[1 + I] + self.kappa0)
             scored.append((oid, j + bonus))
         if not scored:
-            return None, None, budget.work, {"option": None, "funding": "NO_FUNDED_SCORE"}
+            info = {"option": None, "funding": "NO_FUNDED_SCORE"}
+            if self.observer_decision_diagnostics:
+                info["observer"] = {
+                    "offered_options": observer_offered, "scored_options": 0,
+                    "rejected_controls": 0, "decision_outcome": "no_funded_score"}
+            return None, None, budget.work, info
         winner, used = self._compete(scored, cycles, budget)
         ranked = [winner] + [o for o, _ in sorted(scored, key=lambda x: -x[1]) if o != winner]
         by_id = {o[0]: o for o in opts}
+        rejected_controls = 0
         for oid in ranked:
             action, param = self._admit(by_id[oid], inv, budget.remaining)
             if action is not None:
                 break
+            rejected_controls += 1
         else:
-            return None, None, budget.work, {"option": None, "funding": "NO_FUNDED_MOTOR"}
+            info = {"option": None, "funding": "NO_FUNDED_MOTOR"}
+            if self.observer_decision_diagnostics:
+                info["observer"] = {
+                    "offered_options": observer_offered,
+                    "scored_options": len(scored),
+                    "rejected_controls": rejected_controls,
+                    "decision_outcome": "control_rejected"}
+            return None, None, budget.work, info
         self.intention = oid if len(by_id[oid][1]) > 1 else None
         work = budget.work
         key = by_id[oid][1][0]
@@ -492,6 +516,13 @@ class Mind:
                 "simulated": work.simulated_steps, "urgency": round(urgency, 6),
                 "funding": "FUNDED", "scored_options": len(scored),
                 "top": sorted(((round(s, 6), o) for o, s in scored), reverse=True)[:3]}
+        if self.observer_decision_diagnostics:
+            info["observer"] = {
+                "offered_options": observer_offered,
+                "scored_options": len(scored),
+                "rejected_controls": rejected_controls,
+                "decision_outcome": "action_admitted",
+                "admitted_action": action}
         return action, param, work, info
 
     def _compete(self, scored, cycles, budget=None):
