@@ -7,9 +7,9 @@ Source (code and tests excluding this write-up):
 `9cee1a57788797f8ba4c0376fa26789a413eb248`.
 GitHub Actions [run 42178939557](https://github.com/josselin-orta-lab/individual-zero/actions/runs/42178939557):
 Python 3.11 and 3.12 each passed **90 I3 tests**, repository boundary check,
-and the complete development-only charge panel. Four separate, earlier
-diagnostic attempts remain visible, including a 120-step passing exploratory
-panel and the two failures preceding the event-order correction. They have
+and the complete development-only charge panel. Three earlier diagnostic runs remain visible: a passing 120-step
+exploratory panel, a failing obsolete test assertion, and a 400-step failure
+which exposed the event-order defect. No failure was erased. They have
 not been hidden or retrospectively replaced.
 
 ## Prior short-horizon preflight (120 steps)
