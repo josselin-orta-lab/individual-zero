@@ -1,0 +1,72 @@
+name: I3 P5b final original evidence and handoff audit NO new lives
+on:
+  push:
+    branches: [automation/i3-p5b-final-evidence-audit-20261106]
+    paths: [.github/workflows/i3-p5b-final-evidence-audit.yml]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - name: Checkout full documented and archived exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: 11c7e8cb902ecbbc0f324c527c8ab02a57152d10
+          persist-credentials: false
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Test 162 I3 software invariants and active engine boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests/i3 -p 'test_*.py' -q
+          python scripts/check_engine_repository.py --json
+      - name: Independently reverify original P5b complete evidence without new study lives
+        shell: bash
+        run: |
+          set -euo pipefail
+          root=src/i3/docs/studies/p5b-paid-readout-heldout
+          sha256sum -c "$root/ARCHIVE_SHA256SUMS.txt"
+          gzip -dc "$root/readout-full.json.gz" > "$RUNNER_TEMP/p5b-original.json"
+          test "$(sha256sum "$RUNNER_TEMP/p5b-original.json" | cut -d ' ' -f1)" = "98d21bc18d88f26743ae9ca07cc0d966605d14de826b73a91b9d24b675c9a8df"
+          test "$(sha256sum "$root/readout-summary.json" | cut -d ' ' -f1)" = "2c045fb974fec29edf41ae1f0359c9ced7ce191ba8ac5d75905ca9bc5279926b"
+          PYTHONPATH=src python -m i3.lab.p5b_custody "$RUNNER_TEMP/p5b-original.json" > "$RUNNER_TEMP/p5b-verified.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          root=Path("src/i3/docs/studies/p5b-paid-readout-heldout")
+          c=json.load(open(os.environ["RUNNER_TEMP"]+"/p5b-verified.json"))
+          original=json.load(open(root/"independent-custody.json"))
+          assert c==original
+          assert c["status"]=="ORIGINAL_VERIFIED_NO_NEW_LIVES"
+          assert c["raw_canonical_sha256"]=="211c2586971bace7cc592488c399202f97d07ddb3be0937eb49d4a47dd4f9473"
+          assert c["original_lives"]==1152 and c["worlds"]==24 and c["paired_genome_world_keys"]==288
+          assert [sum(c["survivors_by_population"][str(p)][m] for p in range(4))
+            for m in ("full","blind_action_predictions","action_agnostic_prior","blind_sleep_forecast")]==[98,0,0,90]
+          assert c["analysis"]["contrasts"]["blind_action_predictions"]["population_differences_lives_per_72"]==[19,31,23,25]
+          assert c["analysis"]["contrasts"]["action_agnostic_prior"]["population_differences_lives_per_72"]==[19,31,23,25]
+          assert c["analysis"]["contrasts"]["blind_sleep_forecast"]["population_differences_lives_per_72"]==[-2,8,2,0]
+          print("P5b original 1152 lives, costs, n4 contrasts and archive verified; NO NEW LIVES")
+          PY
+      - name: Verify P4a P4b P5a original studies unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import gzip,hashlib
+          from pathlib import Path
+          root=Path("src/i3/docs/studies")
+          for path,expected in (
+            ("p4a-g2-heldout/validation-full.json.gz","44adb1192d1aea87cf5d96a547f794de6f7fe33a566a5de90747a34429e8e8d6"),
+            ("p4b-paid-outcome-learning/learning-full.json.gz","688463e4fbb71cb88d57d0cafbe70eb033adeafe8ae8551d42bec58dfa9e395c"),
+            ("p5a-paid-component-screen/mechanisms-full.json.gz","21719dcc89f83f3984ccc32b3d203d2152ff8c7dd8c2c8a76318ce84d60113d8")):
+              assert hashlib.sha256(gzip.decompress((root/path).read_bytes())).hexdigest()==expected
+          PY
