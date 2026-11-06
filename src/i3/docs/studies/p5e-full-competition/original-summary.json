@@ -1,0 +1,43 @@
+{
+  "discard_curiosity_bonus": {
+    "censored_at_120": 6,
+    "counts": {},
+    "death_causes": {
+      "zero_water": 6
+    },
+    "lived_steps": 1324,
+    "lives": 12,
+    "paid_energy": 702.7108000000002,
+    "paid_vigilance": 972.9720000000003
+  },
+  "normal": {
+    "censored_at_120": 7,
+    "counts": {
+      "carried_food_steps": 342,
+      "collection_selected_over_carried_meal": 18,
+      "higher_scoring_nonmeal": 333,
+      "meal_admitted_after_control": 9,
+      "meal_raw_top_or_tied_full": 9,
+      "meal_top_but_other_competition_winner": 3,
+      "meal_winner_by_raw_score_fallback": 1,
+      "meal_winner_by_threshold_crossing": 8,
+      "meal_won_competition_before_control": 9,
+      "movement_or_exploration_selected_over_meal": 107,
+      "no_processing_budget_steps": 101,
+      "nonmeal_won_competition_before_control": 333,
+      "other_resource_selected_over_meal": 33,
+      "paid_meal_opportunity_steps": 342,
+      "real_eating_actions": 9,
+      "rest_selected_over_meal": 175,
+      "winner_by_raw_score_fallback": 164,
+      "winner_by_threshold_crossing": 178
+    },
+    "death_causes": {
+      "zero_water": 5
+    },
+    "lived_steps": 1335,
+    "lives": 12,
+    "paid_energy": 761.1070000000001,
+    "paid_vigilance": 989.8119999999997
+  }
+}
