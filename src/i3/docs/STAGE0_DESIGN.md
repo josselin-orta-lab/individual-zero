@@ -78,8 +78,10 @@ Development history is not claimed to be an exhaustive inventory of every
 unrecorded local test. The prior scientific schedule overlap is checked directly.
 
 This is **F0 only**. Fresh seeds do not implement a new family or establish
-whole-family generalization. Family R from the scenario still needs its own
-prospective definition; this F0 plan does not silently substitute for it.
+whole-family generalization. [R-depletion-v1](STAGE0_REVISION.md) now explicitly
+specifies the depletion rows as a first revision stratum and a personally
+available clock; that operational choice is separate from the supplied report
+and still needs the final study's prospective source/allocation lock.
 Only 32 existing P2 validation slots (168-199) remain beyond this design. A later
 larger/family-separated allocation must be explicitly designed, not obtained by
 extending P2 or touching the P4 reserve.
@@ -185,14 +187,15 @@ alone cannot establish runtime parity.
 python -m unittest discover -s tests/i3 -p 'test_stage0_energy.py' -v
 ```
 
-Before any study, freeze exact reference/candidate sources, family R,
-latency/no-exposure/death semantics, non-inferiority margin, sample-size rationale,
-multiplicity, crashes, stopping rule and compute ceiling. Bind expected cases,
-genotypes, worlds and intervention modes to that registered design. Publish a
-separate prospective registration before selection or validation, and verify
-live allocation conflicts again. Observer parity must be rechecked when a new
-cognitive candidate is implemented. No further general receipt framework is
-needed before addressing those concrete experimental definitions.
+The [revision contract](STAGE0_REVISION.md) now defines a concrete R stratum
+and observer-side latency/no-exposure/death semantics without opening worlds.
+Before any study, freeze exact reference/candidate sources, the final R protocol,
+non-inferiority margin, sample-size rationale, multiplicity, crashes, stopping
+rule and compute ceiling. Bind expected cases, genotypes, worlds and intervention
+modes to that registered design. Publish a separate prospective registration
+before selection or validation, and verify live allocation conflicts again.
+Observer parity must be rechecked when a new cognitive candidate is implemented.
+No further general receipt framework is needed before the bounded Stage-1 design.
 
 Keep [#1026](https://github.com/josselin-orta-lab/individual-zero/issues/1026)
 for continuing same-genome individuals with different histories and a common
