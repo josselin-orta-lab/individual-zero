@@ -1,0 +1,41 @@
+name: I3 P3 final archive verifier (one-shot, no new lives)
+on:
+  push:
+    branches: [automation/i3-p3-final-audit-20261106]
+    paths: [.github/workflows/i3-p3-final-audit.yml]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - name: Checkout exact candidate including original P3 evidence
+        uses: actions/checkout@v4
+        with:
+          ref: 9de6d9a8e1d2c87f0c07ba0f4b18dd18fc112f86
+          persist-credentials: false
+      - name: Configure Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Verify all I3 software and repository boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests/i3 -p 'test_*.py' -q
+          python scripts/check_engine_repository.py --json
+      - name: Reproduce exact frozen G2 genome custody from archived original, no new lives
+        shell: bash
+        run: |
+          set -euo pipefail
+          root=src/i3/docs/studies/p3-mutation-pilot
+          test "$(sha256sum "$root/G2_GENOMES.json" | cut -d ' ' -f1)" = "6cfb0ac7c0dd603f67c2a08863e6e8ef2183b51db19bb2ede05ba4e371610419"
+          gzip -dc "$root/selection-full.json.gz" > "$RUNNER_TEMP/selection-original.json"
+          test "$(sha256sum "$RUNNER_TEMP/selection-original.json" | cut -d ' ' -f1)" = "e45df7a494b01b02846128f5c93b30987a383edd65bd5884d6690740da11103e"
+          PYTHONPATH=src python -m i3.lab.p3_custody "$RUNNER_TEMP/selection-original.json" "$RUNNER_TEMP/frozen-verified.json"
+          test "$(sha256sum "$RUNNER_TEMP/frozen-verified.json" | cut -d ' ' -f1)" = "6cfb0ac7c0dd603f67c2a08863e6e8ef2183b51db19bb2ede05ba4e371610419"
