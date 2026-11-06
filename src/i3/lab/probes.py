@@ -27,28 +27,64 @@ IDLE = CognitiveWork()
 DELTA = {n: (dx, dy) for n, dx, dy in DIRECTIONS}
 
 
-def _funded_step(w: World, act: str, par):
-    """Apply one probe command under v2 funding; return (result, executed command).
+def _funded_step(w: World, act: str, par, *,
+                 decision_work: CognitiveWork = PROBE_WORK,
+                 learning_work: CognitiveWork = IDLE,
+                 audit: list | None = None):
+    """One probe step: prepaid decision, motor, then prepaid post-action bill.
 
-    If the reserves cannot pay ``PROBE_WORK``, no motor command is emitted (null
-    command, zero work), exactly as for an individual without a processing
-    budget: no free sleep and no free thought. Otherwise a motor command runs
-    only if the energy left after this bill covers its cost AND the reserves left
-    afterwards still cover the next ``PROBE_WORK``. Failing that, the probe
-    sleeps: its existing fallback for an unaffordable move and its only way to
-    recover. Sleep needs no motor energy. The reserve uses only the probe's own
-    body and fixed bill, never hidden world facts.
+    A P2 comparator can provide a prescribed external work tariff. The tariff
+    never enters the probe's perception or strategy. If payment fails, recorded
+    work is *not* fabricated: the probe is physically inactive or the post bill
+    is skipped and the audit marks that tick UNMATCHED. The caller must never
+    report an unmatched probe as a cost-equivalent comparator.
+
+    With the default fixed PROBE_WORK and no audit, this preserves the v2 probe
+    behavior already tested in P1.
     """
+    if not isinstance(decision_work, CognitiveWork) or not isinstance(learning_work, CognitiveWork):
+        raise TypeError("CognitiveWork bills required")
+    before = w.body
+    spent_decision = IDLE
+    spent_learning = IDLE
+    status = "MATCHED"
     budget = CognitiveBudget(w.body, w.laws)
-    if not budget.try_spend(PROBE_WORK):
-        return w.step(None, None, IDLE), None
-    if act != "dormir":
-        bill_e, bill_v = cognitive_cost(w.laws, PROBE_WORK)
-        left = budget.remaining
-        if left[E] - ACTION_COSTS[act] < bill_e or left[V] < bill_v:
-            act, par = "dormir", None
-    return w.step(act, par, PROBE_WORK), act
-
+    if decision_work == IDLE:
+        # A physically inactive individual is not a license for free probing.
+        result, done = w.step(None, None, IDLE), None
+    elif not budget.try_spend(decision_work):
+        result, done = w.step(None, None, IDLE), None
+        status = "UNFUNDED_DECISION"
+    else:
+        spent_decision = decision_work
+        if act != "dormir":
+            bill_e, bill_v = cognitive_cost(w.laws, decision_work)
+            left = budget.remaining
+            if left[E] - ACTION_COSTS[act] < bill_e or left[V] < bill_v:
+                act, par = "dormir", None
+        result, done = w.step(act, par, decision_work), act
+        if learning_work != IDLE and not result["dead"]:
+            learning = CognitiveBudget(w.body, w.laws)
+            if learning.try_spend(learning_work):
+                w.pay_cognition(learning_work)
+                result["body"] = w.body
+                spent_learning = learning_work
+            else:
+                status = "UNFUNDED_POST_ACTION"
+        elif learning_work != IDLE and result["dead"]:
+            status = "TERMINAL_BEFORE_POST_ACTION"
+    if audit is not None:
+        audit.append({
+            "t": w.t, "status": status,
+            "before": before,
+            "after": w.body,
+            "command": done,
+            "requested_decision": decision_work,
+            "requested_learning": learning_work,
+            "paid_decision": spent_decision,
+            "paid_learning": spent_learning,
+        })
+    return result, done
 
 def _step_towards(pos, target, passable):
     """First direction of a shortest path over cells accepted by ``passable``."""
@@ -73,7 +109,7 @@ def _step_towards(pos, target, passable):
     return prev[cur][1]
 
 
-def oracle_survival(spec, horizon: int) -> int:
+def oracle_survival(spec, horizon: int, *, work_schedule=None, audit=None) -> int:
     """Steps survived by a full-knowledge greedy keeper (lab only)."""
     w = World(spec)
     good = {t for t, (fg, di) in w.effects.items() if fg > 0 and di >= 0}
@@ -103,11 +139,15 @@ def oracle_survival(spec, horizon: int) -> int:
             act = "dormir"
         if act == "se_deplacer" and par is None:
             act, par = "dormir", None
-        _funded_step(w, act, par)  # energy/vigilance admission happens here
+        if work_schedule is not None and w.t >= len(work_schedule):
+            break  # comparison stops when the independent work witness ends
+        decision, learning = (PROBE_WORK, IDLE) if work_schedule is None else work_schedule[w.t]
+        _funded_step(w, act, par, decision_work=decision,
+                     learning_work=learning, audit=audit)
     return w.t
 
 
-def reference_survival(spec, horizon: int) -> int:
+def reference_survival(spec, horizon: int, *, work_schedule=None, audit=None) -> int:
     """Steps survived by a systematic lane-sweeping searcher with capture only."""
     w = World(spec)
     pos = (0, 0)                   # personal coordinates, like the individual
@@ -159,7 +199,11 @@ def reference_survival(spec, horizon: int) -> int:
             act, par = act
             if par is None:
                 act, par = "dormir", None
-        res, done = _funded_step(w, act, par)  # may sleep or idle instead
+        if work_schedule is not None and w.t >= len(work_schedule):
+            break  # no unpaid or invented reference work beyond the witness
+        decision, learning = (PROBE_WORK, IDLE) if work_schedule is None else work_schedule[w.t]
+        res, done = _funded_step(w, act, par, decision_work=decision,
+                                 learning_work=learning, audit=audit)
         if done == "se_deplacer":
             dx, dy = DELTA[par]
             pos = (pos[0] + dx, pos[1] + dy)
