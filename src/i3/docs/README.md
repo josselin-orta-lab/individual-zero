@@ -74,5 +74,16 @@ Focused software suite:
 `python -m unittest discover -s tests/i3 -p 'test_*.py' -v`.
 Documentation navigation:
 `python tools/check_repo_navigation.py --scope entrypoints`.
-Record exact SHA and PASS / FAIL / NOT_RUN. This scenario integration runs no
-new study, changes no executable and makes no activation or scientific claim.
+Record exact SHA and PASS / FAIL / NOT_RUN. The original scenario integration
+changed documentation only; the Stage-0 planning slice below adds no living
+engine change, study execution, activation or scientific claim.
+
+## Stage-0 first software slice
+
+[Eight-population F0 design](STAGE0_DESIGN.md) implements deterministic planning,
+complete persistence-only candidate ranking and population sign-test arithmetic.
+It prepares identifiers for eight new candidate pools, not evolved lineages;
+no selection/validation life or world is instantiated. The design is not a
+preregistration. Next within #1060: actual energetic receipt integration and
+full-observer parity, then source/endpoint/margin registration. Family R,
+lineage controls and the existing #1026/#1054 questions remain open.

@@ -8,8 +8,9 @@ I1 remains the active engine. Authority: [engine contract](../engine.json),
 Updated 6 November 2026 for the owner-requested scenario integration
 [#1059](https://github.com/josselin-orta-lab/individual-zero/issues/1059).
 Evidence baseline: `e4eb3e80c9dc48e131e05383d952909bd86213b7` (PR #1058).
-This update changes **documentation and priorities only**. It executes no new
-life, changes no cognition or physics, and opens no validation/reserve world.
+That integration changed documentation and priorities only. The subsequent
+Stage-0 planning slice below adds laboratory metadata/arithmetic, not cognition
+or physics; it opens no validation/reserve world and executes no study life.
 
 ## Current reference and observed limits
 
@@ -79,3 +80,18 @@ Direct current references: [P3](studies/p3-mutation-pilot/RESULTS.md),
 [TEST_PLAN.md](TEST_PLAN.md) describes software checks; historical test counts
 and CI links certify their own SHAs only. Exact current checks belong to the
 integration PR. A documentation merge does not create a new scientific result.
+
+## Stage 0: first non-executing design slice
+
+[Design contract](STAGE0_DESIGN.md), issue #1060: eight new G0 candidate pools
+(K=40, m=5 per architecture/population), separate F0 selection/validation blocks,
+strict complete-outcome ranking and exact sign-test arithmetic with explicit
+ties/effective n. New validation identifiers are 120-167; the reserve stays
+sealed. Identifiers are not generated genomes, selected winners or observed
+lives. This is not a preregistration or a completed Stage 0.
+
+Standalone scalar/metadata tests and full-repository integration checks are
+separate; exact CI results belong to the implementation PR. Actual energetic
+receipt mapping, full Competition observer parity, family R, source locks,
+practical margins, multiplicity, lineage controls and #1026/#1054 remain open.
+No survival, individuality or generalization result is added by this slice.
