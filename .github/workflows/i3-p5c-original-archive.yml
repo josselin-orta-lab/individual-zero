@@ -1,0 +1,81 @@
+name: I3 P5c verify and archive immutable FIRST original paid addend cohort
+on:
+  push:
+    branches: [automation/i3-p5c-original-archive-20261106]
+    paths: [.github/workflows/i3-p5c-original-archive.yml]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout independently tested original-data custodian
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Confirm registration and independent custodian already in main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor 3e97d94f95203eaa837f7a4cae755a15636380c8 HEAD
+          git merge-base --is-ancestor 2c854417c333156a65f0345c18225169ddb39b52 HEAD
+      - name: Download first P5c original study artifact ONLY
+        uses: actions/download-artifact@v4
+        with:
+          name: i3-p5c-first-original-paid-addends
+          run-id: 42232558602
+          github-token: ${{ github.token }}
+          path: out
+      - name: Verify original SHA bytes all 1152 paid receipts and commit durable archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum -c out/SHA256SUMS.txt
+          test "$(sha256sum out/p5c-full-original.json | cut -d ' ' -f1)" = "9ef699c1b8e5396ca4132ca526bfb09b3ae01bda524a33fb218a6e51473fa6a7"
+          test "$(sha256sum out/p5c-summary-original.json | cut -d ' ' -f1)" = "18f4cf060674d280dfe6af92e76dcf7a5fbe9d9df1228231bc90ca44bc08eaa9"
+          PYTHONPATH=src python -m i3.lab.p5c_custody out/p5c-full-original.json > out/p5c-independent-custody.json
+          python - <<'PY'
+          import json
+          original=json.load(open("out/p5c-full-original.json"))
+          summary=json.load(open("out/p5c-summary-original.json"))
+          check=json.load(open("out/p5c-independent-custody.json"))
+          assert check["status"]=="ORIGINAL_VERIFIED_NO_NEW_LIVES"
+          assert check["raw_canonical_sha256"]=="4774b3c890bba4b6b06efa5d955ec81ed3abcbc652ae7b2169ecd7ddb241bc0d"
+          assert check["original_lives"]==1152 and check["worlds"]==24
+          assert check["paired_genome_world_keys"]==288
+          assert original["sha256"]==check["raw_canonical_sha256"]
+          assert check["analysis"]==summary
+          modes=("normal","discard_curiosity_bonus","discard_risk_penalty","discard_both_bonus_terms")
+          totals=[sum(check["survivors_by_population"][str(p)][mode]
+                      for p in range(4)) for mode in modes]
+          assert totals==[110,4,105,7],totals
+          assert summary["contrasts"]["discard_curiosity_bonus"]["population_differences_lives_per_72"]==[21,41,22,22]
+          assert summary["contrasts"]["discard_risk_penalty"]["population_differences_lives_per_72"]==[5,1,3,-4]
+          assert summary["contrasts"]["discard_both_bonus_terms"]["population_differences_lives_per_72"]==[21,40,22,20]
+          print("P5c original independently verified: 1152 paid lives, 24 untouched worlds, 288 pairing keys, all contrasts")
+          PY
+          folder=src/i3/docs/studies/p5c-paid-score-addends
+          mkdir -p "$folder"
+          gzip -n -9 -c out/p5c-full-original.json > "$folder/addends-full.json.gz"
+          cp out/p5c-summary-original.json "$folder/addends-summary.json"
+          cp out/p5c-independent-custody.json "$folder/independent-custody.json"
+          cp out/SHA256SUMS.txt "$folder/ORIGINAL_SHA256SUMS.txt"
+          sha256sum "$folder"/* > "$folder/ARCHIVE_SHA256SUMS.txt"
+          git checkout -b i3/p5c-original-paid-addends-evidence-20261106
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$folder"
+          git commit -m "research(i3 P5c): preserve first 1152 paid score-addend lives and original receipts"
+          git push origin HEAD:refs/heads/i3/p5c-original-paid-addends-evidence-20261106
+      - name: Preserve audit logs if repository push is unavailable
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-p5c-first-original-verified-custody
+          path: out/
+          retention-days: 90
+          if-no-files-found: warn
