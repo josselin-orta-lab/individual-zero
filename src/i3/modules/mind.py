@@ -76,10 +76,17 @@ class Mind:
     def __init__(self, genome: dict, life_seed: int,
                  *, effect_readout: str = "full",
                  observer_decision_diagnostics: bool = False,
+                 observer_full_competition: bool = False,
                  score_addend_mode: str = "normal"):
         if type(observer_decision_diagnostics) is not bool:
             raise TypeError("observer diagnostics flag must be bool")
-        self.observer_decision_diagnostics = observer_decision_diagnostics
+        if type(observer_full_competition) is not bool:
+            raise TypeError("full competition observer flag must be bool")
+        # Laboratory witness only. It is never consulted to score, control,
+        # learn or fund an option, and does not enter first-person capture.
+        self.observer_full_competition = observer_full_competition
+        self.observer_decision_diagnostics = (
+            observer_decision_diagnostics or observer_full_competition)
         if score_addend_mode not in (
                 "normal", "discard_curiosity_bonus",
                 "discard_risk_penalty", "discard_both_bonus_terms"):
@@ -571,9 +578,18 @@ class Mind:
         winner, used = self._compete(scored, cycles, budget)
         ranked = [winner] + [o for o, _ in sorted(scored, key=lambda x: -x[1]) if o != winner]
         by_id = {o[0]: o for o in opts}
+        competition = self._observer_competition if self.observer_full_competition else None
+        if competition is not None:
+            competition["control_order"] = list(ranked)
+            competition["control_attempts"] = []
         rejected_controls = 0
         for oid in ranked:
             action, param = self._admit(by_id[oid], inv, budget.remaining)
+            if competition is not None:
+                # Observation happens AFTER the original admission call, never
+                # a second controller invocation or a second random draw.
+                competition["control_attempts"].append({
+                    "option": oid, "admitted": action is not None})
             if action is not None:
                 break
             rejected_controls += 1
@@ -588,6 +604,10 @@ class Mind:
                     "offered_families": observer_families,
                     "scored_families": self._observer_option_families(o for o, _ in scored),
                     "pre_body": tuple(body), "score_witness": score_witness}
+                if competition is not None:
+                    competition["status"] = "ALL_CONTROLS_REJECTED"
+                    competition["final_admitted_option"] = None
+                    info["observer"]["competition_witness"] = competition
             return None, None, budget.work, info
         self.intention = oid if len(by_id[oid][1]) > 1 else None
         work = budget.work
@@ -607,6 +627,12 @@ class Mind:
                 "offered_families": observer_families,
                 "scored_families": self._observer_option_families(o for o, _ in scored),
                 "pre_body": tuple(body), "score_witness": score_witness}
+            if competition is not None:
+                competition["status"] = "ACTION_ADMITTED"
+                competition["final_admitted_option"] = oid
+                competition["final_admitted_action"] = action
+                competition["intention_after"] = self.intention
+                info["observer"]["competition_witness"] = competition
         return action, param, work, info
 
     def _compete(self, scored, cycles, budget=None):
@@ -615,8 +641,23 @@ class Mind:
         sd = sqrt(sum((v - mean) ** 2 for v in vals) / len(vals))
         ev = {o: (tanh((s - mean) / sd) if sd > 1e-9 else 0.0) for o, s in scored}
         acc = {o: self.acc.get(o, 0.0) for o, _ in scored}
+        observer = None
+        if self.observer_full_competition:
+            # Only copy already computed evidence, thresholds and previous
+            # accumulators. This readout never replays competition.
+            observer = {
+                "scored_order": [o for o, _ in scored],
+                "prior_intention": self.intention,
+                "accumulators_before": dict(acc),
+                "normalized_evidence": dict(ev),
+                "thresholds": {
+                    o: THRESHOLD * (1.0 - self.inertia if o == self.intention else 1.0)
+                    for o, _ in scored},
+            }
         winner = None
         used = 0
+        chosen_by = "raw_score_fallback"
+        tied_candidates = []
         for _ in range(cycles):
             if budget is not None and not budget.try_spend(CognitiveWork(cycles=1)):
                 break
@@ -631,13 +672,30 @@ class Mind:
                 best = max(m for m, _ in crossed)
                 tied = sorted(o for m, o in crossed if m == best)
                 winner = self._tie(tied)
+                if observer is not None:
+                    chosen_by = "threshold_crossing"
+                    tied_candidates = list(tied)
                 break
         if winner is None:  # no abstention by default: best evaluated option
             best = max(vals)
-            winner = self._tie(sorted(o for o, s in scored if s >= best - 1e-12))
+            tied = sorted(o for o, s in scored if s >= best - 1e-12)
+            winner = self._tie(tied)
+            if observer is not None:
+                tied_candidates = list(tied)
+        if observer is not None:
+            observer.update({
+                "selection_mechanism": chosen_by,
+                "tie_candidates": tied_candidates,
+                "winner_before_control": winner,
+                "paid_competition_cycles": used,
+                "accumulators_before_residual": dict(acc),
+            })
         for o in acc:
             acc[o] = 0.0 if o == winner else acc[o] * RESIDUAL
         self.acc = acc
+        if observer is not None:
+            observer["accumulators_after_residual"] = dict(acc)
+            self._observer_competition = observer
         return winner, used
 
     def _tie(self, tied):

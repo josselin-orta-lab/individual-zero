@@ -236,3 +236,16 @@ Python 3.11/3.12; no new lives or reserve/validation exposure. Next
 engineering task is observer-only full paid option/competition receipts,
 never forced eating or a post-hoc genetic adjustment. I1 stays active
 and I3 unregistered.
+
+## P5e proposed full paid competition witness (software only)
+
+[Observer-only technical scope](P5E_FULL_COMPETITION_WITNESS.md) extends
+P5d's original-only eating analysis without modifying survival strategy.
+Opt-in `observer_full_competition` records **all already paid** candidate
+scores, prior accumulators and normalized evidence, actual threshold/fallback
+selection, first winner, controller fallback attempts and admitted motor.
+The sidecar never enters Mind inputs, world physics, paid work or the original
+life evidence hash. No new study worlds were opened. Original P5d
+resource-only scores do **not** establish why eating was rejected; exact
+parity and generation isolation are mandatory before the next diagnostic.
+I1 active, I3 unregistered; P4 reserve sealed.

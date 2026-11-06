@@ -26,7 +26,8 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
              effect_readout: str = "full",
              observer_decision_diagnostics: bool = False,
              score_addend_mode: str = "normal",
-             observer_resource_acquisition: bool = False) -> dict:
+             observer_resource_acquisition: bool = False,
+             observer_full_competition: bool = False) -> dict:
     started = time.perf_counter()
     if learning_mode not in (
             "normal", "shadow_discard", "discard_effects",
@@ -38,6 +39,8 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
         raise TypeError("observer_decision_diagnostics must be bool")
     if type(observer_resource_acquisition) is not bool:
         raise TypeError("observer_resource_acquisition must be bool")
+    if type(observer_full_competition) is not bool:
+        raise TypeError("observer_full_competition must be bool")
     if effect_readout not in (
             "full", "blind_predictions", "blind_action_predictions",
             "blind_sleep_forecast", "blind_sources", "blind_all",
@@ -62,11 +65,14 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
         resource_observer = ResourceObserver()
     mind = Mind(genome, life_seed, effect_readout=effect_readout,
                 observer_decision_diagnostics=(observer_decision_diagnostics or
-                                               observer_resource_acquisition),
+                                               observer_resource_acquisition or
+                                               observer_full_competition),
+                observer_full_competition=observer_full_competition,
                 score_addend_mode=score_addend_mode)
     head = sha256(json.dumps([genome_digest(genome), spec.name, life_seed, horizon],
                              separators=(",", ":")).encode()).hexdigest()
     trace = []
+    competition_trace = [] if observer_full_competition else None
     actions: Counter = Counter()
     drinks = meals = 0
     first_drink = None
@@ -86,6 +92,11 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
         allowance = CognitiveBudget(world.body, world.laws)
         capture = world.capture()
         action, param, work, info = mind.decide(capture, allowance)
+        if competition_trace is not None:
+            from i3.runtime.competition_observer import capture_competition
+            competition_trace.append(capture_competition(
+                info=info, action=action, param=param, work=work,
+                allowed=allowance, capture=capture))
         pending_resource = (resource_observer.prepare(
             cap=capture, mind=mind, info=info, action=action, param=param)
             if resource_observer is not None else None)
@@ -218,6 +229,11 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
         out["observer_decision_diagnostics"] = dict(observer_counts)
     if resource_observer is not None:
         out["observer_resource_acquisition"] = resource_observer.report()
+    if competition_trace is not None:
+        out["observer_full_competition"] = {
+            "schema": "i3-p5e-full-paid-competition/v1",
+            "status": "DEVELOPMENT_ONLY_EXTERNAL_WITNESS",
+            "steps": competition_trace}
     if learning_mode != "normal" or observer_mind_digest:
         out["learning_intervention"] = learning_mode
         # Component ablations retain the base outcome pipeline and discard
