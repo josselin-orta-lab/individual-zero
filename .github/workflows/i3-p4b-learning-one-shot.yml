@@ -1,0 +1,55 @@
+name: I3 P4b preregistered paid-learning histories (one shot)
+on:
+  push:
+    branches: [automation/i3-p4b-learning-once-20261106]
+    paths: [.github/workflows/i3-p4b-learning-one-shot.yml]
+permissions:
+  contents: read
+jobs:
+  study:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      I3_P4B_SOURCE_SHA: fda5ce482aaec151c3e9b4d5b4cdb8ea16ed523b
+      I3_P4B_SCHEDULE_SHA: e437fa0f02f8dd2b9e4bf27c246fae86785af789f1a5ab948e8d036e24f4a156
+      I3_P4B_APPROVED_PROTOCOL: i3-p4b-outcome-learning-v1
+    steps:
+      - name: Checkout exact frozen P4b executable
+        uses: actions/checkout@v4
+        with:
+          ref: fda5ce482aaec151c3e9b4d5b4cdb8ea16ed523b
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Assert P4b preregistration was merged before any study world opened
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git merge-base --is-ancestor 2b9be8ae9150502c3e13655989fc03b9b66e2267 origin/main
+          test "$(git rev-parse HEAD)" = "$I3_P4B_SOURCE_SHA"
+      - name: Run source tests in unapproved environment and pure preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          env -u I3_P4B_SOURCE_SHA -u I3_P4B_SCHEDULE_SHA -u I3_P4B_APPROVED_PROTOCOL python -m unittest discover -s tests/i3 -p 'test_*.py' -q
+          python scripts/check_engine_repository.py --json
+          PYTHONPATH=src python -m i3.lab.p4b_validation --preflight
+      - name: Run exact prospective P4b outcome-learning study ONCE
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          PYTHONPATH=src python -m i3.lab.p4b_validation --run out/i3-p4b-full.json | tee out/i3-p4b-summary.json
+          sha256sum out/i3-p4b-full.json out/i3-p4b-summary.json | tee out/SHA256SUMS.txt
+      - name: Archive unfiltered original data even on study failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-p4b-original-paid-learning-first-run
+          path: out/
+          if-no-files-found: warn
+          retention-days: 90
