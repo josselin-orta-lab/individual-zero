@@ -33,13 +33,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cd original
-          sha256sum -c SHA256SUMS.txt
-          test "$(sha256sum i3-p4a-validation-full.json | cut -d ' ' -f1)" = "44adb1192d1aea87cf5d96a547f794de6f7fe33a566a5de90747a34429e8e8d6"
+          mv original out
+          sha256sum -c out/SHA256SUMS.txt
+          test "$(sha256sum out/i3-p4a-validation-full.json | cut -d ' ' -f1)" = "44adb1192d1aea87cf5d96a547f794de6f7fe33a566a5de90747a34429e8e8d6"
           python - <<'PY'
           import json
           from hashlib import sha256
-          p=json.load(open("i3-p4a-validation-full.json"))
+          p=json.load(open("out/i3-p4a-validation-full.json"))
           digest=sha256(json.dumps({k:v for k,v in p.items() if k!="sha256"},sort_keys=True,separators=(",",":")).encode()).hexdigest()
           assert digest==p["sha256"]=="3fe21087283eeafb8e9b0fc2522b238ea700611029a7f02b1edf3b89b2a3b3c5"
           assert p["total_lives"]==len(p["lives"])==288
@@ -48,12 +48,11 @@ jobs:
           assert p["status"]=="P4A_VALIDATION_ONLY_P4B_AND_RESERVE_NOT_RUN"
           print("P4a exact original verified",len(p["lives"]))
           PY
-          cd ..
           folder=src/i3/docs/studies/p4a-g2-heldout
           mkdir -p "$folder"
-          gzip -n -9 -c original/i3-p4a-validation-full.json > "$folder/validation-full.json.gz"
-          cp original/i3-p4a-validation-summary.json "$folder/validation-summary.json"
-          cp original/SHA256SUMS.txt "$folder/ORIGINAL_SHA256SUMS.txt"
+          gzip -n -9 -c out/i3-p4a-validation-full.json > "$folder/validation-full.json.gz"
+          cp out/i3-p4a-validation-summary.json "$folder/validation-summary.json"
+          cp out/SHA256SUMS.txt "$folder/ORIGINAL_SHA256SUMS.txt"
           git checkout -b i3/p4a-heldout-evidence-20261106
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
