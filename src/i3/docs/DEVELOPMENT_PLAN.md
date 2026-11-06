@@ -90,6 +90,10 @@ claim this observation patch fixes them, or retroactively certify old studies.
    among 36 lives; ecological event ordering was repaired and 90 tests pass.
    [P2 diagnostic](P2_COST_AUDIT_RESULTS.md) is an explicit adverse finding,
    not science-grade cost equivalence. Do not silently mark this gate green.
+   **P2 exit interpretation:** [equal-opportunity contract](P2_EXIT_EQUAL_OPPORTUNITY.md)
+   supports matched-world, matched-physics P3 lineage arms while rejecting
+   a cost-matched *probe ceiling* claim. P3 population schedules are generated
+   without opening selection or validation cohorts.
 3. P3: a mutation-only pilot with multiple fresh lives per genome, independent
    populations, lifetime-only selection and random-parent controls at equal
    budgets. Inherit generic genes only, never memories/maps/body states. Fix
