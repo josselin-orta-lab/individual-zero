@@ -1,0 +1,31 @@
+name: I3 P2 cost panel review (one-shot)
+on:
+  push:
+    branches: [automation/i3-p2-cost-panel-check-20261106]
+    paths: [.github/workflows/i3-p2-cost-panel-once.yml]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - name: Checkout immutable P2 cost audit
+        uses: actions/checkout@v4
+        with:
+          ref: 91eaccd26ed43fc05e38dff1429437bb9d01623c
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run I3 tests
+        run: python -m unittest discover -s tests/i3 -p 'test_*.py' -v
+      - name: Validate source boundaries
+        run: python scripts/check_engine_repository.py --json
+      - name: P2 development-only charge panel
+        run: PYTHONPATH=src python -m i3.lab.p2_cost_panel
