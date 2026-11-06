@@ -66,4 +66,4 @@ three new development-only ablations for learned consequence statistics,
 TD value retention and sleep replay; each algorithm genuinely executes and
 pays the declared work. This is not a new held-out experiment. All earlier
 P3/P4 evidence is unchanged and the reserve remains sealed.
-**Next P5a scientific study: NOT_RUN.**
+**P5a first prospective scientific screen executed and archived:** [registered protocol](P5A_SCREEN_PREREG.md), [complete original evidence and results](studies/p5a-paid-component-screen/RESULTS.md). 1152 lives on 24 distinct validation worlds; censored at 400 steps: normal 112/288, discard-effects 0/288, discard-values 117/288, discard-replay 119/288. n=4 independent populations; effects-ablation exact sign-flip p=0.125, exploratory Holm p=0.375. Strong bounded action-effect dependence; no statistically confirmatory GO, no cost-equivalence claim. P4 reserve still sealed.
