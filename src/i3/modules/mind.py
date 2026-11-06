@@ -392,6 +392,9 @@ class Mind:
         """
         b = list(body)
         steps = 0
+        if self.observer_decision_diagnostics:
+            # Readout sidecar from existing, funded simulated transitions.
+            self._observer_first_forecast = None
         ret = [0.0, 0.0, 0.0]
         disc = [1.0, 1.0, 1.0]
         dead = False
@@ -406,6 +409,10 @@ class Mind:
                     run += 1
             i += run
             mean, u = self._read_plan_prediction(key)
+            if self.observer_decision_diagnostics and steps == 0:
+                self._observer_first_forecast = {
+                    "action_key": tuple(key),
+                    "delta": tuple(mean), "uncertainty": u}
             u_max = max(u_max, u)
             for c in range(5):
                 x = b[c] + run * mean[c]
@@ -463,7 +470,8 @@ class Mind:
                     "offered_options": 0, "scored_options": 0,
                     "rejected_controls": 0, "decision_outcome": "no_processing_budget",
                     "offered_families": self._observer_option_families(()),
-                    "scored_families": self._observer_option_families(())}
+                    "scored_families": self._observer_option_families(()),
+                    "pre_body": tuple(body), "score_witness": []}
             return None, None, budget.work, info
         cycles, horizon, miss = capacities(body, self.n_base, self.h_max)
         inv = self.perceive(cap, miss)
@@ -488,10 +496,13 @@ class Mind:
         seen = [c for c in self.map.values() if c is not None]
         p_res = (sum(1 for c in seen if c[0] or c[1]) + 1.0) / (len(seen) + 2.0)
         scored = []
+        score_witness = [] if self.observer_decision_diagnostics else None
         sim_steps = 0
         for oid, plan, _ in opts:
             try:
                 j, steps, u = self.simulate(body, plan, horizon, budget)
+                first_forecast = (self._observer_first_forecast
+                                  if self.observer_decision_diagnostics else None)
                 sim_steps += steps
                 if oid in self._presence:
                     # A plan is usable only when both branches were funded.
@@ -519,6 +530,13 @@ class Mind:
                 # channel: an unknown meal matters more when integrity is low.
                 bonus -= self.lambda_r * u * (self.w[I] * phi_now[1 + I] + self.kappa0)
             scored.append((oid, j + bonus))
+            if self.observer_decision_diagnostics:
+                # Audit only the values already computed under the actual
+                # cognitive bill; no extra prediction, oracle or simulation.
+                score_witness.append({
+                    "option": oid, "base_return": j,
+                    "curiosity_risk_bonus": bonus, "total_score": j + bonus,
+                    "uncertainty": u, "first_forecast": first_forecast})
         if not scored:
             info = {"option": None, "funding": "NO_FUNDED_SCORE"}
             if self.observer_decision_diagnostics:
@@ -526,7 +544,8 @@ class Mind:
                     "offered_options": observer_offered, "scored_options": 0,
                     "rejected_controls": 0, "decision_outcome": "no_funded_score",
                     "offered_families": observer_families,
-                    "scored_families": self._observer_option_families(())}
+                    "scored_families": self._observer_option_families(()),
+                    "pre_body": tuple(body), "score_witness": score_witness}
             return None, None, budget.work, info
         winner, used = self._compete(scored, cycles, budget)
         ranked = [winner] + [o for o, _ in sorted(scored, key=lambda x: -x[1]) if o != winner]
@@ -546,7 +565,8 @@ class Mind:
                     "rejected_controls": rejected_controls,
                     "decision_outcome": "control_rejected",
                     "offered_families": observer_families,
-                    "scored_families": self._observer_option_families(o for o, _ in scored)}
+                    "scored_families": self._observer_option_families(o for o, _ in scored),
+                    "pre_body": tuple(body), "score_witness": score_witness}
             return None, None, budget.work, info
         self.intention = oid if len(by_id[oid][1]) > 1 else None
         work = budget.work
@@ -564,7 +584,8 @@ class Mind:
                 "decision_outcome": "action_admitted",
                 "admitted_action": action,
                 "offered_families": observer_families,
-                "scored_families": self._observer_option_families(o for o, _ in scored)}
+                "scored_families": self._observer_option_families(o for o, _ in scored),
+                "pre_body": tuple(body), "score_witness": score_witness}
         return action, param, work, info
 
     def _compete(self, scored, cycles, budget=None):
