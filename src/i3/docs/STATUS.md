@@ -58,3 +58,12 @@ It freezes stable/depletion/pulse ecologies, physically separated cohorts,
 paid probe receipts and a development-derived static cost profile.
 Actual full-horizon cost equivalence is not assumed; unmatched probes are
 reported explicitly. P3 is not running. No scientific GO.
+
+## P5a controlled software handoff (6 November 2026)
+
+[Selective paid-retention contract](P5A_SELECTIVE_RETENTION_CONTRACT.md):
+three new development-only ablations for learned consequence statistics,
+TD value retention and sleep replay; each algorithm genuinely executes and
+pays the declared work. This is not a new held-out experiment. All earlier
+P3/P4 evidence is unchanged and the reserve remains sealed.
+**Next P5a scientific study: NOT_RUN.**
