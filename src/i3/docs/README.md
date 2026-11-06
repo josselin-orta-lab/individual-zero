@@ -52,3 +52,15 @@ all conditions had 8/12 reach 120 steps. **Not a held-out scientific
 study or evidence of generalized survival benefit.** Next design question:
 which first-person uninformed effect interface is structurally sound?
 See [#1035](https://github.com/josselin-orta-lab/individual-zero/issues/1035).
+
+### P5b action-independent empirical comparator (development only)
+
+The [action-agnostic personal-prior diagnostic](P5B_AGNOSTIC_PRIOR_FINDINGS.md)
+adds a comparator that predicts the **same personally observed global
+body-change mean** for every contemplated action, keeping the original
+paid planning interface and first-person learned effects intact. Its
+12 matched development lives reached the 120-step horizon in 8/12
+cases like the normal group, but showed **894 inactive steps versus
+109 normal**, with 891 no-processing-budget events. A generic learned
+magnitude did not restore action-specific activity; this is **not**
+a held-out scientific survival claim. P5b validation remains NOT_RUN.
