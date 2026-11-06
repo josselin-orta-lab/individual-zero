@@ -20,6 +20,7 @@ Examples include:
 - a local choice inside one EXP;
 - a compatible refactor;
 - a minor dependency update;
+- an ordinary bug fix;
 - a prototype choice that has not become shared reference behavior.
 
 ## Evidence first
