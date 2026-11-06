@@ -75,10 +75,16 @@ class EffectsModel:
 class Mind:
     def __init__(self, genome: dict, life_seed: int,
                  *, effect_readout: str = "full",
-                 observer_decision_diagnostics: bool = False):
+                 observer_decision_diagnostics: bool = False,
+                 score_addend_mode: str = "normal"):
         if type(observer_decision_diagnostics) is not bool:
             raise TypeError("observer diagnostics flag must be bool")
         self.observer_decision_diagnostics = observer_decision_diagnostics
+        if score_addend_mode not in (
+                "normal", "discard_curiosity_bonus",
+                "discard_risk_penalty", "discard_both_bonus_terms"):
+            raise ValueError("unknown P5c score addend intervention")
+        self.score_addend_mode = score_addend_mode
         if effect_readout not in (
                 "full", "blind_predictions", "blind_action_predictions",
                 "blind_sleep_forecast", "blind_sources", "blind_all",
@@ -524,17 +530,32 @@ class Mind:
                 relevance = self.kappa0 + need_f
             else:
                 relevance = self.kappa0
-            bonus = self.beta_u * u * relevance
+            # Both original addends are genuinely computed under the
+            # unchanged funded decision loop, even when a P5c intervention
+            # discards one AFTER computation, before action competition.
+            curiosity = self.beta_u * u * relevance
+            risk_penalty = 0.0
             if any(k[0] == "manger" for k in plan):
                 # Prudence scales with the vulnerability of the threatened
                 # channel: an unknown meal matters more when integrity is low.
-                bonus -= self.lambda_r * u * (self.w[I] * phi_now[1 + I] + self.kappa0)
+                risk_penalty = -self.lambda_r * u * (
+                    self.w[I] * phi_now[1 + I] + self.kappa0)
+            use_curiosity = self.score_addend_mode not in (
+                "discard_curiosity_bonus", "discard_both_bonus_terms")
+            use_risk = self.score_addend_mode not in (
+                "discard_risk_penalty", "discard_both_bonus_terms")
+            bonus = (curiosity if use_curiosity else 0.0) + (
+                risk_penalty if use_risk else 0.0)
             scored.append((oid, j + bonus))
             if self.observer_decision_diagnostics:
-                # Audit only the values already computed under the actual
-                # cognitive bill; no extra prediction, oracle or simulation.
+                # Audit values computed in the ORIGINAL paid score path.
+                # Suppressed addends remain visible but not effective.
                 score_witness.append({
                     "option": oid, "base_return": j,
+                    "curiosity_bonus_computed": curiosity,
+                    "risk_penalty_computed": risk_penalty,
+                    "curiosity_bonus_applied": curiosity if use_curiosity else 0.0,
+                    "risk_penalty_applied": risk_penalty if use_risk else 0.0,
                     "curiosity_risk_bonus": bonus, "total_score": j + bonus,
                     "uncertainty": u, "first_forecast": first_forecast})
         if not scored:
