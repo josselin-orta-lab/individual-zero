@@ -1,0 +1,53 @@
+name: I3 P3 reconstruct G2 original evidence (one-shot, no lives)
+on:
+  push:
+    branches: [automation/i3-p3-custody-once-20261106]
+    paths: [.github/workflows/i3-p3-custody-once.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  freeze-g2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout custody verifier only
+        uses: actions/checkout@v4
+        with:
+          ref: f2cd236d99cdaee00731167acb6cd5d9e449401e
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Configure Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prove unchanged original genome algorithm
+        run: |
+          set -euo pipefail
+          git diff --exit-code 52476fec3f39a7fd70bf611877b01d9c13d26009 HEAD -- src/i3/modules/genome.py
+          python -m unittest discover -s tests/i3 -p 'test_*.py' -q
+          python scripts/check_engine_repository.py --json
+      - name: Download exact predeclared original P3 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: i3-p3-selection-predeclared-original
+          run-id: 42181938835
+          github-token: ${{ github.token }}
+          path: original
+      - name: Verify original SHA256 and reconstruct genomes, never rerun lives
+        shell: bash
+        run: |
+          set -euo pipefail
+          mv original out
+          sha256sum -c out/SHA256SUMS.txt
+          test "$(sha256sum out/i3-p3-selection-full.json | cut -d ' ' -f1)" = "e45df7a494b01b02846128f5c93b30987a383edd65bd5884d6690740da11103e"
+          PYTHONPATH=src python -m i3.lab.p3_custody out/i3-p3-selection-full.json out/i3-p3-g2-frozen-genomes.json | tee out/i3-p3-custody-summary.json
+          sha256sum out/i3-p3-g2-frozen-genomes.json out/i3-p3-custody-summary.json | tee out/CUSTODY_SHA256SUMS.txt
+      - name: Archive G2 genomes and original source evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-p3-original-and-frozen-g2
+          path: out/
+          if-no-files-found: warn
+          retention-days: 90
