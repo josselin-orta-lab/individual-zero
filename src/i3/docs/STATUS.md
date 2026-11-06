@@ -217,3 +217,22 @@ unconsumed units remain conserved in two censored development lives. This
 distinguishes chosen waiting from zero null motor commands, but does not
 identify the cause of reduced ingestion or establish survival generalization.
 No reserve or validation exposure; I1 remains active, I3 unregistered.
+
+## P5d paid meal-proposal original-only audit (6 November 2026)
+
+[Paid eating-choice audit](P5D_POSTHOC_PAID_EATING.md) reuses **only the
+already archived** 24 G0 development lives. Under scored curiosity removal,
+all **125/125 food-carrying steps** included a genuinely computed and
+paid `manger` option, enough energy after decision for the motor, and
+integrity above the innate eating veto threshold, yet **0/125 selected
+`manger`**. The option was best among **resource-only** recorded scores
+in **95/125**, NOT proven best across rest, movement and exploration:
+full candidate score ranks, accumulator memory and pre-admission
+winner were **NOT_RECORDED**. Normal curiosity: 180 paid meal options
+over 180 carrying steps, seven selected and physically eaten.
+[CI 42284056578](https://github.com/josselin-orta-lab/individual-zero/actions/runs/42284056578)
+passed 195 I3 tests, original-only reconstruction and isolation under
+Python 3.11/3.12; no new lives or reserve/validation exposure. Next
+engineering task is observer-only full paid option/competition receipts,
+never forced eating or a post-hoc genetic adjustment. I1 stays active
+and I3 unregistered.
