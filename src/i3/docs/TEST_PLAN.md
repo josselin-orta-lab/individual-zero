@@ -7,6 +7,7 @@
 | P2 | Trois écologies mécanistiquement distinctes, quatre cohortes étanches, réserve scellée, sondes financées en deux phases, contrôle de coût exact et tarif statique calibré en développement | Tests logiciels implémentés ; validation scientifique non établie |
 | P3 | Lignée sans héritage de souvenirs, contrôle random-parent, 72 mondes distincts, 864 vies avec preuves, reconstruction de 48 génomes G2 | Implémenté et exécuté sur sélection uniquement, sans GO scientifique ni validation P4 |
 | P4 | Validation des G2 fixés (P4a), ablation calculée et payée sans rétention des effets/valeurs (P4b), histoires individuelles appariées, 48 nouvelles conditions de monde au total | Deux premières expériences préinscrites et exécutées : P4a 288 vies, P4b 576 vies ; coût cognitif réalisé non égal entre conditions, GO scientifique non établi |
+| P5a | Trois ablations de rétention payées, 48 G2, 24 nouveaux mondes, 4 populations génétiques et témoins complets des coûts par phase | Premier criblage préinscrit exécuté : 1152 vies. Sans effets appris : 0/288 survivent contre 112/288 normaux ; valeurs 117/288, rejeu 119/288 ; n=4 exploratoire et coûts réels divergents. [Résultats](studies/p5a-paid-component-screen/RESULTS.md) |
 
 ## Foundation controls
 
