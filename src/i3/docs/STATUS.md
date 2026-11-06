@@ -12,7 +12,7 @@ Décision : [ADR-0014](../../../docs/decisions/ADR-0014-i3-lignee-enjeu-de-soi.m
 | P1.1 | Adopté (porte G2b, [résultat](studies/g2b-p11-heldout/RESULTS.md)) : non inférieur à P1, sans gain mesurable |
 | P1.2 | **Rejeté** par la porte G2c ([résultat](studies/g2c-p12-heldout/RESULTS.md)) : révision bien meilleure (69 contre 46, p = 0,0007) mais non-infériorité générale manquée d'une vie. Variante conservée dans la branche `i3/p1.2-variant` |
 | P1.3 | **Adopté sur le substrat v2** par la porte G2e sous sélection ([résultat](studies/g2e-p13-v2/RESULTS.md)) : 478 survies sur 1 000 contre 364 (p = 4 × 10⁻⁹) ; révision après tarissement dans 60 % des vies contre 23 %. Cognition de référence : génome `i3-genome-v3` |
-| P2 Mondes | Non commencé |
+| P2 Mondes | Implémentation d'ingénierie en revue : 3 écologies, partitions étanches, audit de coûts et tarif fixe scellé ; pas de validation scientifique ni de pilote P3 |
 | P3 Lignée | Non commencé |
 | P4 Étude | Non commencé |
 
@@ -52,5 +52,9 @@ not validated or cost-matched comparators: that remains P2 work. See
 [COGNITIVE_FUNDING.md](COGNITIVE_FUNDING.md). Focused suite: 66 tests.
 
 P1.3 has since been compared on the same v2 substrate in both arms (G2e, ADR-0015)
-and adopted; see the P1.3 row above. Next: P2 validation of existing world/probe
-tools (cost matching, condition separation), then the P3 pilot. No scientific GO.
+and adopted; see the P1.3 row above. P2 engineering work is described in
+[P2_ECOLOGY_AND_PROBE_CONTRACT.md](P2_ECOLOGY_AND_PROBE_CONTRACT.md).
+It freezes stable/depletion/pulse ecologies, physically separated cohorts,
+paid probe receipts and a development-derived static cost profile.
+Actual full-horizon cost equivalence is not assumed; unmatched probes are
+reported explicitly. P3 is not running. No scientific GO.
