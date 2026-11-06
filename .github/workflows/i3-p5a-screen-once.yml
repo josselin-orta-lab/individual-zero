@@ -1,0 +1,55 @@
+name: I3 P5a preregistered paid mechanism screen (one-shot)
+on:
+  push:
+    branches: [automation/i3-p5a-mechanisms-once-20261106]
+    paths: [.github/workflows/i3-p5a-screen-once.yml]
+permissions:
+  contents: read
+jobs:
+  selection-independent-mechanism-screen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      I3_P5A_SOURCE_SHA: ee2e97b1949fd94548fe6c5908ff411d37cb3f76
+      I3_P5A_SCHEDULE_SHA: 2e176df5c1ebf9435d2ad4d83e97334d63634024ead074781eed3841b846bb7a
+      I3_P5A_APPROVED_PROTOCOL: i3-p5a-paid-component-screen-v1
+    steps:
+      - name: Checkout previously verified locked source
+        uses: actions/checkout@v4
+        with:
+          ref: ee2e97b1949fd94548fe6c5908ff411d37cb3f76
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify prospective registration is already in main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git merge-base --is-ancestor 8c65855d91529fb4d494a4bd1327912b3df24cd9 origin/main
+          test "$(git rev-parse HEAD)" = "$I3_P5A_SOURCE_SHA"
+      - name: Run protected tests without experimental launch environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          env -u I3_P5A_SOURCE_SHA -u I3_P5A_SCHEDULE_SHA -u I3_P5A_APPROVED_PROTOCOL python -m unittest discover -s tests/i3 -p 'test_*.py' -q
+          python scripts/check_engine_repository.py --json
+          PYTHONPATH=src python -m i3.lab.p5a_screen --preflight
+      - name: Execute one exact P5a prospective study and checksum original
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          PYTHONPATH=src python -m i3.lab.p5a_screen --run out/i3-p5a-full.json | tee out/i3-p5a-summary.json
+          sha256sum out/i3-p5a-full.json out/i3-p5a-summary.json | tee out/SHA256SUMS.txt
+      - name: Preserve full original evidence whether study succeeds or fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-p5a-original-paid-mechanism-first-run
+          path: out/
+          if-no-files-found: warn
+          retention-days: 90
