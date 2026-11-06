@@ -1,0 +1,81 @@
+name: I3 P5c final original evidence and scientific handoff audit NO lives
+on:
+  push:
+    branches: [automation/i3-p5c-final-archive-audit-20261106]
+    paths: [.github/workflows/i3-p5c-final-archive-audit.yml]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - name: Checkout P5c complete archived and documented source
+        uses: actions/checkout@v4
+        with:
+          ref: 72f8a202c5064a6f390ef32845ed0e72cc911721
+          persist-credentials: false
+      - name: Configure Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Test I3 and generation isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests/i3 -p 'test_*.py' -q
+          python scripts/check_engine_repository.py --json
+      - name: Re-verify original P5c bytes and independent conclusions with zero lives
+        shell: bash
+        run: |
+          set -euo pipefail
+          root=src/i3/docs/studies/p5c-paid-score-addends
+          sha256sum -c "$root/ARCHIVE_SHA256SUMS.txt"
+          gzip -dc "$root/addends-full.json.gz" > "$RUNNER_TEMP/p5c-original.json"
+          test "$(sha256sum "$RUNNER_TEMP/p5c-original.json" | cut -d ' ' -f1)" = "9ef699c1b8e5396ca4132ca526bfb09b3ae01bda524a33fb218a6e51473fa6a7"
+          test "$(sha256sum "$root/addends-summary.json" | cut -d ' ' -f1)" = "18f4cf060674d280dfe6af92e76dcf7a5fbe9d9df1228231bc90ca44bc08eaa9"
+          PYTHONPATH=src python -m i3.lab.p5c_custody "$RUNNER_TEMP/p5c-original.json" > "$RUNNER_TEMP/p5c-audited.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          root=Path("src/i3/docs/studies/p5c-paid-score-addends")
+          a=json.load(open(os.environ["RUNNER_TEMP"]+"/p5c-audited.json"))
+          old=json.load(open(root/"independent-custody.json"))
+          assert a==old
+          assert a["status"]=="ORIGINAL_VERIFIED_NO_NEW_LIVES"
+          assert a["raw_canonical_sha256"]=="4774b3c890bba4b6b06efa5d955ec81ed3abcbc652ae7b2169ecd7ddb241bc0d"
+          assert a["original_lives"]==1152 and a["worlds"]==24
+          assert a["paired_genome_world_keys"]==288
+          modes=("normal","discard_curiosity_bonus","discard_risk_penalty","discard_both_bonus_terms")
+          assert [sum(a["survivors_by_population"][str(p)][m] for p in range(4))
+                  for m in modes]==[110,4,105,7]
+          checks={
+            "discard_curiosity_bonus":[21,41,22,22],
+            "discard_risk_penalty":[5,1,3,-4],
+            "discard_both_bonus_terms":[21,40,22,20],
+          }
+          for m,d in checks.items():
+              assert a["analysis"]["contrasts"][m]["population_differences_lives_per_72"]==d
+          print("VERIFIED P5c original 1152, 24 worlds, 288 complete opportunities, paid work, n4 contrasts; ZERO NEW LIVES")
+          PY
+      - name: Verify original P4a P4b P5a and P5b evidence still unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import gzip,hashlib
+          from pathlib import Path
+          root=Path("src/i3/docs/studies")
+          checks={
+           "p4a-g2-heldout/validation-full.json.gz":"44adb1192d1aea87cf5d96a547f794de6f7fe33a566a5de90747a34429e8e8d6",
+           "p4b-paid-outcome-learning/learning-full.json.gz":"688463e4fbb71cb88d57d0cafbe70eb033adeafe8ae8551d42bec58dfa9e395c",
+           "p5a-paid-component-screen/mechanisms-full.json.gz":"21719dcc89f83f3984ccc32b3d203d2152ff8c7dd8c2c8a76318ce84d60113d8",
+           "p5b-paid-readout-heldout/readout-full.json.gz":"98d21bc18d88f26743ae9ca07cc0d966605d14de826b73a91b9d24b675c9a8df",
+          }
+          for name,sha in checks.items():
+              assert hashlib.sha256(gzip.decompress((root/name).read_bytes())).hexdigest()==sha
+          PY
