@@ -68,11 +68,12 @@ not funded stays unfunded, and no postmortem cognition is introduced.
 ## Explicit missing controls
 
 This slice does NOT yet provide an empirically calibrated structural
-baseline or a novel P5b heldout protocol. It does NOT separate all
-components of `blind_predictions` (action prediction versus learned
-sleep), and does not explicitly report a count of options by
-action category. A future step should ensure option categories are
-observer-only and design minimal first-person priors without fake
+baseline or a novel P5b heldout protocol. It now separates
+simulated action predictions from the learned sleep forecast,
+and counts offered and scored option categories in the observer.
+It does not provide an independently justified alternative policy
+or a causal demonstration of information-only benefit.
+A future step must define minimal first-person priors without fake
 work. New worlds must have indices >=72 in the untouched validation
 cohort, independently preregistered with frozen code and population
 uncertainty before any life is executed.
