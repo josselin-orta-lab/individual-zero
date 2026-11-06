@@ -43,7 +43,7 @@ class P5aScreenTests(unittest.TestCase):
         genome=generation_zero(888)
         from i3.modules.genome import digest as genome_digest
         from i3.runtime.provenance import digest,world_snapshot
-        out=run_life(genome,spec,700,25,keep_trace=True,
+        out=run_life(genome,spec,700,400,keep_trace=True,
                      observer_mind_digest=True,learning_mode="normal")
         kw=dict(mode="normal",arm="selected",slot=0,population=0,
                 family="stable",repeat=0,index=48,seed=700,
