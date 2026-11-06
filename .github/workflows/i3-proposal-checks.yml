@@ -2,7 +2,8 @@ name: I3 proposal software checks
 
 on:
   pull_request:
-    branches: [main]
+    # Keep the same software checks on generation-owned stacked PRs.
+    branches: [main, 'i3/**']
     paths:
       - 'src/i3/**/*.py'
       - 'src/i3/engine.json'

@@ -75,15 +75,21 @@ Focused software suite:
 Documentation navigation:
 `python tools/check_repo_navigation.py --scope entrypoints`.
 Record exact SHA and PASS / FAIL / NOT_RUN. The original scenario integration
-changed documentation only; the Stage-0 planning slice below adds no living
-engine change, study execution, activation or scientific claim.
+changed documentation only; the Stage-0 slices below add no living-engine
+change, scientific-study execution, activation or scientific claim.
 
-## Stage-0 first software slice
+## Stage-0 software slices
 
-[Eight-population F0 design](STAGE0_DESIGN.md) implements deterministic planning,
-complete persistence-only candidate ranking and population sign-test arithmetic.
-It prepares identifiers for eight new candidate pools, not evolved lineages;
-no selection/validation life or world is instantiated. The design is not a
-preregistration. Next within #1060: actual energetic receipt integration and
-full-observer parity, then source/endpoint/margin registration. Family R,
-lineage controls and the existing #1026/#1054 questions remain open.
+[Eight-population F0 design and energy receipts](STAGE0_DESIGN.md) implement
+deterministic planning, complete persistence-only candidate ranking and
+population sign-test arithmetic, plus observer-side checks of actual phase
+work, body debits and original life evidence chains. Complete declared pairs
+are summarized by population; deaths and unequal lived time remain visible.
+The full Competition observer is checked against observer-off software fixtures,
+including RNG state. No new cognition or default observer is introduced.
+
+The plan prepares identifiers for eight new candidate pools, not evolved
+lineages; no selection/validation world is instantiated. It is not a
+preregistration. Next within #1060: family R and personal-evidence latency,
+source/endpoint/margin/multiplicity locks and study-specific case binding.
+Lineage controls and the existing #1026/#1054 questions remain open.
