@@ -103,3 +103,17 @@ advantage of selected parents (P4a remained mixed), universal
 optimal survival, autonomous selfhood, or subjective experience.
 
 **No scientific GO and no engine activation.**
+
+## Post-hoc readout-score decomposition (hypothesis generation only)
+
+The [P5b original-only bonus/base audit](studies/p5b-paid-readout-heldout/POSTHOC_SCORE_TERMS.md)
+subsequently decomposed the actually funded option score into its
+base projected return and curiosity/risk bonus before the first
+paired physical-action difference. Across 288 genome/world pairs
+for the personal action-agnostic prior, **4,587** option comparisons
+had a bonus-only scoring difference and **273/288 pairs** had at
+least one such instance; only **650** option comparisons had a
+base-only scoring difference. These are repeated candidate-level
+observations, not 4,587 independent individuals, and the analysis
+was **not preregistered**. It motivates testing bonus components
+separately but cannot be used to revise P5b primary endpoints.
