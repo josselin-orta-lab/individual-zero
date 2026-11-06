@@ -582,10 +582,17 @@ class Mind:
             dx, dy = {n: (a, b) for n, a, b in DIRS}[param]
             self.pos = (self.pos[0] + dx, self.pos[1] + dy)
 
-    def learn_from_outcome(self, result, *, replay_limit=0):
-        """Prepaid learned updates only; controls must retain orientation."""
+    def learn_from_outcome(self, result, *, replay_limit=0, replay_retention=True):
+        """Prepaid learned updates only; controls must retain orientation.
+
+        P5a replay_retention=False genuinely computes replay on a detached
+        snapshot, discarding ONLY its persistent effect on values/buffer.
+        It does not skip or pretend to pay for any replay computation.
+        """
         if type(replay_limit) is not int or not 0 <= replay_limit <= REPLAYS_PER_SLEEP:
             raise ValueError("invalid prepaid replay count")
+        if type(replay_retention) is not bool:
+            raise TypeError("replay_retention must be a boolean")
         if result["dead"] or self.last is None:
             return 0
         before, key, action, param = self.last
@@ -599,10 +606,20 @@ class Mind:
             self.buffer.popleft()
         replays = 0
         if action == "dormir":
-            best = sorted(range(len(self.buffer)), key=lambda i: -self.buffer[i][0])
+            # Replay retention is a separate intervention from the ordinary
+            # paid base TD update. The deepcopy is observer bookkeeping, not
+            # fake mind work; _td genuinely runs on the detached state.
+            if not replay_retention and replay_limit:
+                from copy import deepcopy
+                replay_mind = deepcopy(self)
+            else:
+                replay_mind = self
+            best = sorted(range(len(replay_mind.buffer)),
+                          key=lambda i: -replay_mind.buffer[i][0])
             for i in best[:replay_limit]:
-                _, a, b, d = self.buffer[i]
-                self.buffer[i] = (abs(self._td(a, b, d)), a, b, d)
+                _, a, b, d = replay_mind.buffer[i]
+                replay_mind.buffer[i] = (
+                    abs(replay_mind._td(a, b, d)), a, b, d)
                 replays += 1
         if after[V] < 50.0:
             self.effects.forget(1.0 - 0.02 * (1.0 - after[V] / 50.0))
