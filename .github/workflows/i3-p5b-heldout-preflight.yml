@@ -1,0 +1,51 @@
+name: I3 P5b sealed validation allocation preflight NO exposure
+on:
+  push:
+    branches: [automation/i3-p5b-heldout-preflight-20261106]
+    paths: [.github/workflows/i3-p5b-heldout-preflight.yml]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - name: Checkout exact P5b scientific engineering candidate
+        uses: actions/checkout@v4
+        with:
+          ref: 11bd249d269116a720e503bc56e9b1244e91aea9
+          persist-credentials: false
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Test all I3 and engine boundaries without scientific launch authorization
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests/i3 -p 'test_*.py' -q
+          python scripts/check_engine_repository.py --json
+      - name: Preflight sealed 48 G2 genotype and P5b world allocation
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=src python -m i3.lab.p5b_heldout --preflight
+      - name: Verify original P4/P5a complete evidence unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import gzip,hashlib
+          from pathlib import Path
+          root=Path("src/i3/docs/studies")
+          for filename,digest in (
+            ("p4a-g2-heldout/validation-full.json.gz","44adb1192d1aea87cf5d96a547f794de6f7fe33a566a5de90747a34429e8e8d6"),
+            ("p4b-paid-outcome-learning/learning-full.json.gz","688463e4fbb71cb88d57d0cafbe70eb033adeafe8ae8551d42bec58dfa9e395c"),
+            ("p5a-paid-component-screen/mechanisms-full.json.gz","21719dcc89f83f3984ccc32b3d203d2152ff8c7dd8c2c8a76318ce84d60113d8")):
+              assert hashlib.sha256(gzip.decompress((root/filename).read_bytes())).hexdigest()==digest
+              print("UNCHANGED",filename)
+          PY
