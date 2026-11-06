@@ -1,46 +1,33 @@
-# Stage 1: paid information-value kernel, not yet a live policy
+# Stage 1: paid information components and opt-in local choice
 
-Issue [#1061](https://github.com/josselin-orta-lab/individual-zero/issues/1061),
-following the Stage-0 [design](STAGE0_DESIGN.md) and [revision endpoint](STAGE0_REVISION.md).
-Baseline: `82128766d5a7fdb377f1efa3b59f4bac1b2f48a5`.
-The [single development plan](DEVELOPMENT_PLAN.md) remains authoritative.
+Issue #1061; baseline `942b973faec73f1020505bd53b841691eb01c590`.
+This connects the paid kernel and personal history below to online local choice,
+not a new roadmap, adopted reference or completed Stage 1.
+The [development plan](DEVELOPMENT_PLAN.md) and ADR-0016 remain authoritative.
 
-Implemented: `modules/information_value.py::paid_information_value`, a bounded
-computational primitive using the existing I3 distress, self-projection and
-learned residual. It is **not called by Mind.decide or run_life**. P1.3 remains
-the reference, including its existing curiosity/prudence terms. No new genome,
-world, tariff, observer, selection runner or default behavior is introduced.
-This is not a completed Stage 1, experiment registration or scientific GO.
+## Implemented question
 
-## Source requirement versus this implementation choice
+Can a personally acquired bodily consequence affect a subsequent **executed**
+choice through prepaid conditional distress forecasts, without the additive
+curiosity, relevance and prudence score? This is an integrated software falsifier.
+It is not a survival/non-inferiority or revision-latency experiment.
 
-The owner's scenario asks for two or three paid subjective outcome branches,
-re-planning, and information value in predicted cumulative bodily distress,
-replacing rather than adding to curiosity and prudence. It does not specify a
-prior, observation model, numerical quadrature or an online integration API.
-The finite-outcome, one-probe/one-continuation kernel below is an explicit
-implementation choice, not a definition attributed to the supplied report.
+`run_life(..., decision_policy="local_information_v1")` explicitly constructs
+`modules/information_mind.py::InformationMind`. The default remains `reference`
+and constructs the unchanged P1.3 Mind. The experimental policy, unknown prior
+and episodic partition are bound in the manifest before birth. Other historical
+learning/readout/score-ablation combinations are rejected before World creation.
+No registry, engine entrypoint, physical law, genome schema or tariff changes.
 
-Each `SubjectiveOutcome` has a positive probability, a declared signal class,
-a predicted five-channel change from the probe, and predicted changes for the
-same set of continuation identifiers. There must be exactly two or three
-branches, with probabilities summing to one. No hidden renormalization, omitted
-probability mass, zero-probability branch or automatic optimistic prior.
-Deltas are predicted net physical/motor/metabolic changes over each of the two
-steps, excluding this kernel's separately accounted cognitive debit. They are
-not commands or true World laws. Their provenance is the caller's obligation.
+## Paid information kernel
 
-**Unknown-outcome boundary:** the current EffectsModel stores means and an
-uncertainty proxy, not a calibrated multi-outcome predictive distribution.
-This kernel does not pretend that those means already provide branch priors.
-An absent distribution fails explicitly. The paid personal constructor below
-now supplies a bounded empirical approximation with explicit unknown semantics.
-It is not a calibrated posterior or a complete newborn policy. Synthetic
-forecast vectors in tests are not acquired experiences or scientific results.
+`modules/information_value.py::paid_information_value` takes exactly two or
+three positive-probability SubjectiveOutcome branches with total mass one,
+explicit signal classes, five-channel probe deltas, and a common continuation
+set. Deltas are subjective net motor/metabolic/resource effects, excluding
+this calculation's cognitive debit. They are not true World transition laws.
 
-## Conditional re-planning without a hidden-outcome oracle
-
-For branch b, probability p(b), continuation a, and predicted return G(b,a):
+For branch b, continuation a and bodily return G(b,a), it computes:
 
 ```text
 V_common   = max_a sum_b p(b) G(b,a)
@@ -48,190 +35,182 @@ V_informed = sum_o max_a sum_{b compatible with o} p(b) G(b,a)
 information_value = V_informed - V_common
 ```
 
-An observation class o combines the declared signal with the predicted body
-immediately after the probe, which current I3 senses directly. The hidden
-branch index itself never selects a continuation. Indistinguishable signals
-and equal sensed bodies share a conditional expectation. They cannot receive
-perfect-information value by selecting separately for each hidden outcome.
-Identical best continuations also give no information advantage.
+Observation o consists only of the declared signal and predicted directly
+sensed body after the probe. Hidden sample identity cannot choose a continuation;
+saturated bodily observations remain aliased. G uses the existing normalized
+three-discount-horizon negative-distress return, then the existing projection
+and learned residual. Death is absorbing. Outcomes are averaged, not maximized.
+The diagnostic difference is not an extra bonus or Stage-2 value of computation:
+the actual experimental score is the complete V_informed.
 
-G uses the existing normalized three-horizon negative-distress return: the
-probe step, the continuation step, then Mind.project and its learned residual.
-All channels matter through the individual's existing distress function. Risk
-is averaged over bodily outcomes, not encoded as a separate prudence penalty.
-A predicted vital-channel death is absorbing even if a subsequent forecast
-would restore that channel. No maximization over the outcome distribution.
-The returned ties are not resolved by a behavioral rule or a random draw.
-
-`informed_value` already includes physical consequences and the calculation
-cost. `information_value` is the within-matrix diagnostic increment, NOT an
-extra score bonus and NOT net value versus skipping computation. Both sides
-share the same computation and paid matrix. A future candidate must replace
-its old score path with a complete compatible expected return, never add this
-increment to beta_u/relevance/prudence. This is not Stage-2 metareasoning.
-
-## Actual advance funding and failure semantics
-
-Use the existing CognitiveBudget and unchanged v2 rates. With B branches,
-A continuations and C existing projection chunks, the added declared work is:
+For B branches, A continuations and C projection chunks, successful kernel work:
 
 ```text
-cycles          = 1 preparation + B*A score blocks + 1 expectation/replan block
-simulated_steps = B*A*(2 explicit predicted steps + C projection chunks)
-memory_items    = B*7 + B*A*5  (forecast vectors and signal/probability entries)
+cycles          = 1 + B*A + 1
+simulated_steps = B*A*(2 + C)
+memory_items    = B*7 + B*A*5
 replays         = 0
 ```
 
-These are explicit model blocks, not a measurement of CPU instructions or host
-energy. The preparation block also reads the current personal drift. After it
-is paid and executed, the complete remaining bill is quoted without withdrawing
-it. All forecasts start from the body after that quoted full debit, avoiding
-cheaper earlier branches. Every score block, projection and final reduction
-then consumes its actual allowance **before** execution. On success, actual
-work and remaining body must equal the quote. Terminal hypothetical branches
-still execute the charged absorbing projection; no fake skipped rollout bill.
+A preparation block precedes drift lookup and the remaining-cost quote. Each
+score, actual geometric projection and final reduction is prepaid. Terminal
+hypotheses still execute the charged absorbing projection. Work must match the
+quote on success; failed quotes retain only executed preparation, while later
+exceptions retain only blocks already consumed and produce no partial score.
+These are declared model blocks, not CPU instructions or host-energy estimates.
 
-If preparation cannot be funded, no model read/projection executes. If the
-full quote is unaffordable, only executed preparation remains charged; no
-partial branch score is returned. An exception midway propagates, preserves
-already consumed work and does not charge later computations. Callers must
-retain and settle this work, not catch the error and discard the bill.
-Actual physical death rejects computation before any allowance is spent.
-
-The allowance is **not** proof that World settled a bill. The runtime remains
-responsible for its ordinary strict debit; integration tests explicitly settle
-it with World.pay_cognition. No hidden motor authority is granted by the result.
-
-`perceive_cost=False` is an explicit zero-perceived-INCREMENTAL-cost diagnostic:
-the prediction ignores this call's debit, but all actual work remains charged,
-and earlier cognitive spending is still included. It cannot unlock an
-unaffordable call. This is not waived physical charges, not the funded default,
-and not yet the report's full live ablation. No frozen-projection survival
-experiment is implemented or claimed here.
-
-## Verification and immediate handoff
-
-`tests/i3/test_information_value.py` covers informative/uninformative signals,
-observable body changes, shared best continuations, averaging three outcomes,
-prepaid work, cost-blind diagnostics, prior spending, renaming/order invariance,
-invalid priors, absorbing death, failed budgets, interrupted projections and
-rejection of a projection that does not consume its declared allowance.
-
-Two full-checkout tests connect to actual Mind projection and World debit,
-check unchanged learned/RNG state, and compare the ordinary reference life
-before/after an independent kernel call on existing development fixture 0.
-These are software tests, not a new scientific cohort or survival comparison.
-Exact PASS/FAIL/NOT_RUN records belong to the PR and its checked SHA.
-
-The personal constructor below completes the next computational connection.
-Next: connect it to a separately selected experimental score path, removing
-curiosity/relevance/prudence there. Keep the reference unchanged until the
-prospective survival/revision gate. Before exposure, freeze sources, priors,
-genotype/case binding, margins, multiplicity, stopping and compute rules.
-Stage 0, #1026 and #1054 remain open. I1 active; I3 unregistered; P4 reserve
-sealed; no selection/validation worlds opened by this implementation.
+The default API and `paid_personal_information` retain their existing cost
+semantics. The standalone `perceive_cost=False` diagnostic ignores only the
+kernel's incremental cost, never prior construction/spending or real payment.
+It cannot unlock unaffordable work and is not yet a full live-policy ablation.
+The common-batch extension is described below; it is not a waived-cost economy.
 
 ## Personal-outcome constructor
 
-Added after #1067, baseline `a700015d3fe81ad01a102a06390539c034f9025d`.
-`modules/personal_outcomes.py` adds `PersonalOutcomes` and
-`paid_personal_information`. This is an explicit modelling choice, not a prior
-or algorithm specified by the owner's report. Existing executable sources,
-including EffectsModel, Mind, run_life and the information kernel, are unchanged.
-The new path is executable through its API but is not called by ordinary lives.
+`modules/personal_outcomes.py` and its default no-support API are unchanged.
+PersonalOutcomes starts empty with explicitly bounded capacity 1..512. Its
+items contain only an action/internal-token key and five bodily deltas, not
+positions, hidden stocks, source gains or exogenous schedules. `observe` requires
+living pre-decision and post-physics/pre-learning bodies, actual decision work,
+and a fresh allowance. It prepays one cycle plus 16 memory items, then records
+the bodily delta with only that known own decision energy/vigilance debit added
+back. This cannot undo clipping or identify intrinsic causal resource effects.
+Caller binding is required; the public interface is not authenticated evidence.
+An invalid/unfunded observation neither stores nor evicts a sample.
 
-### Personal evidence and cognitive debits
+Construction takes the latest at most three exact-key effects; only absent
+exact-key support permits the same-action personal backoff. There is no global
+or cross-action transfer. Unsupported probes/continuations raise NoPersonalSupport
+in the original class, with consumed scans retained and no later work charged.
+Two/three samples have equal mass. One sample is duplicated at half mass only
+for the kernel API, not independent evidence or measured uncertainty. Recent
+adverse samples are not filtered; forgotten history is not reconstructed.
 
-A new history starts empty, with an explicitly supplied capacity of 1..512.
-The future candidate must bind it to inherited memory capacity and account for
-its storage jointly with existing memory; this slice does not silently allocate
-another free lifetime memory. Each stored item has only an action/internal-token
-key and five bodily deltas. No location, stock, source gain, scheduled event or
-hidden token effect is accepted. Non-token actions use a None token identifier.
-
-`observe(key, before, decision_work, budget)` requires a living pre-decision
-body and a fresh post-physics/pre-learning CognitiveBudget. The caller must
-supply its actually applied key and actually settled decision work. The new
-learning block costs one cycle and 16 memory items before it executes. The
-recorded delta is post-physics minus pre-decision body, adding back only the
-known energy/vigilance debit of that decision. Motor/metabolic/resource changes
-remain in the observed delta. The new history update's own debit occurs after
-this snapshot, so is not subtracted and re-added as a fictional old effect.
-
-This adjustment does not undo saturation, recover true unclipped gains, remove
-context dependence, or identify intrinsic causal effects. A fatal outcome is
-not learned after death. The inputs are a first-person interface, not an
-authenticated receipt: actual runtime binding is required. An invalid or
-unfunded storage operation changes no memory and evicts no old sample.
-
-### Explicit finite empirical approximation
-
-A query scans the bounded chronological history after paying for that scan.
-Use the latest at most three exact-key samples; only when there are none, use
-the latest at most three same-action samples from other personally experienced
-tokens. There is no cross-action/global fallback. Having collected a token does
-not create knowledge of its ingestion consequences. An unsupported probe or
-continuation raises `NoPersonalSupport` after the scans actually executed, with
-no partial score, fabricated positive effect, or silent zero-valued estimate.
-This deliberately does not solve initial action choice for an ignorant newborn.
-
-Two or three samples have equal mass. Adverse samples in that recent window
-are retained without need/sign-based filtering. This is an explicit short
-empirical window, not a claim to preserve the entire lifetime distribution.
-One sample is represented by two identical half-mass branches to satisfy the
-existing kernel API; these are not independent observations or evidence of
-measured uncertainty. Forgotten experiences cannot be recovered by the query.
-
-For the probe's same action/token continuation, the branch effect is assumed
-locally persistent across the two steps. Different keys use their own personal
-empirical mean, including when both unknown tokens use the same backoff pool.
-This is an uncalibrated, fallible correlation assumption, not change detection,
-a posterior update, or a guarantee of stationarity. Context and body clipping
-can invalidate it. Other continuations' mean predictions do not propagate their
-full outcome uncertainty; the target probe alone supplies this small ensemble.
-
-All branches use signal `body_only`, never a donor token or sample index. The
-unchanged kernel can condition only on the predicted directly sensed body.
-Clipping two distinct effects into the same bodily observation cannot reveal
-which sample was used. The caller still must prove the proposed continuations
-are first-person admissible: a repeated meal needs remaining inventory; a route
-needs reachable known geometry. No action is commanded by the constructor.
-This does not yet model the value of discovering unseen spatial resources.
-
-### Complete paid connection
-
-Construction pays a preparation block, then one complete bounded scan per
-unique queried key, then means/matrix construction. Each block is charged before
-execution. Missing support charges no later scan or unexecuted matrix. With
-N stored items, A continuation identifiers, Q unique keys, B outcome branches,
-and S returned support vectors across keys, successful construction costs:
+Repeating the same action/token shares its probe hypothesis. Other keys use
+their own personal mean; their full uncertainty is not propagated. This is a
+fallible local-persistence approximation, not a posterior or change detector.
+All constructed signals are body_only. It grants no inventory or spatial facts.
+With N stored items, A continuations, Q unique queried keys, B branches and
+S returned support vectors, construction prepays:
 
 ```text
 cycles       = 1 + Q + 1
 memory_items = (2 + 3*A) + Q*(7*N + 2) + 5*S + B*(7 + 5*A)
 ```
 
-`paid_personal_information` passes the constructed hypotheses to the unchanged
-kernel with the same allowance. Its existing `work` remains kernel work;
-`construction_work` and `total_work` expose the additional and combined work.
-Both enter ordinary forecasts. `perceive_cost=False` still ignores only the
-kernel's incremental cost; construction remains prior spending and is included.
-This is not a zero-perceived-total-cost live ablation. All actual charges remain
-payable, including consumed work when construction or the kernel fails.
+`paid_personal_information` distinguishes `construction_work`, kernel `work`
+and combined `total_work`, all on the same real allowance. The original tests
+and their historical PR records remain applicable to their pinned source;
+current full-checkout checks must run again. The opt-in subclass below supplies
+its unknown semantics and inherited episodic partition without modifying this
+original constructor or retroactively adding cost to old life receipts.
 
-`tests/i3/test_personal_outcomes.py` checks unknowns, exact/same-action fallback,
-negative outcomes, bounded forgetting, birth separation, known-debit correction,
-failed budgets, body aliases, renaming, and combined costs. Two real integration
-tests exercise fixed existing stable development indices 0 and 1: actual Mind
-decisions, World steps, paid personal recording, normal paid outcome learning,
-then kernel computation and physical settlement. The additional memory work is
-actually executed and charged, not post-hoc attached to an old receipt. This
-software harness is not a reference-cost-parity study or a new scientific cohort.
-An unchanged run_life test forbids implicit calls into this new component.
+## Deliberately local scope
 
-Next is integrated experimental choice, not another constructor or observer:
-explicit newborn ignorance/bootstrapping, shared memory and paid accounting,
-admissible continuations, and replacement rather than stacking of the old
-score. Full live ablations and the prospectively locked survival/revision gate
-remain unimplemented. Stage 0 and #1061/#1026/#1054 remain open; no activation,
-held-out exposure or scientific benefit is inferred from software tests.
+Candidates are primitive local rest, drink, collect, eat and adjacent movement
+commands, constructed from the **paid personal map and inventory**, never World.
+There is one probe step and one hypothetical continuation, followed by the
+existing self-projection and learned residual. The old remote BFS macro-plans
+are not scored by this prototype. It predicts no information about unseen cells.
+The existing Competition and motor admissibility code are reused unchanged.
+All plans are one-step, so there is no multi-step intention to preserve.
+
+Hypothetical movement exposes no new map cells. Eating decrements carried
+quantity; collecting adds exactly one item. After drinking or collection the
+prototype conservatively assumes no leftover environmental stock at that site,
+rather than injecting hidden quantities. A later actual capture can show more.
+Continuations have structural first-person feasibility, not a guarantee about
+future energy, stock or motor admission. They are never commands to World:
+the next real decision processes a new capture and ordinary control runs again.
+
+This restricted repertoire and memory partition differ from the reference.
+A future survival difference would therefore not isolate information value.
+Do not submit this local prototype as the planned one-mechanism Stage-1 gate.
+
+## Explicit ignorance, not invented experience
+
+The underlying PersonalOutcomes component still raises NoPersonalSupport.
+Only this experimental subclass supplies an explicit stationary ignorance prior:
+one zero-delta hypothesis, represented as two identical half-mass branches for
+the kernel API. This is the same assumption for every unsupported action, with
+no positive food/water effect, action preference or forced exploration command.
+It is not stored as experience and does not inherit across births.
+
+Stationarity is **not objectively neutral**: ignoring unknown decay can be
+optimistic and can prefer an unknown action to a personally costly known one.
+This is an explicit falsifiable modelling assumption, not a calibrated prior
+or the algorithm prescribed by the supplied scenario. Do not tune it to rescue
+poor development lives. Existing random tie-breaking resolves equal forecasts.
+Personal exact-key or same-action samples replace it when acquired. Recent
+samples remain fallible; this is neither a change detector nor a full posterior.
+
+## Costs, comparison point and failure
+
+Perception/control preparation, hypothetical map/inventory construction,
+personal-history scans, branch construction, kernel rollouts and reductions
+consume existing CognitiveBudget allowance before execution. All option
+forecasts use the **same** predicted starting body after the complete quoted
+batch plus the inherited Competition cycle ceiling. This avoids artificially
+cheaper earlier options due to sequential scoring.
+
+The kernel's optional `forecast_work` is a prediction ceiling, not a spend. It
+must cover that call's actual work and be affordable from the original body;
+it cannot be combined with the zero-perceived-cost diagnostic. Its default
+behavior is unchanged. The local caller reconciles the sum of actual kernel
+work with the complete evaluation quote before allowing Competition to run.
+Competition then consumes only the cycles it really executes. Unused cycles
+are not billed, refunded or fabricated. Thus the forecast can conservatively
+overestimate Competition cost; it is not claimed to equal every realized bill.
+
+A failed complete comparison returns no authorized command. All consumed work
+is still settled once by the ordinary runtime, and passive physiology advances.
+A computational error propagates instead of becoming a physical death or a
+partial score. Physical death prohibits further decision or learning. Sleep
+never retroactively finances an unaffordable comparison.
+
+The old bonus terms are absent from the experimental score, not computed and
+then added or discarded. Compatibility witness fields are zero and marked
+`score_kind=local_expected_distress`; `uncertainty=None` is not a calibrated
+zero-uncertainty estimate. The full existing Competition/resource observers
+remain opt-in and provide no additional Mind input.
+
+## Episodic memory and learning
+
+The existing inherited rounded m_max is explicitly divided: floor(m_max/2)
+recent personal effects and the remainder for ordinary TD/replay transitions.
+Their combined retained count cannot exceed m_max. This is **not** a cap on all
+map cells, effect statistics or other state. No extra gene or silent migration;
+unused beta_u/lambda_r stay in the existing birth schema but do not score this
+candidate. The fixed two-step local lookahead is not Stage-2 budget selection.
+
+Ordinary learning reserves and settles its normal bill. When additionally
+affordable, STORE_WORK is reserved in that same learning phase. After settlement,
+the original PersonalOutcomes.observe executes with a checked suballowance
+for that already funded block and the original pre-learning physical body.
+There is no second World debit. It removes only the known decision-phase
+cognitive charge from the lived delta, as in the original constructor.
+No paid storage means no new personal record. No record is made after death.
+The new personal-history digest is separate from the original learned-state
+signature, so old meanings are not silently broadened.
+
+## Verification and next intervention
+
+`tests/i3/test_information_mind.py` exercises inventory/known-map restrictions,
+empty birth, prior replacement, memory partition, insufficient budget, terminal
+bodies, common forecast-cost semantics, real online history use, a synthetic
+history-to-issued-motor falsifier, exact two-phase receipts, existing observer
+parity including RNG, and default-reference parity against the previous pinned
+runner at the same current source snapshot. It uses synthetic software fixtures
+and existing stable development indices 0 and 1 only. A synthetic history
+contrast is not acquired individuality or a scientific survival benefit.
+
+Record exact local and full-checkout CI checks in the PR. Do not borrow a
+prior SHA's success or turn short software trajectories into new scientific
+populations. The original report, studies, allocations and P4 reserve are unchanged.
+
+Next: a bounded prospectively specified development diagnostic of the integrated
+candidate's own histories and failure modes, then the missing personally grounded
+spatial information model needed by the scenario. Do not tune a rescue prior,
+rewrite Competition, or expand observers instead. Full live ablations and the
+source/genotype/case/margin/multiplicity/stopping/compute-locked survival and
+revision gate remain open. Stage 0, #1026 and #1054 are not closed by this slice.

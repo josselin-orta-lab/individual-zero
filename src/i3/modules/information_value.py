@@ -93,7 +93,8 @@ def _reward(model, body) -> float:
 
 
 def paid_information_value(model: PersonalProjection, outcomes: tuple[SubjectiveOutcome, ...],
-                           budget: CognitiveBudget, *, perceive_cost: bool = True) -> dict:
+                           budget: CognitiveBudget, *, perceive_cost: bool = True,
+                           forecast_work: CognitiveWork | None = None) -> dict:
     """Score one probe and one contingent continuation in existing value units.
 
 Both alternatives use the SAME paid payoff matrix: sum_o max_a sum_{b in o}
@@ -115,6 +116,9 @@ must settle budget.work normally; an allowance is not a World debit receipt.
             not isfinite(g) or not 0 < g < 1 for g in model.gammas) or
             not model.proj_chunks or any(type(n) is not int or n < 1 for n in model.proj_chunks)):
         raise ValueError("current three-horizon projection contract required")
+    if forecast_work is not None and (
+            not isinstance(forecast_work, CognitiveWork) or not perceive_cost):
+        raise ValueError("common forecast work requires an actual-cost forecast")
     original_work, original_body = budget.work, budget.remaining
     cells = len(outcomes) * len(names)
     # One preparation block; scan probe/continuation vectors and signal weights.
@@ -128,6 +132,12 @@ must settle budget.work normally; an allowance is not a World debit receipt.
     quoted_work = _add_work(budget.work, remaining_work)
     quoted_body, _ = debit_cognition(budget.body, budget.laws, quoted_work)
     forecast_body = quoted_body if perceive_cost else original_body
+    if forecast_work is not None:
+        # The caller can compare a whole batch at one conservative cost point.
+        # This predicts later work, never spends or bills that work here.
+        if any(getattr(forecast_work, k) < getattr(quoted_work, k) for k in WORK_KEYS):
+            raise ValueError("common forecast cannot omit this call's actual work")
+        forecast_body, _ = debit_cognition(budget.body, budget.laws, forecast_work)
     values, groups = [], {}
     for branch in outcomes:
         effects = dict(branch.continuations)
