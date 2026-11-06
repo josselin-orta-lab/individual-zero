@@ -1,0 +1,155 @@
+name: I3 P5e first original full-choice engineering pilot one-shot
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/i3-p5e-pilot-transport.yml'
+      - 'src/i3/lab/p5e_development.py'
+      - 'tests/i3/test_p5e_development.py'
+      - 'src/i3/docs/P5E_DEVELOPMENT_PROTOCOL.md'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: i3-p5e-original-pilot-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  preflight:
+    name: P5e source, parity and generation gate Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Source SHA before any development life
+        run: |
+          git rev-parse HEAD
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+      - name: Complete I3 original and P5e software tests
+        run: PYTHONPATH=src python -m unittest discover -s tests/i3 -p 'test_*.py'
+      - name: Isolation guards without the disposable test-only transport
+        run: |
+          rm .github/workflows/i3-p5e-pilot-transport.yml
+          python scripts/check_engine_repository.py --json
+          python scripts/check_engine_contracts.py --json
+      - name: Frozen metadata, absolutely zero opened worlds
+        run: |
+          PYTHONPATH=src python -m i3.lab.p5e_development --manifest > original-plan.json
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          raw=Path('original-plan.json').read_bytes()
+          m=json.loads(raw)
+          assert m['schema']=='i3-p5e-full-competition-development/v1'
+          assert m['cohort']=='DEVELOPMENT_ONLY'
+          assert m['validation']=='NOT_OPENED' and m['reserve']=='LOCKED' and m['selection']=='NOT_OPENED'
+          assert m['score_modes']==['normal','discard_curiosity_bonus']
+          assert m['genome_seeds']==[901,902] and m['horizon']==120
+          assert [a['development_index'] for a in m['allocation']]==list(range(38,44))
+          assert len(m['allocation'])==6
+          print('P5E_PREPAID_DEV_PLAN_SHA256',m['sha256'])
+          print('P5E_PREPAID_DEV_PLAN_BYTES_SHA256',hashlib.sha256(raw).hexdigest())
+          PY
+
+  original:
+    name: First and only 24 new P5e development-only lives with raw custody
+    runs-on: ubuntu-latest
+    needs: [preflight]
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify exact source and frozen development allocation
+        run: |
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          PYTHONPATH=src python -m i3.lab.p5e_development --manifest > original-plan.json
+          python - <<'PY'
+          import json
+          m=json.load(open('original-plan.json'))
+          assert m['validation']=='NOT_OPENED' and m['reserve']=='LOCKED'
+          assert [a['development_index'] for a in m['allocation']]==list(range(38,44))
+          print('ORIGINAL_SOURCE_SHA','${{ github.event.pull_request.head.sha }}')
+          print('ORIGINAL_PLAN_SHA',m['sha256'])
+          PY
+      - name: Execute one original 24-life DEVELOPMENT panel, no retry
+        run: |
+          PYTHONPATH=src python -m i3.lab.p5e_development --run-development > p5e-original.json
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          raw=Path('p5e-original.json').read_bytes()
+          d=json.loads(raw)
+          assert d['status']=='FIRST_ORIGINAL_DEVELOPMENT_ONLY_NOT_HELDOUT_NOT_CAUSAL'
+          assert d['validation']=='NOT_OPENED' and d['reserve']=='LOCKED'
+          assert len(d['receipts'])==24 and d['independent_populations']==0
+          assert len({(r['development_index'],r['genome_seed'],r['mode']) for r in d['receipts']})==24
+          assert {r['development_index'] for r in d['receipts']}==set(range(38,44))
+          assert {r['mode'] for r in d['receipts']}=={'normal','discard_curiosity_bonus'}
+          assert d['manifest']==json.load(open('original-plan.json'))
+          for r in d['receipts']:
+              assert len(r['competition_steps'])==r['steps_lived']
+              assert r['paid_work']['shortfall_steps']==0
+          print('P5E_FIRST_RAW_SHA256',hashlib.sha256(raw).hexdigest())
+          print('P5E_FIRST_RAW_BYTES',len(raw))
+          print('P5E_FIRST_SUMMARY',json.dumps(d['summary'],sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: i3-p5e-first-original-full-paid-competition
+          path: |
+            p5e-original.json
+            original-plan.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Archive original byte-identical evidence permanently to PR branch only
+        shell: bash
+        env:
+          EXPECTED_PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PR_HEAD_BRANCH: ${{ github.head_ref }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_PR_HEAD"
+          mkdir -p src/i3/docs/studies/p5e-full-competition
+          python - <<'PY'
+          import gzip,hashlib,json
+          from pathlib import Path
+          root=Path('src/i3/docs/studies/p5e-full-competition')
+          raw=Path('p5e-original.json').read_bytes()
+          original=json.loads(raw)
+          plan=json.loads(Path('original-plan.json').read_bytes())
+          assert original['manifest']==plan
+          dst=root/'p5e-original.json.gz'
+          with dst.open('wb') as f:
+              with gzip.GzipFile(filename='',mode='wb',fileobj=f,compresslevel=9,mtime=0) as z:
+                  z.write(raw)
+          zipped=dst.read_bytes()
+          assert gzip.decompress(zipped)==raw
+          (root/'original-plan.json').write_bytes(Path('original-plan.json').read_bytes())
+          (root/'original-summary.json').write_text(json.dumps(original['summary'],sort_keys=True,indent=2)+'\n')
+          (root/'ORIGINAL_SHA256SUMS.txt').write_text(
+              hashlib.sha256(raw).hexdigest()+'  p5e-original.json\n'+
+              hashlib.sha256(zipped).hexdigest()+'  p5e-original.json.gz\n')
+          print('P5E_GIT_ARCHIVE_SHA256',hashlib.sha256(zipped).hexdigest())
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/i3/docs/studies/p5e-full-competition
+          git commit -m "research(i3 P5e): permanently preserve first original paid competition panel"
+          git push origin "HEAD:refs/heads/$PR_HEAD_BRANCH"
