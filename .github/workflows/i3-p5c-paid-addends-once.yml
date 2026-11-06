@@ -1,0 +1,55 @@
+name: I3 P5c prospectively registered paid score-addend study ONCE
+on:
+  push:
+    branches: [automation/i3-p5c-paid-addends-once-20261106]
+    paths: [.github/workflows/i3-p5c-paid-addends-once.yml]
+permissions:
+  contents: read
+jobs:
+  study:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      I3_P5C_SOURCE_SHA: 674f4f05ddab8ebcc5412632d0caed7df299a8bd
+      I3_P5C_SCHEDULE_SHA: 287147fdf06d1ab6a4fdd6f5dc1cc4d04ec8014be5b23918f68abb8006925268
+      I3_P5C_APPROVED_PROTOCOL: i3-p5c-paid-score-addends-heldout-v1
+    steps:
+      - name: Checkout exact earlier tested scientific source
+        uses: actions/checkout@v4
+        with:
+          ref: 674f4f05ddab8ebcc5412632d0caed7df299a8bd
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Assert P5c preregistration is merged into main BEFORE first world
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git merge-base --is-ancestor 3e97d94f95203eaa837f7a4cae755a15636380c8 origin/main
+          test "$(git rev-parse HEAD)" = "$I3_P5C_SOURCE_SHA"
+      - name: Verify original software checks before scientific exposure
+        shell: bash
+        run: |
+          set -euo pipefail
+          env -u I3_P5C_SOURCE_SHA -u I3_P5C_SCHEDULE_SHA -u I3_P5C_APPROVED_PROTOCOL python -m unittest discover -s tests/i3 -p 'test_*.py' -q
+          python scripts/check_engine_repository.py --json
+          PYTHONPATH=src python -m i3.lab.p5c_heldout --preflight
+      - name: Execute 1152 original preregistered lives and write unmodified receipts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          PYTHONPATH=src python -m i3.lab.p5c_heldout --run out/p5c-full-original.json | tee out/p5c-summary-original.json
+          sha256sum out/p5c-full-original.json out/p5c-summary-original.json | tee out/SHA256SUMS.txt
+      - name: Preserve any available original bytes even if execution fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-p5c-first-original-paid-addends
+          path: out/
+          retention-days: 90
+          if-no-files-found: warn
