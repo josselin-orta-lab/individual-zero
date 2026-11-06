@@ -9,8 +9,8 @@ Updated 6 November 2026 for the owner-requested scenario integration
 [#1059](https://github.com/josselin-orta-lab/individual-zero/issues/1059).
 Evidence baseline: `e4eb3e80c9dc48e131e05383d952909bd86213b7` (PR #1058).
 That integration changed documentation and priorities only. The subsequent
-Stage-0 planning slice below adds laboratory metadata/arithmetic, not cognition
-or physics; it opens no validation/reserve world and executes no study life.
+Stage-0 slices add laboratory metadata/arithmetic and read-only funding receipts,
+not cognition or physics; no validation/reserve world or scientific-study life.
 
 ## Current reference and observed limits
 
@@ -91,7 +91,23 @@ sealed. Identifiers are not generated genomes, selected winners or observed
 lives. This is not a preregistration or a completed Stage 0.
 
 Standalone scalar/metadata tests and full-repository integration checks are
-separate; exact CI results belong to the implementation PR. Actual energetic
-receipt mapping, full Competition observer parity, family R, source locks,
-practical margins, multiplicity, lineage controls and #1026/#1054 remain open.
-No survival, individuality or generalization result is added by this slice.
+separate; exact CI results belong to the implementation PR. Family R, source
+locks, practical margins, multiplicity, lineage controls and #1026/#1054 remain
+open. No survival, individuality or generalization result is added by this slice.
+
+## Stage 0: actual funded-life receipt connection
+
+`lab/stage0_energy.py` verifies full runtime evidence chains and original
+phase work/body debits, then summarizes complete declared reference/candidate
+pairs in eight population blocks. Actual decision/learning energy and vigilance,
+replay work, early deaths and total lived time remain explicit. Chosen waiting
+is not physical inactivity. Zero-lived-step rates are undefined, not zero.
+Pair opportunities must match; actual spending need not. Output is descriptive,
+not causal energetic mediation, authenticated custody, or a scientific verdict.
+
+Development-only integration tests check observer on/off equality of actual
+receipts, body, actions, learned state and per-decision RNG. Exact results belong
+to the implementation PR, not this status text. No Mind/runtime/physics/genome
+change, default observer, new study life or validation/reserve exposure.
+Study-specific case/genotype/intervention binding and prospective registration
+remain required; the fixed design is not automatically executable.

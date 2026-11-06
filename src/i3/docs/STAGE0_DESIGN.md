@@ -3,11 +3,13 @@
 Issue [#1060](https://github.com/josselin-orta-lab/individual-zero/issues/1060),
 under the [single development plan](DEVELOPMENT_PLAN.md) and ADR-0016.
 Baseline: `5ff6e5a78c9804b0a49c7f947479b0dddfd3eb3e`.
+Receipt-adapter dependency: PR #1064, `07760f29478c681aa0cb003eef6301588b0a7b49`.
 
-**Implemented: planning metadata and selection/statistical arithmetic only.**
+**Implemented: planning metadata, arithmetic and read-only funded-life receipts.**
 **NOT a preregistration, executable study, completed Stage 0 or scientific GO.**
-No World, Mind, genome or individual is instantiated. I1 remains active, I3
-unregistered; physics, cognition, prices and original evidence are unchanged.
+No World, Mind, genome or individual is instantiated by the planner or adapter.
+I1 remains active, I3 unregistered; physics, cognition, prices and original
+evidence are unchanged. Runtime integration tests use development fixtures only.
 
 ## Question and minimum intervention
 
@@ -99,9 +101,12 @@ crashes, unfinished lives, boolean/invalid step counts and extra fields fail.
 A crash is not a death, and failed candidates are not silently removed.
 
 The function is arithmetic over supplied receipts, **not a runtime receipt
-adapter or a provenance verifier**. A later adapter must check source, cohort,
-manifest, terminal semantics and complete evidence before constructing these
-inputs. No old trace is reclassified or rerun here.
+adapter or a provenance verifier**. The observer adapter below checks funding
+and original chains but does not automatically select or join a life to the
+fixed candidate/world allocation. Study-specific membership, genotype and
+intervention binding remain necessary. The fixed ranker requires positive
+lived steps; its worlds start viable. The adapter also retains zero-step deaths
+and never silently discards one to satisfy that ranking contract.
 
 ## Population-level arithmetic, not an automatic gate
 
@@ -122,28 +127,72 @@ provenance or independence of its values. Predeclare aggregates, practical
 margins, uncertainty and multiplicity before exposure; do not select a test
 after looking at outcomes. The 7/8 Stage-6 directional condition stays distinct.
 
-## Energetic and observational design, still to connect
+## Connected energetic receipts: observer only
 
-For every planned life, retain death/censoring and steps lived, genuinely paid
-work by decision/learning/replay phase, energy/vigilance paid, inactivity,
-physical actions and resource uptake. Analyze both cumulative expenditure and
-per-lived-step expenditure; publish early deaths rather than conditioning on
-survivors or matching by discarded lives. Equal initial prices/opportunities
-are not equal realized costs. Never bill fictitious work to equalize arms.
+`lab/stage0_energy.py::energy_receipt` consumes an existing complete
+`run_life(..., keep_trace=True)` result with explicitly supplied protocol and
+source SHA-256. It reconstructs the original manifest, behavior and evidence
+chains, verifies world/source/genome hashes, and checks each decision/learning
+work vector against the **existing** `BodyLaws` / `debit_cognition` functions.
+The two phases' actual body debits, step bills, life totals, terminal causes,
+replay counts and physical inactivity must agree. Missing/truncated records,
+invalid finite costs, inconsistent paid work, postmortem learning and false
+censoring fail. It imports no Mind or runner and changes no runtime receipt.
 
-The current P5e full paid Competition witness is the intended observer, not
-new Mind input. This slice does not turn it on by default or re-prove its parity.
-The next receipt adapter must connect actual runtime fields, check completeness
-and observer on/off parity before any independently preregistered gate.
-Energetic mediation remains an analysis question, not established causality.
+Learning includes replay; replay is separately counted in the learning work
+vector, not charged a second time as a fictitious third phase. Cognitive energy
+and vigilance exclude motor/metabolic spending and observer CPU overhead.
+Deliberate `attendre`, `dormir` and null-command physical inactivity remain
+separate. Early deaths remain outcomes. A zero-step physical death has zero
+work but undefined per-lived-step rates, not fabricated perfect efficiency.
 
-## Remaining Stage-0 work and stop boundary
+`population_energy` requires the caller's complete **predeclared** case lists
+for eight blocks and both `reference`/`candidate` full-life records per case.
+It rejects missing/duplicate cases, repeated identities within an arm, a world
+shared across population blocks, differing paired world/seed/horizon and mixed
+panel horizons. Each arm has its own explicit source pin; selected genomes may
+differ, as in the architecture-under-selection design. It reports all compact
+life receipts, population totals, and candidate-minus-reference contrasts.
+Rates use total paid expenditure divided by **all** lived steps, including
+deaths, not the unweighted mean of surviving individuals' rates. Zero-denominator
+rates and contrasts remain `None`. No p-value or scientific gate runs here.
 
-Before any study: finish the actual receipt adapter and full-witness parity;
-freeze exact reference/candidate sources, family R, latency/no-exposure/death
-semantics, non-inferiority margin, sample-size rationale, multiplicity, crashes,
-stopping rule and compute ceiling. Publish a separate prospective registration
-before selection or validation, and verify live allocation conflicts again.
+**Limits:** these are consistency checks, not authenticated custody, a proof of
+executed CPU instructions, complete physical-trajectory replay or genealogical
+independence. Public hashes cannot authenticate a completely re-signed invented
+history. Mode labels and case-to-world/genome membership need study-specific
+prospective locks; the existing runtime manifest does not itself authenticate
+all intervention labels. Expected cases must not be built from the successful
+subset after observing outcomes. No claims of pure information benefit, equal
+realized costs, or causal energetic mediation follow from these descriptives.
+The design manifest from the first slice stays unchanged; its unresolved-field
+list records that design snapshot, not automatic scientific authorization.
+
+## Verification and remaining Stage-0 work
+
+`tests/i3/test_stage0_energy.py` includes synthetic adverse/tamper cases and
+bounded runtime integration. Eight existing development fixture worlds, eight
+steps each, compare observer off/on under normal and curiosity-masked scoring;
+checks include exact evidence, actions, body, learned state, actual paid work
+and the RNG state after each decision. A zero-step dead-at-birth fixture checks
+the runtime edge. These software labels are NOT eight independently evolved
+scientific populations and their trajectories are not a new study cohort.
+No selection, validation or reserve world is opened. Full-checkout CI must
+verify these integration checks on the exact candidate; local synthetic tests
+alone cannot establish runtime parity.
+
+```sh
+python -m unittest discover -s tests/i3 -p 'test_stage0_energy.py' -v
+```
+
+Before any study, freeze exact reference/candidate sources, family R,
+latency/no-exposure/death semantics, non-inferiority margin, sample-size rationale,
+multiplicity, crashes, stopping rule and compute ceiling. Bind expected cases,
+genotypes, worlds and intervention modes to that registered design. Publish a
+separate prospective registration before selection or validation, and verify
+live allocation conflicts again. Observer parity must be rechecked when a new
+cognitive candidate is implemented. No further general receipt framework is
+needed before addressing those concrete experimental definitions.
 
 Keep [#1026](https://github.com/josselin-orta-lab/individual-zero/issues/1026)
 for continuing same-genome individuals with different histories and a common
@@ -152,6 +201,5 @@ Keep [#1054](https://github.com/josselin-orta-lab/individual-zero/issues/1054)
 for the unresolved P5d carried-food case; absent exposure remains NOT_OBSERVED.
 Do not create new lineage/random-parent or F1-F6 mechanisms in this design slice.
 
-The focused tests use synthetic scalar outcomes and identifier arithmetic only.
 Local standalone checks do not replace full-checkout integration tests or the
 required CI on the exact PR SHA. No new experimental result is claimed.
