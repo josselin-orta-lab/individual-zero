@@ -189,3 +189,16 @@ no new lives, no new genetic/ecological independent
 replications, and no proof of complete lifelong
 resource-acquisition causality. [CI 42235312727](https://github.com/josselin-orta-lab/individual-zero/actions/runs/42235312727)
 passed 185 I3 tests on Python 3.11/3.12.
+
+## P5d external resource-acquisition instrumentation (engineering source)
+
+[The bounded P5d contract](P5D_RESOURCE_ACQUISITION.md) addresses [#1054](https://github.com/josselin-orta-lab/individual-zero/issues/1054).
+It distinguishes personal offered/scored resource plans from admitted physical
+commands, successfully collected/consumed inventory and **positive body uptake
+above metabolic drift**. Only the optional life-laboratory observer reads the
+actual post-action world outcome; Mind, world physics, cost rules and original
+life evidence chains remain unchanged. A fixed 24-life **development-only**
+paired panel is implemented for indices 32–37 with two G0 engineering seeds
+and normal vs paid curiosity-score masking. **No P5d scientific validation
+was run or authorized by this implementation.** I1 remains active, I3
+unregistered and P4 reserve locked.
