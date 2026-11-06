@@ -1,5 +1,7 @@
 # P5d: paid eating proposals versus accepted decisions (original-only)
 
+**Technical verification:** [GitHub Actions 42284056578](https://github.com/josselin-orta-lab/individual-zero/actions/runs/42284056578) PASS, 195 focused I3 tests under Python 3.11 and 3.12, exact original SHA-256 analysis and generation ownership checks. Original-only; zero new lives. The ephemeral verification workflow was deleted from the integration branch after validation.
+
 **Classification:** exploratory post-hoc analysis of the same **24 original P5d development lives**; no new life, no additional world exposure, no new genes, no behavioral patch and no scientific GO. Tracking [#1054](https://github.com/josselin-orta-lab/individual-zero/issues/1054). Original executable `00287fcc15892736eabc7bd98b47f83a5fc180f6`; full original data under [permanent custody](studies/p5d-resource-acquisition/) at raw SHA-256 `3d9eff0469157cd1c9f41978720ddc61eb8b40da1c86366b3f1ed50f9823d5ec`.
 
 ## New falsifier: is food ignored because it is not proposed or not affordable?
