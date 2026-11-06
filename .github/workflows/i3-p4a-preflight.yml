@@ -1,0 +1,31 @@
+name: I3 P4a validation code preflight (NO heldout lives)
+on:
+  push:
+    branches: [automation/i3-p4a-preflight-20261106]
+    paths: [.github/workflows/i3-p4a-preflight.yml]
+permissions:
+  contents: read
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - name: Checkout prospective validation source
+        uses: actions/checkout@v4
+        with:
+          ref: 01132efef08edb23143c4618d1a2491b23026eb4
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Check I3 software and repository isolation
+        run: |
+          python -m unittest discover -s tests/i3 -p 'test_*.py' -q
+          python scripts/check_engine_repository.py --json
+      - name: Preregistered schedule and genome preflight without worlds
+        run: PYTHONPATH=src python -m i3.lab.p4a_validation --preflight
