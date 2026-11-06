@@ -51,7 +51,7 @@ def _receipt(life: dict, *, mode: str, population: int, arm: str,
     acc, trace = life["cognitive_accounting"], life["trace"]
     steps = life["steps_lived"]
     if (life["score_addend_mode"] != mode or
-        life["effect_score-addend"] != "full" or
+        life["effect_readout"] != "full" or
         life["learning_intervention"] != "normal" or
         life["genome"] != genome_hash or
         life["manifest"]["world_sha256"] != world_hash or
@@ -244,7 +244,7 @@ def run() -> dict:
                     life = run_life(
                         gene["genome"], spec, seed, p5c_schedule.HORIZON,
                         protocol=PROTOCOL, keep_trace=True, learning_mode="normal",
-                        effect_score-addend="full", score_addend_mode=mode,
+                        effect_readout="full", score_addend_mode=mode,
                         observer_mind_digest=True,
                         observer_decision_diagnostics=True)
                     receipts.append(_receipt(
