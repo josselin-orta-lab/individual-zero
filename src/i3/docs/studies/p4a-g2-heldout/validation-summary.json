@@ -1,0 +1,98 @@
+{
+  "original_evidence_sha256": "3fe21087283eeafb8e9b0fc2522b238ea700611029a7f02b1edf3b89b2a3b3c5",
+  "population_results": [
+    {
+      "arms": {
+        "random_parent": {
+          "deaths": 28,
+          "inactive_steps": 2067,
+          "lived_steps": 8562,
+          "paid_energy": 4373.8922,
+          "paid_vigilance": 5329.614,
+          "survivors": 8
+        },
+        "selected": {
+          "deaths": 30,
+          "inactive_steps": 1894,
+          "lived_steps": 7806,
+          "paid_energy": 3782.9022,
+          "paid_vigilance": 4694.282,
+          "survivors": 6
+        }
+      },
+      "population": 0,
+      "selected_minus_random_survivors": -2
+    },
+    {
+      "arms": {
+        "random_parent": {
+          "deaths": 32,
+          "inactive_steps": 1256,
+          "lived_steps": 7706,
+          "paid_energy": 4281.0866,
+          "paid_vigilance": 5119.086,
+          "survivors": 4
+        },
+        "selected": {
+          "deaths": 23,
+          "inactive_steps": 617,
+          "lived_steps": 9934,
+          "paid_energy": 7157.6742,
+          "paid_vigilance": 8552.172,
+          "survivors": 13
+        }
+      },
+      "population": 1,
+      "selected_minus_random_survivors": 9
+    },
+    {
+      "arms": {
+        "random_parent": {
+          "deaths": 22,
+          "inactive_steps": 2719,
+          "lived_steps": 9757,
+          "paid_energy": 4745.7174,
+          "paid_vigilance": 5859.926,
+          "survivors": 14
+        },
+        "selected": {
+          "deaths": 23,
+          "inactive_steps": 1824,
+          "lived_steps": 9453,
+          "paid_energy": 5207.1986,
+          "paid_vigilance": 6422.944,
+          "survivors": 13
+        }
+      },
+      "population": 2,
+      "selected_minus_random_survivors": -1
+    },
+    {
+      "arms": {
+        "random_parent": {
+          "deaths": 20,
+          "inactive_steps": 1797,
+          "lived_steps": 9474,
+          "paid_energy": 5839.867,
+          "paid_vigilance": 7020.23,
+          "survivors": 16
+        },
+        "selected": {
+          "deaths": 21,
+          "inactive_steps": 1918,
+          "lived_steps": 10058,
+          "paid_energy": 5989.7578,
+          "paid_vigilance": 7248.012,
+          "survivors": 15
+        }
+      },
+      "population": 3,
+      "selected_minus_random_survivors": -1
+    }
+  ],
+  "schedule_sha256": "7d5785eca2f65b1562c2dca22bc4bd65f930250e8a0b032df18a030b22b38289",
+  "schema": "i3-p4a-g2-heldout-v1",
+  "source_sha": "01132efef08edb23143c4618d1a2491b23026eb4",
+  "status": "P4A_VALIDATION_ONLY_P4B_AND_RESERVE_NOT_RUN",
+  "total_lives": 288
+}
