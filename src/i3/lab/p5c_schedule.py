@@ -9,7 +9,7 @@ from __future__ import annotations
 from hashlib import sha256
 import json
 
-from i3.lab import p2_ecologies, p3_schedule, p4a_schedule, p4b_schedule, p5a_schedule, p5c_schedule
+from i3.lab import p2_ecologies, p3_schedule, p4a_schedule, p4b_schedule, p5a_schedule, p5b_schedule
 
 PROTOCOL = "i3-p5c-paid-score-addends-heldout-v1"
 SCHEMA = "i3-p5c-new-score-addend-allocation-v1"
@@ -67,7 +67,7 @@ def manifest() -> dict:
         "mechanistic_secondary": "first_pre_action_change_in_shared_paid_candidate_score_and_bonus_components_with_matched_body_within_12_steps",
         "multiplicity": "three_predeclared_comparisons_Holm_exploratory",
         "sign_flip_floor": 0.125,
-        "p5c_schedule_sha256": p5c_schedule.manifest()["sha256"],
+        "p5b_schedule_sha256": p5b_schedule.manifest()["sha256"],
         "p5a_schedule_sha256": p5a_schedule.manifest()["sha256"],
         "p4b_schedule_sha256": p4b_schedule.manifest()["sha256"],
         "p4a_schedule_sha256": p4a_schedule.schedule_manifest()["sha256"],
