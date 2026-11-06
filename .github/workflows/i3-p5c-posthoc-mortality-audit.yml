@@ -17,7 +17,7 @@ jobs:
       - name: Checkout exact P5c original-only diagnostic source
         uses: actions/checkout@v4
         with:
-          ref: 22cbe688164b9cfb235fb5d785b195c11c00d0fb
+          ref: 2d029edc3bc45e8dc14d606dcec5ef984144c32c
           persist-credentials: false
       - name: Python
         uses: actions/setup-python@v5
