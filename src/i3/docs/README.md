@@ -64,3 +64,12 @@ cases like the normal group, but showed **894 inactive steps versus
 109 normal**, with 891 no-processing-budget events. A generic learned
 magnitude did not restore action-specific activity; this is **not**
 a held-out scientific survival claim. P5b validation remains NOT_RUN.
+
+### P5b matched decision chronology (development only)
+
+[Post-life paired chronology](P5B_DIVERGENCE_CHRONOLOGY.md) now distinguishes
+the first physical action, body state, actually paid decision work and
+funding-status differences across 12 matched engineering lives per readout.
+The action-agnostic prior first diverges in action at step 4 and its earliest
+funding-status divergence is step 33 across the fixture; these are minima
+across pairs, not a causal claim. **No P5b held-out study has run.**
