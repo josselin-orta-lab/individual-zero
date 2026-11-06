@@ -17,7 +17,7 @@ jobs:
       - name: Checkout exact P5a engineering candidate
         uses: actions/checkout@v4
         with:
-          ref: 5f6cf1698e000d956bdb42bbb26b882ac2fcca36
+          ref: 043226fcf3849d6b2e5d79996b636fb9d6fa8b09
           persist-credentials: false
       - name: Configure Python
         uses: actions/setup-python@v5
