@@ -27,3 +27,13 @@ differences in actual cognition and activity; spatial belief learning
 remains active in both modes. Reserve worlds remain locked.
 
 The existing focused tests are `python -m unittest discover -s tests/i3 -p 'test_*.py' -v`. Any future scientific study needs a prospective preregistration and newly reserved environments.
+
+## P5a next bounded research intervention
+
+[Selective paid-retention engineering contract](P5A_SELECTIVE_RETENTION_CONTRACT.md)
+separates persistent effect statistics, TD value coefficients and sleep replay
+without altering the default life or reopening any validation world. These
+controls are **software only**, not a P5a held-out scientific finding.
+Future validation requires independent prospective preregistration, fresh
+allocation, adequate population-level replication and actual paid-cost
+mediation analysis. See [#1026](https://github.com/josselin-orta-lab/individual-zero/issues/1026).
