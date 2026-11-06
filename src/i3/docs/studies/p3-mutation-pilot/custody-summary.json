@@ -1,0 +1,13 @@
+{
+  "generation": 2,
+  "origin_selection_sha256": "76bed12cce89b051b59542a425d29e53725475146504bced97660523fcf73040",
+  "population_count": 4,
+  "reserve": "LOCKED",
+  "schedule_sha256": "230cd653f0a8e580682b351fa3474b9f4dbd9f3e98e7eec1fa61361c0e7289db",
+  "schema": "i3-p3-frozen-g2-genomes-v1",
+  "selection_lives_verified": 864,
+  "sha256": "4663421628f726dde75a3c2f48494e506ceec0fba593dab3441cab8d0da88d2b",
+  "source_sha": "52476fec3f39a7fd70bf611877b01d9c13d26009",
+  "validation": "NOT_RUN",
+  "world_keys_verified": 72
+}

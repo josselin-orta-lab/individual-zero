@@ -1,0 +1,280 @@
+{
+  "population_results": [
+    {
+      "generations": [
+        {
+          "arms": {
+            "random_parent": {
+              "deaths": 26,
+              "inactive_steps": 2792,
+              "lived_steps": 8267,
+              "paid_energy": 3559.9824,
+              "paid_vigilance": 4420.276,
+              "survivors": 10
+            },
+            "selected": {
+              "deaths": 26,
+              "inactive_steps": 2792,
+              "lived_steps": 8267,
+              "paid_energy": 3559.9824,
+              "paid_vigilance": 4420.276,
+              "survivors": 10
+            }
+          },
+          "generation": 0
+        },
+        {
+          "arms": {
+            "random_parent": {
+              "deaths": 22,
+              "inactive_steps": 2619,
+              "lived_steps": 10276,
+              "paid_energy": 5271.3556,
+              "paid_vigilance": 6351.652,
+              "survivors": 14
+            },
+            "selected": {
+              "deaths": 24,
+              "inactive_steps": 1897,
+              "lived_steps": 10085,
+              "paid_energy": 5756.1362,
+              "paid_vigilance": 7025.496,
+              "survivors": 12
+            }
+          },
+          "generation": 1
+        },
+        {
+          "arms": {
+            "random_parent": {
+              "deaths": 25,
+              "inactive_steps": 2478,
+              "lived_steps": 9048,
+              "paid_energy": 4289.5984,
+              "paid_vigilance": 5347.098,
+              "survivors": 11
+            },
+            "selected": {
+              "deaths": 22,
+              "inactive_steps": 1560,
+              "lived_steps": 10109,
+              "paid_energy": 6022.337,
+              "paid_vigilance": 7382.82,
+              "survivors": 14
+            }
+          },
+          "generation": 2
+        }
+      ],
+      "population": 0
+    },
+    {
+      "generations": [
+        {
+          "arms": {
+            "random_parent": {
+              "deaths": 33,
+              "inactive_steps": 3211,
+              "lived_steps": 7052,
+              "paid_energy": 2425.3594,
+              "paid_vigilance": 2978.468,
+              "survivors": 3
+            },
+            "selected": {
+              "deaths": 33,
+              "inactive_steps": 3211,
+              "lived_steps": 7052,
+              "paid_energy": 2425.3594,
+              "paid_vigilance": 2978.468,
+              "survivors": 3
+            }
+          },
+          "generation": 0
+        },
+        {
+          "arms": {
+            "random_parent": {
+              "deaths": 26,
+              "inactive_steps": 2244,
+              "lived_steps": 8783,
+              "paid_energy": 4526.63,
+              "paid_vigilance": 5408.944,
+              "survivors": 10
+            },
+            "selected": {
+              "deaths": 26,
+              "inactive_steps": 1974,
+              "lived_steps": 9696,
+              "paid_energy": 5378.7024,
+              "paid_vigilance": 6433.802,
+              "survivors": 10
+            }
+          },
+          "generation": 1
+        },
+        {
+          "arms": {
+            "random_parent": {
+              "deaths": 23,
+              "inactive_steps": 1668,
+              "lived_steps": 10607,
+              "paid_energy": 6062.4246,
+              "paid_vigilance": 7259.818,
+              "survivors": 13
+            },
+            "selected": {
+              "deaths": 20,
+              "inactive_steps": 289,
+              "lived_steps": 11890,
+              "paid_energy": 8781.2766,
+              "paid_vigilance": 10696.01,
+              "survivors": 16
+            }
+          },
+          "generation": 2
+        }
+      ],
+      "population": 1
+    },
+    {
+      "generations": [
+        {
+          "arms": {
+            "random_parent": {
+              "deaths": 29,
+              "inactive_steps": 2856,
+              "lived_steps": 8093,
+              "paid_energy": 3337.9466,
+              "paid_vigilance": 4190.02,
+              "survivors": 7
+            },
+            "selected": {
+              "deaths": 29,
+              "inactive_steps": 2856,
+              "lived_steps": 8093,
+              "paid_energy": 3337.9466,
+              "paid_vigilance": 4190.02,
+              "survivors": 7
+            }
+          },
+          "generation": 0
+        },
+        {
+          "arms": {
+            "random_parent": {
+              "deaths": 24,
+              "inactive_steps": 2035,
+              "lived_steps": 8917,
+              "paid_energy": 4691.5428,
+              "paid_vigilance": 5811.302,
+              "survivors": 12
+            },
+            "selected": {
+              "deaths": 32,
+              "inactive_steps": 3594,
+              "lived_steps": 8193,
+              "paid_energy": 2959.7488,
+              "paid_vigilance": 3775.108,
+              "survivors": 4
+            }
+          },
+          "generation": 1
+        },
+        {
+          "arms": {
+            "random_parent": {
+              "deaths": 23,
+              "inactive_steps": 2344,
+              "lived_steps": 9611,
+              "paid_energy": 4924.0004,
+              "paid_vigilance": 6000.984,
+              "survivors": 13
+            },
+            "selected": {
+              "deaths": 24,
+              "inactive_steps": 1813,
+              "lived_steps": 8792,
+              "paid_energy": 4967.5576,
+              "paid_vigilance": 6057.88,
+              "survivors": 12
+            }
+          },
+          "generation": 2
+        }
+      ],
+      "population": 2
+    },
+    {
+      "generations": [
+        {
+          "arms": {
+            "random_parent": {
+              "deaths": 22,
+              "inactive_steps": 2758,
+              "lived_steps": 9352,
+              "paid_energy": 4525.3702,
+              "paid_vigilance": 5638.122,
+              "survivors": 14
+            },
+            "selected": {
+              "deaths": 22,
+              "inactive_steps": 2758,
+              "lived_steps": 9352,
+              "paid_energy": 4525.3702,
+              "paid_vigilance": 5638.122,
+              "survivors": 14
+            }
+          },
+          "generation": 0
+        },
+        {
+          "arms": {
+            "random_parent": {
+              "deaths": 22,
+              "inactive_steps": 1622,
+              "lived_steps": 8821,
+              "paid_energy": 5190.3214,
+              "paid_vigilance": 6346.434,
+              "survivors": 14
+            },
+            "selected": {
+              "deaths": 25,
+              "inactive_steps": 1281,
+              "lived_steps": 8434,
+              "paid_energy": 4863.4602,
+              "paid_vigilance": 5962.71,
+              "survivors": 11
+            }
+          },
+          "generation": 1
+        },
+        {
+          "arms": {
+            "random_parent": {
+              "deaths": 28,
+              "inactive_steps": 1570,
+              "lived_steps": 9049,
+              "paid_energy": 5580.4386,
+              "paid_vigilance": 6764.576,
+              "survivors": 8
+            },
+            "selected": {
+              "deaths": 28,
+              "inactive_steps": 1481,
+              "lived_steps": 8860,
+              "paid_energy": 5045.487,
+              "paid_vigilance": 6207.556,
+              "survivors": 8
+            }
+          },
+          "generation": 2
+        }
+      ],
+      "population": 3
+    }
+  ],
+  "protocol": "i3-p3-mutation-pilot-v1",
+  "schedule_sha256": "230cd653f0a8e580682b351fa3474b9f4dbd9f3e98e7eec1fa61361c0e7289db",
+  "selection_lives": 864,
+  "source_sha": "52476fec3f39a7fd70bf611877b01d9c13d26009"
+}
