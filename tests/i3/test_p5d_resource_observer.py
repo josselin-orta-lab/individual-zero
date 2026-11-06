@@ -63,6 +63,41 @@ class P5dResourceObserverTests(unittest.TestCase):
                          set(range(32, 38)))
         self.assertEqual(len(plan["allocation"]), 6)
 
+    def test_paired_resource_scores_stop_at_first_different_physical_action(self):
+        from i3.lab.p5d_development import _paired_chronology
+        def step(action, score, body=(70., 70., 70., 70., 70.)):
+            return {
+                "action": action, "param": None, "chosen_option": action,
+                "body_before_decision": list(body),
+                "resource_options_offered": 1,
+                "resource_options_scored": 1,
+                "paid_resource_scores": [
+                    {"option": "boire", "total_score": score}],
+                "physical_resource_contact": action == "boire",
+                "positive_water_uptake": action == "boire",
+                "positive_food_uptake": False,
+                "body_after_physics": list(body),
+                "decision_funding": "FUNDED",
+            }
+        a = [step("attendre", 2.), step("boire", 4.), step("boire", 7.)]
+        b = [step("attendre", 2.), step("attendre", 5.), step("boire", 99.)]
+        record = _paired_chronology(a, b)
+        self.assertEqual(record["first_physical_action_difference"], 2)
+        self.assertEqual(
+            record["first_shared_paid_resource_option_score_difference_same_body_before_action_change"],
+            2)
+        self.assertEqual(record["matched_paid_resource_option_observations"], 2)
+        # Even with an identical body later, comparison MUST stop on the
+        # divergent action. A future arbitrary high score is not evidence.
+        b[1]["paid_resource_scores"][0]["total_score"] = 4.
+        record = _paired_chronology(a, b)
+        self.assertIsNone(
+            record["first_shared_paid_resource_option_score_difference_same_body_before_action_change"])
+        self.assertEqual(record["matched_paid_resource_option_observations"], 2)
+        b[0]["body_before_decision"][0] = 69.
+        record = _paired_chronology(a, b)
+        self.assertEqual(record["matched_pre_decision_body_steps"], 1)
+
     def test_invalid_observer_flags_fail_before_world_construction(self):
         with self.assertRaises(TypeError):
             run_life(self.genome, self.spec, 7, 5,
