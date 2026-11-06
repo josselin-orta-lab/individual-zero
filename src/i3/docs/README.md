@@ -4,7 +4,7 @@ I3 is an independent **research proposal**, not a registered or activated engine
 
 Read these in order, consulting the original git commit pinned in each preregistration:
 
-1. [Current proposal status](STATUS.md): P1.3 adopted on v2, P2 methodology and P3 selection pilot documented; **P4 still NOT_RUN**.
+1. [Current proposal status](STATUS.md): P1.3 adopted on v2; P2, P3 and two first-pass P4 studies have full provenance; **I3 still not activated**.
 2. [ADR-0014](../../../docs/decisions/ADR-0014-i3-lignee-enjeu-de-soi.md): selection on individual persistence and self-relevant vital accounting.
 3. [Specification](SPECIFICATION.md) and [architecture](ARCHITECTURE.md): generation-owned physical and cognitive boundaries.
 4. [Test plan](TEST_PLAN.md): focused software checks and open P4 scientific validation.
