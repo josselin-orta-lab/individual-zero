@@ -80,3 +80,16 @@ All conditions had 8/12 reach the horizon. The observer shows
 processing-budget loss dominates action-blind inactivity, while
 resource and movement options are still offered. **P5b validation
 NOT_RUN**; no scientific GO and no P4 reserve exposure.
+
+## P5b empirical action-agnostic prior (development-only)
+
+The [P5b empirical control findings](P5B_AGNOSTIC_PRIOR_FINDINGS.md)
+retain the paid action-effect model while masking the association
+between individual actions and effects: only the individual's own
+global mean of observed bodily change is readable in action prediction.
+On 12 paired development lives: 8/12 censored in all compared modes,
+but **894 inactive physical steps and 891 no-processing-budget steps**
+for the empirical prior, versus 109 and 109 for full learning.
+[CI 42212861394](https://github.com/josselin-orta-lab/individual-zero/actions/runs/42212861394)
+passed 151 I3 tests on Python 3.11/3.12 and checked unchanged original
+P4a/P4b/P5a evidence. **NOT a held-out study or scientific GO.**
