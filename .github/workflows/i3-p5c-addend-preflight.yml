@@ -1,0 +1,72 @@
+name: I3 P5c paid addends preflight development ONLY
+on:
+  push:
+    branches: [automation/i3-p5c-addend-preflight-20261106]
+    paths: [.github/workflows/i3-p5c-addend-preflight.yml]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - name: Checkout candidate source SHA
+        uses: actions/checkout@v4
+        with:
+          ref: 1b2c504481135609086513d6e5b80befb5738678
+          persist-credentials: false
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Test I3 default parity, costs and engine generation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests/i3 -p 'test_*.py' -q
+          python scripts/check_engine_repository.py --json
+      - name: Run only 48 development lives on fixed worlds
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=src python -m i3.lab.p5c_development --run-development > "$RUNNER_TEMP/p5c.json"
+          python - <<'PY'
+          import json,os
+          data=json.load(open(os.environ["RUNNER_TEMP"]+"/p5c.json"))
+          assert data["status"]=="ENGINEERING_DEVELOPMENT_ONLY_NOT_HELDOUT_SCIENCE"
+          assert len(data["receipts"])==48
+          assert data["validation"]=="NOT_OPENED" and data["reserve"]=="LOCKED"
+          assert set(data["comparison"])=={"normal","discard_curiosity_bonus",
+                                          "discard_risk_penalty","discard_both_bonus_terms"}
+          for mode, r in data["comparison"].items():
+              assert r["lives"]==12
+              print("DEV",mode,"censored",r["censored_at_120"],
+                    "inactive",r["inactive_steps"],"paid_energy",r["paid_energy"],
+                    "budget_failures",r["no_processing_budget"])
+          for mode, r in data["paired"].items():
+              assert r["pairs"]==12
+              print("PAIR",mode,r)
+          PY
+      - name: Verify immutable P4a P4b P5a and P5b original scientific JSON
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import gzip,hashlib
+          from pathlib import Path
+          root=Path("src/i3/docs/studies")
+          checks={
+            "p4a-g2-heldout/validation-full.json.gz":"44adb1192d1aea87cf5d96a547f794de6f7fe33a566a5de90747a34429e8e8d6",
+            "p4b-paid-outcome-learning/learning-full.json.gz":"688463e4fbb71cb88d57d0cafbe70eb033adeafe8ae8551d42bec58dfa9e395c",
+            "p5a-paid-component-screen/mechanisms-full.json.gz":"21719dcc89f83f3984ccc32b3d203d2152ff8c7dd8c2c8a76318ce84d60113d8",
+            "p5b-paid-readout-heldout/readout-full.json.gz":"98d21bc18d88f26743ae9ca07cc0d966605d14de826b73a91b9d24b675c9a8df",
+          }
+          for name,expected in checks.items():
+              actual=hashlib.sha256(gzip.decompress((root/name).read_bytes())).hexdigest()
+              assert actual==expected,(name,actual)
+              print("UNCHANGED",name)
+          PY
