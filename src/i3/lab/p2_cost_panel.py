@@ -21,7 +21,7 @@ PROTOCOL = "i3-p2-development-charge-panel-v1"
 INDICES = (2, 3, 4, 5)
 GENOME_SEEDS = (6000, 6001, 6002)
 LIFE_SEED_BASE = 51_000
-HORIZON = 120
+HORIZON = ecologies.HORIZON
 
 
 def _totals(laws, blocks):
