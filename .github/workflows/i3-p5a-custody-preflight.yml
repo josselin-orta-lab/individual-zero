@@ -1,0 +1,29 @@
+name: I3 P5a evidence custody verifier tests (no study)
+on:
+  push:
+    branches: [automation/i3-p5a-custody-preflight-20261106]
+    paths: [.github/workflows/i3-p5a-custody-preflight.yml]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - name: Checkout exact post-run read-only custody verifier
+        uses: actions/checkout@v4
+        with:
+          ref: a2886626c0a9dc02ed863a38ec9430bd9f8a59c6
+          persist-credentials: false
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Test all I3 software including synthetic receipt forgeries
+        run: |
+          python -m unittest discover -s tests/i3 -p 'test_*.py' -q
+          python scripts/check_engine_repository.py --json
