@@ -163,8 +163,12 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
     }
     if learning_mode != "normal" or observer_mind_digest:
         out["learning_intervention"] = learning_mode
+        # Component ablations retain the base outcome pipeline and discard
+        # only one declared learned substate; only full shadow_discard drops
+        # the entire outcome update. This counter is pipeline executions,
+        # NOT proof each individual learned component survived.
         out["retained_outcome_learning_updates"] = (
-            learning_updates if learning_mode == "normal" else 0)
+            learning_updates if learning_mode != "shadow_discard" else 0)
         out["shadow_discarded_outcome_updates"] = (
             learning_updates if learning_mode == "shadow_discard" else 0)
     if observer_mind_digest:
