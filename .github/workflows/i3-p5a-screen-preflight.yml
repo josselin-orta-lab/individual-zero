@@ -1,0 +1,45 @@
+name: I3 P5a mechanism screen preflight NO exposure
+on:
+  push:
+    branches: [automation/i3-p5a-screen-preflight-20261106]
+    paths: [.github/workflows/i3-p5a-screen-preflight.yml]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - name: Checkout exact pre-exposure candidate
+        uses: actions/checkout@v4
+        with:
+          ref: 0ddc44ea19a26b49554ec6830a20103a103b7941
+          persist-credentials: false
+      - name: Configure Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run I3 tests and engine boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests/i3 -p 'test_*.py' -q
+          python scripts/check_engine_repository.py --json
+      - name: Verify 48 G2 genomes, original P4 evidence and pure P5a preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=src python -m i3.lab.p5a_screen --preflight
+          python - <<'PY'
+          import gzip,hashlib
+          from pathlib import Path
+          root=Path("src/i3/docs/studies")
+          for file,digest in [
+            ("p4a-g2-heldout/validation-full.json.gz","44adb1192d1aea87cf5d96a547f794de6f7fe33a566a5de90747a34429e8e8d6"),
+            ("p4b-paid-outcome-learning/learning-full.json.gz","688463e4fbb71cb88d57d0cafbe70eb033adeafe8ae8551d42bec58dfa9e395c")]:
+              assert hashlib.sha256(gzip.decompress((root/file).read_bytes())).hexdigest()==digest
+          PY
