@@ -85,8 +85,11 @@ claim this observation patch fixes them, or retroactively certify old studies.
    development/selection/validation/reserve cohorts and a fail-closed P4
    reserve. Probe receipts distinguish exact paid trace prefixes from incomplete
    or unpayable comparisons; a source-sealed development-only static tariff is
-   available for prospective comparator work. P2 software checks do not by
-   themselves establish a science-grade cost-equivalent comparator.
+   available for prospective comparator work. The subsequent full 400-step
+   development panel found 0/7,729 exact work-vector matches and 31 deaths
+   among 36 lives; ecological event ordering was repaired and 90 tests pass.
+   [P2 diagnostic](P2_COST_AUDIT_RESULTS.md) is an explicit adverse finding,
+   not science-grade cost equivalence. Do not silently mark this gate green.
 3. P3: a mutation-only pilot with multiple fresh lives per genome, independent
    populations, lifetime-only selection and random-parent controls at equal
    budgets. Inherit generic genes only, never memories/maps/body states. Fix
