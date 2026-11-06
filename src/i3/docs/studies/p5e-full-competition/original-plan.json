@@ -1,0 +1,50 @@
+{
+  "allocation": [
+    {
+      "development_index": 38,
+      "family": "stable",
+      "life_seed": 860038
+    },
+    {
+      "development_index": 39,
+      "family": "stable",
+      "life_seed": 860039
+    },
+    {
+      "development_index": 40,
+      "family": "depletion",
+      "life_seed": 860040
+    },
+    {
+      "development_index": 41,
+      "family": "depletion",
+      "life_seed": 860041
+    },
+    {
+      "development_index": 42,
+      "family": "pulse",
+      "life_seed": 860042
+    },
+    {
+      "development_index": 43,
+      "family": "pulse",
+      "life_seed": 860043
+    }
+  ],
+  "cohort": "DEVELOPMENT_ONLY",
+  "genome_seeds": [
+    901,
+    902
+  ],
+  "horizon": 120,
+  "purpose": "FULL_ALREADY_FUNDED_COMPETITION_READOUT",
+  "reserve": "LOCKED",
+  "schema": "i3-p5e-full-competition-development/v1",
+  "score_modes": [
+    "normal",
+    "discard_curiosity_bonus"
+  ],
+  "selection": "NOT_OPENED",
+  "sha256": "e7de74fee99a2efdb93070c52d19c9c63e98f01a9e910140708e46aeaa53aa58",
+  "validation": "NOT_OPENED"
+}
