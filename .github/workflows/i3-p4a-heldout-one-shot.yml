@@ -35,7 +35,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m unittest discover -s tests/i3 -p 'test_*.py' -q
+          env -u I3_P4A_SOURCE_SHA -u I3_P4A_SCHEDULE_SHA -u I3_P4A_APPROVED_PROTOCOL python -m unittest discover -s tests/i3 -p 'test_*.py' -q
           python scripts/check_engine_repository.py --json
           PYTHONPATH=src python -m i3.lab.p4a_validation --preflight
       - name: Execute P4a once and preserve every heldout life
