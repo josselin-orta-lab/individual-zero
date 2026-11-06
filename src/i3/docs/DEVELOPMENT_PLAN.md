@@ -163,6 +163,26 @@ the existing paid candidate evaluation, without touching the learned
 model, action control, world generator or original P5b data. The first
 48 short development lives had both positive and adverse survival
 outcomes; do not tune from them or label them independent evolutionary
-replication. Next consider a prospectively registered experiment only
-after exact software and cost-boundary verification and genuinely fresh
-world allocation (validation indices >=96). [Issue #1046](https://github.com/josselin-orta-lab/individual-zero/issues/1046).
+replication. This was the earlier engineering-only step; its subsequent independently
+registered study used world indices 96–119, as documented below. [Issue #1046](https://github.com/josselin-orta-lab/individual-zero/issues/1046).
+
+## P5c science decision after first registered cohort
+
+[Original study, costs, mechanism and null/adverse outcomes](studies/p5c-paid-score-addends/RESULTS.md)
+and [handoff](P5C_HANDOFF.md) supersede the earlier development-only
+hypothesis. For all 48 frozen G2 genes, normal curiosity survived
+110/288 censored lives, and suppressing scored curiosity survived 4/288.
+Suppressing only uncertain-meal risk survived 105/288 with mixed
+population effects. n=4 genetic populations limits exact two-sided
+inference to p>=0.125, no conventional confirmatory or evolutionary GO.
+
+A priority for further science is explaining **active premature
+death under curiosity ablation**, rather than merely processing-budget
+inactivity: its physical inactivity was 1.13% of lived steps versus
+18.65% normal, while P5b blinded action predictions raised inactivity.
+First inspect immutable P5c receipts without new lives for death
+causes, action families and resource contacts only where already
+observed. Never tune from exposed worlds 96–119; any independent
+validation must be prospectively allocated >=120 with new genetic
+and ecology sampling for broader claims. Do not confuse curiosity
+mechanisms with established autonomous individuality.
