@@ -85,8 +85,8 @@ for a later held-out cohort.
 
 ## Verification, next falsifier and research boundary
 
-[First dual-Python preflight 42227732972](https://github.com/josselin-orta-lab/individual-zero/actions/runs/42227732972)
-passed **171 I3 tests** under both Python 3.11 and 3.12,
+[Final dual-Python preflight 42228120893](https://github.com/josselin-orta-lab/individual-zero/actions/runs/42228120893)
+passed **172 I3 tests** under both Python 3.11 and 3.12,
 the I1 generation isolation check, all 48 true development lives
 with paid per-phase energy/vigilance, and SHA-256 verification of
 unaltered original P4a, P4b, P5a and P5b studies.
