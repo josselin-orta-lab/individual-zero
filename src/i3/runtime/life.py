@@ -24,7 +24,8 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
              learning_mode: str = "normal",
              observer_mind_digest: bool = False,
              effect_readout: str = "full",
-             observer_decision_diagnostics: bool = False) -> dict:
+             observer_decision_diagnostics: bool = False,
+             score_addend_mode: str = "normal") -> dict:
     started = time.perf_counter()
     if learning_mode not in (
             "normal", "shadow_discard", "discard_effects",
@@ -39,6 +40,10 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
             "blind_sleep_forecast", "blind_sources", "blind_all",
             "action_agnostic_prior"):
         raise ValueError("unknown P5b effect readout")
+    if score_addend_mode not in (
+            "normal", "discard_curiosity_bonus", "discard_risk_penalty",
+            "discard_both_bonus_terms"):
+        raise ValueError("unknown P5c score addend intervention")
     if type(horizon) is not int or horizon < 1:
         raise ValueError("positive integer horizon required")
     manifest = build_manifest(genome, spec, life_seed, horizon, protocol)
@@ -49,7 +54,8 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
     shortfall_steps = 0
     world = World(spec)
     mind = Mind(genome, life_seed, effect_readout=effect_readout,
-                observer_decision_diagnostics=observer_decision_diagnostics)
+                observer_decision_diagnostics=observer_decision_diagnostics,
+                score_addend_mode=score_addend_mode)
     head = sha256(json.dumps([genome_digest(genome), spec.name, life_seed, horizon],
                              separators=(",", ":")).encode()).hexdigest()
     trace = []
@@ -190,6 +196,8 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
     }
     if effect_readout != "full" or observer_decision_diagnostics:
         out["effect_readout"] = effect_readout
+    if score_addend_mode != "normal" or observer_decision_diagnostics:
+        out["score_addend_mode"] = score_addend_mode
     if observer_decision_diagnostics:
         out["observer_decision_diagnostics"] = dict(observer_counts)
     if learning_mode != "normal" or observer_mind_digest:
