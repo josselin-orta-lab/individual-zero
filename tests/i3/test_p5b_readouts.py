@@ -45,6 +45,11 @@ class P5bReadoutTests(unittest.TestCase):
                 life["steps_lived"])
             self.assertGreaterEqual(life["observer_decision_diagnostics"]["offered_options"],
                                     life["observer_decision_diagnostics"]["scored_options"])
+            for phase in ("offered", "scored"):
+                self.assertEqual(
+                    sum(life["observer_decision_diagnostics"][phase+"_families"].values()),
+                    life["observer_decision_diagnostics"][phase+"_options"])
+            self.assertGreater(life["observer_decision_diagnostics"]["offered_families"]["rest"],0)
             self.assertTrue(life["spatial_beliefs_sha256"])
             for step in life["trace"]:
                 self.assertIn("observer", step["info"])
