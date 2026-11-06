@@ -66,3 +66,18 @@ learned sleep forecast masked 90/288. Three predeclared
 population-level contrasts, n=4 exact p floor 0.125, no
 confirmatory significance. Phase-paid activity, score witnesses
 and original SHA custody verified. No global GO.
+
+## P5c paid curiosity/risk score-addend prospective screen
+
+[Preregistered protocol](P5C_HELDOUT_PREREG.md) and
+[complete original experiment](studies/p5c-paid-score-addends/RESULTS.md).
+24 new validation worlds 96–119, all 48 fixed G2 genotypes,
+1152 original paid lives, four matched score-component interventions.
+Normal censored survival 110/288, discard curiosity 4/288, discard
+uncertain-meal risk 105/288, discard both 7/288. Curiosity
+normal-minus-intervention per genetic population [+21,+41,+22,+22]
+survivors per 72; exact two-sided p=0.125, Holm p=0.375,
+so no conventional confirmatory inference or global GO.
+Independent original-custody checks all experiment identities,
+actual phase charges, computed/applied score terms, and no
+postmortem work, without any additional study life.
