@@ -14,7 +14,7 @@ Décision : [ADR-0014](../../../docs/decisions/ADR-0014-i3-lignee-enjeu-de-soi.m
 | P1.3 | **Adopté sur le substrat v2** par la porte G2e sous sélection ([résultat](studies/g2e-p13-v2/RESULTS.md)) : 478 survies sur 1 000 contre 364 (p = 4 × 10⁻⁹) ; révision après tarissement dans 60 % des vies contre 23 %. Cognition de référence : génome `i3-genome-v3` |
 | P2 Mondes | Contrat d'opportunités égales et facturation validé en ingénierie ; **0/7729** correspondances exactes avec le tarif fixe des sondes : elles restent descriptives, sans équivalence de coût démontrée |
 | P3 Lignée | **Pilote de sélection exécuté et archivé** : 864 vies, 614 morts et 250 survivants censurés ; G2 50/144 sélection contre 45/144 aléatoire, contrastes +3,+3,-1,0 selon population. 48 génomes G2 gelés ; aucun GO scientifique ([résultat](studies/p3-mutation-pilot/RESULTS.md)) |
-| P4 Étude | Non commencé |
+| P4 Étude | **Deux pilotes prospectifs exécutés et archivés** : P4a 288 vies, G2 sélection 47/144 contre 42/144 aléatoire, population −2,+9,−1,−1 : généralisation non démontrée ([résultat](studies/p4a-g2-heldout/RESULTS.md)). P4b 576 vies : apprentissage des effets/valeurs retenu 84/288 survies contre 0/288 lorsque les calculs payés sont jetés, contrastes +17,+35,+17,+15 ; 144/144 histoires du même génome ont des modèles appris distincts ([résultat](studies/p4b-paid-outcome-learning/RESULTS.md)). Résultat limité au modèle, coûts effectifs différents, **aucun GO scientifique** |
 
 Tests : `python -m unittest discover -s tests/i3 -p 'test_*.py' -v`. Une suite verte valide le logiciel au SHA exact, pas un comportement adaptatif.
 
