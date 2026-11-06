@@ -51,6 +51,7 @@ def manifest():
 def run():
     plan = manifest()
     receipts = []
+    histories = {}
     for allocation in plan["allocations"]:
         family, index = allocation["family"], allocation["development_index"]
         if not 20 <= index < 26:
@@ -61,7 +62,7 @@ def run():
             for mode in MODES:
                 life = run_life(
                     genome, spec, allocation["life_seed"], HORIZON,
-                    protocol=SCHEMA,
+                    protocol=SCHEMA, keep_trace=True,
                     effect_readout=mode, observer_decision_diagnostics=True)
                 acc = life["cognitive_accounting"]
                 for channel in ("energy", "vigilance"):
@@ -72,6 +73,10 @@ def run():
                 if acc["shortfall_steps"] or acc["pending_replays"]:
                     raise RuntimeError("incomplete cognitive payment")
                 observer = life["observer_decision_diagnostics"]
+                history = tuple(
+                    (step["action"], step["param"], step["info"]["funding"])
+                    for step in life["trace"])
+                histories[(index, gene_seed, mode)] = history
                 if (sum(observer[k] for k in
                         ("no_processing_budget", "no_funded_score",
                          "control_rejected", "action_admitted"))
@@ -96,10 +101,31 @@ def run():
                     "death_causes": life["death_causes"],
                     "world_sha256": life["manifest"]["world_sha256"],
                     "evidence_head": life["evidence_head"],
+                    "first_no_processing_budget_step": next(
+                        (i + 1 for i, event in enumerate(history)
+                         if event[2] == "NO_PROCESSING_BUDGET"), None),
                 })
     expected = len(FAMILIES) * len(REPEATS) * len(GENOME_SEEDS) * len(MODES)
     if len(receipts) != expected:
         raise RuntimeError("incomplete development comparison")
+    # Exact first difference in paired physical decisions; a shorter
+    # life counts as divergence when its comparator has a subsequent step.
+    divergence = {}
+    for mode in MODES[1:]:
+        cases = []
+        for allocation in plan["allocations"]:
+            index = allocation["development_index"]
+            for seed in GENOME_SEEDS:
+                control = histories[(index, seed, "full")]
+                treated = histories[(index, seed, mode)]
+                first = next((
+                    i + 1 for i in range(max(len(control), len(treated)))
+                    if (control[i][:2] if i < len(control) else None) !=
+                       (treated[i][:2] if i < len(treated) else None)
+                ), None)
+                cases.append({"development_index": index, "genome_seed": seed,
+                              "first_action_divergence_step": first})
+        divergence[mode] = cases
     results = {}
     for mode in MODES:
         rows = [x for x in receipts if x["mode"] == mode]
@@ -133,6 +159,7 @@ def run():
         "status": "ENGINEERING_DEVELOPMENT_ONLY_NOT_SCIENTIFIC_EVIDENCE",
         "manifest_sha256": plan["sha256"],
         "comparison": results,
+        "first_paired_action_divergence": divergence,
         "lives": receipts,
         "validation": "NOT_OPENED",
         "reserve": "LOCKED",
