@@ -72,8 +72,8 @@ outcome, not a prospective held-out gain.
 Only two populations favor selection, one favors random parenting, and
 one ties. The mean paired difference is **+1.25 survived lives per
 population of 36**. The sample SD of these four differences is
-approximately **1.94 lives**. An exploratory 95% Student-t interval is
-roughly **[-1.83, +4.33] lives per population** (n=4; strong small-sample
+approximately **2.06 lives**. An exploratory 95% Student-t interval is
+roughly **[-2.03, +4.53] lives per population** (n=4; strong small-sample
 assumptions). It spans harm and benefit; it is not a confirmatory claim.
 
 ### Cognitive economics (G2 only)
