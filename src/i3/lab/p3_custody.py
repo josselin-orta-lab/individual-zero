@@ -33,7 +33,8 @@ def verify_and_freeze(report: dict) -> dict:
     if sha256(json.dumps(raw, sort_keys=True, separators=(",", ":")).encode()
               ).hexdigest() != claimed:
         raise ValueError("original P3 evidence content digest mismatch")
-    keys = {}\n    source_hashes = set()
+    keys = {}
+    source_hashes = set()
     manifestations = 0
     g2 = []
     for p, population in enumerate(report["populations"]):
@@ -99,7 +100,8 @@ def verify_and_freeze(report: dict) -> dict:
                                 bool(life["death_causes"]) != (life["terminal"] == "dead") or
                                 any(life["paid"][c] < 0 for c in ("energy","vigilance"))):
                                 raise ValueError("invalid or mislabeled lifetime")
-                            source_hashes.add(life["source_sha256"])\n                            key = (p, g, family, repeat)
+                            source_hashes.add(life["source_sha256"])
+                            key = (p, g, family, repeat)
                             world_id = life["world_sha256"]
                             if key in keys and keys[key] != (world_id, expected_seed):
                                 raise ValueError("unequal initial world opportunity")
@@ -122,7 +124,9 @@ def verify_and_freeze(report: dict) -> dict:
                 if g == 0 and arm == p3_schedule.ARMS[-1] and rebuilt != cohorts[p3_schedule.ARMS[0]]:
                     raise ValueError("G0 arms are not identical")
                 cohorts[arm] = rebuilt
-    if (manifestations != MAX_LIVES or len(keys) != 72 or len(g2) != 48\n        or len({item[0] for item in keys.values()}) != 72\n        or len(source_hashes) != 1):
+    if (manifestations != MAX_LIVES or len(keys) != 72 or len(g2) != 48
+        or len({item[0] for item in keys.values()}) != 72
+        or len(source_hashes) != 1):
         raise ValueError("partial world, life, or G2 genome evidence")
     record = {
         "schema": "i3-p3-frozen-g2-genomes-v1",
