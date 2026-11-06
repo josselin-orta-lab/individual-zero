@@ -5,7 +5,7 @@
 | Contrat logiciel | `tests/i3/test_core.py` : génome fermé, physique v4, monnaie vitale, capacités, capture locale, mort irréversible, nouveau-né vierge, rejeu exact, invariance par renommage, pas d'abstention par défaut, `attendre` non privilégié, budget de temps | Implémenté |
 | Porte G2 | Falsificateur comportemental préinscrit + rejeu + ≤ 1 ms/pas | Préinscrit |
 | P2 | Trois écologies mécanistiquement distinctes, quatre cohortes étanches, réserve scellée, sondes financées en deux phases, contrôle de coût exact et tarif statique calibré en développement | Tests logiciels implémentés ; validation scientifique non établie |
-| P3 | Lignée, registre, test de non-transmission entre générations | À faire |
+| P3 | Lignée sans héritage de souvenirs, contrôle random-parent, 72 mondes distincts, 864 vies avec preuves, reconstruction de 48 génomes G2 | Implémenté et exécuté sur sélection uniquement, sans GO scientifique ni validation P4 |
 | P4 | Plan 2 × 2 et ablations d'enjeu, préinscrits à la porte G4 | À faire |
 
 ## Foundation controls
