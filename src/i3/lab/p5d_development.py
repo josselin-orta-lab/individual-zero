@@ -121,10 +121,18 @@ def _receipt(life, allocation, genome_seed, mode):
         raise RuntimeError("resource contact counter disagrees with physical actions")
     for row in steps:
         for phase in ("decision", "learning"):
+            witness = row["phase_payment"][phase]
             for channel in ("energy", "vigilance"):
-                cost = row["paid_" + phase + "_" + channel]
-                if cost < 0:
-                    raise RuntimeError("negative paid work")
+                bill = witness["accounting"][channel]
+                if (bill["paid"] < 0 or bill["requested"] < 0 or
+                        abs(bill["requested"] - bill["paid"]) > 1e-8 or
+                        bill["unpaid"] != 0):
+                    raise RuntimeError("unpaid or forged phase work")
+                if abs(bill["paid"] - row["paid_" + phase + "_" + channel]) > 1e-8:
+                    raise RuntimeError("inconsistent paid-work witness")
+        if row["death_causes"] and any(
+                row["phase_payment"]["learning"]["work"].values()):
+            raise RuntimeError("postmortem learning is not permitted")
     return {
         "mode": mode, "family": allocation["family"],
         "development_index": allocation["development_index"],
