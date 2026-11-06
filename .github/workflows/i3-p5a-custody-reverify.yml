@@ -1,0 +1,54 @@
+name: I3 P5a independent original custody revalidation (no study lives)
+on:
+  push:
+    branches: [automation/i3-p5a-custody-reverify-20261106]
+    paths: [.github/workflows/i3-p5a-custody-reverify.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - name: Checkout corrected observer-only custodian
+        uses: actions/checkout@v4
+        with:
+          ref: 42e718891e40c3f9d242a7e0915c28d515fcafc1
+          persist-credentials: false
+      - name: Configure Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Recheck all synthetic and I3 runtime tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests/i3 -p 'test_*.py' -q
+          python scripts/check_engine_repository.py --json
+      - name: Download the original one-shot scientific evidence only
+        uses: actions/download-artifact@v4
+        with:
+          name: i3-p5a-original-paid-mechanism-first-run
+          run-id: 42192100293
+          github-token: ${{ github.token }}
+          path: out
+      - name: Verify full original source/phase-paid custody without new lives
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum -c out/SHA256SUMS.txt
+          test "$(sha256sum out/i3-p5a-full.json | cut -d ' ' -f1)" = "21719dcc89f83f3984ccc32b3d203d2152ff8c7dd8c2c8a76318ce84d60113d8"
+          PYTHONPATH=src python -m i3.lab.p5a_custody out/i3-p5a-full.json > "$RUNNER_TEMP/custody.json"
+          python - <<'PY'
+          import json,os
+          p=json.load(open(os.environ["RUNNER_TEMP"]+"/custody.json"))
+          assert p["status"]=="ORIGINAL_VERIFIED_NO_NEW_LIVES"
+          assert p["original_canonical_sha256"]=="06217b9f96da28c2ba34034f43b4800005346abeca4c88cc5b47184a3597bd96"
+          assert p["total_lives"]==1152 and p["worlds"]==24
+          print("Verified original P5a scientific data, no additional lives")
+          PY
