@@ -156,6 +156,27 @@ class P5bReadoutTests(unittest.TestCase):
             if step["dead"]:
                 self.assertFalse(any(step["funding_phases"]["learning"]["work"].values()))
 
+    def test_score_witness_only_contains_funded_evaluations(self):
+        life = run_life(self.genome, self.spec, 1042, 70,
+                        observer_decision_diagnostics=True, keep_trace=True)
+        saw_scored = False
+        for step in life["trace"]:
+            audit = step["info"]["observer"]
+            witness = audit["score_witness"]
+            self.assertEqual(len(witness), audit["scored_options"])
+            self.assertTrue(all(0 <= c <= 100 for c in audit["pre_body"]))
+            self.assertEqual(len(audit["pre_body"]), 5)
+            for item in witness:
+                saw_scored = True
+                self.assertAlmostEqual(
+                    item["base_return"] + item["curiosity_risk_bonus"],
+                    item["total_score"])
+                self.assertTrue(0.0 <= item["uncertainty"] <= 1.0)
+                self.assertIsNotNone(item["first_forecast"])
+                self.assertEqual(len(item["first_forecast"]["delta"]), 5)
+                self.assertIn("action_key", item["first_forecast"])
+        self.assertTrue(saw_scored)
+
     def test_diagnostics_do_not_change_default_life(self):
         original = run_life(self.genome, self.spec, 99, 60)
         only_diagnostics = run_life(self.genome, self.spec, 99, 60,
