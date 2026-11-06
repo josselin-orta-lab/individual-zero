@@ -80,6 +80,13 @@ claim this observation patch fixes them, or retroactively certify old studies.
    validation and held-out conditions. New seeds alone are not new ecological
    families. A heuristic oracle's success witnesses feasibility; failure is
    not proof of infeasibility. A reference searcher is not an optimal ceiling.
+   **Engineering implementation staged:** [P2 ecology/probe contract](P2_ECOLOGY_AND_PROBE_CONTRACT.md)
+   freezes stable/depletion/pulse evolution families (1:1:1), disjoint
+   development/selection/validation/reserve cohorts and a fail-closed P4
+   reserve. Probe receipts distinguish exact paid trace prefixes from incomplete
+   or unpayable comparisons; a source-sealed development-only static tariff is
+   available for prospective comparator work. P2 software checks do not by
+   themselves establish a science-grade cost-equivalent comparator.
 3. P3: a mutation-only pilot with multiple fresh lives per genome, independent
    populations, lifetime-only selection and random-parent controls at equal
    budgets. Inherit generic genes only, never memories/maps/body states. Fix
