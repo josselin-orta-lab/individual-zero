@@ -33,7 +33,7 @@ The existing focused tests are `python -m unittest discover -s tests/i3 -p 'test
 [Selective paid-retention engineering contract](P5A_SELECTIVE_RETENTION_CONTRACT.md)
 separates persistent effect statistics, TD value coefficients and sleep replay
 without altering the default life or reopening any validation world. These
-controls are **software only**, not a P5a held-out scientific finding.
+controls were followed by a separately [preregistered P5a mechanism screen](P5A_SCREEN_PREREG.md) whose [full original results](studies/p5a-paid-component-screen/RESULTS.md) are now archived. Across 1152 lives, retaining learned action effects made the largest difference: 112/288 normal survivors versus 0/288 without persistent effects. Removing TD values (117/288) or incremental replay retention (119/288) did not produce the same collapse; signs vary between populations. Four genetic populations, actual cognitive cost mediation, and exploratory multiplicity prevent a general scientific GO. See [P5a handoff](P5A_HANDOFF.md).
 Future validation requires independent prospective preregistration, fresh
 allocation, adequate population-level replication and actual paid-cost
 mediation analysis. See [#1026](https://github.com/josselin-orta-lab/individual-zero/issues/1026).
