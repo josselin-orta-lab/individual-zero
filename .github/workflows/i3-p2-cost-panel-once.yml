@@ -17,7 +17,7 @@ jobs:
       - name: Checkout immutable P2 cost audit
         uses: actions/checkout@v4
         with:
-          ref: 5ef27bca5ccc47b61a6d3f6f4056d3fd5e83d271
+          ref: 2e25117dc730245e2db7a4b41893b65acd7f281c
           persist-credentials: false
       - name: Set up Python
         uses: actions/setup-python@v5
