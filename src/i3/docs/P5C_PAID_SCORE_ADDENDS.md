@@ -95,9 +95,12 @@ candidate at its **first identical pre-decision state** retains
 identical computed forecasts, curiosity, and risk under all masks,
 before their different addends enter competition.
 
-**No P5c validation world has been opened.** A separately frozen
-protocol is required before any prospective P5c experiment
-on unused validation indices **>=96**. Freeze source SHA,
+**At this development checkpoint, no P5c validation world had been opened.**
+The later separately frozen [prospective P5c protocol](P5C_HELDOUT_PREREG.md)
+used new validation indices **96–119**; its
+[original experimental results](studies/p5c-paid-score-addends/RESULTS.md)
+were independently verified. Future cohorts must use untouched
+indices **>=120**. Freeze source SHA,
 initial world/genome allocations, four-condition comparisons,
 unit of independent replication, primary survival and
 pre-action score endpoints, exact paid work and actual
