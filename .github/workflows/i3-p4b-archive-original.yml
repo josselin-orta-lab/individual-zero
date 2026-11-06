@@ -1,0 +1,78 @@
+name: I3 P4b archive first original paid-learning evidence (one shot)
+on:
+  push:
+    branches: [automation/i3-p4b-archive-original-20261106]
+    paths: [.github/workflows/i3-p4b-archive-original.yml]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout main and confirm preregistration predates study
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Check prospective P4b registration
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor 2b9be8ae9150502c3e13655989fc03b9b66e2267 HEAD
+      - name: Download exact first P4b run, never replay
+        uses: actions/download-artifact@v4
+        with:
+          name: i3-p4b-original-paid-learning-first-run
+          run-id: 42186901336
+          github-token: ${{ github.token }}
+          path: out
+      - name: Verify original hashes, all lives, and archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum -c out/SHA256SUMS.txt
+          test "$(sha256sum out/i3-p4b-full.json | cut -d ' ' -f1)" = "688463e4fbb71cb88d57d0cafbe70eb033adeafe8ae8551d42bec58dfa9e395c"
+          python - <<'PY'
+          import json
+          from hashlib import sha256
+          a=json.load(open("out/i3-p4b-full.json"))
+          d=sha256(json.dumps({k:v for k,v in a.items() if k!="sha256"},sort_keys=True,separators=(",",":")).encode()).hexdigest()
+          assert d==a["sha256"]=="8fc34d37b7348e3f171a48879d7dd03b898547c4aaa5204c0727cc8006b0168b"
+          assert a["source_sha"]=="fda5ce482aaec151c3e9b4d5b4cdb8ea16ed523b"
+          assert a["schedule_sha256"]=="e437fa0f02f8dd2b9e4bf27c246fae86785af789f1a5ab948e8d036e24f4a156"
+          assert a["total_lives"]==len(a["lives"])==576
+          assert a["status"]=="P4B_PAID_OUTCOME_LEARNING_ONLY_NO_P4_RESERVE"
+          receipts=a["lives"]
+          assert len(set(x["evidence_head"] for x in receipts))==576
+          assert len(set((x["population"],x["family"],x["repeat"]) for x in receipts))==24
+          assert len(set((x["population"],x["arm"],x["slot"],x["genome_sha256"]) for x in receipts))==48
+          assert len(set(x["source_sha256"] for x in receipts))==1
+          paired={}
+          for x in receipts:
+              k=(x["population"],x["arm"],x["slot"],x["family"],x["repeat"])
+              paired.setdefault(k,{})[x["mode"]]=x
+              assert x["paid_energy"]>=0 and x["paid_vigilance"]>=0
+              assert x["terminal"] in ("dead","censored")
+              assert x["censored"]==(x["terminal"]=="censored")
+          assert len(paired)==288
+          for k,v in paired.items():
+              assert set(v)=={"normal","shadow_discard"}
+              n,s=v["normal"],v["shadow_discard"]
+              assert (n["world_sha256"],n["genome_sha256"],n["life_seed"])==(s["world_sha256"],s["genome_sha256"],s["life_seed"])
+              assert s["retained_outcome_updates"]==0
+          print("P4b complete source/cost/pairing verification",len(receipts))
+          PY
+          folder=src/i3/docs/studies/p4b-paid-outcome-learning
+          mkdir -p "$folder"
+          gzip -n -9 -c out/i3-p4b-full.json > "$folder/learning-full.json.gz"
+          cp out/i3-p4b-summary.json "$folder/learning-summary.json"
+          cp out/SHA256SUMS.txt "$folder/ORIGINAL_SHA256SUMS.txt"
+          git checkout -b i3/p4b-paid-learning-evidence-20261106
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$folder"
+          git commit -m "research(i3 P4b): preserve original 576 paid learning lives and signatures"
+          git push origin HEAD:refs/heads/i3/p4b-paid-learning-evidence-20261106
