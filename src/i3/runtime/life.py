@@ -24,8 +24,10 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
              learning_mode: str = "normal",
              observer_mind_digest: bool = False) -> dict:
     started = time.perf_counter()
-    if learning_mode not in ("normal", "shadow_discard"):
-        raise ValueError("unknown P4b learning intervention")
+    if learning_mode not in (
+            "normal", "shadow_discard", "discard_effects",
+            "discard_values", "discard_replay"):
+        raise ValueError("unknown P4b/P5a learning intervention")
     if type(observer_mind_digest) is not bool:
         raise TypeError("observer_mind_digest must be bool")
     if type(horizon) is not int or horizon < 1:
@@ -68,12 +70,29 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
             # mind still keeps ordinary perception, spatial beliefs and the
             # paid sensorimotor orientation update. No fictitious cognition
             # is billed: the shadow computation really executes.
-            if learning_mode == "normal":
-                target = mind
-            else:
+            if learning_mode == "shadow_discard":
                 from copy import deepcopy
                 target = deepcopy(mind)
-            replays = target.learn_from_outcome(result, replay_limit=replay_limit)
+            else:
+                target = mind
+            # Development-only selective ablations: run the normal prepaid
+            # computation first and restore only one targeted state component.
+            # Costs are not manually adjusted, and paid sensorimotor/spatial
+            # state is not rolled back.
+            if learning_mode == "discard_effects":
+                from copy import deepcopy
+                preserved = deepcopy(mind.effects)
+            elif learning_mode == "discard_values":
+                preserved = [v[:] for v in mind.values]
+            else:
+                preserved = None
+            replays = target.learn_from_outcome(
+                result, replay_limit=replay_limit,
+                replay_retention=(learning_mode != "discard_replay"))
+            if learning_mode == "discard_effects":
+                mind.effects = preserved
+            elif learning_mode == "discard_values":
+                mind.values = preserved
             if replays != replay_limit:
                 raise RuntimeError("executed replay count differs from prepaid count")
             learning_updates += 1
