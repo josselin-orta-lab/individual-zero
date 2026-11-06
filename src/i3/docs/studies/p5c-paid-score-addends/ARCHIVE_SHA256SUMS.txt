@@ -1,0 +1,4 @@
+ff9b7e128cda196b82998e92fa94ec06825d4ea6a94d5be9752134b04ebf5a7a  src/i3/docs/studies/p5c-paid-score-addends/ORIGINAL_SHA256SUMS.txt
+d92f3fb3468c7c78c923941350d37636e7e8df8e01311653bb9fad42b1a5b336  src/i3/docs/studies/p5c-paid-score-addends/addends-full.json.gz
+18f4cf060674d280dfe6af92e76dcf7a5fbe9d9df1228231bc90ca44bc08eaa9  src/i3/docs/studies/p5c-paid-score-addends/addends-summary.json
+8018ac9e19a1db5c07b36c8a9af8dfb001b0eafb14b65515ce089e4105184778  src/i3/docs/studies/p5c-paid-score-addends/independent-custody.json
