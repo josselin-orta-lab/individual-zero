@@ -25,7 +25,8 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
              observer_mind_digest: bool = False,
              effect_readout: str = "full",
              observer_decision_diagnostics: bool = False,
-             score_addend_mode: str = "normal") -> dict:
+             score_addend_mode: str = "normal",
+             observer_resource_acquisition: bool = False) -> dict:
     started = time.perf_counter()
     if learning_mode not in (
             "normal", "shadow_discard", "discard_effects",
@@ -35,6 +36,8 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
         raise TypeError("observer_mind_digest must be bool")
     if type(observer_decision_diagnostics) is not bool:
         raise TypeError("observer_decision_diagnostics must be bool")
+    if type(observer_resource_acquisition) is not bool:
+        raise TypeError("observer_resource_acquisition must be bool")
     if effect_readout not in (
             "full", "blind_predictions", "blind_action_predictions",
             "blind_sleep_forecast", "blind_sources", "blind_all",
@@ -53,8 +56,13 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
               for c in ("energy", "vigilance")}
     shortfall_steps = 0
     world = World(spec)
+    resource_observer = None
+    if observer_resource_acquisition:
+        from i3.runtime.resource_observer import ResourceObserver
+        resource_observer = ResourceObserver()
     mind = Mind(genome, life_seed, effect_readout=effect_readout,
-                observer_decision_diagnostics=observer_decision_diagnostics,
+                observer_decision_diagnostics=(observer_decision_diagnostics or
+                                               observer_resource_acquisition),
                 score_addend_mode=score_addend_mode)
     head = sha256(json.dumps([genome_digest(genome), spec.name, life_seed, horizon],
                              separators=(",", ":")).encode()).hexdigest()
@@ -76,7 +84,11 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
     while world.t < horizon and not world.dead:
         t0 = time.perf_counter()
         allowance = CognitiveBudget(world.body, world.laws)
-        action, param, work, info = mind.decide(world.capture(), allowance)
+        capture = world.capture()
+        action, param, work, info = mind.decide(capture, allowance)
+        pending_resource = (resource_observer.prepare(
+            cap=capture, mind=mind, info=info, action=action, param=param)
+            if resource_observer is not None else None)
         if observer_decision_diagnostics:
             diagnostic = info["observer"]
             observer_counts[diagnostic["decision_outcome"]] += 1
@@ -141,6 +153,10 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
                          "body_before": list(before_learning),
                          "body_after_debit": list(world.body)},
         }
+        if resource_observer is not None:
+            resource_observer.commit(
+                pending_resource, world=world, physical_body=before_learning,
+                dead=result["dead"], phases=phases)
         accounting = {c: {k: result["cognitive_accounting"][c][k] + post_audit[c][k]
                            for k in totals[c]} for c in totals}
         work = CognitiveWork(*(getattr(work, k) + getattr(learning.work, k)
@@ -200,6 +216,8 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
         out["score_addend_mode"] = score_addend_mode
     if observer_decision_diagnostics:
         out["observer_decision_diagnostics"] = dict(observer_counts)
+    if resource_observer is not None:
+        out["observer_resource_acquisition"] = resource_observer.report()
     if learning_mode != "normal" or observer_mind_digest:
         out["learning_intervention"] = learning_mode
         # Component ablations retain the base outcome pipeline and discard
