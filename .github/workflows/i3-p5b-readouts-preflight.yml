@@ -17,7 +17,7 @@ jobs:
       - name: Checkout exact P5b engineering candidate
         uses: actions/checkout@v4
         with:
-          ref: 00253c5613882990969ebdeb0b24f3bbc5238f7c
+          ref: 8b22a45cc5a1b4d4573084f802c5c3bc071b5ae5
           persist-credentials: false
       - name: Configure Python
         uses: actions/setup-python@v5
@@ -29,6 +29,26 @@ jobs:
           set -euo pipefail
           python -m unittest discover -s tests/i3 -p 'test_*.py' -q
           python scripts/check_engine_repository.py --json
+      - name: Development-only diagnostic of decision options and funding
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=src python -m i3.lab.p5b_development_diagnostic --run-development > "$RUNNER_TEMP/p5b-development.json"
+          python - <<'PY'
+          import json,os
+          p=json.load(open(os.environ["RUNNER_TEMP"]+"/p5b-development.json"))
+          assert p["status"]=="ENGINEERING_DEVELOPMENT_ONLY_NOT_SCIENTIFIC_EVIDENCE"
+          assert len(p["lives"])==48 and set(p["comparison"])=={
+            "full","blind_predictions","blind_sources","blind_all"}
+          assert p["validation"]=="NOT_OPENED" and p["reserve"]=="LOCKED"
+          for mode,values in p["comparison"].items():
+              print("DEV",mode,"lives",values["lives"],"censored",values["censored"],
+                    "steps",values["lived_steps"],"inactive",values["inactive_steps"],
+                    "paid_energy",values["energy_paid"],
+                    "observers",values["decision"],
+                    "offered",values["offered_families"],
+                    "scored",values["scored_families"])
+          PY
       - name: Reconcile original P4 and P5a complete scientific data
         shell: bash
         run: |
