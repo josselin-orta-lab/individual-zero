@@ -36,7 +36,8 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
         raise TypeError("observer_decision_diagnostics must be bool")
     if effect_readout not in (
             "full", "blind_predictions", "blind_action_predictions",
-            "blind_sleep_forecast", "blind_sources", "blind_all"):
+            "blind_sleep_forecast", "blind_sources", "blind_all",
+            "action_agnostic_prior"):
         raise ValueError("unknown P5b effect readout")
     if type(horizon) is not int or horizon < 1:
         raise ValueError("positive integer horizon required")
