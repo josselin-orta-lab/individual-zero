@@ -73,7 +73,12 @@ class EffectsModel:
 
 
 class Mind:
-    def __init__(self, genome: dict, life_seed: int):
+    def __init__(self, genome: dict, life_seed: int,
+                 *, effect_readout: str = "full"):
+        if effect_readout not in ("full", "blind_predictions",
+                                  "blind_sources", "blind_all"):
+            raise ValueError("unknown effect-model readout intervention")
+        self.effect_readout = effect_readout
         validate(genome)
         g = genome["genes"]
         self.theta = channel_vector(genome, "theta")
@@ -123,6 +128,21 @@ class Mind:
         w = self.w
         return w[0] * phi[1] + w[1] * phi[2] + w[2] * phi[3] + w[3] * phi[4] + w[4] * phi[5]
 
+    def _read_effect_prediction(self, key):
+        """Read the SAME paid, personally learned model, or blind its output.
+
+        No hidden world laws or physics outcomes are injected; the actual
+        effect statistics remain stored and priced even in blind modes.
+        """
+        if self.effect_readout in ("blind_predictions", "blind_all"):
+            return (0.0,) * 5, 1.0
+        return self.effects.predict(key)
+
+    def _read_source_sign(self, key, channel) -> bool:
+        if self.effect_readout in ("blind_sources", "blind_all"):
+            return False
+        return self.effects.known_positive(key, channel)
+
     def drift(self):
         """Personally observed passive drift, plus personally observed sleep.
 
@@ -132,8 +152,9 @@ class Mind:
         up to their distress thresholds, paying sleep's extra food cost.
         (P1 froze them, so any plan ending tired looked costly forever.)
         """
-        wait, _ = self.effects.predict(("attendre",))
-        sleep = self.effects.stats.get(("dormir",))
+        wait, _ = self._read_effect_prediction(("attendre",))
+        sleep = (None if self.effect_readout in ("blind_predictions", "blind_all")
+                 else self.effects.stats.get(("dormir",)))
         restore = None
         if sleep and sleep[2] > 0 and sleep[1][E] > 0:
             restore = (sleep[1][E], max(0.0, sleep[1][V]), sleep[1][F] - wait[F])
@@ -322,13 +343,15 @@ class Mind:
         eating personally raised food, carried (1.0) or remembered somewhere.
         """
         p_water = 0.0
-        if self.effects.known_positive(("boire",), W):
+        if self._read_source_sign(("boire",), W):
             for q, h in self.hist.items():
                 if h[1] > BELIEF_FLOOR:
                     p_water = max(p_water, self.presence(q))
         carried = {t for t, n in inv if n > 0}
         p_food = 0.0
-        for key, st in self.effects.stats.items():
+        source_stats = (() if self.effect_readout in ("blind_sources", "blind_all")
+                        else self.effects.stats.items())
+        for key, st in source_stats:
             if key[0] == "manger" and key[1] is not None and st[2] > 0 and st[1][F] > 0:
                 t = key[1]
                 if t in carried:
@@ -361,7 +384,7 @@ class Mind:
                 while i + run < n and plan[i + run] == key and run < horizon:
                     run += 1
             i += run
-            mean, u = self.effects.predict(key)
+            mean, u = self._read_effect_prediction(key)
             u_max = max(u_max, u)
             for c in range(5):
                 x = b[c] + run * mean[c]
@@ -531,7 +554,8 @@ class Mind:
         if key[0] == "manger":
             if key[1] not in carried:
                 return None, None
-            s = self.effects.stats.get(("manger", key[1]))
+            s = (None if self.effect_readout == "blind_all"
+                 else self.effects.stats.get(("manger", key[1])))
             if body[I] <= VETO_INTEGRITY and s and s[2] > 0 and s[1][I] < 0:
                 return None, None
             return "manger", self.external[key[1]]
