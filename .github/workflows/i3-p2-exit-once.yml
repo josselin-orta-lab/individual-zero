@@ -17,7 +17,7 @@ jobs:
       - name: Checkout exact P2 exit candidate
         uses: actions/checkout@v4
         with:
-          ref: a23876ea3acccb0c2ffae36a4ab9fb2177e53b0f
+          ref: af2ca29a526b1b899bc55d305b41f61950036af9
           persist-credentials: false
       - name: Set up Python
         uses: actions/setup-python@v5
