@@ -18,12 +18,13 @@ def git(*args):
 def unexpected_workflows(paths, *, active_ci: str) -> list[str]:
     """Allow explicitly reviewed active-generation checks, not archived I0 jobs.
 
-    I2 has an inert proposal-only test workflow; it does not activate I2.
+    I2 and I3 have explicitly named proposal test workflows, not activation.
+    Do not allow arbitrary I3 study workflows by prefix.
     """
     allowed = {
         active_ci, "i0-archive-manual.yml", "engine-structural.yml",
         "i1-preset-worlds.yml", "i2-proposal-safety.yml",
-        "agent-context-static.yml",
+        "agent-context-static.yml", "i3-proposal-checks.yml",
     }
     return sorted(path.name for path in paths
                   if not path.name.startswith("i1-") and path.name not in allowed)
