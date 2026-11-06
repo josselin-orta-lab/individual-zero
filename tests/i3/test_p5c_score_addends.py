@@ -92,6 +92,34 @@ class P5cScoreControls(unittest.TestCase):
                     self.assertFalse(any(step["funding_phases"]["learning"]["work"].values()))
             self.assertGreater(witnessed, 0)
 
+    def test_first_paid_forecasts_and_computed_addends_are_identical(self):
+        # Prior to different physical actions, the existing per-action
+        # predictor, prices and first-person information are untouched.
+        lives = {
+            mode: run_life(self.genome, self.spec, 1042, 12,
+                           score_addend_mode=mode,
+                           observer_decision_diagnostics=True,
+                           keep_trace=True)
+            for mode in MODES
+        }
+        reference = lives["normal"]["trace"][0]
+        baseline = {
+            w["option"]: w for w in reference["info"]["observer"]["score_witness"]
+        }
+        self.assertGreater(len(baseline), 0)
+        for mode, life in lives.items():
+            row = life["trace"][0]
+            self.assertEqual(row["info"]["observer"]["pre_body"],
+                             reference["info"]["observer"]["pre_body"])
+            actual = {w["option"]: w for w in row["info"]["observer"]["score_witness"]}
+            self.assertEqual(set(actual), set(baseline))
+            for oid in baseline:
+                a, b = baseline[oid], actual[oid]
+                for key in ("base_return", "uncertainty",
+                            "curiosity_bonus_computed", "risk_penalty_computed",
+                            "first_forecast"):
+                    self.assertEqual(a[key], b[key], (mode, oid, key))
+
     def test_component_masks_do_not_disable_personal_prediction_learning(self):
         for mode in MODES:
             life = run_life(self.genome, self.spec, 191, 90,
