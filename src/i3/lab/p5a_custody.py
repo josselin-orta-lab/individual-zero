@@ -95,8 +95,11 @@ def verify_original(out: dict) -> dict:
                     raise ValueError("noninteger or negative actual work")
     if (len(keys) != EXPECTED_COUNT or len(opportunities) != 24 or
         len({w for w, seed in opportunities.values()}) != 24 or
-        len(source_sha) != 1 or
-        len({r["evidence_head"] for r in out["lives"]}) != EXPECTED_COUNT):
+        len(source_sha) != 1):
+        # An identical life under two different interventions may have an
+        # identical behavior/evidence hash. Experimental identity is
+        # (population, arm, genome slot, family, repeat, intervention).
+        # Requiring unique behavioral hashes would discard valid null results.
         raise ValueError("missing or overlapping original scientific evidence")
     result = p5a_screen.summarize(out)
     for group in result["populations"]:
