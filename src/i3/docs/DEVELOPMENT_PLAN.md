@@ -1,188 +1,278 @@
-# I3: validated development path
+# I3: approved development path and generalization scenario
 
-Owner approval: 5 November 2026. Baseline:
-`ac71bef28add28d01b2628e998e3626002cbcc98`.
-Tracking: [#1002](https://github.com/josselin-orta-lab/individual-zero/issues/1002).
-This refines P1.3 -> P2 -> P3 -> P4; it is not another architecture or activation gate.
+Current direction accepted by the owner on **6 November 2026**, through the
+request to integrate the supplied scenario. This is the continuation of
+[#1002](https://github.com/josselin-orta-lab/individual-zero/issues/1002) and
+[#1026](https://github.com/josselin-orta-lab/individual-zero/issues/1026), not a
+second roadmap. Decision: [ADR-0016](../../../docs/decisions/ADR-0016-i3-generalization-without-imposed-rules.md).
+Integration tracking: [#1059](https://github.com/josselin-orta-lab/individual-zero/issues/1059).
 
-## Scientific target
+**Next intervention: Stage 0 design and measurement, then Stage 1 information
+value. Do not start with a Competition rewrite.** Stages 1-6 below are planned,
+not implemented, experimentally validated or activated by this document.
 
-Separate designer-provided mechanisms, selected generic innate dispositions,
-and the causal contribution of each individual's own experience. Do not tune
-away every death. Correct physical/evidence defects before adding cognition.
-I1 stays active; I3 stays unregistered. Original G2/G2b/G2c records remain
-unchanged and tied to their original source. P1.2 remains rejected.
+## Source, scope and current reference
 
-## Current funding correction (#1004)
+The [owner-supplied French report](GENERALIZATION_SCENARIO_SOURCE_2026-11-06.md)
+is preserved byte-for-byte: 22,291 bytes; SHA-256
+`e3a282e839c597cd610682fecb852340dd30f96ea8038874bebd2367b0a8753c`;
+Git blob `934601a9258a8c5373512764a10709aa1859883a`.
+Its baseline is `e4eb3e80c9dc48e131e05383d952909bd86213b7` (PR #1058).
+The report's literature references and additional P5e interpretation remain
+attributed to that report; this integration is not an independent reproduction
+of its post-hoc analysis or a literature review. Its dated statements about
+`main` are snapshots, not future live branch state.
 
-The [v2 funding contract](COGNITIVE_FUNDING.md) replaces the observation-only
-limits described below. Work is authorized within actual reserves before it
-executes; outcome learning/replay is prepaid in the same step. No forced sleep,
-new death cause or unpaid cognitive advantage is introduced. Development-only
-long-panel survival fell from 14/16 to 8/16; the adverse change is retained.
-The normal budgeted path has no pending replay and rejects overdraft requests.
+The [pre-integration plan](DEVELOPMENT_PLAN_BEFORE_GENERALIZATION_2026-11-06.md),
+[status ledger](STATUS_BEFORE_GENERALIZATION_2026-11-06.md) and
+[documentation ledger](README_BEFORE_GENERALIZATION_2026-11-06.md) retain their
+original bytes and original relative links. Their old "next" instructions are
+historical; use this file for current priorities and [STATUS.md](STATUS.md)
+for implemented/observed status. Original studies and their gates are unchanged.
 
-Next: isolate P1.3 belief revision against this SAME v2 substrate and complete
-P2 comparator/generator validation. No held-out or lineage study is run by this
-physical correction. Keep pilot size and experimental criteria prospective.
+The reference is P1.3 on the funded v2 substrate, adopted under ADR-0015.
+P1.2 remains rejected under its original gate. P3/P4/P5 results remain bounded,
+with four historical independent genetic populations, no demonstrated general
+lineage advantage, and no general scientific GO. In particular, P5e's 333/342
+non-top meal scores are **not** 333 Competition reversals. Its masked-curiosity
+arm had no food-carrying decisions; it does not explain P5d's non-consumption
+with food carried. See [P5e original results](P5E_DEVELOPMENT_RESULTS.md) and
+[P5d original-only analysis](P5D_POSTHOC_COLLECTION_CONSUMPTION.md).
 
-## Technical foundation (#1003, historical v1 accounting slice)
+## Governing principle: predicted viability in one unit
 
-The first slice adds no cognitive score, innate preference or birth flag:
+Every new cognitive mechanism must contribute to the individual's predicted
+**cumulative distress over its own bodily channels**, including the energy and
+vigilance costs of performing that cognition. Information, inference, memory,
+planning and further computation must be evaluated through those stakes, not
+through an independent bonus designed to obtain a desired action.
 
-- `CognitiveWork` rejects negative, non-integer and boolean counts. Invalid
-  bills fail before world mutation. Cost rates and overflow are checked.
-- `World.step` reports declared cognitive energy/vigilance requested, actually
-  debited and unpaid. Capture stays first-person and does not expose this audit.
-- `Mind.learn` remains the normal pipeline. It calls `observe_outcome` for
-  sensorimotor position tracking, then `learn_from_outcome` for learned updates.
-  Future controls must target the relevant mechanism, not disable orientation.
-- `run_life` adds a detached full-world/genome/protocol manifest, source-byte
-  hashes, Git HEAD/dirty context and Python version. `manifest_id` hashes it;
-  `evidence_head` binds it to the steps, declared work, accounting and final
-  outstanding replay bill. The original `trace_head` stays available as a
-  behavior-only differential, not a complete provenance guarantee.
+Generic, renaming-invariant inherited parameters selected only by individual
+persistence remain admissible under [ADR-0014](../../../docs/decisions/ADR-0014-i3-lignee-enjeu-de-soi.md).
+No scripted drinking/eating/exploration, family-specific policy, reward shaping,
+hidden-world oracle, inherited memories/maps/learned weights, postmortem work,
+resurrection or old-generation runtime dependency. The generation's motor
+authority, irreversible mortality and actual prepaid cognition remain intact.
+I1 stays active; I3 stays unregistered; the registry is not changed.
 
-The default protocol label is `UNREGISTERED_ENGINEERING`. A label alone is not
-preregistration. Source hashes describe on-disk files, not authentication or
-arbitrary monkey-patches. Git HEAD is not proof that a checkout is clean. The
-manifest is observer-only and never a mind input. `mean_step_ms` measures the
-engine loop, not manifest/hash overhead; `run_elapsed_ms` includes that overhead.
+This is a research constraint on developers, never an instruction supplied to
+the living individual's mind. A poor choice or death is not automatically a
+software defect. Keep adverse and null outcomes; do not tune them away.
 
-### Limits confirmed at #1003 (subsequently corrected by #1004)
+## Ordered stages and dependencies
 
-At energy 0.1, waiting plus ten cognitive cycles clamps energy to zero while
-0.2 cognitive energy cannot be debited. The new audit reports this shortfall;
-it does NOT fund the missing work, introduce a debt policy or invent a death.
-Sleep replay is still charged one step later. At death/censoring, pending work
-and its requested cost remain explicit instead of being declared paid.
+| Stage | Deliverable | Status / tracking |
+| --- | --- | --- |
+| 0 | Independent-population design, energetic mediation, complete paid Competition observation, individuality challenge, P5d uncertainty | Next; [#1060](https://github.com/josselin-orta-lab/individual-zero/issues/1060), existing #1026/#1054 |
+| 1 | Information value in predicted distress, replacing additive curiosity/relevance/prudence | Planned after Stage-0 design; [#1061](https://github.com/josselin-orta-lab/individual-zero/issues/1061) |
+| 2 | Decide how much to think by value of computation | Planned after Stage-1 decision; [#1062](https://github.com/josselin-orta-lab/individual-zero/issues/1062) |
+| 3 | Change detection, latent causes, then perceived-attribute factorization | Deferred; one gate per mechanism |
+| 4 | Successor features and delayed credit evaluated by current bodily distress | Deferred after the required model/budget decisions |
+| 5 | Learned topology for obstacles and larger F1 worlds | Deferred; unchanged perception radius |
+| 6 | Multi-family selection of generic learning dispositions | Deferred; independent lineages and random-parent control |
+| Audit | Competition thresholds and physically justified switching cost | Low-priority transversal work, not the critical path |
 
-Statuses are `SHORTFALL`, `PENDING_REPLAY`, or `SETTLED_FOR_DECLARED_WORK`.
-Shortfall detection tolerates at most 1e-12 roundoff per step/channel; raw
-unpaid amounts are retained. This audits declared cognitive work, not every
-machine instruction or the entire motor-energy economy.
+A dependency requires an explicit result and reference decision, not an
+obligation to obtain a positive result. If a gate fails, retain its previous
+reference and record the failure; do not silently promote a failed mechanism
+or launch all later stages as one architecture rewrite.
 
-**Historical follow-up: [#1004](https://github.com/josselin-orta-lab/individual-zero/issues/1004),
-fund cognition and settle replay consistently before interpreting a selection
-pilot as genuinely paid cognition.** Do not use shortfalls as selective gains,
-claim this observation patch fixes them, or retroactively certify old studies.
+### Stage 0: make the experiments capable of answering the questions
 
-## Subsequent bounded work
+Before new confirmatory comparisons, design at least **eight genuinely
+independent genetic populations**; extra genomes/lives from the old four do
+not increase that number. Freeze lineage sampling, genome selection, ecological
+blocks, horizon, stopping rule, uncertainty method, multiplicity and compute
+ceiling. Eight is a minimum design requirement, not a power guarantee.
 
-1. P1.3: revisable place beliefs alone with exploration unchanged. Compare on
-   prospectively reserved fresh conditions; count revision latency from the
-   first personally available evidence. Failure keeps P1.1; it does not itself
-   forbid constructing the bounded selection pilot.
-   **Done (G2e):** adopted on the v2 substrate under selection (ADR-0015);
-   see [results](studies/g2e-p13-v2/RESULTS.md). Revision is more frequent,
-   not faster.
-2. P2: validate existing generators/probes, separate development, selection,
-   validation and held-out conditions. New seeds alone are not new ecological
-   families. A heuristic oracle's success witnesses feasibility; failure is
-   not proof of infeasibility. A reference searcher is not an optimal ceiling.
-   **Engineering implementation staged:** [P2 ecology/probe contract](P2_ECOLOGY_AND_PROBE_CONTRACT.md)
-   freezes stable/depletion/pulse evolution families (1:1:1), disjoint
-   development/selection/validation/reserve cohorts and a fail-closed P4
-   reserve. Probe receipts distinguish exact paid trace prefixes from incomplete
-   or unpayable comparisons; a source-sealed development-only static tariff is
-   available for prospective comparator work. The subsequent full 400-step
-   development panel found 0/7,729 exact work-vector matches and 31 deaths
-   among 36 lives; ecological event ordering was repaired and 90 tests pass.
-   [P2 diagnostic](P2_COST_AUDIT_RESULTS.md) is an explicit adverse finding,
-   not science-grade cost equivalence. Do not silently mark this gate green.
-   **P2 exit interpretation:** [equal-opportunity contract](P2_EXIT_EQUAL_OPPORTUNITY.md)
-   supports matched-world, matched-physics P3 lineage arms while rejecting
-   a cost-matched *probe ceiling* claim. P3 population schedules are generated
-   without opening selection or validation cohorts.
-3. P3: a mutation-only pilot with multiple fresh lives per genome, independent
-   populations, lifetime-only selection and random-parent controls at equal
-   budgets. Inherit generic genes only, never memories/maps/body states. Fix
-   horizons and pilot size prospectively. Survivors are censored, not dead.
-   **Technically executed with prospective source lock:** [P3 prereg](P3_PILOT_PREREG.md),
-   [full evidence and mixed results](studies/p3-mutation-pilot/RESULTS.md):
-   864 lives, 48 G2 genomes frozen. G1 selection worse, G2 +5/144 overall
-   with independent population differences +3,+3,-1,0. No P3 scientific GO
-   and no validation or reserve worlds opened.
-4. P4: held-out comparisons and targeted learning controls, with explicit cost
-   matching and population-level uncertainty. Distinguish better innate
-   behavior from improved use of experience, then test individuality from
-   different histories of the same genome. Report null/adverse lives.
-   **First-pass experiments completed**: [P4a prereg](P4A_HELDOUT_PREREG.md)
-   and [inconclusive generalization result](studies/p4a-g2-heldout/RESULTS.md)
-   (288 lives; population differences -2,+9,-1,-1); [P4b prereg](P4B_LEARNING_PREREG.md)
-   and [paid shadow-learning result](studies/p4b-paid-outcome-learning/RESULTS.md)
-   (576 lives; 84/288 normal survivors versus 0/288 without retained
-   outcome learning; 144/144 same-genome pairs show divergent learned
-   outcome-model fingerprints). The ablation preserves spatial belief
-   learning and differs in realized cognition: this is a narrow mechanism
-   result, NOT a general proof of intelligence, optimum survival, or
-   subjective individuality. Larger independent populations and separately
-   registered effect/value/replay and cost-matched controls remain open.
+Predeclare actual phase-specific cognition, energy/vigilance expenditure,
+inactive-step fraction and lived time. Equal initial opportunities under
+[P2](P2_EXIT_EQUAL_OPPORTUNITY.md) do not imply equal realized work; never bill
+unperformed work to manufacture parity. Separate total treatment effects from
+energetic mediation and do not condition away adverse short lives.
 
-No lineage or new held-out study is executed by the foundation patch. Prefer
-one focused change and a falsifier to another general framework. Software
-checks never constitute an engine activation or scientific GO.
+Reuse P5e's full already-paid Competition witness as the standard observer-side
+instrument for new diagnostic studies, with on/off parity of actions, RNG,
+body/world, paid work and original evidence chain. It provides no extra Mind
+input. This plan does not enable a new default observer or rerun a study.
 
-## Verification
+Keep the acquired-individuality question under
+[#1026](https://github.com/josselin-orta-lab/individual-zero/issues/1026): same
+genome, different histories, then a new prospectively common challenge. Final
+memory hashes alone are insufficient. Define behavioral stability, challenge
+exposure and bodily mediation without resetting a living body or memory,
+cloning an experienced individual or excluding deaths before the challenge.
 
-Run `python -m unittest discover -s tests/i3 -p 'test_*.py' -v` and, in the full
-repository, `python scripts/check_engine_repository.py --json`.
-`test_foundation.py` covers accounting, sensorimotor controls and provenance.
-Four original development-fixture trajectory hashes are retained as historical
-differentials, not current v2 parity requirements or scientific outcome targets.
-No reserved G2/G2b/G2c seeds are used. The PR records exact source SHA and CI
-results; local checks alone do not certify a different commit.
+Keep P5d under [#1054](https://github.com/josselin-orta-lab/individual-zero/issues/1054):
+why were none of 125 paid carried-food opportunities selected without scored
+curiosity? Full original scores were not recorded. P5e's zero carried-food
+exposure in that arm leaves the question **NOT_OBSERVED**, not resolved.
+Design a bounded development-only witness with prospectively specified
+exposure conditions; do not force a meal, inject food into a living state,
+search favorable seeds or reinterpret the normal P5e arm as the missing arm.
 
-## P5b experimental mechanism handoff (6 November 2026)
+### Stage 1: information value in the unit of the individual's stakes
 
-After P5a, [P5b was separately preregistered](P5B_HELDOUT_PREREG.md)
-and completed in [1152 first-pass heldout lives](studies/p5b-paid-readout-heldout/RESULTS.md).
-In the same original four G2 genetic populations, the
-full action-specific effect readout survived 98/288,
-but both zero action prediction and personal action-agnostic
-prediction had 0/288 survive. Masking learned sleep forecast
-survived 90/288. All individuals still executed and paid their
-own learning; actual physical activity and cognition diverged.
-No significance or generalization GO with n=4.
+For an exploratory option or unknown food, average over outcomes supported by
+the individual's own beliefs, replan, and estimate how the information would
+reduce predicted cumulative distress. Begin with the report's **two or three
+actually executed and paid branches**. Include their bodily cost. Replace,
+rather than stack on, additive `beta_u`, relevance and prudence. Urgency comes
+from bodily projection; risk comes from predicted integrity-effect uncertainty.
 
-Next prioritize **action-specific base return versus
-uncertainty/curiosity/risk contribution**, not an unbounded
-architecture rewrite. The personally learned global prior
-produced 285/288 early shared-option differences in total
-score but only 79/288 in base projected return at matched
-pre-decision body. Audit and prospectively intervene on one
-term at a time before using new validation worlds >=96.
-[Agent handoff](P5B_HANDOFF.md) preserves constraints and
-outstanding individuality-by-history questions.
+Gate: survival non-inferiority and improved revision latency in a prospectively
+defined fresh **family R**. Controls: frozen projection and information value
+without cost, with exact semantics fixed before exposure. The report's expected
+survival decrease and expenditure increase are hypotheses that may fail, not
+acceptance targets to engineer. Specify generic priors, unknown outcomes,
+zero-budget paths, source/genome versioning and real branch receipts in #1061.
+Do not silently migrate an existing individual's genome or retain learned
+state at a new birth.
 
-## P5c hypothesis-generating next intervention
+### Stage 2: decide how much to think
 
-[Development-only score-addend contracts](P5C_PAID_SCORE_ADDENDS.md)
-now isolate computed curiosity and uncertain-meal risk penalties *after*
-the existing paid candidate evaluation, without touching the learned
-model, action control, world generator or original P5b data. The first
-48 short development lives had both positive and adverse survival
-outcomes; do not tune from them or label them independent evolutionary
-replication. This was the earlier engineering-only step; its subsequent independently
-registered study used world indices 96–119, as documented below. [Issue #1046](https://github.com/josselin-orta-lab/individual-zero/issues/1046).
+Execute another computation only when its expected viability gain exceeds
+its cost expressed through the same distress function D, subject to physical
+funding. `n_base` and `h_max` become ceilings, not instructions. Replay is
+another priced computation; metareasoning itself must also be paid and bounded.
 
-## P5c science decision after first registered cohort
+Compare survival and inactive-step fraction against a fixed budget. Include
+zero-cost and equal-mean random-budget controls. Determine any matching mean
+from development, never from future validation trajectories. Freeze exact
+interventions, margins, receipts and stopping rules in #1062; no free evaluator
+or omniscient estimate of the value of the next computation.
 
-[Original study, costs, mechanism and null/adverse outcomes](studies/p5c-paid-score-addends/RESULTS.md)
-and [handoff](P5C_HANDOFF.md) supersede the earlier development-only
-hypothesis. For all 48 frozen G2 genes, normal curiosity survived
-110/288 censored lives, and suppressing scored curiosity survived 4/288.
-Suppressing only uncertain-meal risk survived 105/288 with mixed
-population effects. n=4 genetic populations limits exact two-sided
-inference to p>=0.125, no conventional confirmatory or evolutionary GO.
+### Stage 3: generalization and change in the world model
 
-A priority for further science is explaining **active premature
-death under curiosity ablation**, rather than merely processing-budget
-inactivity: its physical inactivity was 1.13% of lived steps versus
-18.65% normal, while P5b blinded action predictions raised inactivity.
-First inspect immutable P5c receipts without new lives for death
-causes, action families and resource contacts only where already
-observed. Never tune from exposed worlds 96–119; any independent
-validation must be prospectively allocated >=120 with new genetic
-and ecology sampling for broader claims. Do not confuse curiosity
-mechanisms with established autonomous individuality.
+Follow the report's **revised priority order**: online change detection, latent
+causes, then factorized effects over generic perceived attributes with shared
+priors. These are three separate mechanisms and gates, not a bundled rewrite.
+Change probability can inform Stage-1 information value. Revision latency is
+a gate observable. Test transfer to a previously unseen token sharing perceived
+attributes with personally experienced toxicity, and include frozen-change
+controls. The attributes must be sensed, not hidden toxicity labels, future
+schedules or designer-coded action advice. No new sensor is silently granted.
+
+### Stage 4: reusable value as needs change
+
+Learn successor features over predicted bodily-channel changes and evaluate
+them through **current** D. Test delayed credit with toxicity delayed by 20-50
+steps and repeat the P5a value ablation on fresh, preregistered conditions.
+The report hypothesizes that removing learned values should now reduce
+survival. A null or adverse result must remain publishable; no tuning on the
+opened gate to make the learned-value mechanism appear necessary.
+
+### Stage 5: topology, obstacles and larger worlds
+
+Allow adjacent impassable boundaries/walls to be perceived as such, learn a
+topological map within the life, and plan within Stage-2 funding. Keep the
+perception radius unchanged and prohibit inherited or hidden complete maps.
+Gate: held-out family F1. Comparator: the current frontier mechanism. Freeze
+the physical/sensory contract before exposure; new test substrate is distinct
+from a designer-written detour or survival policy.
+
+### Stage 6: select ways of learning, not inherited experience
+
+Use at least eight independent populations and ten generations, recombination,
+random-parent controls and multiple world families. Select generic learning
+dispositions only by individual persistence; never transmit learned weights,
+values, memories, maps or bodily state. Repeat P4a on new conditions and include
+a learning-disabled control with explicit actual-cost semantics.
+
+Retain the source's proposed **at least 7/8 populations with a selected-arm
+advantage** as a directional gate for an eight-population design. Do not equate
+it with statistical significance. The protocol must specify the gate for a
+larger population count, uncertainty and multiplicity before running it.
+
+### Low-priority transversal audit: Competition
+
+The original P5e cohort shows six threshold-related meal-order differences
+among 342 opportunities, not a generally defective Competition. A later bounded
+gate may compare best predicted gain with continuity justified by a predicted
+switching cost, without survival loss. Do not rewrite Competition to force
+eating or promote this audit ahead of Stages 0-2.
+
+The source mentions removing prudence both here and in Stage 1. Operationally,
+Stage 1 owns that replacement; the later audit checks the resulting status,
+not a second independent removal. An integrity veto can remain only if its
+physical-body justification is established. Merely renaming an arbitrary
+cognitive threshold a physical law is not a correction; no veto is changed here.
+
+## World-family progression and generalization
+
+The report supplies the following **prospective family contracts**, not already
+implemented generators. Freeze mechanisms, parameter distributions, seeds and
+allocation before evaluation. New F0 seeds are not a new ecological family.
+Selection and validation must include whole-family separation for transfer
+claims, not only disjoint seeds from one mechanism.
+
+| Family | Novelty from the source | Target |
+| --- | --- | --- |
+| F0 | Existing stable, depletion and pulse ecologies | Current baseline |
+| F1 | Obstacles, movement-cost terrain, maps 2-4 times larger | Stage-5 topology |
+| F2 | Seasonal periodic sources | Stage-3 change/latent causes |
+| F3 | Hidden delayed toxicity and shared perceived token attributes | Stage-3 transfer and Stage-4 credit |
+| F4 | Moving danger zones damaging integrity | Cross-channel tradeoffs and risky information |
+| F5 | Inventory as a transportable reserve | Long-horizon planning |
+| F6 | Other competing I3 individuals | **Out of current scope** |
+
+F5 proposes a new reserve-planning ecology, not the claim that current I3 lacks
+an inventory. F2 must be distinguished prospectively from existing F0 pulses;
+renaming an existing generator is not held-out mechanistic generalization.
+Progressive generation is a proposal only, with no post-exposure retuning.
+
+Primary endpoint: survival at a fixed horizon. Secondary endpoints: revision
+latency, first drink and cognitive expenditure per lived step, with censoring,
+no-exposure and death rules preregistered. Probes remain descriptive until
+real cost comparability is established; the oracle is not a paid upper bound.
+
+## Prospective gate discipline
+
+One targeted change per gate. Use selected genomes under
+[ADR-0015](../../../docs/decisions/ADR-0015-i3-portes-sous-selection.md), a frozen
+source SHA and disjoint development, selection, validation and reserve manifests.
+New validation allocations must be previously unopened **indices >=120**, also
+checked against all earlier allocations and new-family namespaces. The original
+P4 reserve **1200000..1200199 stays sealed**. A numerical lower bound is not a
+license to reuse a world. No new study is authorized by this documentation.
+
+Before exposure, freeze hypothesis, falsifier, primary contrast, practical
+margins, exact independent unit, source/genome identifiers, worlds, horizon,
+compute limit, missing/crashed lives, censoring, multiplicity and stopping rule.
+Publish all negative/null lives, actual costs and an explicit verdict. A green
+software check is not a scientific GO. Do not repeatedly run exposed validation
+worlds while adjusting genes, tariffs, policy or thresholds.
+
+## Explicit operational clarifications, separate from the source
+
+- **Statistical resolution:** for an exact two-sided sign test with eight
+  non-tied independent signs, 8/8 positive gives `2/2**8 = 0.0078125`, while
+  7/8 gives `2*(8+1)/2**8 = 0.0703125`. This does not establish prospective
+  power, remove multiplicity or characterize every possible statistical test.
+  The source's Stage-6 directional threshold remains separate from inference.
+- **Family R is undefined in the supplied scenario:** freeze its mechanism,
+  first-person change evidence and latency definition before the Stage-1 gate.
+  Do not silently identify it with F2, an old G2e cohort or a favorable fixture.
+- **Zero-cost controls are underspecified:** distinguish zero perceived cost
+  with actual physical payment from physically waived charges. The latter is
+  an explicitly non-admissible diagnostic economy, never the funded reference.
+  The protocol must resolve this choice rather than claim unpaid cognition is
+  ordinary v2 behavior.
+- **Not-yet-observed results stay unknown:** source-derived post-hoc P5e
+  interpretation does not explain P5d, prove harmless lifelong meal deferral,
+  demonstrate individuality, or establish the benefit of any future stage.
+
+## Verification and next handoff
+
+For this integration: documentation and issue coordination only, no runtime,
+world, genome, tariff, registry, workflow or original study changes; zero new
+study lives. Verify the exact PR diff and the four preserved source/ledger blobs.
+Run `python tools/check_repo_navigation.py --scope entrypoints` in a full
+checkout and mandatory CI on the exact candidate SHA. If unavailable locally,
+report `NOT_RUN`; never borrow a prior PR's green status.
+
+Future code work follows [TEST_PLAN.md](TEST_PLAN.md), focused I3 tests and
+relevant generation guards. Record `question | baseline SHA | one change |
+falsifier | control | observed data | costs | exact checks | verdict | next
+issue`. Start with #1060. Do not use this scenario as a reason to multiply
+frameworks, review gates or synthetic tests that add no scientific information.

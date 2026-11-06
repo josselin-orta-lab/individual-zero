@@ -20,7 +20,6 @@ Examples include:
 - a local choice inside one EXP;
 - a compatible refactor;
 - a minor dependency update;
-- an ordinary bug fix;
 - a prototype choice that has not become shared reference behavior.
 
 ## Evidence first
@@ -85,3 +84,5 @@ A filled illustrative example is available in [../../examples/adr-example.md](..
 - [ADR-0014: I3, an individual whose stake is itself, in a persistence-selected lineage](ADR-0014-i3-lignee-enjeu-de-soi.md) (5 November 2026). Owner-accepted I3 research proposal: lifetime persistence as the only selection criterion, generic heritable genes, reformulated birth invariant; I3 unregistered.
 
 - [ADR-0015: I3 gates judge an architecture on its best selected genomes](ADR-0015-i3-portes-sous-selection.md) (5 November 2026). Owner-accepted gate method for I3, applied on the funded v2 substrate; the first application (G2d, v1 physics) is archived and does not certify v2.
+
+- [ADR-0016: I3 generalization without imposed behavioral rules](ADR-0016-i3-generalization-without-imposed-rules.md) (6 November 2026). Owner-accepted staged direction: predicted distress, paid information/computation value, independent populations and held-out families. Competition is a low-priority audit; the single [I3 development plan](../../src/i3/docs/DEVELOPMENT_PLAN.md) distinguishes planned mechanisms from original evidence. No activation or scientific GO.
