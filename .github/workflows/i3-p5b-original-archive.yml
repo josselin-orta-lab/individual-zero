@@ -1,0 +1,75 @@
+name: I3 P5b verify and preserve first ORIGINAL paid-readout cohort
+on:
+  push:
+    branches: [automation/i3-p5b-original-archive-20261106]
+    paths: [.github/workflows/i3-p5b-original-archive.yml]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - name: Checkout source with approved independent original-data custodian
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Confirm P5b registration and read-only custodian already merged
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor d6bf2ec06b96b0b923436bd5c713c00ce47af16f HEAD
+          git merge-base --is-ancestor 1e3455c0813400ec3d5296eb5d77a01e95f7b500 HEAD
+      - name: Download exact FIRST preregistered P5b original artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: i3-p5b-first-original-paid-readouts
+          run-id: 42220546984
+          github-token: ${{ github.token }}
+          path: out
+      - name: Audit raw bytes and all 1152 identities without running any life
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum -c out/SHA256SUMS.txt
+          test "$(sha256sum out/i3-p5b-full.json | cut -d ' ' -f1)" = "98d21bc18d88f26743ae9ca07cc0d966605d14de826b73a91b9d24b675c9a8df"
+          test "$(sha256sum out/i3-p5b-summary.json | cut -d ' ' -f1)" = "2c045fb974fec29edf41ae1f0359c9ced7ce191ba8ac5d75905ca9bc5279926b"
+          PYTHONPATH=src python -m i3.lab.p5b_custody out/i3-p5b-full.json > out/i3-p5b-independent-custody.json
+          python - <<'PY'
+          import json
+          original=json.load(open("out/i3-p5b-full.json"))
+          summary=json.load(open("out/i3-p5b-summary.json"))
+          custody=json.load(open("out/i3-p5b-independent-custody.json"))
+          assert custody["status"]=="ORIGINAL_VERIFIED_NO_NEW_LIVES"
+          assert custody["raw_canonical_sha256"]=="211c2586971bace7cc592488c399202f97d07ddb3be0937eb49d4a47dd4f9473"
+          assert custody["original_lives"]==1152 and custody["worlds"]==24 and custody["paired_genome_world_keys"]==288
+          assert original["sha256"]==custody["raw_canonical_sha256"]
+          assert custody["analysis"]==summary
+          assert [sum(custody["survivors_by_population"][str(p)][m] for p in range(4))
+                  for m in ("full","blind_action_predictions","action_agnostic_prior","blind_sleep_forecast")] == [98,0,0,90]
+          print("P5b original unchanged, 1152 real-life receipts, 288 matched opportunities, analysis verified")
+          PY
+          folder=src/i3/docs/studies/p5b-paid-readout-heldout
+          mkdir -p "$folder"
+          gzip -n -9 -c out/i3-p5b-full.json > "$folder/readout-full.json.gz"
+          cp out/i3-p5b-summary.json "$folder/readout-summary.json"
+          cp out/i3-p5b-independent-custody.json "$folder/independent-custody.json"
+          cp out/SHA256SUMS.txt "$folder/ORIGINAL_SHA256SUMS.txt"
+          sha256sum "$folder"/* > "$folder/ARCHIVE_SHA256SUMS.txt"
+          git checkout -b i3/p5b-paid-readout-evidence-20261106
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$folder"
+          git commit -m "research(i3 P5b): archive first 1152 paid readout lives and immutable checksums"
+          git push origin HEAD:refs/heads/i3/p5b-paid-readout-evidence-20261106
+      - name: Keep original custody evidence even if repository push fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-p5b-first-original-custody-checked
+          path: out/
+          retention-days: 90
+          if-no-files-found: warn
