@@ -1,0 +1,64 @@
+name: I3 P5d original-only eating diagnostic ephemeral verification
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/i3-p5d-eating-transport.yml'
+      - 'src/i3/lab/p5d_posthoc_eating.py'
+      - 'tests/i3/test_p5d_posthoc_eating.py'
+permissions:
+  contents: read
+concurrency:
+  group: i3-p5d-eating-verify-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  read-only:
+    name: P5d original-only Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run complete I3 software suite
+        run: PYTHONPATH=src python -m unittest discover -s tests/i3 -p 'test_*.py'
+      - name: Run exact original-only diagnostic (no new lives)
+        shell: bash
+        run: |
+          PYTHONPATH=src python -m i3.lab.p5d_posthoc_eating src/i3/docs/studies/p5d-resource-acquisition/p5d-original.json.gz > eating-original-only.json
+          python - <<'PY'
+          import json
+          d=json.load(open('eating-original-only.json'))
+          normal=d['aggregate']['normal']; masked=d['aggregate']['discard_curiosity_bonus']
+          assert d['status']=='POSTHOC_ORIGINAL_DEVELOPMENT_ONLY_ZERO_NEW_LIVES'
+          assert d['original_raw_sha256']=='3d9eff0469157cd1c9f41978720ddc61eb8b40da1c86366b3f1ed50f9823d5ec'
+          assert len(d['per_life'])==24
+          for row in (normal,masked):
+              assert row['carrying_steps']==row['funded_meal_option']==row['funded_decision']==row['action_admitted']==row['meal_options_scored']
+          assert normal['carrying_steps']==180 and masked['carrying_steps']==125
+          assert normal['physically_ate']==7 and masked['physically_ate']==0
+          assert normal['meal_best_among_resource_scores_only']==158
+          assert masked['meal_best_among_resource_scores_only']==95
+          assert masked['energy_for_meal_after_paid_decision']==125
+          assert masked['integrity_above_innate_veto_threshold']==125
+          print('P5D_ORIGINAL_ONLY_AGGREGATE',json.dumps(d['aggregate'],sort_keys=True))
+          PY
+      - name: Generation isolation without this one-time workflow
+        shell: bash
+        run: |
+          rm .github/workflows/i3-p5d-eating-transport.yml
+          python scripts/check_engine_repository.py --json
+          python scripts/check_engine_contracts.py --json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: i3-p5d-original-eating-python-${{ matrix.python-version }}
+          path: eating-original-only.json
+          if-no-files-found: error
+          retention-days: 90
