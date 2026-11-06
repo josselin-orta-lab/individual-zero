@@ -24,7 +24,8 @@ class P5bReadoutTests(unittest.TestCase):
         cls.genome = generation_zero(761)
 
     def test_all_modes_preserve_original_paid_world_opportunity(self):
-        modes = ("full", "blind_predictions", "blind_sources", "blind_all")
+        modes = ("full", "blind_predictions", "blind_action_predictions",
+                 "blind_sleep_forecast", "blind_sources", "blind_all")
         lives = [
             run_life(self.genome, self.spec, 1042, 70,
                      effect_readout=mode, observer_decision_diagnostics=True,
@@ -82,6 +83,28 @@ class P5bReadoutTests(unittest.TestCase):
         self.assertEqual(both._read_effect_prediction(("boire",))[0], (0.,)*5)
         for probe in (pred, src, both):
             self.assertEqual(probe.effects.stats, m.effects.stats)
+
+    def test_action_and_sleep_predictions_are_independent_readout_gates(self):
+        from copy import deepcopy
+        from i3.modules.body import E, F, V
+        m = Mind(self.genome, 21)
+        m.effects.observe(("dormir",), (+4., -0.2, -0.4, 0., +5.))
+        m.effects.observe(("boire",), (-0.2, -0.2, +19., 0., -0.1))
+        action = deepcopy(m)
+        action.effect_readout = "blind_action_predictions"
+        sleep = deepcopy(m)
+        sleep.effect_readout = "blind_sleep_forecast"
+        both = deepcopy(m)
+        both.effect_readout = "blind_predictions"
+        self.assertEqual(action.effects.stats, sleep.effects.stats)
+        self.assertEqual(action._read_plan_prediction(("boire",))[0], (0.,)*5)
+        self.assertEqual(sleep._read_plan_prediction(("boire",))[0][2], 19.)
+        self.assertEqual(both._read_plan_prediction(("boire",))[0], (0.,)*5)
+        self.assertIsNotNone(action.drift()[1])
+        self.assertIsNone(sleep.drift()[1])
+        self.assertIsNone(both.drift()[1])
+        self.assertEqual(m.effects.stats, action.effects.stats)
+        self.assertEqual(m.effects.stats, sleep.effects.stats)
 
     def test_diagnostics_do_not_change_default_life(self):
         original = run_life(self.genome, self.spec, 99, 60)
