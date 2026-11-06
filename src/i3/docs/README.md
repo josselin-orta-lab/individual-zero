@@ -99,3 +99,14 @@ genetic populations but have exact n=4 two-sided sign-flip p=0.125,
 Holm-adjusted p=0.375; actual cognitive work and inactivity differ
 strongly. No information-only parity, statistically confirmatory GO
 or acquired individuality claim. [Next research handoff](P5B_HANDOFF.md).
+
+### P5b post-hoc score-term decomposition
+
+[Original-only arithmetic analysis](studies/p5b-paid-readout-heldout/POSTHOC_SCORE_TERMS.md)
+separates the actually paid projected-return and curiosity/risk
+bonus contributions before actions diverge. In the action-agnostic
+mode, 4,587 paid candidate comparisons had a bonus-only difference
+and 273/288 paired lives exhibited at least one such comparison.
+**Post-hoc and descriptive**, not a preregistered causal finding
+or a new scientific study. The underlying P5b original files remain
+unchanged. See [#1035](https://github.com/josselin-orta-lab/individual-zero/issues/1035).
