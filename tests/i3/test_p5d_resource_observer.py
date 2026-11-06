@@ -53,6 +53,16 @@ class P5dResourceObserverTests(unittest.TestCase):
                 if step["dead"]:
                     self.assertFalse(any(step["funding_phases"]["learning"]["work"].values()))
 
+    def test_only_unused_development_worlds_are_allocated(self):
+        from i3.lab import p5d_development
+        plan = p5d_development.manifest()
+        self.assertEqual(plan["cohort"], "DEVELOPMENT_ONLY")
+        self.assertEqual(plan["validation"], "NOT_OPENED")
+        self.assertEqual(plan["reserve"], "LOCKED")
+        self.assertEqual({row["development_index"] for row in plan["allocation"]},
+                         set(range(32, 38)))
+        self.assertEqual(len(plan["allocation"]), 6)
+
     def test_invalid_observer_flags_fail_before_world_construction(self):
         with self.assertRaises(TypeError):
             run_life(self.genome, self.spec, 7, 5,
