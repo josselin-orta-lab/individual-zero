@@ -119,6 +119,13 @@ class ResourceObserver:
             "body_after_paid_learning": list(world.body),
             "world_position_observer_only": list(world.pos),
             "death_causes": list(dead),
+            "phase_payment": {
+                phase: {
+                    "work": dict(phases[phase]["work"]),
+                    "accounting": {
+                        channel: dict(phases[phase]["accounting"][channel])
+                        for channel in ("energy", "vigilance")}
+                } for phase in ("decision", "learning")},
             "paid_decision_work": dict(phases["decision"]["work"]),
             "paid_learning_work": dict(phases["learning"]["work"]),
             "paid_decision_energy":
