@@ -1,0 +1,4 @@
+1931628f54c21dc64ff8c40ac26f1beab1e7299f959f0bf435a1ce6781329a20  src/i3/docs/studies/p5b-paid-readout-heldout/ORIGINAL_SHA256SUMS.txt
+91b8d6163910a9227abb41a690a18c14f14e8d19887630f9087fc70c93758264  src/i3/docs/studies/p5b-paid-readout-heldout/independent-custody.json
+6b9ef8db088f35069f0a9b73ce54b23478af16173275b1a4945e4cc33c854cb6  src/i3/docs/studies/p5b-paid-readout-heldout/readout-full.json.gz
+2c045fb974fec29edf41ae1f0359c9ced7ce191ba8ac5d75905ca9bc5279926b  src/i3/docs/studies/p5b-paid-readout-heldout/readout-summary.json
