@@ -48,7 +48,8 @@ jobs:
       - name: Read-only audit of original bytes and adversarial mutations
         shell: bash
         run: |
-          PYTHONPATH=src python -m i3.lab.p5d_custody original/p5d-original.json > independent-custody.json
+          export PYTHONPATH=src
+          python -m i3.lab.p5d_custody original/p5d-original.json > independent-custody.json
           python - <<'PY'
           import copy, hashlib, json
           from pathlib import Path
@@ -78,7 +79,7 @@ jobs:
               try:audit_payload(bad)
               except (ValueError,KeyError,TypeError):checks.append(name)
           assert len(checks)==7,checks
-          print('P5D_CUSTODY_SOURCE',${{ github.event.pull_request.head.sha }})
+          print('P5D_CUSTODY_SOURCE','${{ github.event.pull_request.head.sha }}')
           print('P5D_ORIGINAL_SHA256',hashlib.sha256(raw).hexdigest())
           print('P5D_CUSTODY_ADVERSARIAL_CHECKS',checks)
           print('P5D_CUSTODY_AGGREGATION',json.dumps(result['aggregation'],sort_keys=True))
