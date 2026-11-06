@@ -249,3 +249,24 @@ life evidence hash. No new study worlds were opened. Original P5d
 resource-only scores do **not** establish why eating was rejected; exact
 parity and generation isolation are mandatory before the next diagnostic.
 I1 active, I3 unregistered; P4 reserve sealed.
+
+## P5e first original full paid competition development study (6 November 2026)
+
+[Fixed development-only protocol](P5E_DEVELOPMENT_PROTOCOL.md) and
+[original source-pinned unfiltered results](P5E_DEVELOPMENT_RESULTS.md)
+are archived under [studies/p5e-full-competition/](studies/p5e-full-competition/).
+[Original CI 42287145315](https://github.com/josselin-orta-lab/individual-zero/actions/runs/42287145315)
+passed 205 I3 tests on both Python 3.11/3.12 and generation boundaries before
+24/24 new **DEVELOPMENT-only** lives at indices 38–43.
+Normal scored curiosity: **7/12 censored**, 25 collections, nine meals;
+with curiosity bonus discarded: **6/12 censored**, **0 collections**, **0 meals**
+and 717 deliberate waits. **There were no food-carrying decisions in the
+masked arm**, so its meal competition is NOT_OBSERVED, not inferred from
+the normal condition. Of 342 paid normal carried-food opportunities,
+333 had another candidate with a strictly higher full-option raw score;
+9 had a top/tied meal score, nine meals won and were eaten, with
+three raw-top meal losses and three lower-raw-score meal wins from the
+original threshold mechanism. This is original developmental evidence,
+**not** a survival GO or causal generalization. Real cognitive work stays
+paid. New genetic populations/ecologies and prospectively sealed fresh
+validation remain open; I1 active, I3 unregistered, P4 reserve locked.
