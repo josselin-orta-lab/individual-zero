@@ -9,8 +9,8 @@ Updated 6 November 2026 for the owner-requested scenario integration
 [#1059](https://github.com/josselin-orta-lab/individual-zero/issues/1059).
 Evidence baseline: `e4eb3e80c9dc48e131e05383d952909bd86213b7` (PR #1058).
 That integration changed documentation and priorities only. The subsequent
-Stage-0 slices add laboratory metadata/arithmetic and read-only funding receipts,
-not cognition or physics; no validation/reserve world or scientific-study life.
+Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
+receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
 ## Current reference and observed limits
 
@@ -91,9 +91,9 @@ sealed. Identifiers are not generated genomes, selected winners or observed
 lives. This is not a preregistration or a completed Stage 0.
 
 Standalone scalar/metadata tests and full-repository integration checks are
-separate; exact CI results belong to the implementation PR. Family R, source
-locks, practical margins, multiplicity, lineage controls and #1026/#1054 remain
-open. No survival, individuality or generalization result is added by this slice.
+separate; exact CI results belong to the implementation PR. Final family-R
+protocol/source locks, practical margins, multiplicity, lineage controls and
+#1026/#1054 remain open. No survival, individuality or generalization result is added.
 
 ## Stage 0: actual funded-life receipt connection
 
@@ -111,3 +111,18 @@ to the implementation PR, not this status text. No Mind/runtime/physics/genome
 change, default observer, new study life or validation/reserve exposure.
 Study-specific case/genotype/intervention binding and prospective registration
 remain required; the fixed design is not automatically executable.
+
+## Stage 0: personally available revision endpoint
+
+[Concrete R-depletion-v1 contract](STAGE0_REVISION.md) explicitly chooses the
+existing depletion ecology as a first F0 revision stratum, not a new family.
+`lab/stage0_revision.py` joins existing resource sidecars to paid life receipts:
+positive uptake at a personally used source, first local absence, separately
+paid processing, then positive uptake elsewhere. The clock never starts from
+hidden stock. No exposure/failure/death and unknown latencies remain explicit;
+reacquisition is neither survival nor proof of internal belief revision.
+
+No new generator, observer hook, allocation or scientific cohort. Sidecar joins
+are consistency checks, not original-chain authentication. Next: bind the
+bounded Stage-1 candidate and these definitions to a prospective gate rather
+than expand the observer framework. Stage 0 and #1026/#1054 remain open.

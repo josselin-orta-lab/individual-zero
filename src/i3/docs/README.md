@@ -31,9 +31,11 @@ The [owner-supplied scenario](GENERALIZATION_SCENARIO_SOURCE_2026-11-06.md) is
 retained byte-for-byte, dated 6 November 2026 and pinned to main `e4eb3e8`.
 Its additional P5e interpretation is post-hoc; proposed benefits remain
 hypotheses. Its references are preserved, not independently reviewed here.
-Use the development plan for operational clarifications, including the undefined
-family R, zero-cost controls and the distinction between a 7/8 directional
-criterion and significance.
+Use the development plan for operational clarifications, including family R,
+zero-cost controls and the distinction between a 7/8 directional criterion and
+significance. [R-depletion-v1](STAGE0_REVISION.md) now explicitly defines a first
+F0 revision stratum and observer endpoint; this choice was not defined in the
+supplied report and is not a new ecological-family generalization result.
 
 [ADR-0014](../../../docs/decisions/ADR-0014-i3-lignee-enjeu-de-soi.md) governs
 persistence-selected generic inheritance;
@@ -90,6 +92,9 @@ including RNG state. No new cognition or default observer is introduced.
 
 The plan prepares identifiers for eight new candidate pools, not evolved
 lineages; no selection/validation world is instantiated. It is not a
-preregistration. Next within #1060: family R and personal-evidence latency,
-source/endpoint/margin/multiplicity locks and study-specific case binding.
+preregistration. [Revision contract and endpoint](STAGE0_REVISION.md) distinguish
+local available absence, paid processing and positive uptake at another source;
+no exposure, failure and death remain explicit. Next: bind this definition and
+the bounded Stage-1 candidate to source/endpoint/margin/multiplicity locks and
+study-specific cases, rather than expand the observer framework.
 Lineage controls and the existing #1026/#1054 questions remain open.
