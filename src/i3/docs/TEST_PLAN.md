@@ -6,7 +6,7 @@
 | Porte G2 | Falsificateur comportemental préinscrit + rejeu + ≤ 1 ms/pas | Préinscrit |
 | P2 | Trois écologies mécanistiquement distinctes, quatre cohortes étanches, réserve scellée, sondes financées en deux phases, contrôle de coût exact et tarif statique calibré en développement | Tests logiciels implémentés ; validation scientifique non établie |
 | P3 | Lignée sans héritage de souvenirs, contrôle random-parent, 72 mondes distincts, 864 vies avec preuves, reconstruction de 48 génomes G2 | Implémenté et exécuté sur sélection uniquement, sans GO scientifique ni validation P4 |
-| P4 | Plan 2 × 2 et ablations d'enjeu, préinscrits à la porte G4 | À faire |
+| P4 | Validation des G2 fixés (P4a), ablation calculée et payée sans rétention des effets/valeurs (P4b), histoires individuelles appariées, 48 nouvelles conditions de monde au total | Deux premières expériences préinscrites et exécutées : P4a 288 vies, P4b 576 vies ; coût cognitif réalisé non égal entre conditions, GO scientifique non établi |
 
 ## Foundation controls
 
