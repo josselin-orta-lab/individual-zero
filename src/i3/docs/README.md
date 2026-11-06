@@ -119,6 +119,25 @@ and `discard_both_bonus_terms`. Original first-person action predictions
 and their genuine cognitive work still execute and are paid. Six
 **development** worlds, two G0 engineering genomes and 48 short lives
 show 11/12 censored normally, 7/12 without curiosity, 12/12 without
-risk penalty and 7/12 without either. These are **not** held-out
-scientific comparisons, and no P5c validation world has been opened.
+risk penalty and 7/12 without either. These are **not** held-out scientific comparisons. At this earlier
+engineering checkpoint, no P5c validation world had yet been opened;
+the later prospective study is reported below.
 Next [#1046](https://github.com/josselin-orta-lab/individual-zero/issues/1046).
+
+## P5c prospective paid curiosity/risk study (first original cohort)
+
+[Exact pre-registered source and protocol](P5C_HELDOUT_PREREG.md);
+[complete unchanged original 1152 life receipts and results](studies/p5c-paid-score-addends/RESULTS.md).
+All 48 frozen G2 genotypes, four original genetic populations,
+24 new world indices 96–119, four paid addend conditions.
+Censored alive at step 400: normal **110/288**, discard curiosity
+**4/288**, discard uncertain-meal risk penalty **105/288**,
+discard both **7/288**. Curiosity retention survival differences
+by independent genetic population **[+21,+41,+22,+22]**,
+exact n=4 two-sided sign-flip **p=0.125**, exploratory Holm
+**p=0.375**. Actual costs differ after different choices and
+lifetimes. Importantly, curiosity-discarded lives were **much
+less physically inactive** than normal despite catastrophic
+mortality, a different mechanism from the P5b action-prediction
+blinding collapse. [Scientific handoff](P5C_HANDOFF.md).
+No general scientific GO; I1 active, I3 unregistered, reserve sealed.
