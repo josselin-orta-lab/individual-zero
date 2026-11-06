@@ -81,7 +81,12 @@ def run():
                     (step["action"], step["param"], step["info"]["funding"],
                      tuple(step["body"]),
                      tuple(step["funding_phases"]["decision"]["accounting"][c]["paid"]
-                           for c in ("energy", "vigilance")))
+                           for c in ("energy", "vigilance")),
+                     tuple(step["info"]["observer"]["pre_body"]),
+                     tuple((w["option"], w["base_return"],
+                            w["curiosity_risk_bonus"], w["total_score"],
+                            w["first_forecast"]["delta"] if w["first_forecast"] else None)
+                           for w in step["info"]["observer"]["score_witness"]))
                     for step in life["trace"])
                 histories[(index, gene_seed, mode)] = history
                 if (sum(observer[k] for k in
@@ -134,6 +139,22 @@ def run():
                             if i < len(treated) else None)
                     ), None)
 
+                def first_score_difference():
+                    # Compare only genuinely paid scores for the SAME
+                    # proposed option at identical pre-decision body.
+                    # Missing options and changed body are not scored as
+                    # evidence that predicted information changed value.
+                    for i in range(min(len(control), len(treated))):
+                        a, b = control[i], treated[i]
+                        if a[5] != b[5]:
+                            continue
+                        ca = {entry[0]: entry for entry in a[6]}
+                        cb = {entry[0]: entry for entry in b[6]}
+                        for oid in ca.keys() & cb.keys():
+                            if abs(ca[oid][3] - cb[oid][3]) > 1e-9:
+                                return i + 1
+                    return None
+
                 # Chronology is descriptive. It cannot prove that a
                 # difference in realized cost *caused* the prior choice.
                 cases.append({
@@ -142,6 +163,9 @@ def run():
                     "first_decision_funding_divergence_step": first_difference((2,)),
                     "first_post_step_body_divergence_step": first_difference((3,)),
                     "first_paid_decision_work_divergence_step": first_difference((4,)),
+                    "first_scored_option_difference_step": first_difference((6,)),
+                    "first_shared_option_score_difference_with_same_body_step":
+                        first_score_difference(),
                 })
         divergence[mode] = cases
     results = {}
