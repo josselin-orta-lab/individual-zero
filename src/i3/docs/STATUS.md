@@ -175,3 +175,17 @@ despite substantially worse survival. Realized work differs.
 [Research handoff](P5C_HANDOFF.md): distinguish active mortality
 pathways and need-weighted curiosity from generic uncertainty.
 No I3 activation, no general scientific GO; original P4 reserve locked.
+
+## P5c original-only active-mortality diagnosis (post-hoc)
+
+[Original-only death causes and first-12-step action
+breakdown](studies/p5c-paid-score-addends/POSTHOC_ACTIVE_MORTALITY.md)
+show 239 zero-water deaths and 132 early resource commands
+without scored curiosity, compared to 146 zero-water
+deaths and 392 early resource commands normally,
+across the original 288 lives/mode. It is **post-hoc,
+descriptive and repeated within old original worlds**;
+no new lives, no new genetic/ecological independent
+replications, and no proof of complete lifelong
+resource-acquisition causality. [CI 42235312727](https://github.com/josselin-orta-lab/individual-zero/actions/runs/42235312727)
+passed 185 I3 tests on Python 3.11/3.12.
