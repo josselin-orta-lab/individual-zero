@@ -110,3 +110,15 @@ and 273/288 paired lives exhibited at least one such comparison.
 **Post-hoc and descriptive**, not a preregistered causal finding
 or a new scientific study. The underlying P5b original files remain
 unchanged. See [#1035](https://github.com/josselin-orta-lab/individual-zero/issues/1035).
+
+## P5c paid curiosity/risk addend controls, development only
+
+[P5c technical contract and first engineering findings](P5C_PAID_SCORE_ADDENDS.md)
+separates `normal`, `discard_curiosity_bonus`, `discard_risk_penalty`
+and `discard_both_bonus_terms`. Original first-person action predictions
+and their genuine cognitive work still execute and are paid. Six
+**development** worlds, two G0 engineering genomes and 48 short lives
+show 11/12 censored normally, 7/12 without curiosity, 12/12 without
+risk penalty and 7/12 without either. These are **not** held-out
+scientific comparisons, and no P5c validation world has been opened.
+Next [#1046](https://github.com/josselin-orta-lab/individual-zero/issues/1046).
