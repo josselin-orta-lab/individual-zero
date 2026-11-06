@@ -20,8 +20,14 @@ from i3.modules.world import World, WorldSpec
 
 def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
              *, keep_trace: bool = False,
-             protocol: str = "UNREGISTERED_ENGINEERING") -> dict:
+             protocol: str = "UNREGISTERED_ENGINEERING",
+             learning_mode: str = "normal",
+             observer_mind_digest: bool = False) -> dict:
     started = time.perf_counter()
+    if learning_mode not in ("normal", "shadow_discard"):
+        raise ValueError("unknown P4b learning intervention")
+    if type(observer_mind_digest) is not bool:
+        raise TypeError("observer_mind_digest must be bool")
     if type(horizon) is not int or horizon < 1:
         raise ValueError("positive integer horizon required")
     manifest = build_manifest(genome, spec, life_seed, horizon, protocol)
@@ -57,7 +63,17 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
         if replay_limit is not None:
             post_audit = world.pay_cognition(learning.work)
             result["body"] = world.body
-            replays = mind.learn_from_outcome(result, replay_limit=replay_limit)
+            # P4b: run exactly the prepaid outcome-model computation on
+            # a detached mind, then discard its new learned state. The actual
+            # mind still keeps ordinary perception, spatial beliefs and the
+            # paid sensorimotor orientation update. No fictitious cognition
+            # is billed: the shadow computation really executes.
+            if learning_mode == "normal":
+                target = mind
+            else:
+                from copy import deepcopy
+                target = deepcopy(mind)
+            replays = target.learn_from_outcome(result, replay_limit=replay_limit)
             if replays != replay_limit:
                 raise RuntimeError("executed replay count differs from prepaid count")
             learning_updates += 1
@@ -126,6 +142,26 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
         "mean_step_ms": round(1000.0 * elapsed / max(1, steps), 4),
         "trace_head": head,
     }
+    if learning_mode != "normal" or observer_mind_digest:
+        out["learning_intervention"] = learning_mode
+        out["retained_outcome_learning_updates"] = (
+            learning_updates if learning_mode == "normal" else 0)
+        out["shadow_discarded_outcome_updates"] = (
+            learning_updates if learning_mode == "shadow_discard" else 0)
+    if observer_mind_digest:
+        # Observer-only postmortem/life-end signature. Never enters Mind.decide.
+        # Tokens and locations are internal, relative to this individual's
+        # first-person history; no external world schedule is exposed.
+        effects = [[list(k), v] for k, v in
+                   sorted(mind.effects.stats.items(), key=lambda item: repr(item[0]))]
+        spatial = [[list(pos), hist] for pos, hist in sorted(mind.hist.items())]
+        out["outcome_model_sha256"] = digest({
+            "values": mind.values, "effects": effects,
+            "buffer": list(mind.buffer)})
+        out["spatial_beliefs_sha256"] = digest({
+            "hist": spatial,
+            "map": [[list(pos), cell] for pos, cell in sorted(mind.map.items())]})
+        out["observer_internal_position"] = list(mind.pos)
     out["evidence_head"] = digest({"previous": evidence_head,
                                    "terminal": out["terminal"],
                                    "accounting": out["cognitive_accounting"]})
