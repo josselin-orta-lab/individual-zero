@@ -106,6 +106,56 @@ class P5bReadoutTests(unittest.TestCase):
         self.assertEqual(m.effects.stats, action.effects.stats)
         self.assertEqual(m.effects.stats, sleep.effects.stats)
 
+    def test_action_agnostic_prior_is_personal_and_not_action_specific(self):
+        from copy import deepcopy
+        m = Mind(self.genome, 21, effect_readout="action_agnostic_prior")
+        # No observation: uncertainty is maximal, not invented evidence.
+        unknown = m._read_plan_prediction(("boire",))
+        self.assertEqual(tuple(unknown[0]), (0.0,) * 5)
+        self.assertEqual(unknown[1], 1.0)
+        # Only a personally observed, action-agnostic aggregate is readable.
+        m.effects.observe(("boire",), (0., -0.2, +19., 0., -0.1))
+        m.effects.observe(("dormir",), (+4., -0.3, -1., 0., +5.))
+        water = m._read_plan_prediction(("boire",))
+        sleep = m._read_plan_prediction(("dormir",))
+        never = m._read_plan_prediction(("unknown-token", "unknown"))
+        expected = m.effects.predict(("*",))
+        self.assertEqual(water, sleep)
+        self.assertEqual(water, never)
+        self.assertEqual(water, expected)
+        self.assertEqual(m._read_source_sign(("boire",), W), True)
+        self.assertNotEqual(water, m.effects.predict(("boire",)))
+        # The gate cannot mutate the source learned model or body state.
+        before = deepcopy(m.effects.stats)
+        for _ in range(3):
+            m._read_plan_prediction(("collecter", "anything"))
+        self.assertEqual(before, m.effects.stats)
+
+    def test_action_agnostic_prior_paid_development_life_and_observer(self):
+        control = run_life(self.genome, self.spec, 1042, 70,
+                           observer_decision_diagnostics=True, keep_trace=True)
+        prior = run_life(self.genome, self.spec, 1042, 70,
+                         effect_readout="action_agnostic_prior",
+                         observer_decision_diagnostics=True, keep_trace=True)
+        self.assertEqual(prior["effect_readout"], "action_agnostic_prior")
+        self.assertEqual(control["manifest"]["world_sha256"],
+                         prior["manifest"]["world_sha256"])
+        self.assertEqual(prior["cognitive_accounting"]["shortfall_steps"], 0)
+        self.assertEqual(prior["cognitive_accounting"]["pending_replays"], 0)
+        self.assertEqual(
+            sum(prior["observer_decision_diagnostics"][k] for k in
+                ("no_processing_budget", "no_funded_score",
+                 "control_rejected", "action_admitted")),
+            prior["steps_lived"])
+        for step in prior["trace"]:
+            for phase in ("decision", "learning"):
+                for channel in ("energy", "vigilance"):
+                    bill = step["funding_phases"][phase]["accounting"][channel]
+                    self.assertEqual(bill["unpaid"], 0)
+                    self.assertAlmostEqual(bill["paid"], bill["requested"])
+            if step["dead"]:
+                self.assertFalse(any(step["funding_phases"]["learning"]["work"].values()))
+
     def test_diagnostics_do_not_change_default_life(self):
         original = run_life(self.genome, self.spec, 99, 60)
         only_diagnostics = run_life(self.genome, self.spec, 99, 60,
