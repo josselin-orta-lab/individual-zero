@@ -132,3 +132,25 @@ Four original development-fixture trajectory hashes are retained as historical
 differentials, not current v2 parity requirements or scientific outcome targets.
 No reserved G2/G2b/G2c seeds are used. The PR records exact source SHA and CI
 results; local checks alone do not certify a different commit.
+
+## P5b experimental mechanism handoff (6 November 2026)
+
+After P5a, [P5b was separately preregistered](P5B_HELDOUT_PREREG.md)
+and completed in [1152 first-pass heldout lives](studies/p5b-paid-readout-heldout/RESULTS.md).
+In the same original four G2 genetic populations, the
+full action-specific effect readout survived 98/288,
+but both zero action prediction and personal action-agnostic
+prediction had 0/288 survive. Masking learned sleep forecast
+survived 90/288. All individuals still executed and paid their
+own learning; actual physical activity and cognition diverged.
+No significance or generalization GO with n=4.
+
+Next prioritize **action-specific base return versus
+uncertainty/curiosity/risk contribution**, not an unbounded
+architecture rewrite. The personally learned global prior
+produced 285/288 early shared-option differences in total
+score but only 79/288 in base projected return at matched
+pre-decision body. Audit and prospectively intervene on one
+term at a time before using new validation worlds >=96.
+[Agent handoff](P5B_HANDOFF.md) preserves constraints and
+outstanding individuality-by-history questions.
