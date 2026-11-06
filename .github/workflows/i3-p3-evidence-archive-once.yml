@@ -1,0 +1,53 @@
+name: I3 P3 archive original evidence into review branch (one-shot)
+on:
+  push:
+    branches: [automation/i3-p3-evidence-archive-20261106]
+    paths: [.github/workflows/i3-p3-evidence-archive-once.yml]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  archive-original:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout document baseline with push credential
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Verify prospective registration predates evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor 86bc43e8d4f1f17e1df09da9313dfa716be4172c HEAD
+      - name: Download previously verified original and reconstructed evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: i3-p3-original-and-frozen-g2
+          run-id: 42182975466
+          github-token: ${{ github.token }}
+          path: downloaded
+      - name: Verify original hashes and freeze a compact repository record
+        shell: bash
+        run: |
+          set -euo pipefail
+          mv downloaded out
+          sha256sum -c out/SHA256SUMS.txt
+          sha256sum -c out/CUSTODY_SHA256SUMS.txt
+          test "$(sha256sum out/i3-p3-selection-full.json | cut -d ' ' -f1)" = "e45df7a494b01b02846128f5c93b30987a383edd65bd5884d6690740da11103e"
+          test "$(sha256sum out/i3-p3-g2-frozen-genomes.json | cut -d ' ' -f1)" = "6cfb0ac7c0dd603f67c2a08863e6e8ef2183b51db19bb2ede05ba4e371610419"
+          mkdir -p src/i3/docs/studies/p3-mutation-pilot
+          gzip -n -9 -c out/i3-p3-selection-full.json > src/i3/docs/studies/p3-mutation-pilot/selection-full.json.gz
+          cp out/i3-p3-g2-frozen-genomes.json src/i3/docs/studies/p3-mutation-pilot/G2_GENOMES.json
+          cp out/i3-p3-selection-summary.json src/i3/docs/studies/p3-mutation-pilot/selection-summary.json
+          cp out/i3-p3-custody-summary.json src/i3/docs/studies/p3-mutation-pilot/custody-summary.json
+          cp out/SHA256SUMS.txt src/i3/docs/studies/p3-mutation-pilot/ORIGINAL_SHA256SUMS.txt
+          cp out/CUSTODY_SHA256SUMS.txt src/i3/docs/studies/p3-mutation-pilot/CUSTODY_SHA256SUMS.txt
+          git checkout -b i3/p3-selection-evidence-20261106
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/i3/docs/studies/p3-mutation-pilot
+          git commit -m "research(i3 P3): archive preregistered original lives and frozen G2 genomes"
+          git push origin HEAD:refs/heads/i3/p3-selection-evidence-20261106
