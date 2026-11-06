@@ -1,0 +1,55 @@
+name: I3 P5b preregistered paid readout heldout (one-shot)
+on:
+  push:
+    branches: [automation/i3-p5b-readout-once-20261106]
+    paths: [.github/workflows/i3-p5b-readout-once.yml]
+permissions:
+  contents: read
+jobs:
+  heldout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      I3_P5B_SOURCE_SHA: 11bd249d269116a720e503bc56e9b1244e91aea9
+      I3_P5B_SCHEDULE_SHA: 663e258b3c35e5b8d2f60d437e7ecc3079484dfe07f956d9d50bf775f69a66d1
+      I3_P5B_APPROVED_PROTOCOL: i3-p5b-paid-readout-heldout-v1
+    steps:
+      - name: Checkout exact previously tested scientific executable
+        uses: actions/checkout@v4
+        with:
+          ref: 11bd249d269116a720e503bc56e9b1244e91aea9
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Assert preregistration merged BEFORE scientific world exposure
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git merge-base --is-ancestor d6bf2ec06b96b0b923436bd5c713c00ce47af16f origin/main
+          test "$(git rev-parse HEAD)" = "$I3_P5B_SOURCE_SHA"
+      - name: Run all I3 gates without study authorization and inspect unopened allocation
+        shell: bash
+        run: |
+          set -euo pipefail
+          env -u I3_P5B_SOURCE_SHA -u I3_P5B_SCHEDULE_SHA -u I3_P5B_APPROVED_PROTOCOL python -m unittest discover -s tests/i3 -p 'test_*.py' -q
+          python scripts/check_engine_repository.py --json
+          PYTHONPATH=src python -m i3.lab.p5b_heldout --preflight
+      - name: Run one exact paid P5b study and checksum original original bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          PYTHONPATH=src python -m i3.lab.p5b_heldout --run out/i3-p5b-full.json | tee out/i3-p5b-summary.json
+          sha256sum out/i3-p5b-full.json out/i3-p5b-summary.json | tee out/SHA256SUMS.txt
+      - name: Archive original data even if study fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-p5b-first-original-paid-readouts
+          path: out/
+          if-no-files-found: warn
+          retention-days: 90
