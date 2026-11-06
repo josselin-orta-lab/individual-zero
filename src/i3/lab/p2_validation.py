@@ -112,11 +112,96 @@ def assess_pair(genome: dict, spec, life_seed: int, horizon: int,
     }
 
 
+def calibrate_fixed_tariff() -> dict:
+    """Freeze a common v2 profile using DEVELOPMENT worlds only.
+
+    Engineering calibration, never selection fitness or validation tuning.
+    One static tariff for all future probe worlds avoids feeding private
+    individual action-dependent costs into a reference searcher.
+    """
+    from hashlib import sha256
+    from i3.modules.genome import generation_zero
+    total = {"decision": {k: 0 for k in ("cycles", "simulated_steps", "memory_items", "replays")},
+             "learning": {k: 0 for k in ("cycles", "simulated_steps", "memory_items", "replays")}}
+    n = 0
+    sources = []
+    for family in p2_ecologies.FAMILIES:
+        for index in (0, 1):
+            spec = p2_ecologies.world_for(family, "development", index)
+            life = run_life(generation_zero(6000), spec, 10_000 + index, 120,
+                            keep_trace=True, protocol=PROTOCOL + "-calibration")
+            sources.append({"family": family, "index": index,
+                            "world_sha256": life["manifest"]["world_sha256"],
+                            "manifest_id": life["manifest_id"]})
+            for d, l in work_witness(life):
+                for k in total["decision"]:
+                    total["decision"][k] += getattr(d, k)
+                    total["learning"][k] += getattr(l, k)
+                n += 1
+    if n == 0:
+        raise RuntimeError("no development work available for calibration")
+    tariff = {phase: {k: (v + n // 2) // n for k, v in counts.items()}
+              for phase, counts in total.items()}
+    profile = {
+        "schema": "i3-p2-static-tariff-v1",
+        "cohort": "development",
+        "calibration": sources,
+        "sampled_ticks": n,
+        "tariff": tariff,
+        "purpose": "static_common_probe_bill_not_per_instruction_equivalence",
+    }
+    profile["sha256"] = sha256(
+        json.dumps(profile, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    return profile
+
+
+def run_fixed_tariff_probe(spec, horizon: int, profile: dict, *,
+                           probe: str = "reference") -> dict:
+    """Use a previously frozen profile without looking at any individual's life."""
+    from hashlib import sha256
+    if probe not in PROBE_NAMES or type(horizon) is not int or horizon < 1:
+        raise ValueError("unknown probe or horizon")
+    if type(profile) is not dict or profile.get("schema") != "i3-p2-static-tariff-v1" or (
+            profile.get("cohort") != "development"):
+        raise ValueError("development-only calibrated profile required")
+    content = {k: v for k, v in profile.items() if k != "sha256"}
+    digest = sha256(json.dumps(content, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    if digest != profile.get("sha256"):
+        raise ValueError("static work tariff has been modified since freezing")
+    decision = CognitiveWork(**profile["tariff"]["decision"])
+    learning = CognitiveWork(**profile["tariff"]["learning"])
+    audit = []
+    steps = PROBE_NAMES[probe](spec, horizon, work_schedule=((decision, learning),) * horizon,
+                              audit=audit)
+    exact = sum(row["status"] == "MATCHED" and
+                row["paid_decision"] == decision and row["paid_learning"] == learning
+                for row in audit)
+    totals = {"energy": 0.0, "vigilance": 0.0}
+    for row in audit:
+        for block in (row["paid_decision"], row["paid_learning"]):
+            for k, v in _charges(spec.laws, block).items():
+                totals[k] += v
+    return {
+        "schema": "i3-p2-probe-with-static-tariff-v1",
+        "profile_sha256": profile["sha256"],
+        "probe": probe,
+        "information": "hidden_full_world" if probe == "oracle" else "capture_only",
+        "world_sha256": p2_ecologies.fingerprint(spec),
+        "steps": steps, "horizon": horizon, "matched_ticks": exact,
+        "unmatched_ticks": len(audit) - exact,
+        "fully_funded": exact == len(audit) == horizon,
+        "paid": totals,
+        "terminal": "censored" if steps == horizon else "dead_or_unfunded",
+        "scope": "frozen_mean_work_tariff_not_exact_individual_work",
+    }
+
+
 def development_diagnostic() -> dict:
     """Small engineering-only smoke check; never opens selection or reserve."""
     from i3.modules.genome import generation_zero
     result = {"protocol": PROTOCOL, "cohorts": ["development"],
-              "world_protocol": p2_ecologies.partition_manifest(), "cases": []}
+              "world_protocol": p2_ecologies.partition_manifest(), "cases": [],
+              "frozen_tariff": calibrate_fixed_tariff()}
     for family in p2_ecologies.FAMILIES:
         for index in (0, 1):
             spec = p2_ecologies.world_for(family, "development", index)
@@ -128,6 +213,8 @@ def development_diagnostic() -> dict:
                                       120, probe=name)
                 case["probes"].append({k: v for k, v in audited.items()
                                        if k != "probe_audit"})
+            case["static_tariff_reference"] = run_fixed_tariff_probe(
+                spec, 120, result["frozen_tariff"])
             result["cases"].append(case)
     return result
 
