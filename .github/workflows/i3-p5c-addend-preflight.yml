@@ -17,7 +17,7 @@ jobs:
       - name: Checkout candidate source SHA
         uses: actions/checkout@v4
         with:
-          ref: 1b2c504481135609086513d6e5b80befb5738678
+          ref: 14927a1615431b0a402f6b64efa9e64a733ebafb
           persist-credentials: false
       - name: Python
         uses: actions/setup-python@v5
