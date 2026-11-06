@@ -78,8 +78,8 @@ Normal inactivation 109/1370 steps; action-prediction blind 841/1370,
 learned-sleep blind 96/1370, source-positivity blind 200/1370.
 All conditions had 8/12 reach the horizon. The observer shows
 processing-budget loss dominates action-blind inactivity, while
-resource and movement options are still offered. **P5b validation
-NOT_RUN**; no scientific GO and no P4 reserve exposure.
+resource and movement options are still offered. This paragraph records
+**development-only** diagnostics; the later registered study is below.
 
 ## P5b empirical action-agnostic prior (development-only)
 
@@ -104,4 +104,28 @@ predictions are blinded or replaced with a personal global mean.
 Observed first action difference is step 4 across pairs.
 [CI 42215560744](https://github.com/josselin-orta-lab/individual-zero/actions/runs/42215560744)
 passed 152 tests on Python 3.11/3.12; original P4/P5a full evidence
-unchanged. P5b scientific validation NOT_RUN; reserve locked.
+unchanged. The separate later scientific P5b study is described below;
+reserve remains locked.
+
+## P5b registered first-pass readout study (6 November 2026)
+
+[Exact prospective protocol](P5B_HELDOUT_PREREG.md) merged before
+[original run 42220546984](https://github.com/josselin-orta-lab/individual-zero/actions/runs/42220546984);
+[full original scientific evidence and report](studies/p5b-paid-readout-heldout/RESULTS.md)
+independently custodied by
+[run 42221386799](https://github.com/josselin-orta-lab/individual-zero/actions/runs/42221386799),
+with no additional lives. **1152 lives**, 24 new validation worlds
+(indices 72–95), all 48 frozen G2 genotypes. Censored at step 400:
+full **98/288**, action-prediction-blind **0/288**,
+action-agnostic personal prior **0/288**, sleep-forecast-blind **90/288**.
+Four independent genetic populations show normal-minus-action-readout
+effects +19,+31,+23,+25 survivors/72, but exact two-sided n=4
+p=0.125 and three-comparison Holm p=0.375. Physical inactivity
+increases from 19.56% (full) to 75.65% and 75.64% in the two
+action-specific controls; realized work and costs are not matched.
+For early paid candidate scores, 288/288 action-blind and 285/288
+agnostic pairs differ before the first physical-action difference,
+but only 79/288 agnostic pairs differ in projected *base return*.
+[Handoff](P5B_HANDOFF.md) separates scored uncertainty/risk from
+prediction information. No general scientific GO; I1 active,
+I3 unregistered, original P4 reserve sealed.
