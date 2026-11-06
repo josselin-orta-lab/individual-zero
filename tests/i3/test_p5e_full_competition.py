@@ -56,7 +56,11 @@ class P5eFullCompetitionTests(unittest.TestCase):
                     self.assertEqual(row["physical_action"], original["action"])
                     self.assertEqual(row["chosen_option"], original["option"])
                     comp = row["competition"]
-                    self.assertIsNotNone(comp)
+                    if comp is None:
+                        self.assertEqual(row["scored_options"], 0)
+                        self.assertIn(row["decision_outcome"],
+                                      ("no_processing_budget", "no_funded_score"))
+                        continue
                     paid = {w["option"]: w["total_score"] for w in row["paid_option_scores"]}
                     self.assertEqual(set(paid), set(comp["scored_order"]))
                     self.assertEqual(set(paid), set(comp["normalized_evidence"]))
@@ -72,11 +76,17 @@ class P5eFullCompetitionTests(unittest.TestCase):
                     self.assertLessEqual(
                         comp["paid_competition_cycles"],
                         row["paid_decision_work"]["cycles"])
-                    self.assertEqual(row["inventory_before_decision"],
-                                     [list(item) for item in
-                                      original["info"].get("capture_inventory", [])]
-                                     if "capture_inventory" in original["info"] else
-                                     row["inventory_before_decision"])
+
+            self.assertEqual(
+                combined["observer_full_competition"]["steps"],
+                observed["observer_full_competition"]["steps"])
+            for comp_row, resource_row in zip(
+                    combined["observer_full_competition"]["steps"],
+                    combined["observer_resource_acquisition"]["steps"]):
+                self.assertEqual(comp_row["inventory_before_decision"],
+                                 resource_row["capture_inventory"])
+                self.assertEqual(comp_row["body_before_decision"],
+                                 resource_row["body_before_decision"])
             self.assertNotIn("observer_full_competition", control)
             self.assertNotIn("observer_resource_acquisition", control)
             self.assertNotIn("observer_resource_acquisition", observed)
