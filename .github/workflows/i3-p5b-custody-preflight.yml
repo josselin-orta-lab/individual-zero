@@ -1,0 +1,46 @@
+name: I3 P5b post-run custody preflight synthetic only
+on:
+  push:
+    branches: [automation/i3-p5b-custody-preflight-20261106]
+    paths: [.github/workflows/i3-p5b-custody-preflight.yml]
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - name: Checkout exact read-only P5b verifier
+        uses: actions/checkout@v4
+        with:
+          ref: 1e3455c0813400ec3d5296eb5d77a01e95f7b500
+          persist-credentials: false
+      - name: Configure Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: All I3 tests including synthetic forged P5b custody
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests/i3 -p 'test_*.py' -q
+          python scripts/check_engine_repository.py --json
+      - name: Source and original evidence unmodified
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=src python -m i3.lab.p5b_heldout --preflight
+          python - <<'PY'
+          import gzip,hashlib
+          from pathlib import Path
+          root=Path("src/i3/docs/studies")
+          for path,expected in (
+            ("p4a-g2-heldout/validation-full.json.gz","44adb1192d1aea87cf5d96a547f794de6f7fe33a566a5de90747a34429e8e8d6"),
+            ("p4b-paid-outcome-learning/learning-full.json.gz","688463e4fbb71cb88d57d0cafbe70eb033adeafe8ae8551d42bec58dfa9e395c"),
+            ("p5a-paid-component-screen/mechanisms-full.json.gz","21719dcc89f83f3984ccc32b3d203d2152ff8c7dd8c2c8a76318ce84d60113d8")):
+              assert hashlib.sha256(gzip.decompress((root/path).read_bytes())).hexdigest()==expected
+          PY
