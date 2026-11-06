@@ -154,3 +154,15 @@ pre-decision body. Audit and prospectively intervene on one
 term at a time before using new validation worlds >=96.
 [Agent handoff](P5B_HANDOFF.md) preserves constraints and
 outstanding individuality-by-history questions.
+
+## P5c hypothesis-generating next intervention
+
+[Development-only score-addend contracts](P5C_PAID_SCORE_ADDENDS.md)
+now isolate computed curiosity and uncertain-meal risk penalties *after*
+the existing paid candidate evaluation, without touching the learned
+model, action control, world generator or original P5b data. The first
+48 short development lives had both positive and adverse survival
+outcomes; do not tune from them or label them independent evolutionary
+replication. Next consider a prospectively registered experiment only
+after exact software and cost-boundary verification and genuinely fresh
+world allocation (validation indices >=96). [Issue #1046](https://github.com/josselin-orta-lab/individual-zero/issues/1046).
