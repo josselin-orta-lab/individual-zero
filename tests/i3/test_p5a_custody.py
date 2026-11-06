@@ -93,9 +93,17 @@ class P5aCustodyTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             p5a_custody.verify_original(bad)
 
-    def test_rejects_fake_duplicate_evidence(self):
+    def test_identical_behavior_hashes_across_modes_are_valid(self):
+        paired=deepcopy(self.fixture)
+        paired["lives"][0]["evidence_head"]=paired["lives"][1]["evidence_head"]
+        paired["lives"][0]["trace_head"]=paired["lives"][1]["trace_head"]
+        seal(paired)
+        self.assertEqual(p5a_custody.verify_original(paired)["total_lives"],1152)
+
+    def test_duplicate_experimental_identity_rejected_even_with_new_hash(self):
         bad=deepcopy(self.fixture)
-        bad["lives"][0]["evidence_head"]=bad["lives"][1]["evidence_head"]
+        bad["lives"][0]["mode"]=bad["lives"][1]["mode"]
+        bad["lives"][0]["evidence_head"]="changed-but-present"
         seal(bad)
         with self.assertRaises(ValueError):
             p5a_custody.verify_original(bad)
