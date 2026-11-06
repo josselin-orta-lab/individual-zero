@@ -1,0 +1,31 @@
+name: I3 P2 comparator exit contract verification (one-shot)
+on:
+  push:
+    branches: [automation/i3-p2-exit-verify-20261106]
+    paths: [.github/workflows/i3-p2-exit-once.yml]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - name: Checkout exact P2 exit candidate
+        uses: actions/checkout@v4
+        with:
+          ref: a23876ea3acccb0c2ffae36a4ab9fb2177e53b0f
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run I3 tests
+        run: python -m unittest discover -s tests/i3 -p 'test_*.py' -v
+      - name: Guard cross-generation boundaries
+        run: python scripts/check_engine_repository.py --json
+      - name: Produce schedule digest without opening worlds
+        run: PYTHONPATH=src python -c "from i3.lab.p3_schedule import schedule_manifest; x=schedule_manifest(); print(x['sha256'],len(x['selection_keys']),len(x['validation_keys_unopened']))"
