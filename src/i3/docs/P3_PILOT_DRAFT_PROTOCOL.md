@@ -24,7 +24,7 @@ P1.3-v2 is the only candidate cognitive architecture. Frozen physical law:
 - Two comparison arms for each population: **persistence-selected parents**
   and **uniformly random parents**. Same initial G0 genotypes, genome mutation
   operator, number of births, environments, observation horizons, and
-  total cognitive accounting; only the parent-selection rule changes.
+  nominal cognitive tariffs and accounting methods; **realized cognition may\n  differ by genome and by lived experience** and must be reported as an\n  outcome, never forcibly equalized. Only the parent-selection rule changes.
 - At each generation and in each arm, each genotype receives **two new lives
   in each of the three ecological families** (`stable`, `depletion`, `pulse`),
   six 400-step lives per genotype. A genotype's fitness is the number of
