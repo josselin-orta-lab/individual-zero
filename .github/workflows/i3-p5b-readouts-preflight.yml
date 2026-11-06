@@ -17,7 +17,7 @@ jobs:
       - name: Checkout exact P5b engineering candidate
         uses: actions/checkout@v4
         with:
-          ref: 8b22a45cc5a1b4d4573084f802c5c3bc071b5ae5
+          ref: 6737813df0950c974f7ba2db1abfc49efe1030c1
           persist-credentials: false
       - name: Configure Python
         uses: actions/setup-python@v5
@@ -38,8 +38,9 @@ jobs:
           import json,os
           p=json.load(open(os.environ["RUNNER_TEMP"]+"/p5b-development.json"))
           assert p["status"]=="ENGINEERING_DEVELOPMENT_ONLY_NOT_SCIENTIFIC_EVIDENCE"
-          assert len(p["lives"])==48 and set(p["comparison"])=={
-            "full","blind_predictions","blind_sources","blind_all"}
+          assert len(p["lives"])==72 and set(p["comparison"])=={
+            "full","blind_predictions","blind_action_predictions",
+            "blind_sleep_forecast","blind_sources","blind_all"}
           assert p["validation"]=="NOT_OPENED" and p["reserve"]=="LOCKED"
           for mode,values in p["comparison"].items():
               print("DEV",mode,"lives",values["lives"],"censored",values["censored"],
