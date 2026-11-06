@@ -1,0 +1,114 @@
+{
+  "original_sha256": "8fc34d37b7348e3f171a48879d7dd03b898547c4aaa5204c0727cc8006b0168b",
+  "populations": [
+    {
+      "modes": {
+        "normal": {
+          "deaths": 55,
+          "inactive_steps": 3394,
+          "paid_energy": 7713.644,
+          "paid_vigilance": 9574.526,
+          "retained_outcome_updates": 11809,
+          "shadow_discarded_updates": 0,
+          "survivors": 17
+        },
+        "shadow_discard": {
+          "deaths": 72,
+          "inactive_steps": 7612,
+          "paid_energy": 1650.5176,
+          "paid_vigilance": 2567.386,
+          "retained_outcome_updates": 0,
+          "shadow_discarded_updates": 4630,
+          "survivors": 0
+        }
+      },
+      "normal_minus_shadow_censored": 17,
+      "pairs_with_distinct_retained_outcome_models": 36,
+      "population": 0,
+      "same_genome_different_history_pairs": 36
+    },
+    {
+      "modes": {
+        "normal": {
+          "deaths": 37,
+          "inactive_steps": 1524,
+          "paid_energy": 14240.2934,
+          "paid_vigilance": 17050.554,
+          "retained_outcome_updates": 19083,
+          "shadow_discarded_updates": 0,
+          "survivors": 35
+        },
+        "shadow_discard": {
+          "deaths": 72,
+          "inactive_steps": 8642,
+          "paid_energy": 1537.8408,
+          "paid_vigilance": 2369.744,
+          "retained_outcome_updates": 0,
+          "shadow_discarded_updates": 4341,
+          "survivors": 0
+        }
+      },
+      "normal_minus_shadow_censored": 35,
+      "pairs_with_distinct_retained_outcome_models": 36,
+      "population": 1,
+      "same_genome_different_history_pairs": 36
+    },
+    {
+      "modes": {
+        "normal": {
+          "deaths": 55,
+          "inactive_steps": 4002,
+          "paid_energy": 8463.8504,
+          "paid_vigilance": 10419.904,
+          "retained_outcome_updates": 12777,
+          "shadow_discarded_updates": 0,
+          "survivors": 17
+        },
+        "shadow_discard": {
+          "deaths": 72,
+          "inactive_steps": 7778,
+          "paid_energy": 1631.8466,
+          "paid_vigilance": 2539.186,
+          "retained_outcome_updates": 0,
+          "shadow_discarded_updates": 4701,
+          "survivors": 0
+        }
+      },
+      "normal_minus_shadow_censored": 17,
+      "pairs_with_distinct_retained_outcome_models": 36,
+      "population": 2,
+      "same_genome_different_history_pairs": 36
+    },
+    {
+      "modes": {
+        "normal": {
+          "deaths": 57,
+          "inactive_steps": 5030,
+          "paid_energy": 6882.0778,
+          "paid_vigilance": 8538.512,
+          "retained_outcome_updates": 10544,
+          "shadow_discarded_updates": 0,
+          "survivors": 15
+        },
+        "shadow_discard": {
+          "deaths": 72,
+          "inactive_steps": 7753,
+          "paid_energy": 1361.5134,
+          "paid_vigilance": 2088.228,
+          "retained_outcome_updates": 0,
+          "shadow_discarded_updates": 3958,
+          "survivors": 0
+        }
+      },
+      "normal_minus_shadow_censored": 15,
+      "pairs_with_distinct_retained_outcome_models": 36,
+      "population": 3,
+      "same_genome_different_history_pairs": 36
+    }
+  ],
+  "schedule_sha256": "e437fa0f02f8dd2b9e4bf27c246fae86785af789f1a5ab948e8d036e24f4a156",
+  "schema": "i3-p4b-outcome-learning-v1",
+  "source_sha": "fda5ce482aaec151c3e9b4d5b4cdb8ea16ed523b",
+  "status": "P4B_PAID_OUTCOME_LEARNING_ONLY_NO_P4_RESERVE",
+  "total_lives": 576
+}
