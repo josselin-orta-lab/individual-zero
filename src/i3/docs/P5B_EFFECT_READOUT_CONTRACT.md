@@ -34,7 +34,7 @@ disable the learning and retention of action-effect statistics:
 
 These are deliberately *ablations*, **not** restoration or rescue
 policies. A masked readout supplies neither privileged physical world
-data nor learned effects fabricated from P5a outcomes. All four modes
+data nor learned effects fabricated from P5a outcomes. All six modes
 still execute and pay the actual learning work, store the learned
 effect statistics and pay the actual decision computation. First-person
 perception, motor position, map and place beliefs, innate genetics,
