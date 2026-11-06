@@ -1,0 +1,55 @@
+name: I3 P4a preregistered heldout validation (one shot)
+on:
+  push:
+    branches: [automation/i3-p4a-heldout-once-20261106]
+    paths: [.github/workflows/i3-p4a-heldout-one-shot.yml]
+permissions:
+  contents: read
+jobs:
+  validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      I3_P4A_SOURCE_SHA: 01132efef08edb23143c4618d1a2491b23026eb4
+      I3_P4A_SCHEDULE_SHA: 7d5785eca2f65b1562c2dca22bc4bd65f930250e8a0b032df18a030b22b38289
+      I3_P4A_APPROVED_PROTOCOL: i3-p4a-g2-heldout-v1
+    steps:
+      - name: Checkout exact frozen validated executable before prereg docs
+        uses: actions/checkout@v4
+        with:
+          ref: 01132efef08edb23143c4618d1a2491b23026eb4
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify preregistration was merged into main before exposure
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git merge-base --is-ancestor e08fc2c6604d470dbf12839a0aa449309ac7d49a origin/main
+          test "$(git rev-parse HEAD)" = "$I3_P4A_SOURCE_SHA"
+      - name: Verify exact software, preserved G2 and pure schedule
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests/i3 -p 'test_*.py' -q
+          python scripts/check_engine_repository.py --json
+          PYTHONPATH=src python -m i3.lab.p4a_validation --preflight
+      - name: Execute P4a once and preserve every heldout life
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          PYTHONPATH=src python -m i3.lab.p4a_validation --run out/i3-p4a-validation-full.json | tee out/i3-p4a-validation-summary.json
+          sha256sum out/i3-p4a-validation-full.json out/i3-p4a-validation-summary.json | tee out/SHA256SUMS.txt
+      - name: Preserve original output even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-p4a-original-heldout-first-run
+          path: out/
+          retention-days: 90
+          if-no-files-found: warn
