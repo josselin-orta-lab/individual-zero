@@ -26,7 +26,9 @@ disable the learning and retention of action-effect statistics:
 | Gate | Projection prediction | Learned source-positive checks | Learned sleep forecast | Integrity veto |
 | --- | --- | --- | --- | --- |
 | `full` | normal | normal | normal | normal |
-| `blind_predictions` | zero unknown prior; uncertainty=1 | normal | unknown | normal |
+| `blind_predictions` | zero unknown prior; uncertainty=1 | normal | unknown passive/sleep forecast | normal |
+| `blind_action_predictions` | only simulated action deltas unknown; passive/sleep forecast intact | normal | normal | normal |
+| `blind_sleep_forecast` | normal action deltas; learned sleep restoration hidden | normal | sleep unknown, passive drift retained | normal |
 | `blind_sources` | normal | no known-positive learned sources | normal | normal |
 | `blind_all` | unknown prior | unknown | unknown | no effect-statistics-based veto |
 
@@ -38,16 +40,18 @@ effect statistics and pay the actual decision computation. First-person
 perception, motor position, map and place beliefs, innate genetics,
 funded body laws and deaths are unchanged.
 
-**Caution:** `blind_predictions` also blinds the *learned sleep
-restoration estimate* because it is a learned effect-based predictor.
-`blind_all` additionally removes the learned integrity veto.
-Interpret these bundled readout consequences transparently and
-consider finer controls before any scientific validation.
+**Caution:** `blind_predictions` blinds both passive action
+drift and sleep restoration. The `blind_action_predictions` and
+`blind_sleep_forecast` controls are therefore separate follow-ups
+that allow the earlier bundled readout to be decomposed. `blind_all`
+also removes the learned integrity veto. None of these controls
+simulates physically impossible effects or injects future knowledge.
 
 ## Observer diagnostics
 
 The optional observer report records: number of offered candidate
-options, funded scored options, motor admission rejections,
+options, counts by resource/movement/exploration/rest category, funded
+scored options and their corresponding categories, motor admission rejections,
 `no_processing_budget`, `no_funded_score`,
 `control_rejected`, and `action_admitted`.
 The observer does not influence ranking, RNG state, admission,
