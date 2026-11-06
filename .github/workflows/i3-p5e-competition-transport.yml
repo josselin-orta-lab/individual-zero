@@ -1,0 +1,51 @@
+name: I3 P5e full paid competition witness one-shot verification
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/i3-p5e-competition-transport.yml'
+      - 'src/i3/modules/mind.py'
+      - 'src/i3/runtime/life.py'
+      - 'src/i3/runtime/competition_observer.py'
+      - 'tests/i3/test_p5e_full_competition.py'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: i3-p5e-competition-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  software:
+    name: P5e funded competition parity Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Check exact source head
+        run: |
+          git rev-parse HEAD
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+      - name: Full I3 existing and P5e synthetic suite
+        run: PYTHONPATH=src python -m unittest discover -s tests/i3 -p 'test_*.py'
+      - name: Verify engine isolation on effective production tree
+        run: |
+          rm .github/workflows/i3-p5e-competition-transport.yml
+          python scripts/check_engine_repository.py --json
+          python scripts/check_engine_contracts.py --json
+      - name: Source files digest for review
+        run: |
+          sha256sum src/i3/modules/mind.py src/i3/runtime/life.py src/i3/runtime/competition_observer.py tests/i3/test_p5e_full_competition.py
+
+# Technical tests only. No study/cohort run, no validation/reserve access.
