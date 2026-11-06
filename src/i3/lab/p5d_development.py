@@ -47,6 +47,63 @@ def _first_difference(left, right, keys):
     return None
 
 
+def _paired_chronology(left, right):
+    """Pre-action scores are comparable only while paths remain paired.
+
+    A body match is necessary but NOT proof of equal private minds; option
+    comparisons require both a genuinely funded common option and the same
+    pre-decision body. Stop interpreting paid scores after first action change.
+    Later divergence in uptake/body/funding is descriptive only.
+    """
+    first_action = _first_difference(left, right, ("action", "param"))
+    boundary = min(len(left), len(right))
+    if first_action is not None:
+        boundary = min(boundary, first_action)
+    first_offer = first_scored = first_paid_score = None
+    matched_paid_options = 0
+    matched_body_steps = 0
+    for i in range(boundary):
+        a, b = left[i], right[i]
+        if a["body_before_decision"] != b["body_before_decision"]:
+            continue
+        matched_body_steps += 1
+        if first_offer is None and (
+                a["resource_options_offered"] != b["resource_options_offered"]):
+            first_offer = i + 1
+        if first_scored is None and (
+                a["resource_options_scored"] != b["resource_options_scored"]):
+            first_scored = i + 1
+        by_a = {w["option"]: w for w in a["paid_resource_scores"]}
+        by_b = {w["option"]: w for w in b["paid_resource_scores"]}
+        for option in by_a.keys() & by_b.keys():
+            matched_paid_options += 1
+            if (first_paid_score is None and
+                    abs(by_a[option]["total_score"] -
+                        by_b[option]["total_score"]) > 1e-9):
+                first_paid_score = i + 1
+    return {
+        "first_resource_offer_count_difference_same_body_before_action_change":
+            first_offer,
+        "first_resource_scored_count_difference_same_body_before_action_change":
+            first_scored,
+        "first_shared_paid_resource_option_score_difference_same_body_before_action_change":
+            first_paid_score,
+        "matched_pre_decision_body_steps": matched_body_steps,
+        "matched_paid_resource_option_observations": matched_paid_options,
+        "first_chosen_option_difference":
+            _first_difference(left, right, ("chosen_option",)),
+        "first_physical_action_difference": first_action,
+        "first_resource_contact_difference":
+            _first_difference(left, right, ("physical_resource_contact",)),
+        "first_positive_uptake_difference":
+            _first_difference(left, right,
+                              ("positive_water_uptake", "positive_food_uptake")),
+        "first_physical_body_difference":
+            _first_difference(left, right, ("body_after_physics",)),
+        "first_funding_difference":
+            _first_difference(left, right, ("decision_funding",)),
+    }
+
 def _receipt(life, allocation, genome_seed, mode):
     obs = life["observer_resource_acquisition"]
     steps = obs["steps"]
@@ -141,22 +198,7 @@ def run():
                 histories[(*key, mode)] for mode in MODES)
             paired.append({
                 "development_index": key[0], "genome_seed": seed,
-                "first_paid_resource_score_difference":
-                    _first_difference(left, right, ("paid_resource_scores",)),
-                "first_chosen_option_difference":
-                    _first_difference(left, right, ("chosen_option",)),
-                "first_physical_action_difference":
-                    _first_difference(left, right, ("action", "param")),
-                "first_resource_contact_difference":
-                    _first_difference(left, right, ("physical_resource_contact",)),
-                "first_positive_uptake_difference":
-                    _first_difference(left, right,
-                                      ("positive_water_uptake",
-                                       "positive_food_uptake")),
-                "first_physical_body_difference":
-                    _first_difference(left, right, ("body_after_physics",)),
-                "first_funding_difference":
-                    _first_difference(left, right, ("decision_funding",)),
+                **_paired_chronology(left, right),
             })
     return {
         "schema": SCHEMA, "manifest": plan,
