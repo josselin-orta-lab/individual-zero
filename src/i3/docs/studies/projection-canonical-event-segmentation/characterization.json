@@ -1,0 +1,37 @@
+{
+ "candidate_promoted": false,
+ "cases": 486,
+ "classification": "CANONICAL_EVENT_SEGMENTATION_MATCHES_ORACLE",
+ "event_boundaries_cleared_for_candidate_e": true,
+ "event_segments": {
+  "max": 22,
+  "mean": 12.927983539094651,
+  "min": 6
+ },
+ "lives": 0,
+ "max_final_body_error_vs_oracle": 0.0,
+ "max_projection_value_error_vs_oracle": 3.410605131648481e-13,
+ "numerical_tolerance": 1e-10,
+ "omega_rerun_authorized": false,
+ "paid_endpoint_units": {
+  "expected": 255,
+  "max": 255,
+  "mean": 255.0,
+  "min": 255
+ },
+ "protocol": "STAGE1_CANONICAL_EVENT_SEGMENTATION.md",
+ "schema": "i3-canonical-event-segmentation/v1",
+ "world_access": false,
+ "worst_cases": {
+  "final_body": null,
+  "projection_value": {
+   "abs_error": 3.410605131648481e-13,
+   "body": [80.0, 10.0, 80.0, 80.0, 80.0],
+   "event_value": -325.4848088846997,
+   "fixture": "sleep_learned",
+   "genome": "midpoint",
+   "horizon": 2,
+   "oracle_value": -325.48480888469936
+  }
+ }
+}
