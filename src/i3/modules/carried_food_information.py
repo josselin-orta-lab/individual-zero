@@ -19,6 +19,7 @@ from math import fsum, isfinite
 
 from .body import CognitiveBudget, CognitiveWork, VITAL, debit_cognition
 from .information_value import WORK_KEYS, _add_work
+from .forecast_work import projection_simulated_steps_ceiling
 from .observed_effect_view import (
     VIEW_WORK, paid_simulate_after_observed_effect)
 from .reference_branches import ReferenceBranchMemory
@@ -38,7 +39,7 @@ def _key(token):
 
 def _simulation_upper(model, plan):
     return CognitiveWork(
-        simulated_steps=len(plan) + len(model.proj_chunks))
+        simulated_steps=len(plan) + projection_simulated_steps_ceiling(model))
 
 
 def _minimum_ceiling(
