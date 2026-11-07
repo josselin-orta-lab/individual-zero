@@ -83,6 +83,12 @@ Each architecture ranks its own 40 candidates by ADR-0015 only:
 2. total lived steps descending;
 3. founder seed ascending.
 
+A physical death with **zero lived steps is a valid persistence outcome** and
+remains in the complete ranking with zero steps. Censoring still requires the
+full 400-step horizon. A crash, missing receipt or malformed terminal state is
+not a death and still blocks selection. This pre-exposure clarification avoids
+inheriting the historical Stage-0 helper's older steps>=1 arithmetic boundary.
+
 No omega value, information score, revision status or validation result enters
 selection.
 
