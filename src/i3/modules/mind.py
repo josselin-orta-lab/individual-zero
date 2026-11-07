@@ -531,97 +531,105 @@ class Mind:
             -self.d_max if dead
             else -self.distress(self.feats(tuple(float(x) for x in body))))
 
+    def _project_event_local_quadratic4_decimal_state(
+            self, body, drift, restore, budget=None):
+        """Candidate E sparse bootstrap from an already-canonical Decimal body."""
+        ddrift = tuple(self._projection_decimal(x) for x in drift)
+        drestore = (
+            tuple(self._projection_decimal(x) for x in restore)
+            if restore is not None else None)
+        theta = tuple(self._projection_decimal(x) for x in self.theta)
+
+        ret = [0.0, 0.0, 0.0]
+        disc = [1.0, 1.0, 1.0]
+        dead = self._projection_decimal_dead(body)
+        r_start = self._projection_decimal_reward(
+            body, dead, budget)
+
+        for outer in self.proj_chunks:
+            remaining = outer
+            while remaining > 0:
+                if dead:
+                    for k, gamma in enumerate(self.gammas):
+                        g_run = gamma ** remaining
+                        weight = (
+                            (1.0 - g_run) / (1.0 - gamma))
+                        ret[k] += (
+                            disc[k] * (-self.d_max) * weight)
+                        disc[k] *= g_run
+                    remaining = 0
+                    continue
+
+                event_run = (
+                    self._projection_decimal_next_event_segment(
+                        body, ddrift, drestore, theta,
+                        remaining))
+                event_remaining = event_run
+
+                while event_remaining > 0:
+                    block_run = min(4, event_remaining)
+
+                    if block_run == 1:
+                        end_body, end_dead = (
+                            self._projection_decimal_advance(
+                                body, ddrift, drestore, theta, 1))
+                        r_end = self._projection_decimal_reward(
+                            end_body, end_dead, budget)
+                        r_mid = None
+                    else:
+                        midpoint = (
+                            Decimal(block_run) / Decimal(2))
+                        mid_body, mid_dead = (
+                            self._projection_decimal_advance(
+                                body, ddrift, drestore, theta,
+                                midpoint))
+                        if mid_dead:
+                            raise RuntimeError(
+                                "Candidate E block crossed death before endpoint")
+                        r_mid = self._projection_decimal_reward(
+                            mid_body, mid_dead, budget)
+                        end_body, end_dead = (
+                            self._projection_decimal_advance(
+                                body, ddrift, drestore, theta,
+                                block_run))
+                        if end_dead:
+                            raise RuntimeError(
+                                "Candidate E multi-step block crossed death")
+                        r_end = self._projection_decimal_reward(
+                            end_body, end_dead, budget)
+
+                    for k, gamma in enumerate(self.gammas):
+                        g_run = gamma ** block_run
+                        segment = (
+                            r_end if block_run == 1 else
+                            self._discounted_quadratic_sum(
+                                r_start, r_mid, r_end,
+                                block_run, gamma))
+                        ret[k] += disc[k] * segment
+                        disc[k] *= g_run
+
+                    body = list(end_body)
+                    dead = end_dead
+                    r_start = r_end
+                    remaining -= block_run
+                    event_remaining -= block_run
+
+        r_tail = -self.d_max if dead else r_start
+        for k, gamma in enumerate(self.gammas):
+            ret[k] += disc[k] * (
+                r_tail / (1.0 - gamma))
+        return ret, body
+
     def _project_event_local_quadratic4(
             self, b, drift, restore, budget=None):
         """Candidate E: canonical events plus fixed local quadratic blocks <=4."""
         with localcontext() as ctx:
             ctx.prec = 100
             body = [self._projection_decimal(x) for x in b]
-            ddrift = tuple(self._projection_decimal(x) for x in drift)
-            drestore = (
-                tuple(self._projection_decimal(x) for x in restore)
-                if restore is not None else None)
-            theta = tuple(self._projection_decimal(x) for x in self.theta)
-
-            ret = [0.0, 0.0, 0.0]
-            disc = [1.0, 1.0, 1.0]
-            dead = self._projection_decimal_dead(body)
-            r_start = self._projection_decimal_reward(
-                body, dead, budget)
-
-            for outer in self.proj_chunks:
-                remaining = outer
-                while remaining > 0:
-                    if dead:
-                        for k, gamma in enumerate(self.gammas):
-                            g_run = gamma ** remaining
-                            weight = (
-                                (1.0 - g_run) / (1.0 - gamma))
-                            ret[k] += (
-                                disc[k] * (-self.d_max) * weight)
-                            disc[k] *= g_run
-                        remaining = 0
-                        continue
-
-                    event_run = (
-                        self._projection_decimal_next_event_segment(
-                            body, ddrift, drestore, theta,
-                            remaining))
-                    event_remaining = event_run
-
-                    while event_remaining > 0:
-                        block_run = min(4, event_remaining)
-
-                        if block_run == 1:
-                            end_body, end_dead = (
-                                self._projection_decimal_advance(
-                                    body, ddrift, drestore, theta, 1))
-                            r_end = self._projection_decimal_reward(
-                                end_body, end_dead, budget)
-                            r_mid = None
-                        else:
-                            midpoint = (
-                                Decimal(block_run) / Decimal(2))
-                            mid_body, mid_dead = (
-                                self._projection_decimal_advance(
-                                    body, ddrift, drestore, theta,
-                                    midpoint))
-                            if mid_dead:
-                                raise RuntimeError(
-                                    "Candidate E block crossed death before endpoint")
-                            r_mid = self._projection_decimal_reward(
-                                mid_body, mid_dead, budget)
-                            end_body, end_dead = (
-                                self._projection_decimal_advance(
-                                    body, ddrift, drestore, theta,
-                                    block_run))
-                            if end_dead:
-                                raise RuntimeError(
-                                    "Candidate E multi-step block crossed death")
-                            r_end = self._projection_decimal_reward(
-                                end_body, end_dead, budget)
-
-                        for k, gamma in enumerate(self.gammas):
-                            g_run = gamma ** block_run
-                            segment = (
-                                r_end if block_run == 1 else
-                                self._discounted_quadratic_sum(
-                                    r_start, r_mid, r_end,
-                                    block_run, gamma))
-                            ret[k] += disc[k] * segment
-                            disc[k] *= g_run
-
-                        body = list(end_body)
-                        dead = end_dead
-                        r_start = r_end
-                        remaining -= block_run
-                        event_remaining -= block_run
-
-            r_tail = -self.d_max if dead else r_start
-            for k, gamma in enumerate(self.gammas):
-                ret[k] += disc[k] * (
-                    r_tail / (1.0 - gamma))
-            return ret, [float(x) for x in body]
+            ret, final_body = (
+                self._project_event_local_quadratic4_decimal_state(
+                    body, drift, restore, budget))
+            return ret, [float(x) for x in final_body]
 
     def project(self, b, drift, budget=None):
         """Innate self-projection over 255 future steps; event modes are opt-in."""
