@@ -1,4 +1,5 @@
 """Candidate-G reference-recurrence falsifier; no World or I3 life."""
+import json
 from pathlib import Path
 import subprocess
 import sys
@@ -34,6 +35,8 @@ class CandidateGReferenceRecurrenceTests(unittest.TestCase):
         self.assertTrue(rules["R3_actual_work_within_common_ceiling"])
 
     def test_behavioral_gate_is_reported_not_engineered(self):
+        print("CANDIDATE_G_REFERENCE_RECURRENCE " + json.dumps(
+            self.result, sort_keys=True))
         rules = self.result["rules"]
         expected = (
             "CANDIDATE_G_REFERENCE_RECURRENCE_SOFTWARE_GATE_PASS"
