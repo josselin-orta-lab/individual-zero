@@ -12,6 +12,7 @@ from math import fsum, isfinite
 
 from .body import ACTIONS, CognitiveBudget, CognitiveWork, VITAL, debit_cognition
 from .information_value import WORK_KEYS, _add_work, _advance
+from .forecast_work import projection_simulated_steps_ceiling
 
 Vector = tuple[float, ...]
 
@@ -90,7 +91,7 @@ def _minimum_ceiling(model, outcomes, plans, horizon, original_work):
     # predicted death may skip projection; the common forecast never relies on
     # those favorable early exits.
     per_branch_sim = sum(
-        min(len(plan), horizon) + len(model.proj_chunks)
+        min(len(plan), horizon) + projection_simulated_steps_ceiling(model)
         for plan in plans.values())
     remainder = CognitiveWork(
         cycles=cells + 1,
@@ -284,7 +285,7 @@ def _revealed_minimum_ceiling(
         cells += len(available)
         plan_items += sum(len(plan) for plan in available.values())
         simulated += sum(
-            min(len(plan), horizon) + len(model.proj_chunks)
+            min(len(plan), horizon) + projection_simulated_steps_ceiling(model)
             for plan in available.values())
     prep = CognitiveWork(
         cycles=1,

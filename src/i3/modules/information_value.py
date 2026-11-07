@@ -11,6 +11,7 @@ from math import fsum, isfinite
 from typing import Protocol
 
 from .body import CognitiveBudget, CognitiveWork, VITAL, debit_cognition
+from .forecast_work import projection_simulated_steps_ceiling
 
 Vector = tuple[float, ...]
 WORK_KEYS = ("cycles", "simulated_steps", "memory_items", "replays")
@@ -158,7 +159,7 @@ must settle budget.work normally; an allowance is not a World debit receipt.
         planned.append(row)
     remaining_work = CognitiveWork(
         cycles=miss_count + 1,
-        simulated_steps=miss_count * (2 + len(model.proj_chunks)))
+        simulated_steps=miss_count * (2 + projection_simulated_steps_ceiling(model)))
     quoted_work = _add_work(budget.work, remaining_work)
     quoted_body, _ = debit_cognition(budget.body, budget.laws, quoted_work)
     if forecast_work is None:
