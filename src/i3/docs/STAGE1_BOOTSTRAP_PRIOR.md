@@ -197,3 +197,71 @@ separate:
 Collapsing steps 1 and 2 would turn resource observation into an oracle for its
 bodily consequence. Collapsing steps 2 and 3 would remove the value of learning
 from the trial.
+
+
+## Nested value of trying one unsupported action
+
+`modules/unknown_action_trial.py::paid_unknown_action_trial_value` composes the
+zero-mean prior and branch-local observed-effect view without creating a live
+policy.
+
+The kernel separates three values under one common complete-work forecast:
+
+1. **no trial**: best explicit continuation that never uses the unsupported
+   exact action key;
+2. **trial with frozen continuation**: execute the unsupported action once,
+   average over the zero-mean effect branches, but require one common
+   post-trial continuation chosen before observing the result;
+3. **trial with informed continuation**: execute the same one trial, then let
+   the directly sensed post-trial body choose the best post-trial continuation.
+
+It reports two different quantities:
+
+```text
+information_value = informed trial - frozen trial
+trial_advantage    = informed trial - no trial
+```
+
+This distinction is essential. Learning can be valuable while the experiment
+itself is still too dangerous or costly to choose. Conversely, a favorable
+trial advantage is not automatically evidence that information caused the
+advantage.
+
+Every trial matrix plan starts with the unsupported action. Within each
+subjective branch, #1089 makes that exact branch effect the prediction for the
+trial and any later exact reuse. Other action predictions remain unchanged
+P1.3.
+
+The common no-trial plan set is forbidden from containing the unsupported exact
+key. It therefore cannot receive the unknown action for free.
+
+### Observability and clipping
+
+Conditional replanning groups branches by the generic signal and the directly
+sensed post-trial body. If two different prior deltas clip to the same observable
+body, they may not install different learned exact effects. The kernel fails
+closed rather than letting an unclipped hidden branch identity leak through.
+
+### Complete cost ceiling
+
+The one forecast ceiling includes:
+
+- the #1088 prior construction;
+- matrix/preparation bookkeeping;
+- every no-trial continuation;
+- every prior-branch × post-trial continuation;
+- one #1089 view for every trial matrix cell;
+- all ordinary P1.3 simulation work;
+- the final frozen/informed reduction.
+
+No branch may stop computation because it looks unfavorable and there is no
+Stage-2 compute-selection rule.
+
+This kernel still has no frontier modality model, action admission or motor
+command. It answers the inner question only: if an unsupported action were
+available here, is one trial plus adaptation worth more than not trying it?
+
+A later frontier composition must first establish that the resource action is
+observable/available from the frontier branch. Only then can this nested trial
+calculation be attached. Seeing a water source remains distinct from knowing
+what drinking will do.
