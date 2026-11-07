@@ -289,17 +289,17 @@ class OnlineChoiceTests(unittest.TestCase):
 
     def test_online_history_is_recorded_and_used_on_later_decisions(self):
         uses, stores = [], []
-        supports = StationaryUnknownOutcomes._supports
+        indexed = StationaryUnknownOutcomes._indexed_supports
         observe = PersonalOutcomes.observe
-        def seen_supports(history, keys):
+        def seen_indexed(history, keys, index):
             actions = {key[0] for key in keys}
             uses.append(any(s.key[0] in actions for s in history._samples))
-            return supports(history, keys)
+            return indexed(history, keys, index)
         def seen_observe(history, key, before, work, budget):
             result = observe(history, key, before, work, budget)
             stores.append(budget.work)
             return result
-        with patch.object(StationaryUnknownOutcomes, "_supports", seen_supports), \
+        with patch.object(StationaryUnknownOutcomes, "_indexed_supports", seen_indexed), \
              patch.object(PersonalOutcomes, "observe", seen_observe):
             life = run()
         self.assertGreater(len(stores), 0)
@@ -361,6 +361,16 @@ class OnlineChoiceTests(unittest.TestCase):
             self.assertEqual(
                 saved.memory_items,
                 7 * len(m.personal._samples) * 6)
+            indexed_saved = CognitiveWork(
+                **profile["forecast_decision_index_savings"])
+            self.assertEqual(indexed_saved.cycles, 0)
+            self.assertEqual(
+                indexed_saved.memory_items,
+                7 * len(m.personal._samples) * 2)
+            accesses = [
+                option["personal_construction"]["history_access"]
+                for option in profile["options"]]
+            self.assertEqual(accesses, ["shared_scan", "indexed_lookup", "indexed_lookup"])
             self.assertEqual(summary["total_work"], {
                 "cycles": work.cycles,
                 "simulated_steps": work.simulated_steps,
