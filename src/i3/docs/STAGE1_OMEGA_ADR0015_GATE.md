@@ -5,6 +5,18 @@ Issue #1061. Design baseline:
 
 **DESIGN AND ARITHMETIC ONLY. EXECUTION IS NOT AUTHORIZED BY THIS FILE.**
 
+## Executed result
+
+This prospective design was later executed in full under immutable source
+`ca506554e67eddde08e71ba6872df3b50f3ea4be` and run `42416437088`.
+
+Final result: [studies/stage1-omega-adr0015/RESULTS.md](studies/stage1-omega-adr0015/RESULTS.md).
+
+Verdict: **`FAIL_FROZEN_STAGE1_OMEGA_GATE`**. G1-G5 fail; G6 custody passes.
+This paragraph records the later result only and does not alter any frozen
+design clause below.
+
+
 No selection, validation or reserve world is opened by this slice.
 
 ## Question
