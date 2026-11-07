@@ -139,9 +139,15 @@ def run(out_path):
     }
     units = []
     cases = 0
+    worst = {
+        "prefix_error": None,
+        "decision_bias": None,
+        "final_body_error": None,
+        "quartic_decision_difference": None,
+    }
 
     for fixture_name, fixture in fixtures.items():
-        for _genome_name, genome in P.genomes():
+        for genome_name, genome in P.genomes():
             for body in P.bodies():
                 cases += 1
                 truth = P.values(genome, body, "per_step", **fixture)
@@ -156,13 +162,36 @@ def run(out_path):
                 quartic_g1 = quartic["plus_1_wait"] - quartic["prefix"]
                 quartic_g3 = quartic["plus_3_waits"] - quartic["prefix"]
 
-                exact["max_abs_prefix_error_vs_per_step"] = max(
-                    exact["max_abs_prefix_error_vs_per_step"],
-                    abs(event["prefix"] - truth["prefix"]))
-                exact["max_decision_bias_vs_per_step"] = max(
-                    exact["max_decision_bias_vs_per_step"],
-                    abs(event_g1 - truth_g1),
-                    abs(event_g3 - truth_g3))
+                prefix_error = abs(event["prefix"] - truth["prefix"])
+                if prefix_error > exact["max_abs_prefix_error_vs_per_step"]:
+                    exact["max_abs_prefix_error_vs_per_step"] = prefix_error
+                    worst["prefix_error"] = {
+                        "fixture": fixture_name,
+                        "genome": genome_name,
+                        "body": body,
+                        "event_exact": event["prefix"],
+                        "per_step": truth["prefix"],
+                        "abs_error": prefix_error,
+                    }
+
+                bias_1 = abs(event_g1 - truth_g1)
+                bias_3 = abs(event_g3 - truth_g3)
+                decision_bias = max(bias_1, bias_3)
+                if decision_bias > exact["max_decision_bias_vs_per_step"]:
+                    exact["max_decision_bias_vs_per_step"] = decision_bias
+                    worst["decision_bias"] = {
+                        "fixture": fixture_name,
+                        "genome": genome_name,
+                        "body": body,
+                        "comparison": (
+                            "plus_1_wait" if bias_1 >= bias_3
+                            else "plus_3_waits"),
+                        "event_exact_gap": (
+                            event_g1 if bias_1 >= bias_3 else event_g3),
+                        "per_step_gap": (
+                            truth_g1 if bias_1 >= bias_3 else truth_g3),
+                        "abs_bias": decision_bias,
+                    }
                 if fixture_name == "projection_equivalent":
                     exact["projection_equivalent_invariant_max_gap"] = max(
                         exact["projection_equivalent_invariant_max_gap"],
@@ -171,10 +200,26 @@ def run(out_path):
                 quartic_vs_exact["max_abs_prefix_difference"] = max(
                     quartic_vs_exact["max_abs_prefix_difference"],
                     abs(quartic["prefix"] - event["prefix"]))
-                quartic_vs_exact["max_decision_difference"] = max(
-                    quartic_vs_exact["max_decision_difference"],
-                    abs(quartic_g1 - event_g1),
-                    abs(quartic_g3 - event_g3))
+                qdiff_1 = abs(quartic_g1 - event_g1)
+                qdiff_3 = abs(quartic_g3 - event_g3)
+                qdiff = max(qdiff_1, qdiff_3)
+                if qdiff > quartic_vs_exact["max_decision_difference"]:
+                    quartic_vs_exact["max_decision_difference"] = qdiff
+                    worst["quartic_decision_difference"] = {
+                        "fixture": fixture_name,
+                        "genome": genome_name,
+                        "body": body,
+                        "comparison": (
+                            "plus_1_wait" if qdiff_1 >= qdiff_3
+                            else "plus_3_waits"),
+                        "quartic_gap": (
+                            quartic_g1 if qdiff_1 >= qdiff_3
+                            else quartic_g3),
+                        "event_exact_gap": (
+                            event_g1 if qdiff_1 >= qdiff_3
+                            else event_g3),
+                        "abs_difference": qdiff,
+                    }
 
                 _ev, event_body, paid = direct_event_exact(
                     genome, body, **fixture)
@@ -183,10 +228,23 @@ def run(out_path):
                 if truth_paid != len(P.PER_STEP):
                     raise RuntimeError("per-step truth cost changed")
                 units.append(paid)
-                exact["max_final_body_channel_error_vs_per_step"] = max(
-                    exact["max_final_body_channel_error_vs_per_step"],
-                    max(abs(a - b) for a, b in zip(
-                        event_body, truth_body)))
+                body_errors = tuple(
+                    abs(a - b) for a, b in zip(event_body, truth_body))
+                body_error = max(body_errors)
+                if body_error > exact[
+                        "max_final_body_channel_error_vs_per_step"]:
+                    channel = body_errors.index(body_error)
+                    exact["max_final_body_channel_error_vs_per_step"] = (
+                        body_error)
+                    worst["final_body_error"] = {
+                        "fixture": fixture_name,
+                        "genome": genome_name,
+                        "body": body,
+                        "channel": channel,
+                        "event_exact_final_body": event_body,
+                        "per_step_final_body": truth_body,
+                        "abs_error": body_error,
+                    }
 
     trajectory_same = (
         exact["max_decision_bias_vs_per_step"] <= NUMERICAL_TOLERANCE
@@ -222,6 +280,7 @@ def run(out_path):
             "per_step_truth": len(P.PER_STEP),
         },
         "classification": classification,
+        "worst_cases": worst,
         "candidate_promoted": False,
         "omega_rerun_authorized": False,
     }
