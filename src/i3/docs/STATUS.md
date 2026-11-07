@@ -220,6 +220,37 @@ prospectively frozen on a fresh allocation.
 P1.3 remains reference. I3 remains unregistered. Stage 0, #1026 and #1054
 remain open; no scientific Stage-1 GO.
 
+## Latest Stage-1 decision-boundary result: information is real, winner unchanged
+
+The 7 November software sequence now resolves the immediate local ambiguity.
+
+- #1099: without a future matching action opportunity, information was zero in
+  160/160 tested multi-deficit states.
+- #1101: exact P1.3 water explorer-prefix semantics retained positive
+  information but selected an epistemic trial in 0/80 states.
+- #1102/#1104: carried unknown food gives genuine information from personal
+  safe/toxic experience; in the rich competing-needs fixture it improved meal
+  rank in 9/27 states.
+- #1105: under **one shared complete cognition-depleted forecast body**, all
+  27/27 rich states were fundable; information was positive in 9/27 and raised
+  the meal score in 14/27, but the raw winner changed in **0/27**.
+
+This removes the main cost-comparability ambiguity. The Stage-1 computation is
+not numerically dead and its real v2 burden does not erase the signal. The
+current bottleneck is that P1.3 contains too little representation of reusable
+future opportunities for learning an effect to become decision-dominant.
+
+**DRIFT DETECTED:** stop adding local water/food score patches, synthetic
+competitor variants or Stage-2 budget rules. The next bounded intervention is a
+single generic first-person future-opportunity representation used only to
+unblock Stage 1. It is an operational prerequisite, not permission to launch
+full Stage 3. It must not encode hidden stock, source persistence, schedules,
+world-family identity or a favorable effect prior.
+
+P1.3 remains the reference. I3 remains unregistered. No new scientific life,
+selection, validation or reserve exposure follows from these software results.
+Stage 2 remains blocked; Stage 0, #1026 and historical #1054 remain open.
+
 ## Current reference and observed limits
 
 | Area | Implemented / observed status |

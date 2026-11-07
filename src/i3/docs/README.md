@@ -82,6 +82,26 @@ Food-effect risk and multi-cell joint frontier outcomes remain NOT_IMPLEMENTED.
 Three candidate deaths are starvation deaths, but seven are dehydration deaths,
 so food information alone cannot explain the dominant failure.
 
+
+The later bounded software work sharpens the diagnosis further. Water without a
+represented future matching opportunity gives zero information (#1099), and
+exact P1.3 explorer semantics select 0/80 epistemic water trials (#1101).
+Carried-food information is genuine (#1102): a rich competing-needs audit moves
+the meal's rank in 9/27 states (#1104). But after all ordinary alternatives and
+the information meal share one complete cognition-depleted forecast body,
+27/27 states are fundable, information remains positive in 9/27, and the raw
+winner changes in **0/27** (#1105).
+
+So Stage 1 is no longer blocked by information arithmetic or by a hidden
+cost-parity ambiguity. It is blocked by P1.3's sparse representation of
+**future matching opportunities**.
+
+**Current handoff:** no more local water/food score patches. Before another live
+Stage-1 candidate, test one minimal generic first-person future-opportunity
+representation, empty at birth and learned from personal observations only.
+This is an evidence-driven Stage-1 prerequisite, not the start of full Stage 3.
+Stage 2 remains blocked.
+
 P1.3 remains the reference. I3 remains unregistered. No validation or reserve
 world has been opened.
 

@@ -31,16 +31,25 @@ modality prior. A synthetic test proves that a strictly zero-mean unsupported
 effect can have positive information value when the observed body changes the
 best continuation.
 
-**DRIFT DETECTED:** the owner scenario caps Stage-1 uncertainty at 2-3 simulated
-branches. Do not compose the 3-way modality prior and 2-way effect prior as an
-unbounded 3x2 tree, and do not jump to Stage 2. The next bounded design must fit
-frontier observation plus unsupported-action trial into at most three outcome
-branches while preserving P1.3 repertoire and the distinction between seeing a
-resource and knowing its effect. Water remains the existing engineering scope;
-food, joint modality outcomes and the scientific gate remain unresolved.
+Subsequent software results now narrow the blocker further. #1099 shows zero
+information when no future matching opportunity is represented. #1101 restores
+exact P1.3 explorer semantics and selects an epistemic water trial in 0/80
+states. #1102 proves carried-food information can exist; #1104 improves meal
+rank in 9/27 rich competing-need states; #1105 then places every alternative
+under one common cognition-depleted forecast body: 27/27 are funded, information
+is positive in 9/27 and raises the meal score in 14/27, but the raw winner
+changes in **0/27**.
 
-Reuse #1026 for individuality and #1054 for the P5d carried-food case. Stages
-3-6 remain deferred and gated.
+**DRIFT DETECTED:** stop local water/food score patches and do not jump to Stage
+2. The next code slice may test only one minimal generic first-person
+future-opportunity representation needed by Stage 1. It must be empty at birth,
+paid, renaming invariant, bounded to 2-3 outcome branches and unable to read
+hidden stock, source persistence, schedules or world identity. This is not
+authorization to implement full Stage 3 change detection/latent causes/
+factorization.
+
+Reuse #1026 for individuality and #1054 for the historical P5d uncertainty.
+Stages 3-6 otherwise remain deferred and gated.
 
 Do not prioritize a Competition rewrite: P5e did not establish generally
 broken Competition, and its masked arm never carried food. Missing exposure
