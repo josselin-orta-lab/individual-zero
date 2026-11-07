@@ -43,14 +43,19 @@ and learned residual. Death is absorbing. Outcomes are averaged, not maximized.
 The diagnostic difference is not an extra bonus or Stage-2 value of computation:
 the actual experimental score is the complete V_informed.
 
-For B branches, A continuations and C projection chunks, successful kernel work:
+For B branches, A continuations and C projection chunks, the uncached kernel
+has B*A matrix cells. With the decision-local exact-cell reuse below, let U be
+the number of unique predicted first/second-body cells actually computed:
 
 ```text
-cycles          = 1 + B*A + 1
-simulated_steps = B*A*(2 + C)
+cycles          = 1 + U + 1
+simulated_steps = U*(2 + C)
 memory_items    = B*7 + B*A*5
 replays         = 0
 ```
+
+The matrix description is still fully prepared, so memory_items continues to
+scale with B*A; only duplicate cell projection work is reused.
 
 A preparation block precedes drift lookup and the remaining-cost quote. Each
 score, actual geometric projection and final reduction is prepaid. Terminal
@@ -67,8 +72,11 @@ The common-batch extension is described below; it is not a waived-cost economy.
 
 ## Personal-outcome constructor
 
-`modules/personal_outcomes.py` and its default no-support API are unchanged.
-PersonalOutcomes starts empty with explicitly bounded capacity 1..512. Its
+`modules/personal_outcomes.py` keeps the same no-support and hypothesis
+semantics. It now accepts an optional observer-only work receipt that records
+existing setup, history-scan and branch-build spends without changing the
+allowance or returned outcomes. PersonalOutcomes starts empty with explicitly
+bounded capacity 1..512. Its
 items contain only an action/internal-token key and five bodily deltas, not
 positions, hidden stocks, source gains or exogenous schedules. `observe` requires
 living pre-decision and post-physics/pre-learning bodies, actual decision work,
@@ -189,6 +197,33 @@ cycle is worth buying, change inherited ceilings, alter tariffs, or skip a
 unique forecast. A later budget-allocation policy would be a separate mechanism
 and require its own prospective comparison.
 
+### Synthetic phase-cost measurement after exact reuse
+
+PR #1072 adds observer-side phase receipts and a reducer that must reconcile
+exactly to the already-declared decision work before converting work through
+the current BodyLaws. It runs no study life and provides no Mind input.
+
+On the deterministic 1x1 synthetic fixture used by the software test, with the
+midpoint genome and three local options, the empty-history decision used 0.7872
+energy and 1.72 vigilance in total. Repeated personal-history scans were already
+the largest phase: 0.1836 energy / 0.45 vigilance, versus 0.04 / 0.07 for the
+single unique projected cell after exact reuse.
+
+With the candidate's personal half-memory filled to its midpoint capacity
+(136 synthetic samples), total decision cost was 2.9536 energy / 2.06 vigilance.
+History scans consumed 1.8972 energy / 0.45 vigilance (9 scan cycles and 8586
+memory items), while eight unique projected cells consumed 0.32 energy / 0.56
+vigilance. Thus on this software fixture, repeated scans dominate **energy**
+as memory fills, while unique rollouts dominate **vigilance**. This is an
+engineering scaling observation, not a survival result and not evidence that
+the same ranking holds on larger maps with more options.
+
+The next cost-only correction may therefore remove exact repeated history scans,
+but must preserve returned support sets, unknown-query semantics, paid work
+truth and the common forecast body. Skipping a unique query or choosing a
+smaller cognitive budget would instead be policy-changing and belongs to a
+separate prospective mechanism.
+
 The old bonus terms are absent from the experimental score, not computed and
 then added or discarded. Compatibility witness fields are zero and marked
 `score_kind=local_expected_distress`; `uncertainty=None` is not a calibrated
@@ -231,10 +266,12 @@ populations. The original report, studies, allocations and P4 reserve are unchan
 
 The bounded development diagnostic is complete and adverse. Exact decision-local
 cell reuse is the first cost correction because it removes only duplicate work
-while preserving the exhaustive forecast body and score semantics. Next: verify
-whether remaining unique work is still unaffordable on unexposed software
-fixtures before introducing any policy-changing bounded allocation. Spatial
-information remains deferred until the paid comparison itself is sustainable.
+while preserving the exhaustive forecast body and score semantics. Synthetic
+phase accounting now shows repeated personal-history scans dominating energy
+once memory is populated, while unique rollouts dominate vigilance on the
+minimal fixture. The next bounded intervention is exact scan reuse, not a
+policy-changing budget allocator. Spatial information remains deferred until
+the paid comparison itself is sustainable.
 Do not tune a rescue prior, rewrite Competition, or expand observers instead.
 Full live ablations and the source/genotype/case/margin/multiplicity/stopping/
 compute-locked survival and revision gate remain open. Stage 0, #1026 and #1054
