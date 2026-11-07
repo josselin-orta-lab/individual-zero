@@ -30,15 +30,28 @@ This closes Candidate-F/omega as the current Stage-1 architecture candidate.
 Software capacity evidence remains historically valid, but it did not translate
 into persistence or revision under the full funded architecture.
 
-**Next intervention:** do not tune omega. Build the smallest software-only
-**cost-only reference-choice control**: P1.3 keeps its ordinary decisions while
-the extra Candidate-F information work is actually computed and physically
-charged. The current omega=0 arm is not this control because it keeps the
-candidate policy and only removes inherited omega.
+The post-gate cost-versus-policy control has now been implemented and tested on
+fresh development 54/55 after the failed-closed 52/53 attempt. See the
+[54/55 result](studies/stage1-candidate-f-cost-vs-policy-development-54-55/RESULTS.md).
 
-No fresh scientific panel is authorized by this handoff. If the control becomes
-well-defined and software-valid, it must receive a new prospective development
-allocation, never exposed 44..167 or the P4 reserve.
+The strict survival-level cost-sufficiency falsifier is **not observed**:
+Candidate-F and the deliberately overcharged P1.3-choice control both have 0/12
+survivors, while reference has 4/12. Because the control pays Candidate-F
+shadow cognition **plus** P1.3 choice cognition, this null cannot prove that
+cost alone is sufficient.
+
+Sub-horizon behavior still strongly implicates policy: upper-cost lives longer
+than Candidate-F in 7/12 matched blocks and obtains 25 positive water uptakes
+versus Candidate-F's 4. In all four reference-survivor blocks, upper-cost gets
+water and outlives Candidate-F while Candidate-F gets none.
+
+**Handoff:** treat Candidate-F as rejected and causal mediation as unresolved
+with both cost and policy implicated. Do not create a free-cognition or
+body-reimbursement control just to isolate a percentage. A further causal
+control must preserve paid cognition and physical state exactly enough to be
+scientifically defensible; otherwise return to Stage-1 architecture design.
+
+No fresh scientific panel is authorized by this handoff.
 
 ## Current handoff after the 7 November Stage-1 diagnostics
 

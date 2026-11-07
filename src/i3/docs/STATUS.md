@@ -67,6 +67,58 @@ and use fresh development conditions only if later executed.
 P1.3 remains reference. I3 remains unregistered. Stage 2 remains blocked and
 the P4 reserve remains sealed.
 
+## Latest complete causal diagnostic: 54/55 cost-versus-policy remains unresolved
+
+8 November 2026: the fresh 54/55 panel completed all 36 preregistered lives once
+under execution source `a27e4c3ccebfcfec610b79f02f00fd2440d1b7dc`, Actions run
+`42426687157`. All originals are preserved in evidence commit
+`18bfda8bc680afc9df01d1d2ebb308b79efcbc70`.
+
+See the
+[complete result](studies/stage1-candidate-f-cost-vs-policy-development-54-55/RESULTS.md)
+and
+[read-only causal audit](studies/stage1-candidate-f-cost-vs-policy-development-54-55/POSTHOC_CAUSAL_AUDIT.md).
+
+The frozen primary rule required at least one matched block where Candidate-F
+dies while the deliberately **overcharged** P1.3-choice control survives.
+Observed: **0/12**. Candidate-F and upper-cost both die in all 12 blocks;
+ordinary P1.3 survives 4/12. Therefore the preregistered strict
+cost-sufficiency counterexample is **not observed**.
+
+This null does not prove cost sufficiency because the control pays Candidate-F
+shadow cognition plus an additional P1.3 decision. It is intentionally not
+cost matched.
+
+The secondary paired behavior nevertheless implicates policy. Upper-cost lives
+longer than Candidate-F in 7/12 blocks, shorter in 1 and ties in 4. In every
+one of the four blocks where P1.3 survives, Candidate-F obtains zero water while
+the upper-cost P1.3-choice arm obtains water and lives longer than Candidate-F,
+although it still dies before horizon.
+
+Aggregate positive water uptake is reference 232, Candidate-F 4, upper-cost 25.
+Movement is 831 / 79 / 216 respectively. Across upper-cost lives the shadow
+action differs from the actual P1.3 action on 510/2395 decisions.
+
+Cost also remains severe. Upper-cost accumulates 868 P1.3
+`NO_PROCESSING_BUDGET` steps and 36.24% physical inactivity. Realized paid
+energy/vigilance per lived step is 0.60876/0.75158 reference,
+2.06095/2.90923 Candidate-F and 1.66955/2.11048 upper-cost. Trajectories differ,
+so these rates are descriptive, not mediation.
+
+**Current interpretation: cost and policy are both implicated; exact mediation
+remains unresolved.**
+
+**DRIFT DETECTED:** Candidate-F/omega is already rejected by the frozen gate.
+Do not tune it, rerun 54/55, or build another increasingly artificial causal
+control merely to obtain a clean percentage. A tighter control is admissible
+only if it can match physical cost without granting unpaid P1.3 cognition,
+reimbursing the body, forcing actions or otherwise violating I3 contracts. If
+no such paid construction is available, stop causal decomposition here and
+return Stage 1 to architecture design.
+
+P1.3 remains reference. I3 remains unregistered. Stage 2 remains blocked and
+the reserve remains sealed.
+
 ## Latest causal diagnostic attempt: 52/53 closed on observer engineering failure
 
 7 November 2026: the prospectively frozen 52/53 Candidate-F cost-vs-policy
