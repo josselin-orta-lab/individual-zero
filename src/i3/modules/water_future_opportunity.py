@@ -25,7 +25,7 @@ from .body import CognitiveBudget, CognitiveWork, VITAL, debit_cognition
 from .information_value import WORK_KEYS, _add_work
 from .observed_effect_view import (
     VIEW_WORK, paid_simulate_after_observed_effect)
-from .plan_information import _continuation_dict, _validate_plan
+from .plan_information import _validate_plan
 from .reference_branches import ReferenceBranchMemory
 from .rms_three_leaf_target_prior import paid_rms_three_leaf_target_prior
 
@@ -61,6 +61,27 @@ def _validate_explorer_prefix(plan):
     _validate_plan(plan)
     if any(tuple(key) != TARGET_ENTRY for key in plan):
         raise ValueError("existing P1.3 explorer prefix must contain moves only")
+
+
+
+
+def _ordinary_continuation_dict(items):
+    """Named suffixes; empty tuple means stop/bootstrap after explorer prefix."""
+    if type(items) is not tuple or not items:
+        raise ValueError("nonempty named ordinary continuation set required")
+    out = {}
+    for item in items:
+        if type(item) is not tuple or len(item) != 2:
+            raise ValueError("continuation identifier/plan pair required")
+        name, plan = item
+        if type(name) is not str or not name or name in out:
+            raise ValueError("unique nonempty continuation identifier required")
+        if type(plan) is not tuple:
+            raise ValueError("immutable continuation plan required")
+        if plan:
+            _validate_plan(plan)
+        out[name] = plan
+    return out
 
 
 def _future_opportunity_reduction(
@@ -215,7 +236,8 @@ def _minimum_ceiling(
 def paid_water_one_future_opportunity_value(
         model, memory: ReferenceBranchMemory, explore_plan,
         ordinary_continuations, horizon, budget: CognitiveBudget, *,
-        forecast_work: CognitiveWork | None = None) -> dict:
+        forecast_work: CognitiveWork | None = None,
+        future_opportunity_probability: float | None = None) -> dict:
     """Value a current unknown drink trial plus one generic future opportunity.
 
     The future opportunity is not the persistence of the current source.
@@ -235,8 +257,7 @@ def paid_water_one_future_opportunity_value(
     analytically while every O/R plan cell is genuinely simulated and paid.
     """
     _validate_explorer_prefix(explore_plan)
-    ordinary = _continuation_dict(
-        ordinary_continuations, allow_empty=False)
+    ordinary = _ordinary_continuation_dict(ordinary_continuations)
     if any(_contains(plan, DRINK) for plan in ordinary.values()):
         raise ValueError(
             "ordinary continuation cannot contain unsupported drink")
@@ -251,6 +272,12 @@ def paid_water_one_future_opportunity_value(
     if forecast_work is not None and not isinstance(
             forecast_work, CognitiveWork):
         raise ValueError("forecast_work must be CognitiveWork")
+    if (future_opportunity_probability is not None and
+            (type(future_opportunity_probability) not in (int, float) or
+             not isfinite(future_opportunity_probability) or
+             not 0.0 <= future_opportunity_probability <= 1.0)):
+        raise ValueError(
+            "future_opportunity_probability must be finite in [0,1]")
     if (not hasattr(model, "map") or type(model.map) is not dict or
             not hasattr(model, "proj_chunks") or not model.proj_chunks or
             not callable(getattr(model, "simulate", None)) or
@@ -307,8 +334,14 @@ def paid_water_one_future_opportunity_value(
             "schema": SCHEMA,
             "status": prior["status"],
             "water_probability": prior["target_probability"],
-            "future_water_opportunity_probability": prior[
-                "target_probability"],
+            "future_water_opportunity_probability": (
+                prior["target_probability"]
+                if future_opportunity_probability is None
+                else float(future_opportunity_probability)),
+            "future_opportunity_probability_source": (
+                "CURRENT_FIRST_PERSON_MODALITY_PROXY"
+                if future_opportunity_probability is None
+                else "EXPLICIT_PERSONAL_RECURRENCE"),
             "decline_value": decline_value,
             "decline_best_continuations": decline_best,
             "trial_frozen_value": None,
@@ -331,7 +364,9 @@ def paid_water_one_future_opportunity_value(
         raise RuntimeError("RMS water prior must have exactly three leaves")
     no_target, positive, negative = prior["leaves"]
     p_initial = prior["target_probability"]
-    p_future = p_initial
+    p_future = (
+        p_initial if future_opportunity_probability is None
+        else float(future_opportunity_probability))
     if not 0.0 < p_initial < 1.0:
         raise RuntimeError("strict water probability required")
     if no_target["leaf"] != "NO_TARGET_MODALITY":
@@ -418,6 +453,10 @@ def paid_water_one_future_opportunity_value(
         "status": "COMPLETE_ONE_FUTURE_OPPORTUNITY_ESTIMATE_NOT_POLICY",
         "water_probability": p_initial,
         "future_water_opportunity_probability": p_future,
+        "future_opportunity_probability_source": (
+            "CURRENT_FIRST_PERSON_MODALITY_PROXY"
+            if future_opportunity_probability is None
+            else "EXPLICIT_PERSONAL_RECURRENCE"),
         "future_opportunity_semantics": (
             "ONE_GENERIC_FUTURE_ONE_CELL_WATER_OPPORTUNITY_"
             "NOT_CURRENT_SOURCE_PERSISTENCE"),
