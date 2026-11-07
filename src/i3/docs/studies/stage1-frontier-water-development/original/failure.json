@@ -1,0 +1,1 @@
+{"case":{"block":"stable-48-g901","case":"stable-48-g901:reference_frontier_information_v1","cohort":"development","family":"stable","genome_seed":901,"index":48,"life_seed":7420000,"policy":"reference_frontier_information_v1"},"completed":2,"error":"P5e: forged or inconsistent paid option","error_type":"RuntimeError","no_retry":true,"status":"ENGINEERING_FAILURE_NOT_A_DEATH"}
