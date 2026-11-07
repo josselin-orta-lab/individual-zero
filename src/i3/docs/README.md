@@ -105,6 +105,39 @@ Stage 2 remains blocked.
 P1.3 remains the reference. I3 remains unregistered. No validation or reserve
 world has been opened.
 
+## Latest: projection bias confirmed; unbiased evaluation makes information decisive
+
+The P1.3 projection's end-of-chunk accounting is inconsistent; per-step
+projection fixes it exactly but costs 255 units instead of 8. A same-cost
+trapezoid is not enough (bias 0.133 vs limit 1e-3). Under an unbiased
+projection, Stage-1 information becomes decisive (32 of 40 selected trials at
+ω = 0) and ω acts strongly. Next: event-aware accounting, candidate C
+([results](studies/projection-consistency/RESULTS.md)).
+
+## Latest: ω decided (A), capacity shown; P1.3 projection bias is the next blocker
+
+The owner chose a heritable expectation toward the unknown, ω. Its frozen
+software falsifier passed: ω = 0 reproduces #1101, cost is identical across ω,
+and ω shifts water-frontier values in the predicted direction
+([results](studies/stage1-omega-software-falsifier/RESULTS.md)).
+
+Decomposing the result exposed a **plan-length bias in the P1.3 projection**:
+longer plans score higher even when the extra steps are waits. Fix and gate the
+projection's bootstrap consistency before ω enters the genome or the live path.
+
+## Latest: carried food closed as decision-neutral; first contact needs a decision
+
+After #1102, the carried-food path was audited (#1103) and characterized
+(inventory-bounded future reuse, frozen, executed once, no world): **0/27 meal
+rank improvements at 1–8 represented future uses**; information saturates.
+The one-reuse bound is not causal, so do not patch recurrence. See
+[results](studies/stage1-carried-food-reuse/RESULTS.md).
+
+The open Stage-1 blocker is **first contact**: before personal experience,
+information value cannot pay for a risky unsupported trial. Owner decision
+required: [STAGE1_FIRST_CONTACT_DECISION.md](STAGE1_FIRST_CONTACT_DECISION.md).
+Do not implement either option before that decision.
+
 ## 48/49 diagnostic closed by engineering failure
 
 The fresh three-arm 48/49 diagnostic did not complete. Two

@@ -1,0 +1,8740 @@
+{
+ "lives": 0,
+ "protocol": "STAGE1_OMEGA_SOFTWARE_FALSIFIER.md",
+ "rows": {
+  "-0.5": [
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.07237983030006301,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.07237983030006301,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.07237983030006301,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.07237983030006301,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.04613880890911104,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.04613880890911104,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.04613880890911104,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.04613880890911104,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.02276085015553353,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.02276085015553353,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.02276085015553353,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.02276085015553353,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.003778567136531019,
+    "trial_information_value": 0.00042202063800417244,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.003778567136531019,
+    "trial_information_value": 0.00042202063800417244,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.003778567136531019,
+    "trial_information_value": 0.00042202063800417244,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.003778567136531019,
+    "trial_information_value": 0.00042202063800417244,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.028191868131002273,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.007047967032750568,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.028191868131002273,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.007047967032750568,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.028191868131002273,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.007047967032750568,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.028191868131002273,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.007047967032750568,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.013065140932715713,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.003266285233178956,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.013065140932715713,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.003266285233178956,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.013065140932715713,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.003266285233178956,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.013065140932715713,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.003266285233178956,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.012750290229046723,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.003187572557261653,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.012750290229046723,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.003187572557261653,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.012750290229046723,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.003187572557261653,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.012750290229046723,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.003187572557261653,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.01229975281797091,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.003074938204492672,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.01229975281797091,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.003074938204492672,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.01229975281797091,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.003074938204492672,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.01229975281797091,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.003074938204492672,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.06591064750350095,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.016477661875875294,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.06591064750350095,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.016477661875875294,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.06591064750350095,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.016477661875875294,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.06591064750350095,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.016477661875875294,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03134597901498015,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.007836494753745038,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03134597901498015,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.007836494753745038,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03134597901498015,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.007836494753745038,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03134597901498015,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.007836494753745038,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03112964213894087,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.007782410534735051,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03112964213894087,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.007782410534735051,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03112964213894087,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.007782410534735051,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03112964213894087,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.007782410534735051,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03058484936727557,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.007646212341818837,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03058484936727557,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.007646212341818837,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03058484936727557,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.007646212341818837,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03058484936727557,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.007646212341818837,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.00010611389398063054,
+    "trial_information_value": 0.00013377057003438608,
+    "water_revelation_advantage": 2.6528473495157634e-05,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.00010611389398063054,
+    "trial_information_value": 0.00013377057003438608,
+    "water_revelation_advantage": 2.6528473495157634e-05,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.00010611389398063054,
+    "trial_information_value": 0.00013377057003438608,
+    "water_revelation_advantage": 2.6528473495157634e-05,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.00010611389398063054,
+    "trial_information_value": 0.00013377057003438608,
+    "water_revelation_advantage": 2.6528473495157634e-05,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.003442612829284264,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0008606532073210937,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.003442612829284264,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0008606532073210937,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.003442612829284264,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0008606532073210937,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.003442612829284264,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0008606532073210937,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.006729364111827674,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0016823410279569462,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.006729364111827674,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0016823410279569462,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.006729364111827674,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0016823410279569462,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.006729364111827674,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0016823410279569462,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.00966354085592025,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0024158852139800624,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.00966354085592025,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0024158852139800624,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.00966354085592025,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0024158852139800624,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.00966354085592025,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0024158852139800624,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.05128175839777693,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.05128175839777693,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.05128175839777693,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.05128175839777693,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.028964463965734932,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.028964463965734932,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.028964463965734932,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.028964463965734932,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.010154102660968278,
+    "trial_information_value": 0.00012832891237590793,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.010154102660968278,
+    "trial_information_value": 0.00012832891237590793,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.010154102660968278,
+    "trial_information_value": 0.00012832891237590793,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.010154102660968278,
+    "trial_information_value": 0.00012832891237590793,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.003952092324028433,
+    "trial_information_value": 9.37178525876603e-05,
+    "water_revelation_advantage": 0.0009880230810070945,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.003952092324028433,
+    "trial_information_value": 9.37178525876603e-05,
+    "water_revelation_advantage": 0.0009880230810070945,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.003952092324028433,
+    "trial_information_value": 9.37178525876603e-05,
+    "water_revelation_advantage": 0.0009880230810070945,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.003952092324028433,
+    "trial_information_value": 9.37178525876603e-05,
+    "water_revelation_advantage": 0.0009880230810070945,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   }
+  ],
+  "-1.0": [
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.08016677107902559,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.08016677107902559,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.08016677107902559,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.08016677107902559,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.05181848629936958,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.05181848629936958,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.05181848629936958,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.05181848629936958,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.026446086226470378,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.026446086226470378,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.026446086226470378,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.026446086226470378,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.006094814984640762,
+    "trial_information_value": 0.0001267971027594239,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.006094814984640762,
+    "trial_information_value": 0.0001267971027594239,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.006094814984640762,
+    "trial_information_value": 0.0001267971027594239,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.006094814984640762,
+    "trial_information_value": 0.0001267971027594239,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.025344572189989423,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0063361430474973,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.025344572189989423,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0063361430474973,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.025344572189989423,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0063361430474973,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.025344572189989423,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0063361430474973,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.009929646669961545,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.002482411667490414,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.009929646669961545,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.002482411667490414,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.009929646669961545,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.002482411667490414,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.009929646669961545,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.002482411667490414,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.010314217824201388,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.002578554456050264,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.010314217824201388,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.002578554456050264,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.010314217824201388,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.002578554456050264,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.010314217824201388,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.002578554456050264,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.010563102271034186,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0026407755677585465,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.010563102271034186,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0026407755677585465,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.010563102271034186,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0026407755677585465,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.010563102271034186,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0026407755677585465,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.06227633636636831,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.015569084091592078,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.06227633636636831,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.015569084091592078,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.06227633636636831,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.015569084091592078,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.06227633636636831,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.015569084091592078,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.02762927356412659,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.006907318391031758,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.02762927356412659,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.006907318391031758,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.02762927356412659,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.006907318391031758,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.02762927356412659,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.006907318391031758,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.028358331551560978,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0070895828878903,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.028358331551560978,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0070895828878903,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.028358331551560978,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0070895828878903,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.028358331551560978,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0070895828878903,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.028758933643369344,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.007189733410842392,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.028758933643369344,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.007189733410842392,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.028758933643369344,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.007189733410842392,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.028758933643369344,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.007189733410842392,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.001359758552896384,
+    "trial_information_value": 0.0002866498513441895,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.001359758552896384,
+    "trial_information_value": 0.0002866498513441895,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.001359758552896384,
+    "trial_information_value": 0.0002866498513441895,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.001359758552896384,
+    "trial_information_value": 0.0002866498513441895,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.002134715260167841,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0005336788150419602,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.002134715260167841,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0005336788150419602,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.002134715260167841,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0005336788150419602,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.002134715260167841,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0005336788150419602,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.005712289732498266,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0014280724331245942,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.005712289732498266,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0014280724331245942,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.005712289732498266,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0014280724331245942,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.005712289732498266,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0014280724331245942,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.008908325850561394,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0022270814626403346,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.008908325850561394,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0022270814626403346,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.008908325850561394,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0022270814626403346,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.008908325850561394,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0022270814626403346,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.05822206199844149,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.05822206199844149,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.05822206199844149,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.05822206199844149,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.033704380050815,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.033704380050815,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.033704380050815,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.033704380050815,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.013213565699926821,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.013213565699926821,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.013213565699926821,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.013213565699926821,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.0022430080686676734,
+    "trial_information_value": 0.0004838327935771103,
+    "water_revelation_advantage": 0.0005607520171669322,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.0022430080686676734,
+    "trial_information_value": 0.0004838327935771103,
+    "water_revelation_advantage": 0.0005607520171669322,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.0022430080686676734,
+    "trial_information_value": 0.0004838327935771103,
+    "water_revelation_advantage": 0.0005607520171669322,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.0022430080686676734,
+    "trial_information_value": 0.0004838327935771103,
+    "water_revelation_advantage": 0.0005607520171669322,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   }
+  ],
+  "0.0": [
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.06484487406623274,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.06484487406623274,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.06484487406623274,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.06484487406623274,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.04067360511270102,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.04067360511270102,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.04067360511270102,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.04067360511270102,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.01929008767844509,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.01929008767844509,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.01929008767844509,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.01929008767844509,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.001650060028622724,
+    "trial_information_value": 0.0005929022704018738,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.001650060028622724,
+    "trial_information_value": 0.0005929022704018738,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.001650060028622724,
+    "trial_information_value": 0.0005929022704018738,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.001650060028622724,
+    "trial_information_value": 0.0005929022704018738,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03102421091412677,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.007756052728531637,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03102421091412677,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.007756052728531637,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03102421091412677,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.007756052728531637,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03102421091412677,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.007756052728531637,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.01618047453633742,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.00404511863408441,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.01618047453633742,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.00404511863408441,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.01618047453633742,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.00404511863408441,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.01618047453633742,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.00404511863408441,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.015166201974759708,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0037915504936899547,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.015166201974759708,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0037915504936899547,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.015166201974759708,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0037915504936899547,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.015166201974759708,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0037915504936899547,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.014016242705775173,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.00350406067644371,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.014016242705775173,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.00350406067644371,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.014016242705775173,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.00350406067644371,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.014016242705775173,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.00350406067644371,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.069523946080426,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.017380986520106445,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.069523946080426,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.017380986520106445,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.069523946080426,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.017380986520106445,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.069523946080426,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.017380986520106445,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03503738989486482,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008759347473716206,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03503738989486482,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008759347473716206,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03503738989486482,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008759347473716206,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03503738989486482,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008759347473716206,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.033875658155352095,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008468914538837913,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.033875658155352095,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008468914538837913,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.033875658155352095,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008468914538837913,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.033875658155352095,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008468914538837913,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.032385470520213455,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008096367630053392,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.032385470520213455,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008096367630053392,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.032385470520213455,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008096367630053392,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.032385470520213455,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008096367630053392,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.0015791924576760152,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0003947981144190038,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.0015791924576760152,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0003947981144190038,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.0015791924576760152,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0003947981144190038,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.0015791924576760152,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0003947981144190038,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.004738607803943529,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0011846519509859377,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.004738607803943529,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0011846519509859377,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.004738607803943529,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0011846519509859377,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.004738607803943529,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0011846519509859377,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.007734841098237744,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0019337102745594636,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.007734841098237744,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0019337102745594636,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.007734841098237744,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0019337102745594636,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.007734841098237744,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0019337102745594636,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.010407515302590098,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0026018788256475522,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.010407515302590098,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0026018788256475522,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.010407515302590098,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0026018788256475522,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.010407515302590098,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0026018788256475522,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.04460138140052283,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.04460138140052283,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.04460138140052283,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.04460138140052283,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.02448447448406521,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.02448447448406521,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.02448447448406521,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.02448447448406521,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.007088470088321586,
+    "trial_information_value": 0.00043762755509835216,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.007088470088321586,
+    "trial_information_value": 0.00043762755509835216,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.007088470088321586,
+    "trial_information_value": 0.00043762755509835216,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.007088470088321586,
+    "trial_information_value": 0.00043762755509835216,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.005728581581805281,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0014321453954512786,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.005728581581805281,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0014321453954512786,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.005728581581805281,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0014321453954512786,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.005728581581805281,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0014321453954512786,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   }
+  ],
+  "0.25": [
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.061171890153741915,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.061171890153741915,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.061171890153741915,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.061171890153741915,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.03802143081218923,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.03802143081218923,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.03802143081218923,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.03802143081218923,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.01763513403759409,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.01763513403759409,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.01763513403759409,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.01763513403759409,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.0006562092522441887,
+    "trial_information_value": 0.00039682088927761594,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.0006562092522441887,
+    "trial_information_value": 0.00039682088927761594,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.0006562092522441887,
+    "trial_information_value": 0.00039682088927761594,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.0006562092522441887,
+    "trial_information_value": 0.00039682088927761594,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03243477487148083,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008108693717870041,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03243477487148083,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008108693717870041,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03243477487148083,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008108693717870041,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03243477487148083,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008108693717870041,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.017730581090973585,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.004432645272743452,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.017730581090973585,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.004432645272743452,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.017730581090973585,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.004432645272743452,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.017730581090973585,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.004432645272743452,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.016366597600441568,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.004091649400110309,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.016366597600441568,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.004091649400110309,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.016366597600441568,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.004091649400110309,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.016366597600441568,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.004091649400110309,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.014866927402502728,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0037167318506255986,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.014866927402502728,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0037167318506255986,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.014866927402502728,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0037167318506255986,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.014866927402502728,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0037167318506255986,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.07132271565881076,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.01783067891470269,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.07132271565881076,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.01783067891470269,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.07132271565881076,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.01783067891470269,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.07132271565881076,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.01783067891470269,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.036873609870694324,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.009218402467673581,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.036873609870694324,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.009218402467673581,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.036873609870694324,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.009218402467673581,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.036873609870694324,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.009218402467673581,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03523918069944454,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008809795174861135,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03523918069944454,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008809795174861135,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03523918069944454,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008809795174861135,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03523918069944454,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008809795174861135,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.033276295632569175,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008319073908142238,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.033276295632569175,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008319073908142238,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.033276295632569175,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008319073908142238,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.033276295632569175,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008319073908142238,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.002378153551619633,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0005945383879049082,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.002378153551619633,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0005945383879049082,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.002378153551619633,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0005945383879049082,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.002378153551619633,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0005945383879049082,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.005382141818351616,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0013455354545879317,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.005382141818351616,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0013455354545879317,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.005382141818351616,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0013455354545879317,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.005382141818351616,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0013455354545879317,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.008233230569098193,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0020583076422745483,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.008233230569098193,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0020583076422745483,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.008233230569098193,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0020583076422745483,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.008233230569098193,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0020583076422745483,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.010775287316416637,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0026938218291041593,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.010775287316416637,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0026938218291041593,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.010775287316416637,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0026938218291041593,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.010775287316416637,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0026938218291041593,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.041358665378174564,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.041358665378174564,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.041358665378174564,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.041358665378174564,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.022341952219509187,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.022341952219509187,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.022341952219509187,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.022341952219509187,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.005640692442897333,
+    "trial_information_value": 0.0005727883093074038,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.005640692442897333,
+    "trial_information_value": 0.0005727883093074038,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.005640692442897333,
+    "trial_information_value": 0.0005727883093074038,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.005640692442897333,
+    "trial_information_value": 0.0005727883093074038,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.0065778131047429245,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0016444532761857311,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.0065778131047429245,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0016444532761857311,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.0065778131047429245,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0016444532761857311,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.0065778131047429245,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0016444532761857311,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   }
+  ],
+  "0.5": [
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.05756190237753389,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.05756190237753389,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.05756190237753389,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.05756190237753389,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.03542287491013951,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.03542287491013951,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.03542287491013951,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.03542287491013951,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.016033798795205167,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.016033798795205167,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.016033798795205167,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.016033798795205167,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.00029070633908406807,
+    "trial_information_value": 0.00021151053337592485,
+    "water_revelation_advantage": 7.267658477100314e-05,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.00029070633908406807,
+    "trial_information_value": 0.00021151053337592485,
+    "water_revelation_advantage": 7.267658477100314e-05,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.00029070633908406807,
+    "trial_information_value": 0.00021151053337592485,
+    "water_revelation_advantage": 7.267658477100314e-05,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.00029070633908406807,
+    "trial_information_value": 0.00021151053337592485,
+    "water_revelation_advantage": 7.267658477100314e-05,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03384160053936269,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008460400134840507,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03384160053936269,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008460400134840507,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03384160053936269,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008460400134840507,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03384160053936269,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008460400134840507,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.019275647480826774,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.004818911870206777,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.019275647480826774,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.004818911870206777,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.019275647480826774,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.004818911870206777,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.019275647480826774,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.004818911870206777,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.01756195306134034,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.004390488265335057,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.01756195306134034,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.004390488265335057,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.01756195306134034,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.004390488265335057,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.01756195306134034,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.004390488265335057,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.015712571934447195,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.003928142983611771,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.015712571934447195,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.003928142983611771,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.015712571934447195,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.003928142983611771,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.015712571934447195,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.003928142983611771,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.07311623209714369,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.018279058024285977,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.07311623209714369,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.018279058024285977,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.07311623209714369,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.018279058024285977,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.07311623209714369,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.018279058024285977,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03870350620378149,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.009675876550945262,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03870350620378149,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.009675876550945262,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03870350620378149,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.009675876550945262,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03870350620378149,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.009675876550945262,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03659637960079487,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.009149094900198662,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03659637960079487,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.009149094900198662,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03659637960079487,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.009149094900198662,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03659637960079487,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.009149094900198662,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03416079710218245,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008540199275545612,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03416079710218245,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008540199275545612,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03416079710218245,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008540199275545612,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03416079710218245,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008540199275545612,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.0031741389969486278,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0007935347492371569,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.0031741389969486278,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0007935347492371569,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.0031741389969486278,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0007935347492371569,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.0031741389969486278,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0007935347492371569,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.006022700184145524,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.001505675046036381,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.006022700184145524,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.001505675046036381,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.006022700184145524,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.001505675046036381,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.006022700184145524,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.001505675046036381,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.008728720691728697,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0021821801729321466,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.008728720691728697,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0021821801729321466,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.008728720691728697,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0021821801729321466,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.008728720691728697,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0021821801729321466,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.011140249190570939,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0027850622976427486,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.011140249190570939,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0027850622976427486,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.011140249190570939,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0027850622976427486,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.011140249190570939,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0027850622976427486,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.03818093100667874,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.03818093100667874,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.03818093100667874,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.03818093100667874,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.020260290946347403,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.020260290946347403,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.020260290946347403,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.020260290946347403,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.004249607224738883,
+    "trial_information_value": 0.0006461769102850123,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.004249607224738883,
+    "trial_information_value": 0.0006461769102850123,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.004249607224738883,
+    "trial_information_value": 0.0006461769102850123,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.004249607224738883,
+    "trial_information_value": 0.0006461769102850123,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.0073697966061841425,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0018424491515460217,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.0073697966061841425,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0018424491515460217,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.0073697966061841425,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0018424491515460217,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.0073697966061841425,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0018424491515460217,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   }
+  ],
+  "1.0": [
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.05052636985787362,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.05052636985787362,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.05052636985787362,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.05052636985787362,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.030386618301426527,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.030386618301426527,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.030386618301426527,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.030386618301426527,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.012679201519904315,
+    "trial_information_value": 0.0003050122699670421,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.012679201519904315,
+    "trial_information_value": 0.0003050122699670421,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.012679201519904315,
+    "trial_information_value": 0.0003050122699670421,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.012679201519904315,
+    "trial_information_value": 0.0003050122699670421,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.0021722927491567012,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0005430731872891337,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.0021722927491567012,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0005430731872891337,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.0021722927491567012,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0005430731872891337,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 0,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.0021722927491567012,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0005430731872891337,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03664403700671026,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.009161009251677621,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03664403700671026,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.009161009251677621,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03664403700671026,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.009161009251677621,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03664403700671026,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.009161009251677621,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.022350659766183667,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0055876649415459445,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.022350659766183667,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0055876649415459445,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.022350659766183667,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0055876649415459445,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.022350659766183667,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0055876649415459445,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.019937543488788623,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.004984385872197072,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.019937543488788623,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.004984385872197072,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.019937543488788623,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.004984385872197072,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.019937543488788623,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.004984385872197072,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.017388740503986755,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.004347185125996633,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.017388740503986755,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.004347185125996633,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.017388740503986755,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.004347185125996633,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 1,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.017388740503986755,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.004347185125996633,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.076687505553654,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.019171876388413445,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.076687505553654,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.019171876388413445,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.076687505553654,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.019171876388413445,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.076687505553654,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.019171876388413445,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.04234432794172971,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.010586081985432427,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.04234432794172971,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.010586081985432427,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.04234432794172971,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.010586081985432427,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.04234432794172971,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.010586081985432427,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.0392918064752692,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0098229516188173,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.0392918064752692,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0098229516188173,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.0392918064752692,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0098229516188173,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.0392918064752692,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0098229516188173,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03591082911318311,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008977707278295721,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03591082911318311,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008977707278295721,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03591082911318311,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008977707278295721,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 2,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.03591082911318311,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.008977707278295721,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.004757182941764082,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0011892957354410205,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.004757182941764082,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0011892957354410205,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.004757182941764082,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0011892957354410205,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.004757182941764082,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0011892957354410205,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.007294889969890472,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0018237224924726458,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.007294889969890472,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0018237224924726458,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.007294889969890472,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0018237224924726458,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.007294889969890472,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0018237224924726458,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.009711002892300757,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.002427750723075217,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.009711002892300757,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.002427750723075217,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.009711002892300757,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.002427750723075217,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.009711002892300757,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.002427750723075217,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.011861742519862828,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.002965435629965707,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.011861742519862828,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.002965435629965707,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.011861742519862828,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.002965435629965707,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 3,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.011861742519862828,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.002965435629965707,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.03202040721624533,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.03202040721624533,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.03202040721624533,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 20.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.03202040721624533,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.01609629757165265,
+    "trial_information_value": 0.00016384645832279165,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.01609629757165265,
+    "trial_information_value": 0.00016384645832279165,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.01609629757165265,
+    "trial_information_value": 0.00016384645832279165,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 30.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.01609629757165265,
+    "trial_information_value": 0.00016384645832279165,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 4,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.0016373337113086972,
+    "trial_information_value": 0.00023293924275180622,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 6,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.0016373337113086972,
+    "trial_information_value": 0.00023293924275180622,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 8,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.0016373337113086972,
+    "trial_information_value": 0.00023293924275180622,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "DECLINE_TRIAL"
+    ],
+    "horizon": 12,
+    "level": 40.0,
+    "status": "EVALUATED",
+    "trial_advantage": -0.0016373337113086972,
+    "trial_information_value": 0.00023293924275180622,
+    "water_revelation_advantage": 0.0,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 4,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.008802455958712707,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.002200613989678135,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 6,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.008802455958712707,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.002200613989678135,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 8,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.008802455958712707,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.002200613989678135,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": 4,
+    "choices": [
+     "TRIAL"
+    ],
+    "horizon": 12,
+    "level": 50.0,
+    "status": "EVALUATED",
+    "trial_advantage": 0.008802455958712707,
+    "trial_information_value": 0.0,
+    "water_revelation_advantage": 0.002200613989678135,
+    "work": {
+     "cycles": 17,
+     "memory_items": 196,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   }
+  ]
+ },
+ "rules": {
+  "R0_identity_with_1101": true,
+  "R1_identical_paid_work_across_omega": true,
+  "R2_direction_monotone": true,
+  "R3_capacity_some_positive_omega_adds_positive_revelation": true
+ },
+ "schema": "i3-stage1-omega-software-falsifier/v1",
+ "states_newly_positive_vs_omega0": {
+  "0.25": 0,
+  "0.5": 4,
+  "1.0": 4
+ },
+ "summary": {
+  "-0.5": {
+   "best_trial_advantage": 0.06591064750350095,
+   "declined": 28,
+   "evaluated": 80,
+   "max_information_value": 0.00042202063800417244,
+   "max_revelation_advantage": 0.016477661875875294,
+   "positive_revelation": 52,
+   "selected_epistemic": 8,
+   "trial_selected": 52,
+   "worst_trial_advantage": -0.07237983030006301
+  },
+  "-1.0": {
+   "best_trial_advantage": 0.06227633636636831,
+   "declined": 32,
+   "evaluated": 80,
+   "max_information_value": 0.0004838327935771103,
+   "max_revelation_advantage": 0.015569084091592078,
+   "positive_revelation": 48,
+   "selected_epistemic": 4,
+   "trial_selected": 48,
+   "worst_trial_advantage": -0.08016677107902559
+  },
+  "0.0": {
+   "best_trial_advantage": 0.069523946080426,
+   "declined": 28,
+   "evaluated": 80,
+   "max_information_value": 0.0005929022704018738,
+   "max_revelation_advantage": 0.017380986520106445,
+   "positive_revelation": 52,
+   "selected_epistemic": 0,
+   "trial_selected": 52,
+   "worst_trial_advantage": -0.06484487406623274
+  },
+  "0.25": {
+   "best_trial_advantage": 0.07132271565881076,
+   "declined": 28,
+   "evaluated": 80,
+   "max_information_value": 0.0005727883093074038,
+   "max_revelation_advantage": 0.01783067891470269,
+   "positive_revelation": 52,
+   "selected_epistemic": 0,
+   "trial_selected": 52,
+   "worst_trial_advantage": -0.061171890153741915
+  },
+  "0.5": {
+   "best_trial_advantage": 0.07311623209714369,
+   "declined": 24,
+   "evaluated": 80,
+   "max_information_value": 0.0006461769102850123,
+   "max_revelation_advantage": 0.018279058024285977,
+   "positive_revelation": 56,
+   "selected_epistemic": 4,
+   "trial_selected": 56,
+   "worst_trial_advantage": -0.05756190237753389
+  },
+  "1.0": {
+   "best_trial_advantage": 0.076687505553654,
+   "declined": 24,
+   "evaluated": 80,
+   "max_information_value": 0.0003050122699670421,
+   "max_revelation_advantage": 0.019171876388413445,
+   "positive_revelation": 56,
+   "selected_epistemic": 0,
+   "trial_selected": 56,
+   "worst_trial_advantage": -0.05052636985787362
+  }
+ },
+ "verdict": "CAPACITY_SHOWN",
+ "world_access": false
+}

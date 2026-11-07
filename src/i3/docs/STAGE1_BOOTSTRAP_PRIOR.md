@@ -955,3 +955,37 @@ This is also a direct software route back to #1054's unresolved carried-food
 case without rewriting P5d evidence.
 
 No scientific study or runtime policy is authorized by this slice.
+
+
+## Carried-food raw-rank audit (#1103) and future-reuse characterization
+
+The #1103 audit placed the #1102 score beside actual P1.3 witnesses on 27
+synthetic states: information positive in 18, **meal rank improved in 0**, P1.3
+already eats in 24. A frozen follow-up added opt-in `max_future_repeats`
+(default 1 is #1102 exactly) and represented 1, 2, 4 and 8 carried future uses:
+still **0/27 improvements**, raw-top fixed at 15/27, information saturating
+(0.126 → 0.148) while paid kernel work grows ×3.6–4.8. Verdict
+`BOUND_NOT_CAUSAL`: [results](studies/stage1-carried-food-reuse/RESULTS.md).
+
+Harmful personal histories can carry genuine information when their branches
+disagree on the best plan (Amendment 1); "harmful ⇒ zero" held only for the
+earlier test states.
+
+Information value is bounded by how much the best plan differs between imagined
+effects, not by how often it is reused. First contact is the remaining Stage-1
+blocker: [decision note](STAGE1_FIRST_CONTACT_DECISION.md).
+
+
+## ω: inherited expectation toward the unknown (owner decision A)
+
+`paid_recent_rms_zero_mean_effect_prior(..., omega=0.0)`, threaded through the
+RMS three-leaf composition and the one-future-opportunity water kernel. The two
+hypotheses become `(ω+1)·s` and `(ω−1)·s`: mean `ω·s` on every channel, spread
+`s` unchanged, `ω = 0` exactly the zero-mean prior. Paid work does not depend
+on ω.
+
+The frozen falsifier passed R0–R3 on the #1101 grid
+([results](studies/stage1-omega-software-falsifier/RESULTS.md)), but showed that
+the P1.3 projection rewards plan length. Absolute trial and revelation
+advantages from this kernel family must be re-read after a bootstrap-consistency
+fix.
