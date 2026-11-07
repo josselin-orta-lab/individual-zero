@@ -195,6 +195,11 @@ class OmegaAdr0015RunnerTests(unittest.TestCase):
         self.assertEqual(p["selection_lives_per_shard"], 240)
         self.assertEqual(p["validation_main_lives_per_shard"], 30)
         self.assertEqual(p["validation_rank0_replays_per_shard"], 6)
+        self.assertEqual(p["selection_systematic_probe_runs"], 48)
+        self.assertEqual(p["validation_systematic_probe_runs"], 48)
+        self.assertEqual(
+            p["systematic_probe_cost_status"],
+            "DESCRIPTIVE_NOT_COST_MATCHED_NOT_I3_LIFE")
         self.assertEqual(
             p["selection_barrier"], "ALL_16_COMPLETE_BEFORE_ANY_RANKING")
         self.assertEqual(
@@ -286,6 +291,13 @@ class OmegaAdr0015RunnerTests(unittest.TestCase):
             selection["random_g0_descriptive"]["0"]["candidate"]
             ["interpretation"],
             "DESCRIPTIVE_G0_EVOLVABILITY_NOT_GATE")
+        self.assertEqual(
+            len(selection["genome_descriptive"]["0"]["candidate_pool"]), 40)
+        self.assertEqual(
+            len(selection["genome_descriptive"]["0"]["candidate_selected"]), 5)
+        self.assertTrue(all(
+            "omega" in row and "genome_digest" in row
+            for row in selection["genome_descriptive"]["0"]["candidate_pool"]))
         with self.assertRaises(ValueError):
             R.aggregate_selection(shards[:-1])
 
