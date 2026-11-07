@@ -12,36 +12,51 @@ That integration changed documentation and priorities only. The subsequent
 Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
-## Latest diagnostic: local candidate not ready for the Stage-1 gate
+## Latest diagnostic: cost paralysis receded, local policy still fails
 
-7 November 2026, [original results and complete traces](studies/stage1-local-information-development/RESULTS.md),
-PR #1070: 24 prospectively specified development lives, no retries or runtime
-changes. Candidate 0/12 survivors, 12 dehydration deaths, 1189/1422 inactive
-steps (83.61%), zero positive water/food uptake. Reference 3/12 survivors,
-563/3332 inactive steps (16.90%). Candidate's 194 sleep steps all lose net
-vigilance including cognition; none of 1409 paid option scores has a positive
-information increment above 1e-12. All candidate revision receipts are
-NO_EXPOSURE, not successful or zero-latency revision.
+7 November 2026, [cost-reduced development result](studies/stage1-cost-reduced-development/RESULTS.md)
+and [read-only zero-information audit](studies/stage1-cost-reduced-development/POSTHOC_INFORMATION_ZERO_AUDIT.md),
+PR #1075. The prospectively frozen 46/47 panel completed once: 24 lives, no
+retry or engineering crash, originals archived before reduction.
 
-**DRIFT DETECTED:** do not expand spatial cognition over an untested paid
-comparison loop. Exact payoff-cell reuse, one-pass support resolution and a
-stale-safe decision-local support index are now implemented. On the same
-minimal populated synthetic fixture, total actual decision cost has fallen
-from 2.9536 energy / 2.06 vigilance before scan optimization to **1.3104 /
-1.76**; history access is now **0.254 / 0.15**, while eight unique projected
-cells remain **0.32 / 0.56** and dominate both currencies. Empty-history total
-remains 0.6672 / 1.42. Saved traversal work remains only in the common
-conservative forecast quote, never physical billing. These are engineering
-scaling observations, not survival results. There is no longer an obvious
-duplicate-work target: reducing unique rollouts would change how much the
-individual computes and therefore crosses into Stage 2. Next #1061: freeze and
-run a fresh bounded development diagnostic of this cost-reduced Stage-1
-candidate on previously unopened development conditions. Keep tariffs, prior,
-physical recovery and the old exposed panel fixed. P1.3 remains reference.
-The local repertoire/memory/prior also differ, so this small unselected panel
-cannot isolate information value or support independent-population inference.
-Stage 0, #1026, #1054 and the later scientific gates remain open. No held-out
-world, reserve exposure, activation or scientific GO.
+The candidate meets its **engineering-only** continuation rule: aggregate
+physical inactivity is 403/1792 = 22.49% and there are 12 positive water
+uptakes. Only 3/12 candidate lives enter terminal NO_PROCESSING lock, versus
+the first diagnostic's pervasive early funding collapse. This does **not**
+constitute a Stage-1 gate result.
+
+The candidate nevertheless remains 0/12 alive at horizon, with 10 dehydration
+and 2 starvation deaths. Reference is 4/12 alive. Candidate cognition costs
+2.059937 energy and 3.166388 vigilance per lived step versus 0.476000 and
+0.584084 for reference; trajectories differ, so this is descriptive rather
+than cost-matched mediation.
+
+The newly visible bottleneck is behavioral rather than merely computational:
+candidate sleep occupies 1241/1792 steps (69.25%). None of 8666 paid option
+scores has positive information value above 1e-12, despite 8224 (94.90%) having
+complete empirical support. In stable/pulse, all eight candidate lives remain
+fully funded until death, obtain zero water, and never score a local `boire`
+option. Across 400 funded decisions with sensed water <=20 in those families,
+drink is available 0 times while sleep is chosen 381 times.
+
+The read-only audit does not reconstruct unarchived branch values. It therefore
+does not claim whether zero information is dominated by signal aliasing or an
+unchanged best continuation. It does show that 4255 fully supported zero-value
+scores introduce at least two distinct new payoff-cell keys, so total payoff
+collapse is not a sufficient explanation. Synthetic kernel tests separately
+prove that the implementation can produce positive information value.
+
+**DRIFT DETECTED:** stop optimizing duplicate work and do not add a Stage-2
+budget heuristic to rescue this local prototype. Its deliberate local repertoire
+cannot value discovery of unseen cells: hypothetical movement reveals no new
+map cell, while repertoire/memory/prior also differ from P1.3. The next Stage-1
+candidate should preserve P1.3's existing first-person spatial repertoire and
+learned state, changing the information-value mechanism as narrowly as possible.
+Do not rerun exposed 44-47, tune the stationary prior, force resources, or
+rewrite Competition. P1.3 remains reference.
+
+Stage 0, #1026, #1054 and the scientific Stage-1 survival/revision gate remain
+open. No selection/validation/reserve exposure, activation or scientific GO.
 
 ## Current reference and observed limits
 
