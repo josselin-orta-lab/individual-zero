@@ -56,8 +56,27 @@ first useful water experience, the conservative no-oracle belief provides no
 actionable bodily consequence for water discovery.
 
 Do not tune 50/51, restore curiosity as a hidden bonus, invent favorable water
-behind an unseen frontier, or jump to Stage 2. Any bootstrap prior must be
-generic, renaming-invariant, paid and frozen before fresh exposure.
+behind an unseen frontier, or jump to Stage 2.
+
+The bootstrap is now decomposed in software, with no new lives:
+
+- [zero-mean stake prior](STAGE1_BOOTSTRAP_PRIOR.md): two opposite unsupported
+  bodily effects, p=.5/.5, exact zero expected external delta and no action or
+  World input (#1088);
+- exact branch-local simulation after one effect becomes observable, without
+  mutating the real Mind or transferring the sample to other actions (#1089);
+- nested unsupported-action trial value, explicitly separating
+  `information_value` from `trial_advantage`; a synthetic test demonstrates
+  positive information from the zero-mean prior (#1090);
+- a symmetric first-person modality prior over no resource / water / token,
+  extending P1.3's existing Laplace resource-rate principle without body utility
+  or token identity (#1091).
+
+**DRIFT DETECTED:** the source scenario explicitly budgets only 2-3 simulated
+outcome branches for Stage 1. Do not naively compose modality 3 x effect 2 into
+six leaves. The next design must keep the complete frontier/bootstrap
+uncertainty within three outcome branches while preserving the distinction
+between observing a resource and learning its effect.
 
 Food-effect risk and multi-cell joint frontier outcomes remain NOT_IMPLEMENTED.
 Three candidate deaths are starvation deaths, but seven are dehydration deaths,
