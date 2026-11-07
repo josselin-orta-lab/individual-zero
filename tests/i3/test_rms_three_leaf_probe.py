@@ -27,6 +27,7 @@ COMMON = (
 POST = (
     ("post-wait", (("attendre",),)),
     ("post-sleep", (("dormir",),)),
+    ("post-repeat-drink", (("boire",),)),
 )
 
 
