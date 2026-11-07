@@ -111,7 +111,8 @@ The caller must physically settle the new learning allowance exactly once.
 
     def construct(self, probe: EffectKey,
                   continuations: tuple[tuple[str, EffectKey], ...],
-                  budget: CognitiveBudget) -> tuple[SubjectiveOutcome, ...]:
+                  budget: CognitiveBudget, *,
+                  work_receipt: dict | None = None) -> tuple[SubjectiveOutcome, ...]:
         """Construct two/three hypotheses, all with a body-only observation.
 
 Latest <=3 exact-key samples; otherwise latest <=3 same-action samples. No
@@ -122,6 +123,23 @@ mean. This persistence approximation is not a learned change detector.
 """
         _key(probe)
         _alive_budget(budget)
+        if work_receipt is not None and type(work_receipt) is not dict:
+            raise ValueError("work_receipt must be a plain dict")
+        zero_work = {k: 0 for k in WORK_KEYS}
+        start_work = budget.work
+        if work_receipt is not None:
+            work_receipt.clear()
+            work_receipt.update({
+                "schema": "i3-personal-construction-work/v1",
+                "status": "STARTED",
+                "phase": "validate",
+                "setup": dict(zero_work),
+                "history_scan": dict(zero_work),
+                "branch_build": dict(zero_work),
+                "total": dict(zero_work),
+            })
+        def delta(after, before):
+            return {k: getattr(after, k) - getattr(before, k) for k in WORK_KEYS}
         if type(continuations) is not tuple or not continuations:
             raise ValueError("explicit nonempty continuation tuple required")
         names = set()
@@ -133,25 +151,47 @@ mean. This persistence approximation is not a learned change detector.
                 raise ValueError("unique continuation identifiers required")
             _key(key)
             names.add(name)
+        if work_receipt is not None:
+            work_receipt["phase"] = "setup"
+        before = budget.work
         budget.spend(CognitiveWork(cycles=1, memory_items=2 + 3 * len(names)))
+        if work_receipt is not None:
+            work_receipt["setup"] = delta(budget.work, before)
+            work_receipt["total"] = delta(budget.work, start_work)
+            work_receipt["phase"] = "history_scan"
         keys = tuple(dict.fromkeys((probe, *(key for _, key in continuations))))
         supports = {}
+        scan_start = budget.work
         for key in keys:
             budget.spend(CognitiveWork(cycles=1, memory_items=7 * len(self._samples) + 2))
+            if work_receipt is not None:
+                work_receipt["history_scan"] = delta(budget.work, scan_start)
+                work_receipt["total"] = delta(budget.work, start_work)
             supports[key] = self._support(key)
         count = max(2, len(supports[probe]))
+        if work_receipt is not None:
+            work_receipt["phase"] = "branch_build"
+        before = budget.work
         budget.spend(CognitiveWork(
             cycles=1, memory_items=5 * sum(map(len, supports.values())) +
             count * (7 + 5 * len(names))))
+        if work_receipt is not None:
+            work_receipt["branch_build"] = delta(budget.work, before)
+            work_receipt["total"] = delta(budget.work, start_work)
         means = {key: tuple(fsum(x[c] for x in rows) / len(rows) for c in range(5))
                  for key, rows in supports.items()}
         probes = supports[probe]
         if len(probes) == 1:
             probes = probes * 2
-        return tuple(SubjectiveOutcome(
+        result = tuple(SubjectiveOutcome(
             1.0 / count, "body_only", delta,
             tuple((name, delta if key == probe else means[key])
                   for name, key in continuations)) for delta in probes)
+        if work_receipt is not None:
+            work_receipt["status"] = "COMPLETE"
+            work_receipt["phase"] = "complete"
+            work_receipt["total"] = delta(budget.work, start_work)
+        return result
 
 
 def paid_personal_information(model: PersonalProjection, history: PersonalOutcomes,

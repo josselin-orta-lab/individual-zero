@@ -129,6 +129,7 @@ must settle budget.work normally; an allowance is not a World debit receipt.
     # One preparation block; scan probe/continuation vectors and signal weights.
     prep = CognitiveWork(cycles=1, memory_items=len(outcomes) * 7 + cells * 5)
     budget.spend(prep)
+    after_prep = budget.work
     drift = model.drift()
     # A caller may reuse exact matrix cells only within one decision. The
     # common forecast body remains based on the caller's exhaustive ceiling, so
@@ -206,6 +207,7 @@ must settle budget.work normally; an allowance is not a World debit receipt.
         # outcome index is NOT an observation; its label cannot select a plan.
         signal = (branch.signal, first)
         groups.setdefault(signal, []).append(len(values) - 1)
+    after_cells = budget.work
     budget.spend(CognitiveWork(cycles=1))
     means = [fsum(b.probability * values[i][j] for i, b in enumerate(outcomes))
              for j in range(len(names))]
@@ -223,12 +225,21 @@ must settle budget.work normally; an allowance is not a World debit receipt.
     if budget.work != quoted_work or budget.remaining != quoted_body:
         raise RuntimeError("executed computation differs from its funded quote")
     work = CognitiveWork(*(getattr(budget.work, k) - getattr(original_work, k) for k in WORK_KEYS))
+    def work_delta(after, before):
+        return {k: getattr(after, k) - getattr(before, k) for k in WORK_KEYS}
+    work_breakdown = {
+        "preparation": work_delta(after_prep, original_work),
+        "unique_cells": work_delta(after_cells, after_prep),
+        "reduction": work_delta(budget.work, after_cells),
+        "total": asdict(work),
+    }
     return {"schema": "i3-paid-information-kernel/v1", "status": "COMPLETE_SUBJECTIVE_ESTIMATE_NOT_POLICY",
             "informed_value": informed, "uninformed_value": uninformed,
             "information_value": informed - uninformed,
             "common_best_continuations": tuple(n for n, v in zip(names, means) if v == uninformed),
             "conditional_choices": choices, "continuation_order": names,
             "branch_values": values, "work": asdict(work),
+            "work_breakdown": work_breakdown,
             "cell_reuse": {"computed": miss_count, "reused": reused,
                            "cache_size": len(cell_cache) if cell_cache is not None else 0},
             "body_after_computation": budget.remaining, "forecast_start_body": forecast_body,

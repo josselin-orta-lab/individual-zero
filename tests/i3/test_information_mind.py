@@ -2,6 +2,7 @@
 from copy import deepcopy
 from dataclasses import replace
 from pathlib import Path
+import json
 import subprocess
 import sys
 import unittest
@@ -19,6 +20,7 @@ from i3.modules.personal_outcomes import PersonalOutcomes, STORE_WORK
 from i3.modules.world import World, WorldSpec, WaterSource
 from i3.runtime.life import run_life
 from i3.lab.stage0_energy import energy_receipt
+from i3.lab.stage1_cost_profile import summarize_decision_cost
 
 BASE = "942b973faec73f1020505bd53b841691eb01c590"
 BODY = (80., 60., 30., 80., 80.)
@@ -212,6 +214,30 @@ class PriorAndBudgetTests(unittest.TestCase):
                                    cell_cache=[])
 
 
+    def test_personal_construction_receipt_does_not_change_work_or_outcomes(self):
+        a, b = StationaryUnknownOutcomes(16), StationaryUnknownOutcomes(16)
+        for history in (a, b):
+            remember(history, ("boire", None), (0., 0., 5., 0., 0.))
+        ba, bb = CognitiveBudget(BODY, BodyLaws()), CognitiveBudget(BODY, BodyLaws())
+        plain = a.construct(("boire", None), (("wait", ("attendre", None)),), ba)
+        receipt = {}
+        observed = b.construct(
+            ("boire", None), (("wait", ("attendre", None)),), bb,
+            work_receipt=receipt)
+        self.assertEqual(plain, observed)
+        self.assertEqual(ba.work, bb.work)
+        self.assertEqual(ba.remaining, bb.remaining)
+        self.assertEqual(receipt["status"], "COMPLETE")
+        self.assertEqual(receipt["phase"], "complete")
+        total = CognitiveWork(**receipt["total"])
+        self.assertEqual(total, bb.work)
+        parts = CognitiveWork(*(
+            receipt["setup"][k] + receipt["history_scan"][k] +
+            receipt["branch_build"][k] for k in
+            ("cycles", "simulated_steps", "memory_items", "replays")))
+        self.assertEqual(parts, total)
+
+
 class OnlineChoiceTests(unittest.TestCase):
     def test_personal_effect_changes_issued_motor_not_only_a_score(self):
         actions = []
@@ -274,6 +300,47 @@ class OnlineChoiceTests(unittest.TestCase):
                 self.assertGreaterEqual(witness["cache_size"], witness["computed"])
                 reused += witness["reused"]
         self.assertGreater(reused, 0)
+
+    def test_synthetic_phase_profile_reconciles_empty_and_populated_history(self):
+        summaries = {}
+        for label in ("empty", "populated"):
+            m = InformationMind(midpoint(), 7, observer_decision_diagnostics=True)
+            if label == "populated":
+                patterns = (
+                    (("dormir", None), (2., -.2, -.4, .2, 3.)),
+                    (("attendre", None), (0., -.2, -.4, .2, 0.)),
+                    (("boire", None), (0., -.2, 8., 0., 0.)),
+                )
+                for i in range(m.personal._samples.maxlen):
+                    remember(m.personal, *patterns[i % len(patterns)])
+            w = World(fixture((100., 80., 60., 80., 100.)))
+            action, param, work, info = m.decide(
+                w.capture(), CognitiveBudget(w.body, w.laws))
+            self.assertIsNotNone(action)
+            summary = summarize_decision_cost(info["observer"]["cost_profile"], w.laws)
+            self.assertEqual(summary["total_work"], {
+                "cycles": work.cycles,
+                "simulated_steps": work.simulated_steps,
+                "memory_items": work.memory_items,
+                "replays": work.replays,
+            })
+            summaries[label] = summary
+            compact = {
+                "total_energy": summary["total_energy"],
+                "total_vigilance": summary["total_vigilance"],
+                "dominant_energy_phase": summary["dominant_energy_phase"],
+                "dominant_vigilance_phase": summary["dominant_vigilance_phase"],
+                "history_scan": summary["focus"]["personal_history_scan"],
+                "unique_cells": summary["focus"]["kernel_unique_cells"],
+            }
+            print("STAGE1_COST_PROFILE", label, json.dumps(compact, sort_keys=True))
+        self.assertGreaterEqual(
+            summaries["populated"]["focus"]["personal_history_scan"]["energy"],
+            summaries["empty"]["focus"]["personal_history_scan"]["energy"])
+        self.assertEqual(
+            summaries["populated"]["focus"]["personal_history_scan"]["vigilance"],
+            summaries["empty"]["focus"]["personal_history_scan"]["vigilance"])
+
 
     def test_observers_preserve_actions_paid_evidence_and_rng(self):
         original = InformationMind.decide
