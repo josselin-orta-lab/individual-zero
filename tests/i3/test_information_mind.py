@@ -180,6 +180,38 @@ class PriorAndBudgetTests(unittest.TestCase):
                                                                 memory_items=1000000))
 
 
+    def test_exact_cell_reuse_preserves_score_and_forecast_but_reduces_work(self):
+        outcomes = (SubjectiveOutcome(.5, "body", ZERO, (("a", ZERO),)),) * 2
+        m = Mind(midpoint(), 1)
+        ceiling = CognitiveWork(cycles=20, simulated_steps=20, memory_items=100)
+        full_budget = CognitiveBudget(BODY, BodyLaws())
+        cached_budget = CognitiveBudget(BODY, BodyLaws())
+        full = paid_information_value(m, outcomes, full_budget, forecast_work=ceiling)
+        cached = paid_information_value(
+            m, outcomes, cached_budget, forecast_work=ceiling, cell_cache={})
+        for key in ("informed_value", "uninformed_value", "information_value",
+                    "conditional_choices", "common_best_continuations",
+                    "forecast_start_body"):
+            self.assertEqual(full[key], cached[key])
+        self.assertEqual(cached["cell_reuse"], {"computed": 1, "reused": 1, "cache_size": 1})
+        self.assertLess(cached_budget.work.cycles, full_budget.work.cycles)
+        self.assertLess(cached_budget.work.simulated_steps, full_budget.work.simulated_steps)
+        self.assertGreater(cached_budget.remaining[0], full_budget.remaining[0])
+        self.assertGreater(cached_budget.remaining[4], full_budget.remaining[4])
+
+    def test_cell_cache_requires_common_forecast_and_plain_dict(self):
+        outcomes = (SubjectiveOutcome(.5, "body", ZERO, (("a", ZERO),)),) * 2
+        m = Mind(midpoint(), 1)
+        with self.assertRaises(ValueError):
+            paid_information_value(m, outcomes, CognitiveBudget(BODY, BodyLaws()),
+                                   cell_cache={})
+        with self.assertRaises(ValueError):
+            paid_information_value(m, outcomes, CognitiveBudget(BODY, BodyLaws()),
+                                   forecast_work=CognitiveWork(cycles=20, simulated_steps=20,
+                                                               memory_items=100),
+                                   cell_cache=[])
+
+
 class OnlineChoiceTests(unittest.TestCase):
     def test_personal_effect_changes_issued_motor_not_only_a_score(self):
         actions = []
@@ -230,6 +262,18 @@ class OnlineChoiceTests(unittest.TestCase):
                              "risk_penalty_computed", "risk_penalty_applied"):
                     self.assertEqual(score[name], 0.)
         self.assertGreater(checked, 0)
+
+    def test_online_choice_reuses_only_decision_local_exact_cells(self):
+        life = run(observer_full_competition=True)
+        reused = 0
+        for row in life["observer_full_competition"]["steps"]:
+            for score in row["paid_option_scores"]:
+                witness = score["kernel_cell_reuse"]
+                self.assertGreaterEqual(witness["computed"], 0)
+                self.assertGreaterEqual(witness["reused"], 0)
+                self.assertGreaterEqual(witness["cache_size"], witness["computed"])
+                reused += witness["reused"]
+        self.assertGreater(reused, 0)
 
     def test_observers_preserve_actions_paid_evidence_and_rng(self):
         original = InformationMind.decide
