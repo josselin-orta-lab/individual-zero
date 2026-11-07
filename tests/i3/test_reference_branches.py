@@ -3,6 +3,7 @@ from pathlib import Path
 import subprocess
 import sys
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
@@ -62,6 +63,15 @@ class ReferenceBranchMemoryTests(unittest.TestCase):
         self.assertEqual(receipt["work"], {
             "cycles": 1, "simulated_steps": 0,
             "memory_items": 2, "replays": 0})
+
+    def test_internal_read_error_is_not_mislabeled_as_missing_support(self):
+        m, b, receipt = ReferenceBranchMemory(), budget(), {}
+        with patch.object(m, "_supports", side_effect=RuntimeError("broken read")):
+            with self.assertRaisesRegex(RuntimeError, "broken read"):
+                m.branches(("boire", None), b, work_receipt=receipt)
+        self.assertEqual(
+            b.work, CognitiveWork(cycles=1, memory_items=2))
+        self.assertEqual(receipt, {})
 
     def test_exact_recent_support_precedes_same_action_fallback(self):
         m = ReferenceBranchMemory()
