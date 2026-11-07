@@ -47,6 +47,22 @@ source-locked development protocol and cost check, not Stage 2.
 P1.3 remains the reference. I3 remains unregistered. No validation or reserve
 world has been opened.
 
+## 48/49 diagnostic closed by engineering failure
+
+The fresh three-arm 48/49 diagnostic did not complete. Two
+`stable-48-g901` control lives were archived, then the external P5e
+Competition observer rejected the candidate's new frontier score schema before
+a complete candidate life was returned.
+
+This is **ENGINEERING_FAILURE_NOT_A_DEATH**, not a negative candidate result.
+The panel is closed and will not be resumed or rerun. See
+[RESULTS.md](studies/stage1-frontier-water-development/RESULTS.md).
+
+Immediate next work is software-only: update the Competition observer to
+authenticate the explicit frontier information term while retaining all
+historical anti-forgery checks. Do not open another development panel until
+that fix is merged and a new allocation is prospectively frozen.
+
 ## Read for the next intervention
 
 1. [Current status](STATUS.md): implemented source, original evidence and open limits.
