@@ -240,6 +240,32 @@ pursued, is reuse of one decision-local history pass across option constructions
 Skipping a unique support query or choosing a smaller cognitive budget would
 instead be policy-changing.
 
+PR #1074 removes that remaining traversal redundancy without making support
+queries free. An empty decision-local support index is created at decision
+scope. Its first use pays and builds the ordinary history pass; later option
+constructions still pay one lookup cycle plus per-key bookkeeping, but reuse
+the already paid traversal. The index is bound to both its PersonalOutcomes
+owner and a memory version advanced by every successful observation, so
+cross-owner or stale reuse fails before spending. It is never retained across
+decisions or births.
+
+On the same synthetic fixture, empty history is unchanged at **0.6672 energy /
+1.42 vigilance** because traversing zero samples has no reusable memory cost.
+With 136 personal samples, history access falls again from 0.6348 energy /
+0.15 vigilance to **0.254 / 0.15**, and total actual decision cost falls from
+1.6912 / 1.76 to **1.3104 / 1.76**. The eight unique projected cells remain
+0.32 / 0.56 and now dominate both energy and vigilance among measured phases.
+
+The additional saved `7*N` memory work for each later option is, again, added
+only to the common conservative forecast quote and never physically billed.
+At this point the measured dominant work is **unique computation**, not an
+obvious duplicate. Reducing it by skipping branches, shortening projection or
+stopping early would alter the computation policy and therefore belongs to a
+prospectively specified Stage-2-style mechanism, not another transparent
+optimization. Before doing that, the cost-reduced Stage-1 local candidate needs
+a fresh bounded development diagnostic on previously unopened development
+conditions to determine whether computational paralysis actually persists.
+
 The old bonus terms are absent from the experimental score, not computed and
 then added or discarded. Compatibility witness fields are zero and marked
 `score_kind=local_expected_distress`; `uncertainty=None` is not a calibrated
@@ -283,13 +309,14 @@ populations. The original report, studies, allocations and P4 reserve are unchan
 The bounded development diagnostic is complete and adverse. Exact decision-local
 cell reuse is the first cost correction because it removes only duplicate work
 while preserving the exhaustive forecast body and score semantics. Synthetic phase accounting identified repeated personal-history scans as the
-dominant populated-memory energy term. One-pass support resolution per
-construction now removes two thirds of that scan work on the minimal fixture
-while preserving the old exhaustive common forecast quote. Remaining populated
-scan energy is 0.6348 versus 0.32 for unique rollouts; rollout vigilance is
-0.56 versus 0.15 for scans. A decision-local shared scan is the next possible
-exact reuse before any policy-changing budget allocator. Spatial information
-remains deferred until the paid comparison itself is sustainable.
+dominant populated-memory energy term. One-pass support resolution and a
+stale-safe decision-local support index now remove the exact scan redundancy
+while preserving the old exhaustive common forecast quote. On the minimal
+populated fixture, history access is 0.254 energy / 0.15 vigilance versus
+0.32 / 0.56 for unique rollouts; the latter now dominate both currencies.
+No further duplicate-work correction is currently justified. Next: a fresh,
+prospectively fixed development diagnostic of the cost-reduced local candidate
+before any Stage-2 budget policy or spatial expansion.
 Do not tune a rescue prior, rewrite Competition, or expand observers instead.
 Full live ablations and the source/genotype/case/margin/multiplicity/stopping/
 compute-locked survival and revision gate remain open. Stage 0, #1026 and #1054
