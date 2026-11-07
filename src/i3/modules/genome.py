@@ -14,7 +14,7 @@ import random
 
 from .body import CHANNELS
 
-SCHEMA = "i3-genome-v3"
+SCHEMA = "i3-genome-v4"
 
 # (name, low, high) per gene. Per-channel genes are expanded to 5 entries.
 PER_CHANNEL = {
@@ -37,6 +37,7 @@ SCALARS = {
 TEMPERAMENT = ("reward_sensitivity", "threat_sensitivity", "exploration",
                "goal_protection", "affiliation")
 TEMPERAMENT_RANGE = (-1.0, 1.0)
+OMEGA_RANGE = (-1.0, 1.0)
 
 
 def gene_bounds() -> dict[str, tuple[float, float]]:
@@ -48,8 +49,10 @@ def gene_bounds() -> dict[str, tuple[float, float]]:
     for t in TEMPERAMENT:
         bounds[f"temperament.{t}"] = TEMPERAMENT_RANGE
     # Added genes come last: generation-0 draws of earlier genes are unchanged
-    # (v1 and v3 genomes of one seed share every v1 gene; ADR-0015).
+    # across schema additions (ADR-0015). belief_rate was the v3 addition;
+    # omega is the sole v4 addition and therefore follows every v3 gene.
     bounds["belief_rate"] = bounds.pop("belief_rate")
+    bounds["omega"] = OMEGA_RANGE
     return bounds
 
 
@@ -60,7 +63,7 @@ GENE_ORDER = tuple(BOUNDS)
 def validate(genome: dict) -> dict:
     """Static admissibility: closed schema, finite values inside bounds."""
     if type(genome) is not dict or genome.get("schema") != SCHEMA:
-        raise ValueError("exact i3-genome-v3 mapping required")
+        raise ValueError("exact i3-genome-v4 mapping required")
     genes = genome.get("genes")
     if type(genes) is not dict or tuple(sorted(genes)) != tuple(sorted(GENE_ORDER)):
         raise ValueError("genome must contain exactly the declared generic genes")
