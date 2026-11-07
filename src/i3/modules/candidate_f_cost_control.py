@@ -9,11 +9,14 @@ Only the P1.3 action has motor authority.
 from __future__ import annotations
 
 from dataclasses import asdict
+from typing import TYPE_CHECKING
 
 from .body import CognitiveBudget, CognitiveWork, VITAL
-from .genomic_omega_frontier_information_mind import (
-    GenomicOmegaFrontierInformationMind)
-from .mind import Mind
+
+if TYPE_CHECKING:
+    from .genomic_omega_frontier_information_mind import (
+        GenomicOmegaFrontierInformationMind)
+    from .mind import Mind
 
 SCHEMA = "i3-candidate-f-shadow-cost-reference-choice/v1"
 
@@ -43,6 +46,13 @@ def _common_first_person_state(mind):
 
 
 def _validate_pair(reference, candidate):
+    # Keep this utility import-detached from World/runtime until actually used.
+    # Mind itself imports DIRECTIONS from modules.world, so top-level imports
+    # here would make a pure software-control module look World-coupled.
+    from .genomic_omega_frontier_information_mind import (
+        GenomicOmegaFrontierInformationMind)
+    from .mind import Mind
+
     if type(reference) is not Mind:
         raise ValueError("exact plain P1.3 Mind required for reference choice")
     if not isinstance(candidate, GenomicOmegaFrontierInformationMind):
@@ -70,8 +80,8 @@ def _validate_pair(reference, candidate):
 
 
 def paid_candidate_f_shadow_then_reference_choice(
-        reference: Mind,
-        candidate: GenomicOmegaFrontierInformationMind,
+        reference: "Mind",
+        candidate: "GenomicOmegaFrontierInformationMind",
         capture: dict,
         budget: CognitiveBudget) -> tuple:
     """Pay Candidate-F cognition first, then let plain P1.3 choose.
@@ -119,7 +129,14 @@ def paid_candidate_f_shadow_then_reference_choice(
         raise RuntimeError("reference declared work mismatch")
     budget.spend(reference_work)
 
-    if tuple(budget.remaining) != tuple(reference_budget.remaining):
+    # CognitiveBudget's canonical v2 settlement recomputes the cumulative bill
+    # from the phase-start body. The detached reference allowance subtracts the
+    # same linear bill from the already debited post-shadow body. These are
+    # mathematically identical but may differ by floating-point association.
+    sequential_body = tuple(reference_budget.remaining)
+    settlement_gap = max(
+        abs(a - b) for a, b in zip(budget.remaining, sequential_body))
+    if settlement_gap > 1e-12:
         raise RuntimeError("sequential cognition settlement body mismatch")
 
     out = dict(info)
@@ -138,6 +155,9 @@ def paid_candidate_f_shadow_then_reference_choice(
         "body_before": initial_body,
         "body_after_candidate_shadow": body_after_shadow,
         "body_after_reference_choice": tuple(budget.remaining),
+        "sequential_reference_body": sequential_body,
+        "sequential_settlement_max_abs_gap": settlement_gap,
+        "settlement_authority": "CUMULATIVE_V2_PHASE_START_BODY",
         "cost_matching_claim": "UPPER_COST_NOT_EXACT_MATCH",
         "world_access": False,
         "candidate_motor_authority": False,
