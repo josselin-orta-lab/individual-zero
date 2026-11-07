@@ -155,3 +155,45 @@ information semantics honest: merely seeing a water source reveals that
 No fresh world should be opened until that composition is explicit and tested.
 
 Stage 2 remains blocked.
+
+
+## Branch-local observed effect view
+
+The first composition prerequisite is now
+`modules/observed_effect_view.py::paid_simulate_after_observed_effect`.
+
+After a subjective trial branch has explicitly revealed one bodily consequence,
+this helper evaluates a future continuation through the existing P1.3
+`simulate` algorithm while replacing the prediction for **that exact action
+key only** with the observed delta and zero uncertainty.
+
+The view is read-only. It does not update the real EffectsModel, TD values,
+replay buffer, map, RNG, intention or observer state. It also deliberately does
+not reproduce P1.3's action-level/global effect fallback update. Propagating one
+hypothetical sample to other actions would claim more counterfactual learning
+than the branch has actually observed.
+
+Constructing the exact key/delta view costs one cycle plus seven memory items.
+The subsequent plan simulation spends its ordinary P1.3 simulated work. A future
+information comparison must include both in its common forecast ceiling.
+
+This operation answers only:
+
+> After this exact effect has been observed for this exact action, how would the
+> existing P1.3 plan model value future reuse of that action?
+
+It does not say the trial should occur, generate its outcome, execute an action
+or read World.
+
+The remaining nested bootstrap composition must therefore keep three moments
+separate:
+
+1. an unseen frontier may expose a resource modality;
+2. trying the newly available but unsupported action incurs one of the #1088
+   zero-mean possible effects;
+3. only **after that observed trial effect** may this branch-local view use the
+   effect for future replanning.
+
+Collapsing steps 1 and 2 would turn resource observation into an oracle for its
+bodily consequence. Collapsing steps 2 and 3 would remove the value of learning
+from the trial.
