@@ -268,3 +268,54 @@ Before registration, tests must establish:
 Only after those properties pass should a separate runtime-wiring slice add a
 development-only policy and observers. No fresh world allocation follows from
 the controller class alone.
+
+
+## Development-only runtime wiring
+
+The multi-step controller is exposed to `runtime.life` only through the
+explicit opt-in policy
+`candidate_f_shadow_upper_cost_reference_controller_v1`.
+
+This wiring changes no default path. Plain `decision_policy="reference"`
+never constructs the controller.
+
+The runtime manifest states the causal intervention directly:
+
+- motor authority: P1.3 reference only;
+- decision cost: Candidate-F shadow + P1.3 reference;
+- learning cost: P1.3 reference + candidate-private STORE_WORK when funded;
+- cost claim: upper-cost, not exact matching;
+- shadow common state: realigned to actual P1.3 before every decision.
+
+The ordinary runtime loop remains the settlement authority. The controller's
+total decision work is passed once to `World.step`; it is never paid as two
+separate World debits. Its internal detached allowances authenticate the two
+executed subcomputations.
+
+During learning, ordinary P1.3 work is allocated first. Optional shadow-private
+storage is appended to the same learning allowance and therefore physically
+settled once by `World.pay_cognition`.
+
+External observers continue to see P1.3 as the actor because controller state
+reads delegate to the reference mind. The full Competition witness therefore
+authenticates the P1.3 paid option set and admitted motor action while the trace
+also retains the shadow-work receipt.
+
+Life-end output adds:
+
+- branch-memory retained/recorded counts for the shadow;
+- omega used by the shadow;
+- number of shadow decisions and private branch commits;
+- explicit common-state and motor authorities.
+
+This wiring is still **development apparatus**, not a scientific gate arm.
+It authorizes software World fixtures only. A new empirical diagnostic needs a
+separate prospective allocation and endpoint freeze after this wiring passes
+exact-head CI.
+
+The causal interpretation remains asymmetric:
+
+- if P1.3 choices survive despite this deliberately larger cognitive bill,
+  Candidate-F policy change is strongly implicated;
+- if the upper-cost control also collapses, cost remains a sufficient
+  possibility but the overcharge prevents an exact mediation claim.
