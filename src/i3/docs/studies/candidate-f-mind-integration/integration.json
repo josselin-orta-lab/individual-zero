@@ -1,0 +1,27 @@
+{
+ "cases": 486,
+ "forecast_cost_contract_authorized": true,
+ "gate": {
+  "candidate_f_projection_mode": "event_local_quadratic4",
+  "cost_profile_pass": true,
+  "default_simulation_mode": "reference",
+  "invalid_pairing_fails_closed": true,
+  "parity_pass": true
+ },
+ "lives": 0,
+ "max_abs_value_error_vs_frozen_lab": 0.0,
+ "omega_rerun_authorized": false,
+ "paid_projection_units": {
+  "frozen_candidate_e_max": 112,
+  "max": 112,
+  "mean": 86.61111111111111,
+  "min": 16
+ },
+ "parity_limit": 1e-12,
+ "protocol": "STAGE1_CANDIDATE_F_MIND_INTEGRATION.md",
+ "reference_adoption_authorized": false,
+ "schema": "i3-candidate-f-mind-integration/v1",
+ "verdict": "CANDIDATE_F_MIND_INTEGRATION_PASS",
+ "world_access": false,
+ "worst_case": null
+}

@@ -30,6 +30,7 @@ BELIEF_FLOOR = 0.05
 PROJECTION_CHUNKS = (1, 2, 4, 8, 16, 32, 64, 128)
 PROJECTION_ACCOUNTING = ("chunk_end", "trapezoid", "event_quadratic", "event_quartic",
                          "event_local_quadratic4")
+SIMULATION_MODES = ("reference", "candidate_f")
 VETO_INTEGRITY = 10.0
 
 
@@ -80,11 +81,15 @@ class Mind:
                  *, effect_readout: str = "full",
                  observer_decision_diagnostics: bool = False,
                  observer_full_competition: bool = False,
-                 score_addend_mode: str = "normal"):
+                 score_addend_mode: str = "normal",
+                 simulation_mode: str = "reference"):
         if type(observer_decision_diagnostics) is not bool:
             raise TypeError("observer diagnostics flag must be bool")
         if type(observer_full_competition) is not bool:
             raise TypeError("full competition observer flag must be bool")
+        if simulation_mode not in SIMULATION_MODES:
+            raise ValueError("unknown simulation mode")
+        self.simulation_mode = simulation_mode
         # Laboratory witness only. It is never consulted to score, control,
         # learn or fund an option, and does not enter first-person capture.
         self.observer_full_competition = observer_full_competition
@@ -526,97 +531,105 @@ class Mind:
             -self.d_max if dead
             else -self.distress(self.feats(tuple(float(x) for x in body))))
 
+    def _project_event_local_quadratic4_decimal_state(
+            self, body, drift, restore, budget=None):
+        """Candidate E sparse bootstrap from an already-canonical Decimal body."""
+        ddrift = tuple(self._projection_decimal(x) for x in drift)
+        drestore = (
+            tuple(self._projection_decimal(x) for x in restore)
+            if restore is not None else None)
+        theta = tuple(self._projection_decimal(x) for x in self.theta)
+
+        ret = [0.0, 0.0, 0.0]
+        disc = [1.0, 1.0, 1.0]
+        dead = self._projection_decimal_dead(body)
+        r_start = self._projection_decimal_reward(
+            body, dead, budget)
+
+        for outer in self.proj_chunks:
+            remaining = outer
+            while remaining > 0:
+                if dead:
+                    for k, gamma in enumerate(self.gammas):
+                        g_run = gamma ** remaining
+                        weight = (
+                            (1.0 - g_run) / (1.0 - gamma))
+                        ret[k] += (
+                            disc[k] * (-self.d_max) * weight)
+                        disc[k] *= g_run
+                    remaining = 0
+                    continue
+
+                event_run = (
+                    self._projection_decimal_next_event_segment(
+                        body, ddrift, drestore, theta,
+                        remaining))
+                event_remaining = event_run
+
+                while event_remaining > 0:
+                    block_run = min(4, event_remaining)
+
+                    if block_run == 1:
+                        end_body, end_dead = (
+                            self._projection_decimal_advance(
+                                body, ddrift, drestore, theta, 1))
+                        r_end = self._projection_decimal_reward(
+                            end_body, end_dead, budget)
+                        r_mid = None
+                    else:
+                        midpoint = (
+                            Decimal(block_run) / Decimal(2))
+                        mid_body, mid_dead = (
+                            self._projection_decimal_advance(
+                                body, ddrift, drestore, theta,
+                                midpoint))
+                        if mid_dead:
+                            raise RuntimeError(
+                                "Candidate E block crossed death before endpoint")
+                        r_mid = self._projection_decimal_reward(
+                            mid_body, mid_dead, budget)
+                        end_body, end_dead = (
+                            self._projection_decimal_advance(
+                                body, ddrift, drestore, theta,
+                                block_run))
+                        if end_dead:
+                            raise RuntimeError(
+                                "Candidate E multi-step block crossed death")
+                        r_end = self._projection_decimal_reward(
+                            end_body, end_dead, budget)
+
+                    for k, gamma in enumerate(self.gammas):
+                        g_run = gamma ** block_run
+                        segment = (
+                            r_end if block_run == 1 else
+                            self._discounted_quadratic_sum(
+                                r_start, r_mid, r_end,
+                                block_run, gamma))
+                        ret[k] += disc[k] * segment
+                        disc[k] *= g_run
+
+                    body = list(end_body)
+                    dead = end_dead
+                    r_start = r_end
+                    remaining -= block_run
+                    event_remaining -= block_run
+
+        r_tail = -self.d_max if dead else r_start
+        for k, gamma in enumerate(self.gammas):
+            ret[k] += disc[k] * (
+                r_tail / (1.0 - gamma))
+        return ret, body
+
     def _project_event_local_quadratic4(
             self, b, drift, restore, budget=None):
         """Candidate E: canonical events plus fixed local quadratic blocks <=4."""
         with localcontext() as ctx:
             ctx.prec = 100
             body = [self._projection_decimal(x) for x in b]
-            ddrift = tuple(self._projection_decimal(x) for x in drift)
-            drestore = (
-                tuple(self._projection_decimal(x) for x in restore)
-                if restore is not None else None)
-            theta = tuple(self._projection_decimal(x) for x in self.theta)
-
-            ret = [0.0, 0.0, 0.0]
-            disc = [1.0, 1.0, 1.0]
-            dead = self._projection_decimal_dead(body)
-            r_start = self._projection_decimal_reward(
-                body, dead, budget)
-
-            for outer in self.proj_chunks:
-                remaining = outer
-                while remaining > 0:
-                    if dead:
-                        for k, gamma in enumerate(self.gammas):
-                            g_run = gamma ** remaining
-                            weight = (
-                                (1.0 - g_run) / (1.0 - gamma))
-                            ret[k] += (
-                                disc[k] * (-self.d_max) * weight)
-                            disc[k] *= g_run
-                        remaining = 0
-                        continue
-
-                    event_run = (
-                        self._projection_decimal_next_event_segment(
-                            body, ddrift, drestore, theta,
-                            remaining))
-                    event_remaining = event_run
-
-                    while event_remaining > 0:
-                        block_run = min(4, event_remaining)
-
-                        if block_run == 1:
-                            end_body, end_dead = (
-                                self._projection_decimal_advance(
-                                    body, ddrift, drestore, theta, 1))
-                            r_end = self._projection_decimal_reward(
-                                end_body, end_dead, budget)
-                            r_mid = None
-                        else:
-                            midpoint = (
-                                Decimal(block_run) / Decimal(2))
-                            mid_body, mid_dead = (
-                                self._projection_decimal_advance(
-                                    body, ddrift, drestore, theta,
-                                    midpoint))
-                            if mid_dead:
-                                raise RuntimeError(
-                                    "Candidate E block crossed death before endpoint")
-                            r_mid = self._projection_decimal_reward(
-                                mid_body, mid_dead, budget)
-                            end_body, end_dead = (
-                                self._projection_decimal_advance(
-                                    body, ddrift, drestore, theta,
-                                    block_run))
-                            if end_dead:
-                                raise RuntimeError(
-                                    "Candidate E multi-step block crossed death")
-                            r_end = self._projection_decimal_reward(
-                                end_body, end_dead, budget)
-
-                        for k, gamma in enumerate(self.gammas):
-                            g_run = gamma ** block_run
-                            segment = (
-                                r_end if block_run == 1 else
-                                self._discounted_quadratic_sum(
-                                    r_start, r_mid, r_end,
-                                    block_run, gamma))
-                            ret[k] += disc[k] * segment
-                            disc[k] *= g_run
-
-                        body = list(end_body)
-                        dead = end_dead
-                        r_start = r_end
-                        remaining -= block_run
-                        event_remaining -= block_run
-
-            r_tail = -self.d_max if dead else r_start
-            for k, gamma in enumerate(self.gammas):
-                ret[k] += disc[k] * (
-                    r_tail / (1.0 - gamma))
-            return ret, [float(x) for x in body]
+            ret, final_body = (
+                self._project_event_local_quadratic4_decimal_state(
+                    body, drift, restore, budget))
+            return ret, [float(x) for x in final_body]
 
     def project(self, b, drift, budget=None):
         """Innate self-projection over 255 future steps; event modes are opt-in."""
@@ -832,6 +845,74 @@ class Mind:
                         p_food = max(p_food, self.presence(q, t))
         return p_water, p_food
 
+    def _simulate_candidate_f(self, body, plan, horizon, budget):
+        """Frozen Candidate F: one canonical state through plan and bootstrap."""
+        with localcontext() as ctx:
+            ctx.prec = 100
+            state = [self._projection_decimal(x) for x in body]
+            steps = 0
+            if self.observer_decision_diagnostics:
+                self._observer_first_forecast = None
+            ret = [0.0, 0.0, 0.0]
+            disc = [1.0, 1.0, 1.0]
+            dead = False
+            u_max = 0.0
+            i, n = 0, len(plan)
+
+            while i < n and steps < horizon:
+                budget.spend(CognitiveWork(simulated_steps=1))
+                key = plan[i]
+                run = 1
+                if key[0] == "se_deplacer":
+                    while (
+                            i + run < n
+                            and plan[i + run] == key
+                            and run < horizon):
+                        run += 1
+                i += run
+
+                mean, u = self._read_plan_prediction(key)
+                if self.observer_decision_diagnostics and steps == 0:
+                    self._observer_first_forecast = {
+                        "action_key": tuple(key),
+                        "delta": tuple(mean), "uncertainty": u}
+                u_max = max(u_max, u)
+
+                drun = Decimal(run)
+                for channel in range(5):
+                    state[channel] += (
+                        drun * self._projection_decimal(mean[channel]))
+                self._projection_decimal_clamp(state)
+
+                steps += 1
+                dead = self._projection_decimal_dead(state)
+                reward = (
+                    -self.d_max if dead else
+                    -self.distress(
+                        self.feats(tuple(float(x) for x in state))))
+                for k, gamma in enumerate(self.gammas):
+                    g_run = gamma ** run
+                    ret[k] += (
+                        disc[k] * reward
+                        * ((1.0 - g_run) / (1.0 - gamma)))
+                    disc[k] *= g_run
+                if dead:
+                    break
+
+            phi = self.feats(tuple(float(x) for x in state))
+            projection = (
+                None if dead else
+                self._project_event_local_quadratic4_decimal_state(
+                    state, *self._drift, budget)[0])
+            out = 0.0
+            for k, gamma in enumerate(self.gammas):
+                boot = (
+                    -self.d_max / (1.0 - gamma)
+                    if dead else self.value(k, phi, projection))
+                out += (1.0 - gamma) * (
+                    ret[k] + disc[k] * boot)
+            return out / 3.0, steps, u_max
+
     def simulate(self, body, plan, horizon, budget):
         """Predicted normalised discounted distress (negated) per horizon, steps used.
 
@@ -840,6 +921,16 @@ class Mind:
         are run before bootstrapping on the learned value. Low vigilance
         shortens both, so a degraded mind sees less far (spec: capacities).
         """
+        if self.simulation_mode not in SIMULATION_MODES:
+            raise ValueError("unknown simulation mode")
+        if self.simulation_mode == "candidate_f":
+            if self.projection_accounting != "event_local_quadratic4":
+                raise ValueError(
+                    "candidate_f simulation requires "
+                    "event_local_quadratic4 projection")
+            return self._simulate_candidate_f(
+                body, plan, horizon, budget)
+
         b = list(body)
         steps = 0
         if self.observer_decision_diagnostics:
