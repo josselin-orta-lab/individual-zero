@@ -56,18 +56,21 @@ def _validate_explorer_prefix(plan):
 
 
 def _minimum_ceiling(
-        model, explore, common, post, horizon, original_work):
+        model, explore, common, post, horizon, original_work,
+        *, trial_branches):
+    if trial_branches not in (0, 2):
+        raise ValueError("water bootstrap has zero or two trial-effect branches")
     common_cells = len(common)
-    trial_cells = 2 * len(post)
+    trial_cells = trial_branches * len(post)
     common_items = sum(
         len(explore) + len(plan) for plan in common.values())
-    trial_items = 2 * sum(
+    trial_items = trial_branches * sum(
         len(explore) + 2 + len(plan) for plan in post.values())
 
     prep = CognitiveWork(
         cycles=1,
         memory_items=(
-            3 * 7
+            (1 + trial_branches) * 7
             + 5 * (common_cells + trial_cells)
             + 2 * (common_items + trial_items)
             + 8))
@@ -82,7 +85,7 @@ def _minimum_ceiling(
                 _simulation_upper(model, full, horizon)))
 
     trial_work = CognitiveWork()
-    for _ in range(2):
+    for _ in range(trial_branches):
         for plan in post.values():
             full = tuple(explore) + (TARGET_ENTRY, DRINK) + tuple(plan)
             cell = _add_work(
@@ -148,8 +151,10 @@ def paid_water_frontier_optional_trial_value(
         tuple(model.w), "water", budget)
     after_prior = budget.work
 
+    trial_branches = 2 if prior["leaves"] else 0
     prep, minimum = _minimum_ceiling(
-        model, tuple(explore_plan), common, post, horizon, budget.work)
+        model, tuple(explore_plan), common, post, horizon, budget.work,
+        trial_branches=trial_branches)
     budget.spend(prep)
     after_prep = budget.work
 
