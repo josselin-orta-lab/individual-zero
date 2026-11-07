@@ -5,15 +5,42 @@ The [engine contract](../engine.json) has no active entrypoints; the
 [registry](../../../config/engine-registry.json) keeps I1 active.
 A green software test is not a scientific GO.
 
-## Current handoff after the 7 November development diagnostic
+## Current handoff after the 7 November Stage-1 diagnostics
 
-[Original 24-life results](studies/stage1-local-information-development/RESULTS.md):
-local_information_v1 has 0/12 survivors and 83.61% inactivity; reference 3/12 and
-16.90%. Every candidate sleep step loses net vigilance including paid cognition.
-**Next #1061: make the existing paid comparison sustainable before spatial
-expansion.** Preserve prices and originals; do not tune on this exposed panel.
-P1.3 remains the reference. This is an adverse development diagnostic, not an
-isolated information-value effect or a selected-genome scientific gate.
+The original local-information prototype is now a **failed engineering
+prototype, not the Stage-1 gate candidate**.
+
+The first frozen 44/45 diagnostic exposed computational paralysis. Exact
+duplicate-work corrections then reduced that bottleneck. A second, independently
+frozen 46/47 diagnostic met its engineering continuation rule (22.49% candidate
+inactivity and 12 positive water uptakes), but the candidate still had **0/12
+survivors** versus reference 4/12. It slept on 69.25% of lived steps; all 8666
+paid information scores had zero information increment. In stable/pulse, 400
+funded decisions at sensed water <=20 offered no local drink option. See the
+[cost-reduced results](studies/stage1-cost-reduced-development/RESULTS.md) and
+[read-only audit](studies/stage1-cost-reduced-development/POSTHOC_INFORMATION_ZERO_AUDIT.md).
+
+**DRIFT DETECTED:** do not keep tuning `local_information_v1`, add Stage-2
+budget heuristics, force resources or rewrite Competition to rescue it.
+
+The replacement path now preserves P1.3's repertoire and learned state:
+[reference integration contract](STAGE1_REFERENCE_INTEGRATION.md).
+Implemented software prerequisites are:
+
+- fixed-capacity 18-record paid empirical branch memory, empty at birth;
+- `reference_branch_memory_v1`, a storage-only P1.3 cost control whose decision
+  path and replay allocation remain reference-identical before extra storage;
+- a paid exhaustive plan-level information kernel that can replan among existing
+  P1.3 plans when explicit subjective bodily outcomes are supplied.
+
+The remaining Stage-1 blocker is **outcome belief generation for the genuinely
+unknown**. P1.3 does not yet contain a first-person distribution specifying
+which actionable content/effect an unseen cell may have. Freeze a generic,
+renaming-invariant, paid prior/empirical sampling rule before creating a live
+information policy. Do not choose that prior from exposed indices 44-47.
+
+P1.3 remains the reference. I3 remains unregistered. No validation or reserve
+world has been opened.
 
 ## Read for the next intervention
 
