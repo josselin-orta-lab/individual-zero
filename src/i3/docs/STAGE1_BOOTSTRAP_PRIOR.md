@@ -610,3 +610,105 @@ This slice is not a live policy. The next question is whether replacing #1088
 inside the three-leaf target composition with this empirical two-branch prior
 can make an unsupported trial selectively worthwhile while still allowing
 dangerous empirical priors to reject it.
+
+
+## Prior C: recent personal RMS scale with exact zero mean
+
+Two prior attempts delimit the problem more sharply:
+
+- the fixed symmetric radius-100 prior kept zero mean but selected no optional
+  trial in 80 realistic P1.3-like software states;
+- the direct recent empirical prior selected many trials, but the selection was
+  driven by transferred expected physical effect: maximum measured inner
+  information value was zero, and an adverse recent history still selected the
+  trial. That probe was rejected in #1096 and left unmerged.
+
+The next prior keeps the useful part of personal experience, **scale**, while
+discarding its mean and sign.
+
+`modules/recent_rms_effect_prior.py::paid_recent_rms_zero_mean_effect_prior`
+reads the same last two or three action-agnostic bodily deltas from the existing
+paid branch-memory ring.
+
+For each body channel:
+
+```text
+s_c = sqrt(mean_i(delta_i[c]^2))
+```
+
+It then constructs exactly two hypotheses:
+
+```text
++s   with probability 0.5
+-s   with probability 0.5
+```
+
+Therefore:
+
+```text
+E[delta_c] = 0
+E[delta_c^2] = mean_i(personal_delta_i[c]^2)
+```
+
+for every channel.
+
+This preserves the recent personal raw second moment exactly while transferring
+no empirical mean.
+
+### What personal experience contributes
+
+The individual learns only an empirical magnitude of bodily uncertainty:
+
+> consequences I have recently experienced have tended to move these bodily
+> channels by roughly this much.
+
+It does **not** infer that an unsupported action will behave like the average
+known action, and it does not infer whether the unknown effect is beneficial or
+harmful.
+
+No action name, token identity, current need or distress gradient enters this
+prior. Current bodily stakes matter later, when the existing projection decides
+whether resolving that uncertainty is worth its risk and cognitive cost.
+
+This differs from the original radius-100 prior in one dimension only:
+uncertainty magnitude is now learned from the individual's own recent life
+instead of being fixed at the largest admissible delta.
+
+### Failure states
+
+- fewer than two retained generic effects:
+  `INSUFFICIENT_GENERIC_SUPPORT`;
+- RMS zero on all five channels:
+  `NO_EMPIRICAL_SCALE`.
+
+Neither case fabricates two branches merely to satisfy a downstream API.
+
+### Cost
+
+The existing fixed branch-memory ring is scanned and paid normally. Scale
+construction then pays two model cycles plus:
+
+```text
+5 * number_of_recent_samples + 12 memory items
+```
+
+for two or three samples.
+
+This is an allowance receipt, not physical settlement. A future live caller
+would still have to settle all work in the ordinary runtime.
+
+### Next falsifier
+
+This prior is not yet composed into frontier scoring.
+
+Only after its software invariants pass should it replace the fixed ±100 prior
+inside a **test-only** three-leaf water composition.
+
+Promotion requires both:
+
+1. at least one realistic state where the optional trial is selected **with
+   strictly positive trial information value**;
+2. at least one state where the trial is declined.
+
+A harmful recent history must also remain rejectable. Failure of any of those
+conditions blocks runtime integration and any new development panel.
