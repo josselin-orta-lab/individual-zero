@@ -127,9 +127,9 @@ jobs:
           cat > "$RUNNER_TEMP/release-notes.md" <<EOF
           # I3 Stage-1 omega ADR-0015 campaign
 
-          Execution source: `$SOURCE_SHA`
-          Design SHA-256: `$EXPECTED_DESIGN_SHA`
-          Runner protocol SHA-256: `$EXPECTED_PROTOCOL`
+          Execution source: $SOURCE_SHA
+          Design SHA-256: $EXPECTED_DESIGN_SHA
+          Runner protocol SHA-256: $EXPECTED_PROTOCOL
 
           Status: STARTED_AFTER_FULL_SOFTWARE_PREFLIGHT
 
