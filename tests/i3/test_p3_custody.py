@@ -8,7 +8,11 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 from i3.lab import p3_custody as custody, p3_schedule as sched
-from i3.modules.genome import generation_zero, mutate, digest
+from i3.modules.genome import (
+    historical_v3_generation_zero as generation_zero,
+    historical_v3_mutate as mutate,
+    digest_historical_v3 as digest,
+)
 
 
 def fixture():

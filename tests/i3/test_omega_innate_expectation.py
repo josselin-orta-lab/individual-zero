@@ -94,8 +94,9 @@ class OmegaBoundaryTests(unittest.TestCase):
                      "reference_branches.py", "observed_effect_view.py"):
             self.assertNotIn("omega", (SRC / name).read_text(), name)
 
-    def test_genome_is_unchanged_by_this_slice(self):
-        self.assertNotIn("omega", (SRC / "genome.py").read_text())
+    def test_genome_wiring_remains_separate_from_mind(self):
+        self.assertIn("omega", (SRC / "genome.py").read_text())
+        self.assertNotIn("omega", (SRC / "mind.py").read_text())
 
     def test_falsifier_fixtures_match_the_1101_tests(self):
         self.assertEqual(F.EXPLORE, W.EXPLORE)

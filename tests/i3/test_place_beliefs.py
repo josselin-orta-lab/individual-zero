@@ -27,9 +27,10 @@ class PlaceBeliefTests(unittest.TestCase):
             m.visible = ()
             self.assertEqual(m.presence((0, -1)) == 0.0, forgotten)
 
-    def test_added_gene_is_drawn_last_and_shares_v1_draws(self):
-        self.assertEqual(G.GENE_ORDER[-1], "belief_rate")
-        self.assertEqual(len(G.GENE_ORDER), 30)
+    def test_schema_additions_are_drawn_last_and_share_prior_draws(self):
+        self.assertEqual(
+            G.GENE_ORDER[-2:], ("belief_rate", "omega"))
+        self.assertEqual(len(G.GENE_ORDER), 31)
 
     def test_visible_cell_uses_current_observation(self):
         m = Mind(G.midpoint(), 0)

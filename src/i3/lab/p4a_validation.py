@@ -16,7 +16,10 @@ import subprocess
 import sys
 
 from i3.lab import p2_ecologies, p3_schedule, p4a_schedule
-from i3.modules.genome import digest as genome_digest, validate
+from i3.modules.genome import (
+    digest_historical_v3 as genome_digest,
+    validate_historical_v3 as validate,
+)
 from i3.runtime.life import run_life
 from i3.runtime.provenance import digest, world_snapshot
 
