@@ -82,15 +82,9 @@ class WaterFrontierOptionalTrialTests(unittest.TestCase):
         self.assertTrue(any(row[3] > 0.0 for row in evaluated))
         selected = [row for row in evaluated if "TRIAL" in row[2]]
         best = max(evaluated, key=lambda row: row[4])
-        print("WATER_OPTIONAL_TRIAL_SWEEP", {
-            "evaluated": len(evaluated),
-            "selected": len(selected),
-            "best_body": best[0],
-            "best_horizon": best[1],
-            "best_choices": best[2],
-            "best_information_value": best[3],
-            "best_trial_advantage": best[4],
-        })
+        self.assertEqual(selected, [])
+        self.assertGreater(best[3], 0.0)
+        self.assertLess(best[4], 0.0)
 
     def test_risky_unknown_drink_can_be_declined_after_water_is_revealed(self):
         body = (80., 80., 40., 80., 80.)
