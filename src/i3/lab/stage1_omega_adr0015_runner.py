@@ -470,6 +470,62 @@ def aggregate_selection(shards):
     if not observer_valid or not no_shortfall:
         raise ValueError("selection custody floor failed")
 
+    systematic_probe = {}
+    random_g0 = {}
+    for p in range(D.POPULATIONS):
+        probe = by_key[(p, "reference")].get(
+            "systematic_reference_probe")
+        candidate_probe = by_key[(p, "candidate")].get(
+            "systematic_reference_probe")
+        expected_worlds = {
+            row["index"] for row in S.world_rows("selection")
+            if row["population"] == p
+        }
+        if (not isinstance(probe, list) or len(probe) != len(expected_worlds)
+                or candidate_probe is not None
+                or {row["world_index"] for row in probe} != expected_worlds
+                or any(row.get("interpretation")
+                       != "DESCRIPTIVE_SYSTEMATIC_SEARCH_NOT_COST_MATCHED"
+                       for row in probe)):
+            raise ValueError("selection systematic-probe custody failed")
+        probe_tuple = (
+            sum(bool(row["censored"]) for row in probe),
+            sum(row["steps_survived"] for row in probe))
+        systematic_probe[str(p)] = {
+            "persistence": list(probe_tuple),
+            "worlds": probe,
+            "interpretation":
+                "DESCRIPTIVE_SYSTEMATIC_SEARCH_NOT_COST_MATCHED",
+        }
+        random_g0[str(p)] = {}
+        for arm in ("reference", "candidate"):
+            seed_stats = {
+                seed: [0, 0] for seed in D.founder_seeds(p)}
+            rows = by_key[(p, arm)]["receipts"]
+            for row in rows:
+                seed = row["gate"]["candidate_seed"]
+                seed_stats[seed][0] += (
+                    row["gate"]["terminal"] == "censored")
+                seed_stats[seed][1] += row["gate"]["steps_lived"]
+            tuples = {seed: tuple(value)
+                      for seed, value in seed_stats.items()}
+            random_g0[str(p)][arm] = {
+                "lives": len(rows),
+                "censored_lives": sum(value[0] for value in tuples.values()),
+                "founders_beating_systematic_reference":
+                    sum(value > probe_tuple for value in tuples.values()),
+                "founders_tied_systematic_reference":
+                    sum(value == probe_tuple for value in tuples.values()),
+                "founders_below_systematic_reference":
+                    sum(value < probe_tuple for value in tuples.values()),
+                "founder_persistence": {
+                    str(seed): list(tuples[seed])
+                    for seed in sorted(tuples)
+                },
+                "interpretation":
+                    "DESCRIPTIVE_G0_EVOLVABILITY_NOT_GATE",
+            }
+
     # Descriptive G0 architecture comparison on matched founder/world panels.
     matched = {}
     for p in range(D.POPULATIONS):
@@ -507,6 +563,8 @@ def aggregate_selection(shards):
         "selected": selected,
         "rankings": rankings,
         "matched_g0_descriptive": matched,
+        "random_g0_descriptive": random_g0,
+        "systematic_reference_probe": systematic_probe,
         "world_lock": True,
         "observer_valid": observer_valid,
         "no_cognitive_shortfall": no_shortfall,
@@ -695,6 +753,35 @@ def aggregate_validation(selection_aggregate, shards):
             replay_identical &= all(
                 row["identical"] for row in shard["rank0_replays"])
 
+    validation_probe = {}
+    for p in range(D.POPULATIONS):
+        probe = by_key[(p, "reference")].get(
+            "systematic_reference_probe")
+        expected_worlds = {
+            row["index"] for row in S.world_rows("validation")
+            if row["population"] == p
+        }
+        if (not isinstance(probe, list) or len(probe) != len(expected_worlds)
+                or {row["world_index"] for row in probe} != expected_worlds
+                or any(row.get("interpretation")
+                       != "DESCRIPTIVE_SYSTEMATIC_SEARCH_NOT_COST_MATCHED"
+                       for row in probe)):
+            raise ValueError("validation systematic-probe custody failed")
+        for arm in ("candidate", "omega_zero"):
+            if by_key[(p, arm)].get(
+                    "systematic_reference_probe") is not None:
+                raise ValueError(
+                    "systematic probe must execute once in reference shard")
+        validation_probe[str(p)] = {
+            "persistence": [
+                sum(bool(row["censored"]) for row in probe),
+                sum(row["steps_survived"] for row in probe),
+            ],
+            "worlds": probe,
+            "interpretation":
+                "DESCRIPTIVE_SYSTEMATIC_SEARCH_NOT_COST_MATCHED",
+        }
+
     world_lock = all(len(values) == 1 for values in world_hashes.values())
     custody = {
         "source_lock": True,
@@ -741,6 +828,7 @@ def aggregate_validation(selection_aggregate, shards):
         "custody": custody,
         "gate": gate,
         "validation_cost_descriptive": arm_cost,
+        "systematic_reference_probe": validation_probe,
         "scientific_verdict": (
             "PASS_FROZEN_STAGE1_OMEGA_GATE"
             if gate["would_pass_if_receipts_are_authentic"]
@@ -778,6 +866,15 @@ def main(argv=None):
     val.add_argument("--expected-sha", required=True)
     val.add_argument("--expected-protocol", required=True)
 
+    asel = sub.add_parser("aggregate-selection")
+    asel.add_argument("output")
+    asel.add_argument("shards", nargs="+")
+
+    aval = sub.add_parser("aggregate-validation")
+    aval.add_argument("selection_json")
+    aval.add_argument("output")
+    aval.add_argument("shards", nargs="+")
+
     args = parser.parse_args(argv)
     if args.command == "plan":
         value = protocol_manifest()
@@ -794,6 +891,17 @@ def main(argv=None):
             args.population, args.arm, _read_json(args.selection_json),
             args.output, expected_sha=args.expected_sha,
             expected_protocol=args.expected_protocol)
+        return 0
+    if args.command == "aggregate-selection":
+        report = aggregate_selection(
+            [_read_json(path) for path in args.shards])
+        _write_json(args.output, report)
+        return 0
+    if args.command == "aggregate-validation":
+        report = aggregate_validation(
+            _read_json(args.selection_json),
+            [_read_json(path) for path in args.shards])
+        _write_json(args.output, report)
         return 0
     raise RuntimeError("unreachable")
 
