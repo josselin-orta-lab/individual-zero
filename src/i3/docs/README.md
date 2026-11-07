@@ -105,6 +105,15 @@ Stage 2 remains blocked.
 P1.3 remains the reference. I3 remains unregistered. No validation or reserve
 world has been opened.
 
+## Latest: projection bias confirmed; unbiased evaluation makes information decisive
+
+The P1.3 projection's end-of-chunk accounting is inconsistent; per-step
+projection fixes it exactly but costs 255 units instead of 8. A same-cost
+trapezoid is not enough (bias 0.133 vs limit 1e-3). Under an unbiased
+projection, Stage-1 information becomes decisive (32 of 40 selected trials at
+ω = 0) and ω acts strongly. Next: event-aware accounting, candidate C
+([results](studies/projection-consistency/RESULTS.md)).
+
 ## Latest: ω decided (A), capacity shown; P1.3 projection bias is the next blocker
 
 The owner chose a heritable expectation toward the unknown, ω. Its frozen

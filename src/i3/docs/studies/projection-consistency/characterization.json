@@ -1,0 +1,43 @@
+{
+ "cases_per_scheme": 486,
+ "lives": 0,
+ "paid_simulated_units_per_projection": {
+  "chunk_end": 8,
+  "per_step": 255,
+  "trapezoid": 8
+ },
+ "projection_equivalent_invariant_max_gap": {
+  "chunk_end": 0.16793514519639752,
+  "per_step": 8.881784197001252e-16,
+  "trapezoid": 0.13165625043118023
+ },
+ "protocol": "STAGE1_PROJECTION_CONSISTENCY.md",
+ "schema": "i3-projection-consistency-characterization/v1",
+ "selection": {
+  "bias_limit": 0.001,
+  "equal_paid_units": true,
+  "trapezoid_bias": 0.1327778197182834,
+  "verdict": "NO_CANDIDATE_PROMOTED"
+ },
+ "stats": {
+  "chunk_end": {
+   "max_abs_gap_plus_1": 0.061531841997911285,
+   "max_abs_gap_plus_3": 0.16793514519639752,
+   "max_abs_prefix_error_vs_per_step": 0.8020510592609273,
+   "max_decision_bias_vs_per_step": 0.16901182720785002
+  },
+  "per_step": {
+   "max_abs_gap_plus_1": 0.06038283234040798,
+   "max_abs_gap_plus_3": 0.14056486274699315,
+   "max_abs_prefix_error_vs_per_step": 0.0,
+   "max_decision_bias_vs_per_step": 0.0
+  },
+  "trapezoid": {
+   "max_abs_gap_plus_1": 0.05727063536432592,
+   "max_abs_gap_plus_3": 0.13252249543443723,
+   "max_abs_prefix_error_vs_per_step": 0.2859122835887282,
+   "max_decision_bias_vs_per_step": 0.1327778197182834
+  }
+ },
+ "world_access": false
+}

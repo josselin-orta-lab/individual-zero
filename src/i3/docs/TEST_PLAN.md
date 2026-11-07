@@ -85,4 +85,5 @@ postmortem work, without any additional study life.
 | Carried-food future reuse | `tests/i3/test_carried_food_future_reuse.py`: default equals #1102, repeats bounded by carried units, branches stay personal rows, information only from branch disagreement, every plan paid, renaming invariance | Implemented |
 | Carried-food raw-rank audit | `tests/i3/test_stage1_carried_food_rank_audit.py`: audit boundary (no runtime, no World built or stepped), descriptive placement | Implemented |
 | ω innate expectation | `tests/i3/test_omega_innate_expectation.py`: default = zero-mean prior, mean shift ω·s with spread kept, bounds, identical paid work across ω, personal-support paths and genome untouched, falsifier fixtures = #1101 | Implemented |
+| Projection accounting | `tests/i3/test_projection_consistency.py`: default is the reference, unknown mode rejected, unit chunks identical, trapezoid exact for linear distress, identical paid units, smaller projection-equivalent gap | Implemented (opt-in, not promoted) |
 

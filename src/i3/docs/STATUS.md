@@ -286,6 +286,31 @@ in the self-projection, an inconsistent bootstrap.
 Proposed next slice: a bootstrap-consistency invariant and a projection fix,
 gated as a reference change. ω's genome slice and live integration wait for it.
 
+## P1.3 projection consistency: confirmed defect, no cheap fix yet, D1 reframes Stage 1
+
+The plan-length bias is confirmed as a bootstrap inconsistency of the P1.3
+projection's end-of-chunk accounting. Per-step projection satisfies the
+invariant to 8.9e-16. Measured on a frozen grid
+([results](studies/projection-consistency/RESULTS.md)):
+
+- **Opt-in `trapezoid` accounting** (same 8 paid units, exact when distress is
+  linear) reduces the worst decision bias only from 0.169 to 0.133.
+  Verdict `NO_CANDIDATE_PROMOTED`. The default stays `chunk_end`, bit-identical
+  on 60 compared values.
+- **Declared diagnostic D1.** The ω falsifier rerun with unbiased per-step
+  projection gives:
+    - ω's effect strong and monotone: 16 → 52 trial states;
+    - at ω = 0, 32 of 40 selected trials epistemic, versus 0/80 under the
+      biased projection.
+
+  #1101's sub-decisive-information verdict was largely an artifact.
+  Per-step costs 255 units instead of 8 and is not a live option.
+
+Next: candidate C, event-aware accounting (split chunks at closed-form
+threshold-crossing and death steps, pay any extra evaluation), under a new
+frozen protocol, then the ω falsifier again. Reference adoption needs an
+ADR-0015 gate.
+
 ## Current reference and observed limits
 
 | Area | Implemented / observed status |

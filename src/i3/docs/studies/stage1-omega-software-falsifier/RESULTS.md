@@ -79,3 +79,8 @@ change a plan's value (to numerical precision).
   goes through an ADR-0015 gate, and the result is consigned before it.
 
 Only then can ω's genome slice and live integration be judged on unbiased values.
+
+**Follow-up:** the bias was confirmed and characterized; under an unbiased
+projection ω acts strongly and monotonically. See
+[projection-consistency results](../projection-consistency/RESULTS.md).
+

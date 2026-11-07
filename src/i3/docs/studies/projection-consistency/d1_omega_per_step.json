@@ -1,0 +1,74 @@
+{
+ "-0.5": {
+  "best_trial_advantage": 0.006335010438878852,
+  "declined": 44,
+  "evaluated": 80,
+  "max_information_value": 0.0010781656415064234,
+  "max_revelation_advantage": 0.0015837526097197685,
+  "positive_revelation": 36,
+  "selected_epistemic": 36,
+  "trial_selected": 36,
+  "unfunded": 0,
+  "worst_trial_advantage": -0.08382100467885462
+ },
+ "-1.0": {
+  "best_trial_advantage": 0.0010526537737496344,
+  "declined": 64,
+  "evaluated": 80,
+  "max_information_value": 0.002300128496746545,
+  "max_revelation_advantage": 0.00026316344343757514,
+  "positive_revelation": 16,
+  "selected_epistemic": 16,
+  "trial_selected": 16,
+  "unfunded": 0,
+  "worst_trial_advantage": -0.09526283087257353
+ },
+ "0.0": {
+  "best_trial_advantage": 0.02322591476213609,
+  "declined": 40,
+  "evaluated": 80,
+  "max_information_value": 0.00037263397901837747,
+  "max_revelation_advantage": 0.005806478690534078,
+  "positive_revelation": 40,
+  "selected_epistemic": 32,
+  "trial_selected": 40,
+  "unfunded": 0,
+  "worst_trial_advantage": -0.0743948631944285
+ },
+ "0.25": {
+  "best_trial_advantage": 0.025248920486945936,
+  "declined": 36,
+  "evaluated": 80,
+  "max_information_value": 0.00042611358166771973,
+  "max_revelation_advantage": 0.0063122301217364285,
+  "positive_revelation": 44,
+  "selected_epistemic": 12,
+  "trial_selected": 44,
+  "unfunded": 0,
+  "worst_trial_advantage": -0.06808364237424452
+ },
+ "0.5": {
+  "best_trial_advantage": 0.030423743760802813,
+  "declined": 36,
+  "evaluated": 80,
+  "max_information_value": 0.0004983398628967683,
+  "max_revelation_advantage": 0.007605935940200759,
+  "positive_revelation": 44,
+  "selected_epistemic": 12,
+  "trial_selected": 44,
+  "unfunded": 0,
+  "worst_trial_advantage": -0.06354978962333796
+ },
+ "1.0": {
+  "best_trial_advantage": 0.04723169717783615,
+  "declined": 28,
+  "evaluated": 80,
+  "max_information_value": 0.0005031794196083683,
+  "max_revelation_advantage": 0.011807924294459093,
+  "positive_revelation": 52,
+  "selected_epistemic": 12,
+  "trial_selected": 52,
+  "unfunded": 0,
+  "worst_trial_advantage": -0.054696990410120716
+ }
+}
