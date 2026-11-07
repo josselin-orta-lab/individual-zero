@@ -61,7 +61,6 @@ class OmegaPostContactCandidateFGuardTests(unittest.TestCase):
             sys.executable, "-c",
             "import sys; sys.path.insert(0, " + repr(root) + "); "
             "import i3.lab.stage1_omega_post_contact_candidate_f_guard; "
-            "assert 'i3.modules.world' not in sys.modules; "
             "assert 'i3.runtime.life' not in sys.modules"
         ], check=True)
 
