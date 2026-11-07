@@ -23,6 +23,7 @@ from math import fsum, isfinite
 
 from .body import CognitiveBudget, CognitiveWork, VITAL, debit_cognition
 from .information_value import WORK_KEYS, _add_work
+from .forecast_work import projection_simulated_steps_ceiling
 from .observed_effect_view import (
     VIEW_WORK, paid_simulate_after_observed_effect)
 from .plan_information import _validate_plan
@@ -50,7 +51,7 @@ def _simulation_upper(model, plan, horizon):
         i += run
         steps += 1
     return CognitiveWork(
-        simulated_steps=steps + len(model.proj_chunks))
+        simulated_steps=steps + projection_simulated_steps_ceiling(model))
 
 
 def _contains(plan, key):
