@@ -195,11 +195,52 @@ probability or bodily-effect arithmetic. Token proliferation cannot increase
 the 18-record branch-memory capacity.
 
 This closes the **unsupported-outcome semantics** gap without yet creating a
-live `reference_information_v1` policy. The remaining integration problem is
-to translate an actionable frontier observation into branch-specific P1.3
-continuation plans while preserving the existing repertoire and observable
-signal boundary. In particular, a food-token branch may only use the token
-after that branch's observation has made it personally available.
+live `reference_information_v1` policy.
+
+## Observable revealed continuations
+
+The next arithmetic gap is now implemented in
+`modules/plan_information.py::paid_revealed_plan_information_value`.
+
+The uninformed comparator receives only **common continuations**, meaning plans
+that exist before the probe observation. Each subjective branch may additionally
+declare plans that become available only after its observable result.
+
+For example, an `ACTIONABLE_WATER` branch may expose a generic P1.3 simulation
+plan consisting of one movement step followed by `boire`. The simulation plan
+does not encode which adjacent direction contains the source; P1.3 action-effect
+simulation already treats movement through its generic learned movement effect.
+No hidden coordinate is therefore needed for value arithmetic.
+
+Likewise an `ACTIONABLE_FOOD_TOKEN` branch may expose movement, collection and
+eating using an **observed-token placeholder only inside that observable
+branch**. The token cannot exist in the common pre-observation plan set.
+
+The kernel enforces the anti-oracle condition directly: if two subjective
+outcomes collapse to the same observable pair of signal and predicted body,
+they must expose identical continuation names **and identical plan bodies**.
+Different hidden outcomes may not silently grant different action sets.
+
+The informed value can choose among common plus revealed plans for each
+observable group. The uninformed value can choose only among common plans.
+Every available branch/plan cell is actually prepaid and executed under one
+conservative complete-matrix forecast ceiling. There is no favorable early
+stop, no branch-max shortcut and no Stage-2 compute-selection rule.
+
+This closes branch-specific **plan availability arithmetic**, but still does
+not bind the frontier prior to a live P1.3 decision loop. The remaining bounded
+integration is now mechanical but scientifically important:
+
+1. convert a particular existing `explorer:*` option into its travel/probe
+   consequence without changing its first motor command;
+2. obtain the paid #1080 frontier belief from the same personal state;
+3. construct only signal-permitted revealed continuations;
+4. score information in place of additive curiosity/relevance/prudence while
+   preserving the rest of P1.3's option repertoire, Competition and control;
+5. use the #1077 storage-only arm as the physical memory-cost control.
+
+That live candidate must still be development-only until its full cost ceiling,
+no-support path, frozen-projection ablation and source/case locks are frozen.
 
 Stage 2 remains separate and blocked: it asks how much unique computation to
 buy, not how to invent outcomes the individual has never represented.
