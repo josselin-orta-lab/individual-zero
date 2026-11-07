@@ -148,13 +148,12 @@ must settle budget.work normally; an allowance is not a World debit receipt.
             first = _advance(forecast_body, branch.probe_delta)
             second = _advance(first, effects[name])
             key = (first, second)
-            cached = cell_cache is not None and key in cell_cache
-            if cell_cache is not None and not cached and key not in seen_misses:
+            if cell_cache is not None and key not in cell_cache and key not in seen_misses:
                 seen_misses.add(key)
                 miss_count += 1
             elif cell_cache is None:
                 miss_count += 1
-            row.append((name, first, second, key, cached))
+            row.append((name, first, second, key))
         planned.append(row)
     remaining_work = CognitiveWork(
         cycles=miss_count + 1,
@@ -172,7 +171,7 @@ must settle budget.work normally; an allowance is not a World debit receipt.
             for name in names:
                 first = _advance(forecast_body, branch.probe_delta)
                 second = _advance(first, effects[name])
-                row.append((name, first, second, None, False))
+                row.append((name, first, second, None))
             planned.append(row)
     elif any(getattr(forecast_work, k) < getattr(quoted_work, k) for k in WORK_KEYS):
         raise ValueError("common forecast cannot omit this call's actual work")
@@ -180,8 +179,8 @@ must settle budget.work normally; an allowance is not a World debit receipt.
     reused = 0
     for branch, planned_row in zip(outcomes, planned):
         row = []
-        for name, first, second, key, cached in planned_row:
-            if cached:
+        for name, first, second, key in planned_row:
+            if cell_cache is not None and key in cell_cache:
                 value = cell_cache[key]
                 reused += 1
             else:
