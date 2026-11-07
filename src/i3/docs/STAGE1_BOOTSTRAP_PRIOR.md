@@ -975,3 +975,18 @@ Information value is bounded by how much the best plan differs between imagined
 effects, not by how often it is reused. First contact is the remaining Stage-1
 blocker: [decision note](STAGE1_FIRST_CONTACT_DECISION.md).
 
+
+## ω: inherited expectation toward the unknown (owner decision A)
+
+`paid_recent_rms_zero_mean_effect_prior(..., omega=0.0)`, threaded through the
+RMS three-leaf composition and the one-future-opportunity water kernel. The two
+hypotheses become `(ω+1)·s` and `(ω−1)·s`: mean `ω·s` on every channel, spread
+`s` unchanged, `ω = 0` exactly the zero-mean prior. Paid work does not depend
+on ω.
+
+The frozen falsifier passed R0–R3 on the #1101 grid
+([results](studies/stage1-omega-software-falsifier/RESULTS.md)), but showed that
+the P1.3 projection rewards plan length. Absolute trial and revelation
+advantages from this kernel family must be re-read after a bootstrap-consistency
+fix.
+

@@ -69,4 +69,4 @@ new mechanism, and an honest negative.
     - It also fails if survival depends on `ω` only in water-poor families, which
       would signal ecology-specific calibration.
 
-Option B is not pursued. A's falsifier 1 runs first; nothing in the genome or the live path changes before it passes.
+Option B is not pursued. A's falsifier 1 passed (`CAPACITY_SHOWN`), but it exposed a P1.3 projection plan-length bias that must be fixed first: [results](studies/stage1-omega-software-falsifier/RESULTS.md). The genome and the live path stay unchanged until then.

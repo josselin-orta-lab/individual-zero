@@ -251,6 +251,41 @@ P1.3 remains the reference. I3 remains unregistered. No new scientific life,
 selection, validation or reserve exposure follows from these software results.
 Stage 2 remains blocked; Stage 0, #1026 and historical #1054 remain open.
 
+## Stage-1 ω (owner decision A): capacity shown, projection bias found
+
+The owner chose option A (7 November 2026): a heritable generic expectation
+toward the unknown, ω ∈ [−1, 1], drawn symmetrically and set only by lineage
+persistence. Recorded before code in
+[STAGE1_OMEGA_SOFTWARE_FALSIFIER.md](STAGE1_OMEGA_SOFTWARE_FALSIFIER.md):
+
+- **Uniform, need-agnostic shift.** The personal RMS prior becomes (ω ± 1)·s,
+  so its mean is ω·s and its spread unchanged.
+- **Not yet in the genome.** ω is an explicit kernel parameter for now; the
+  genome change is deferred so archived v3 digests stay valid.
+- **Reference semantics.** The #1101 exact-explorer source change is reused for
+  reference-preserving semantics; #1101's rejection stands.
+
+Falsifier 1, executed once on the #1101 grid, no world or life:
+`CAPACITY_SHOWN`.
+
+- **R0–R2 pass.** ω = 0 reproduces #1101 exactly, paid work is identical
+  across ω, and the direction is monotone.
+- **R3 passes.** ω = 0.5 and ω = 1 add 4 positive water-revelation states
+  (52 → 56); ω = −1 removes 4.
+  ([results](studies/stage1-omega-software-falsifier/RESULTS.md))
+
+**Post-hoc finding, the next blocker.** The P1.3 simulator values longer plans
+higher even when the extra steps are waits: food-stressed −1.4263, +1 wait
+−1.4151, +3 waits −1.3938. The likely cause is end-of-chunk distress accounting
+in the self-projection, an inconsistent bootstrap.
+
+- **Unaffected:** ω's effect, because every arm compares the same plans.
+- **Uninterpretable:** absolute signs of Stage-1 trial and revelation
+  advantages, including #1101's.
+
+Proposed next slice: a bootstrap-consistency invariant and a projection fix,
+gated as a reference change. ω's genome slice and live integration wait for it.
+
 ## Current reference and observed limits
 
 | Area | Implemented / observed status |

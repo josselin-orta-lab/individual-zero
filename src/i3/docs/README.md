@@ -105,6 +105,17 @@ Stage 2 remains blocked.
 P1.3 remains the reference. I3 remains unregistered. No validation or reserve
 world has been opened.
 
+## Latest: ω decided (A), capacity shown; P1.3 projection bias is the next blocker
+
+The owner chose a heritable expectation toward the unknown, ω. Its frozen
+software falsifier passed: ω = 0 reproduces #1101, cost is identical across ω,
+and ω shifts water-frontier values in the predicted direction
+([results](studies/stage1-omega-software-falsifier/RESULTS.md)).
+
+Decomposing the result exposed a **plan-length bias in the P1.3 projection**:
+longer plans score higher even when the extra steps are waits. Fix and gate the
+projection's bootstrap consistency before ω enters the genome or the live path.
+
 ## Latest: carried food closed as decision-neutral; first contact needs a decision
 
 After #1102, the carried-food path was audited (#1103) and characterized
