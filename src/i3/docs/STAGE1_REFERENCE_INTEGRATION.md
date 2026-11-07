@@ -84,18 +84,28 @@ Thus P1.3 remains byte-behaviorally on its existing path.
 
 ## Next bounded integration
 
-After this substrate is verified, the next development slice may create two
-explicit opt-in P1.3-repertoire arms:
+The first of those controls is now implemented as the explicit opt-in
+`reference_branch_memory_v1` policy. Its `decide` path delegates unchanged to
+P1.3: same options, shuffle/RNG, simulations, curiosity/prudence score,
+Competition and Action Control.
 
-1. a storage-only control that pays and retains the same branch memory while
-   keeping the original P1.3 score;
-2. an information candidate with the same store/cost that removes the additive
-   curiosity/relevance/prudence path and uses prepaid two/three-branch
-   information scoring.
+Its learning phase first computes the exact P1.3 base/replay purchase on a
+detached allowance. The real allowance pays that identical reference work and
+replay count. Only then, if an additional `STORE_WORK` block is physically
+affordable, one lived effect is retained in the 18-record ring. Storage can
+therefore change later physiology, as a real cost must, but it cannot steal a
+reference replay or alter the decision that preceded its payment. If the extra
+store is unaffordable, normal P1.3 learning still proceeds and no branch is
+fabricated.
 
-That comparison is development-only until branch/replanning semantics are
-frozen. It avoids attributing the physical cost of the new empirical branch
-memory to information use itself.
+This storage-only arm is the cost control for the future information candidate.
+The information arm must use the same storage rule and cost, while replacing
+only the additive curiosity/relevance/prudence path with prepaid two/three-
+branch information scoring.
+
+That future comparison remains development-only until branch/replanning
+semantics are frozen. It prevents attributing the physical cost of the new
+empirical branch memory to information use itself.
 
 The hard next design question is plan-level replanning, especially explorer
 observations. Do not solve it by injecting unseen cells or a hidden resource
