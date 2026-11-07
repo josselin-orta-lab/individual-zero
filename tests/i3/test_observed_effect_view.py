@@ -43,6 +43,67 @@ class ObservedEffectViewTests(unittest.TestCase):
              "uncertainty": 0.0})
         self.assertEqual(result["max_uncertainty"], 0.0)
 
+    def test_candidate_f_preserves_exact_observed_effect_override(self):
+        mind = make_mind(observer=True)
+        mind.simulation_mode = "candidate_f"
+        mind.projection_accounting = "event_local_quadratic4"
+
+        positive = paid_simulate_after_observed_effect(
+            mind, BODY, (("boire",),), 4,
+            ("boire",), (0., 0., 60., 0., 0.),
+            CognitiveBudget(BODY, BodyLaws()))
+        negative = paid_simulate_after_observed_effect(
+            mind, BODY, (("boire",),), 4,
+            ("boire",), (0., 0., -20., 0., 0.),
+            CognitiveBudget(BODY, BodyLaws()))
+
+        self.assertEqual(
+            positive["first_forecast"],
+            {"action_key": ("boire",),
+             "delta": (0., 0., 60., 0., 0.),
+             "uncertainty": 0.0})
+        self.assertEqual(
+            negative["first_forecast"],
+            {"action_key": ("boire",),
+             "delta": (0., 0., -20., 0., 0.),
+             "uncertainty": 0.0})
+        self.assertNotAlmostEqual(
+            positive["value"], negative["value"], delta=1e-12)
+        self.assertEqual(positive["max_uncertainty"], 0.0)
+        self.assertEqual(negative["max_uncertainty"], 0.0)
+
+    def test_candidate_f_proxy_does_not_mutate_owner_state(self):
+        mind = make_mind(observer=True)
+        mind.simulation_mode = "candidate_f"
+        mind.projection_accounting = "event_local_quadratic4"
+        before = {
+            "effects": deepcopy(mind.effects.stats),
+            "values": deepcopy(mind.values),
+            "buffer": tuple(mind.buffer),
+            "map": deepcopy(mind.map),
+            "hist": deepcopy(mind.hist),
+            "rng": mind.rng.getstate(),
+            "budget_rng": mind._budget_rng.getstate(),
+            "observer": deepcopy(getattr(
+                mind, "_observer_first_forecast", None)),
+        }
+        paid_simulate_after_observed_effect(
+            mind, BODY, (("boire",), ("attendre",)), 4,
+            ("boire",), (0., 0., 60., 0., 0.),
+            CognitiveBudget(BODY, BodyLaws()))
+        after = {
+            "effects": mind.effects.stats,
+            "values": mind.values,
+            "buffer": tuple(mind.buffer),
+            "map": mind.map,
+            "hist": mind.hist,
+            "rng": mind.rng.getstate(),
+            "budget_rng": mind._budget_rng.getstate(),
+            "observer": getattr(
+                mind, "_observer_first_forecast", None),
+        }
+        self.assertEqual(after, before)
+
     def test_unrelated_plan_value_matches_original_simulation(self):
         mind = make_mind()
         direct_budget = CognitiveBudget(BODY, BodyLaws())
