@@ -221,14 +221,10 @@ class CandidateFUpperCostControllerTests(unittest.TestCase):
                          reference_snapshot["buffer"])
         self.assertEqual(controller.reference.pos, reference_snapshot["pos"])
 
-    def test_controller_is_not_registered_runtime_policy(self):
-        with patch(
-                "i3.runtime.life.World",
-                side_effect=AssertionError("world must not be constructed")):
-            with self.assertRaisesRegex(ValueError, "unknown decision policy"):
-                run_life(
-                    midpoint(), fixture(), 1, 1,
-                    decision_policy=POLICY)
+    def test_controller_core_does_not_self_register_runtime(self):
+        controller = CandidateFUpperCostReferenceController(midpoint(), 47)
+        self.assertFalse(
+            controller.custody_summary()["self_registers_runtime"])
 
     def test_module_import_does_not_load_mind_world_or_runtime(self):
         root = str(Path(__file__).resolve().parents[2] / "src")

@@ -5,7 +5,8 @@ authority and owns the common lived history. Before every decision, the
 Candidate-F shadow is realigned to that actual history while preserving only
 its candidate-private branch memory and omega state.
 
-This module is not registered in runtime.life and opens no World by itself.
+This controller does not self-register or open World. A separate explicit
+development-only runtime policy may import it.
 """
 from __future__ import annotations
 
@@ -123,7 +124,7 @@ class CandidateFUpperCostReferenceController:
                 "replays": self._last_total_decision_work.replays,
             },
             "world_access": False,
-            "runtime_registered": False,
+            "self_registers_runtime": False,
         }
 
 
