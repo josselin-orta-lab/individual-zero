@@ -159,6 +159,99 @@ class RevisionJoinTests(unittest.TestCase):
             with self.subTest(key=key), self.assertRaises(ValueError):
                 revision._resource_events(life)
 
+    def test_upper_cost_shadow_work_does_not_fake_p13_processing(self):
+        life = joining_fixture()
+        shadow = dict(
+            cycles=3, simulated_steps=0, memory_items=347, replays=0)
+        zero = dict(
+            cycles=0, simulated_steps=0, memory_items=0, replays=0)
+        row = life["trace"][0]
+        witness = life["observer_resource_acquisition"]["steps"][0]
+        life["manifest"]["experimental_policy"] = {
+            "name": revision.UPPER_COST_POLICY}
+        row.update(action=None, param=None, option=None)
+        row["info"] = {
+            "experimental_policy": revision.UPPER_COST_POLICY,
+            "funding": "NO_PROCESSING_BUDGET",
+            "observer": {"decision_outcome": "no_processing_budget"},
+            "cost_control": {
+                "schema": revision.UPPER_COST_SCHEMA,
+                "motor_authority": "P1.3_REFERENCE_ONLY",
+                "candidate_motor_authority": False,
+                "settlement_authority":
+                    "CUMULATIVE_V2_PHASE_START_BODY",
+                "sequential_settlement_max_abs_gap": 0.0,
+                "candidate_shadow_work": dict(shadow),
+                "reference_choice_work": dict(zero),
+                "total_work": dict(shadow),
+            },
+        }
+        row["funding_phases"]["decision"]["work"] = dict(shadow)
+        witness.update(
+            action=None, param=None, chosen_option=None,
+            decision_funding="NO_PROCESSING_BUDGET",
+            decision_outcome="no_processing_budget",
+            paid_decision_work=dict(shadow))
+        witness["phase_payment"]["decision"]["work"] = dict(shadow)
+
+        joined = revision._resource_events(life)
+        self.assertEqual(len(joined), 1)
+        self.assertFalse(joined[0]["processing_paid"])
+
+    def test_upper_cost_processing_receipt_must_authenticate_total_work(self):
+        life = joining_fixture()
+        shadow = dict(
+            cycles=3, simulated_steps=0, memory_items=347, replays=0)
+        zero = dict(
+            cycles=0, simulated_steps=0, memory_items=0, replays=0)
+        row = life["trace"][0]
+        witness = life["observer_resource_acquisition"]["steps"][0]
+        life["manifest"]["experimental_policy"] = {
+            "name": revision.UPPER_COST_POLICY}
+        row.update(action=None, param=None, option=None)
+        row["info"] = {
+            "experimental_policy": revision.UPPER_COST_POLICY,
+            "funding": "NO_PROCESSING_BUDGET",
+            "observer": {"decision_outcome": "no_processing_budget"},
+            "cost_control": {
+                "schema": revision.UPPER_COST_SCHEMA,
+                "motor_authority": "P1.3_REFERENCE_ONLY",
+                "candidate_motor_authority": False,
+                "settlement_authority":
+                    "CUMULATIVE_V2_PHASE_START_BODY",
+                "sequential_settlement_max_abs_gap": 0.0,
+                "candidate_shadow_work": dict(shadow),
+                "reference_choice_work": dict(zero),
+                "total_work": dict(shadow),
+            },
+        }
+        row["funding_phases"]["decision"]["work"] = dict(shadow)
+        witness.update(
+            action=None, param=None, chosen_option=None,
+            decision_funding="NO_PROCESSING_BUDGET",
+            decision_outcome="no_processing_budget",
+            paid_decision_work=dict(shadow))
+        witness["phase_payment"]["decision"]["work"] = dict(shadow)
+        row["info"]["cost_control"]["total_work"]["memory_items"] += 1
+        with self.assertRaisesRegex(ValueError, "work mismatch"):
+            revision._resource_events(life)
+
+    def test_ordinary_no_processing_still_requires_zero_total_work(self):
+        life = joining_fixture()
+        row = life["trace"][0]
+        witness = life["observer_resource_acquisition"]["steps"][0]
+        row.update(action=None, param=None, option=None)
+        row["info"] = {
+            "funding": "NO_PROCESSING_BUDGET",
+            "observer": {"decision_outcome": "no_processing_budget"},
+        }
+        witness.update(
+            action=None, param=None, chosen_option=None,
+            decision_funding="NO_PROCESSING_BUDGET",
+            decision_outcome="no_processing_budget")
+        with self.assertRaisesRegex(ValueError, "paid base block"):
+            revision._resource_events(life)
+
     def test_false_processing_and_water_uptake_rejected(self):
         for key, value in (("decision_funding", "NO_PROCESSING_BUDGET"),
                            ("decision_outcome", "no_processing_budget"),
