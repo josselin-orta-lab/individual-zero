@@ -191,7 +191,7 @@ The caller must physically settle the new learning allowance exactly once.
             access = "direct_scan"
             try:
                 out = self._supports((key,))[key]
-            except Exception:
+            except NoPersonalSupport:
                 if work_receipt is not None:
                     work_receipt.clear()
                     work_receipt.update({
@@ -209,7 +209,7 @@ The caller must physically settle the new learning allowance exactly once.
             self._build_support_index(support_index)
             try:
                 out = self._indexed_supports((key,), support_index)[key]
-            except Exception:
+            except NoPersonalSupport:
                 if work_receipt is not None:
                     work_receipt.clear()
                     work_receipt.update({
@@ -225,7 +225,7 @@ The caller must physically settle the new learning allowance exactly once.
             access = "indexed_lookup"
             try:
                 out = self._indexed_supports((key,), support_index)[key]
-            except Exception:
+            except NoPersonalSupport:
                 if work_receipt is not None:
                     work_receipt.clear()
                     work_receipt.update({
