@@ -128,18 +128,78 @@ This closes the **replanning arithmetic** gap without closing the **outcome
 generation** gap. In particular the kernel does not generate an exploration
 branch, edit a map, reveal an unseen cell or read World.
 
-The hard remaining Stage-1 design question is therefore narrower and explicit:
-what personally held belief can generate 2-3 possible outcomes for an
-`explorer:*` observation? The existing P1.3 code has only the generic personal
-resource base rate `p_res` for unseen cells. It does not currently retain an
-outcome distribution that says which newly discovered resource would become
-actionable. Inventing that content, or converting old additive `relevance`
-back into a pseudo-outcome, would recreate a designer curiosity term.
+## Unsupported frontier outcomes: conservative personal belief
 
-Do not solve this by injecting unseen cells or a hidden resource oracle. Any
-spatial observation branch must be generated from explicit personal beliefs
-already available to the individual, or be introduced as a separately reviewed
-minimal belief mechanism rather than smuggled into the value calculation.
+`modules/unknown_outcomes.py` now freezes the unknown-outcome rule before any
+live Stage-1 policy.
+
+It reuses the **existing P1.3 frontier resource base rate exactly**:
+
+```text
+p_resource = (personally seen resource-bearing cells + 1)
+             / (personally seen passable cells + 2)
+```
+
+This is the same Laplace/Beta(1,1) structural prior already used by P1.3
+curiosity. No new genome field, source density, world family constant or
+development-fitted probability is introduced.
+
+The new rule deliberately separates **resource presence** from **actionable
+consequence**.
+
+Conditional water-versus-token modality weights come only from the
+individual's personally perceived map. A previously seen cell containing both
+modalities contributes one incidence to each. The split is frequency-based,
+not weighted by current thirst, hunger, utility or survival outcome.
+
+Resource mass becomes actionable only if the individual has both:
+
+1. personally learned a positive bodily effect for that generic modality
+   (`boire -> water`, or at least one `manger:<internal token> -> food`);
+2. retained paid recent empirical branches for that action class in the fixed
+   18-record branch memory.
+
+The resulting frontier belief has at most three observation classes:
+
+- `NO_ACTIONABLE_PERSONAL_MODEL`;
+- `ACTIONABLE_WATER`, if personally supported;
+- `ACTIONABLE_FOOD_TOKEN`, if personally supported.
+
+Any resource probability assigned to a modality without personal positive
+effect evidence or paid branch support is folded into
+`NO_ACTIONABLE_PERSONAL_MODEL`. It is **not** represented as zero bodily
+effect, an average hidden resource gain, a favorable synthetic branch or an
+oracle observation.
+
+### Newborn semantics
+
+At birth, before personal resource-effect experience, the structural resource
+base rate is still 0.5 when no cell has been seen. But there is no actionable
+resource-effect branch. The frontier model therefore reports
+`NO_ACTIONABLE_PERSONAL_MODEL`.
+
+This is intentionally conservative. It may fail to bootstrap exploration. Such
+a failure is an admissible Stage-1 result and must not be repaired by choosing
+a favorable prior from the already exposed 44-47 development worlds.
+
+### Paid work and invariance
+
+The personal map/effect scan is explicitly paid. Empirical branch retrieval is
+also paid through the existing decision-local support index; missing support is
+a paid negative result. No World object, hidden stock, future schedule or token
+truth is read.
+
+Food support uses same-action empirical fallback rather than any particular
+external token identity, so renaming internal token labels changes no
+probability or bodily-effect arithmetic. Token proliferation cannot increase
+the 18-record branch-memory capacity.
+
+This closes the **unsupported-outcome semantics** gap without yet creating a
+live `reference_information_v1` policy. The remaining integration problem is
+to translate an actionable frontier observation into branch-specific P1.3
+continuation plans while preserving the existing repertoire and observable
+signal boundary. In particular, a food-token branch may only use the token
+after that branch's observation has made it personally available.
 
 Stage 2 remains separate and blocked: it asks how much unique computation to
-buy, not how to construct the Stage-1 subjective branches.
+buy, not how to invent outcomes the individual has never represented.
