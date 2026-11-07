@@ -178,6 +178,48 @@ must not be selected from exposed 44-51 development results.
 P1.3 remains reference; I3 remains unregistered. No selection, validation,
 reserve exposure or scientific Stage-1 GO.
 
+## Stage-1 bootstrap substrate after 50/51
+
+The adverse 50/51 result is preserved and closed. No later slice reruns those
+worlds. The current software-only bootstrap chain is:
+
+- **#1088:** `paid_zero_mean_stake_prior`. Two opposite unsupported effect
+  hypotheses along the current distress gradient, p=.5/.5, exact zero expected
+  external bodily delta, no action/token/map/World input. Exact CI: 457 I3
+  tests.
+- **#1089:** exact observed-effect view for future reuse of one action inside
+  one subjective branch. No mutation of real EffectsModel/TD/map/RNG and no
+  cross-action propagation. Exact CI: 466 I3 tests.
+- **#1090:** nested unsupported-action trial value. It separately reports
+  no-trial value, frozen post-trial value, informed post-trial value,
+  `information_value` and `trial_advantage`. A synthetic test demonstrates
+  positive information value from the strictly zero-mean prior. Exact CI: 476
+  I3 tests.
+- **#1091:** first-person frontier modality prior. P1.3's existing Laplace
+  resource-presence formula is retained; conditional water/token modality uses
+  symmetric Laplace smoothing over personal incidences. Zero-incidence
+  distribution is .5 no resource / .25 water / .25 token. No body utility or
+  effect enters the prior. Exact CI: 486 I3 tests.
+
+These pieces answer different uncertainties and must not be collapsed:
+
+1. what modality an unseen frontier may reveal;
+2. what an unsupported newly available action might do;
+3. how behavior should change after that effect becomes observable.
+
+The source scenario states **2-3 simulated branches** for Stage 1. A direct
+3-way modality x 2-way effect product would exceed that declared envelope.
+
+**DRIFT DETECTED:** do not build a generic recursive belief tree, add Stage-2
+compute selection, or reopen development 44-51. The next bounded Stage-1 design
+must express the existing water-frontier engineering question with at most
+three outcome leaves, while keeping resource observation distinct from action
+effect. Any such composition remains software/development-only until
+prospectively frozen on a fresh allocation.
+
+P1.3 remains reference. I3 remains unregistered. Stage 0, #1026 and #1054
+remain open; no scientific Stage-1 GO.
+
 ## Current reference and observed limits
 
 | Area | Implemented / observed status |
