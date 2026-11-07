@@ -67,6 +67,50 @@ and use fresh development conditions only if later executed.
 P1.3 remains reference. I3 remains unregistered. Stage 2 remains blocked and
 the P4 reserve remains sealed.
 
+## Latest causal diagnostic attempt: 52/53 closed on observer engineering failure
+
+7 November 2026: the prospectively frozen 52/53 Candidate-F cost-vs-policy
+diagnostic opened once under execution source
+`e10365f605c6e919af1651a5c20f335ae6fd5f40`, Actions run
+`42422888044`.
+
+Py3.11/3.12 software preconditions passed. Twelve complete original lives were
+archived before the runner stopped while reducing the twelfth life. Durable
+evidence commit: `60c5ae22c0b381865ec81678015c41efc1b9d975`.
+Artifact: `13593974371`.
+
+The failure is **ENGINEERING_FAILURE_NOT_A_DEATH**. The physical upper-cost
+life `stable-53-g902` completed 286 steps and died from zero water. At step
+177 the Candidate-F shadow paid 3 cycles + 347 memory items, then P1.3 had
+insufficient remaining budget for its own processing block and correctly
+reported `NO_PROCESSING_BUDGET` with zero P1.3 work. The historical Stage-0
+revision join incorrectly required total decision work to be zero whenever that
+P1.3 status was present.
+
+The upper-cost receipt itself is consistent: total work equals shadow +
+reference work on all 286 decisions, P1.3 remains sole motor authority, and the
+maximum sequential-vs-cumulative settlement gap is only
+1.4210854715202004e-14.
+
+Therefore 52/53 are **closed with no rerun** under their frozen stop-and-archive
+rule. Only three complete matched stable blocks were reduced before failure;
+depletion/pulse were never generated. No cost-vs-policy causal verdict is
+evaluated from this incomplete prefix.
+
+See
+[52/53 result](studies/stage1-candidate-f-cost-vs-policy-development-52-53/RESULTS.md)
+and
+[observer failure audit](studies/stage1-candidate-f-cost-vs-policy-development-52-53/POSTHOC_OBSERVER_FAILURE_AUDIT.md).
+
+Next intervention: correct Stage-0 revision's processing-work check **only for
+the explicit upper-cost policy** so P1.3 funding status is checked against
+`reference_choice_work`, while total physical decision work remains
+independently authenticated. Ordinary policy semantics must remain unchanged.
+Any renewed diagnostic requires a fresh prospective allocation.
+
+**DRIFT DETECTED:** do not rerun 52/53, reinterpret the partial stable prefix as
+a causal result, or weaken the physical-work receipts globally.
+
 ## Latest diagnostic: cost paralysis receded, local policy still fails
 
 7 November 2026, [cost-reduced development result](studies/stage1-cost-reduced-development/RESULTS.md)
