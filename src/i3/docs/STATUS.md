@@ -58,6 +58,42 @@ rewrite Competition. P1.3 remains reference.
 Stage 0, #1026, #1054 and the scientific Stage-1 survival/revision gate remain
 open. No selection/validation/reserve exposure, activation or scientific GO.
 
+## Current Stage-1 engineering handoff: reference-preserving path
+
+After the adverse local prototype, #1076-#1078 moved Stage 1 back onto the P1.3
+behavioral substrate without opening another scientific panel.
+
+- **#1076:** `ReferenceBranchMemory`, a global fixed 18-record ring
+  (3 recent effects × 6 primitive action classes). It is empty at birth,
+  non-inherited, paid to store/read, exact-key then same-action, and does not
+  split `m_max` or alter TD/map/effect/value state.
+- **#1077:** explicit opt-in `reference_branch_memory_v1` storage-only control.
+  Its decision path is inherited P1.3. It computes the exact P1.3 learning and
+  replay purchase first, pays that unchanged work, then buys branch storage
+  only if an additional STORE_WORK block is affordable. Storage cannot steal a
+  replay or improve the reference economy.
+- **#1078:** `paid_plan_information_value`, an exhaustive paid conditional
+  replanning kernel over 2-3 explicit subjective bodily outcomes and existing
+  P1.3 continuation plans. Software tests demonstrate positive information
+  value when a sensed outcome changes the best plan and zero value when
+  observations are indistinguishable. It is not a runtime policy.
+
+The remaining blocker is not computation plumbing. **Value of information is
+undefined without a belief distribution over unknown outcomes.** P1.3 retains
+personal map/history, effect means/scalar uncertainty and the generic frontier
+resource base rate, but it does not retain a distribution that says which
+actionable content/effect an unseen cell or never-experienced action may have.
+
+Therefore `reference_information_v1` is **NOT IMPLEMENTED**. Before it exists,
+freeze a generic, first-person, renaming-invariant and physically paid rule for
+unsupported outcomes, including newborn semantics. It may not read World,
+inject water/food into a frontier, reinterpret old additive relevance as an
+outcome, or be tuned from exposed development worlds 44-47.
+
+Stage 2 stays blocked: the current scientific question is *what outcomes the
+individual believes possible*, not *how many unique calculations it should
+buy*. Stage 0, #1026 and #1054 remain open.
+
 ## Current reference and observed limits
 
 | Area | Implemented / observed status |
