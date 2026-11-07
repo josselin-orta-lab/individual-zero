@@ -1,0 +1,100 @@
+{
+ "schema": "i3-projection-event-error-decomposition/v1",
+ "protocol": "STAGE1_PROJECTION_ERROR_DECOMPOSITION.md",
+ "world_access": false,
+ "lives": 0,
+ "cases": 486,
+ "numerical_tolerance": 1e-10,
+ "classification": "SEGMENTED_BODY_EVOLUTION_CONTRIBUTES",
+ "event_exact_vs_per_step": {
+  "max_abs_prefix_error_vs_per_step": 0.01813728111588997,
+  "max_decision_bias_vs_per_step": 0.01813728111589108,
+  "max_final_body_channel_error_vs_per_step": 0.40000000000019753,
+  "projection_equivalent_invariant_max_gap": 0.018137281115890636
+ },
+ "event_quartic_vs_event_exact": {
+  "max_abs_prefix_difference": 0.022639009319109782,
+  "max_decision_difference": 0.015592015231826295
+ },
+ "paid_event_exact_projection_units": {
+  "max": 255,
+  "mean": 255,
+  "min": 255,
+  "per_step_truth": 255
+ },
+ "worst_cases": {
+  "decision_bias": {
+   "abs_bias": 0.01813728111589108,
+   "body": [
+    80,
+    10,
+    80,
+    80,
+    80
+   ],
+   "comparison": "plus_3_waits",
+   "event_exact_gap": 0.018137281115890636,
+   "fixture": "sleep_learned",
+   "genome": "g0-6003",
+   "per_step_gap": -4.440892098500626e-16
+  },
+  "final_body_error": {
+   "abs_error": 0.40000000000019753,
+   "body": [
+    80,
+    10,
+    80,
+    80,
+    80
+   ],
+   "channel": 2,
+   "event_exact_final_body": [
+    80,
+    0,
+    59.99999999999999,
+    90,
+    80
+   ],
+   "fixture": "sleep_learned",
+   "genome": "midpoint",
+   "per_step_final_body": [
+    80,
+    0,
+    59.599999999999795,
+    90.20000000000014,
+    80
+   ]
+  },
+  "prefix_error": {
+   "abs_error": 0.01813728111588997,
+   "body": [
+    80,
+    10,
+    80,
+    80,
+    80
+   ],
+   "event_exact": -1.3393264941009921,
+   "fixture": "sleep_learned",
+   "genome": "g0-6003",
+   "per_step": -1.3211892129851022
+  },
+  "quartic_decision_difference": {
+   "abs_difference": 0.015592015231826295,
+   "body": [
+    80,
+    10,
+    80,
+    80,
+    80
+   ],
+   "comparison": "plus_3_waits",
+   "event_exact_gap": 0.018137281115890636,
+   "fixture": "sleep_learned",
+   "genome": "g0-6003",
+   "quartic_gap": 0.03372929634771693
+  }
+ },
+ "candidate_promoted": false,
+ "omega_rerun_authorized": false
+}
