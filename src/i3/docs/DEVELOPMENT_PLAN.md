@@ -7,9 +7,12 @@ request to integrate the supplied scenario. This is the continuation of
 second roadmap. Decision: [ADR-0016](../../../docs/decisions/ADR-0016-i3-generalization-without-imposed-rules.md).
 Integration tracking: [#1059](https://github.com/josselin-orta-lab/individual-zero/issues/1059).
 
-**Next intervention: Stage 0 design and measurement, then Stage 1 information
-value. Do not start with a Competition rewrite.** Stages 1-6 below are planned,
-not implemented, experimentally validated or activated by this document.
+**Current operational intervention: finish Stage 1 only after supplying the
+smallest first-person representation of future matching opportunities that its
+information calculation demonstrably needs. Stage 0 remains open; Stage 2 stays
+blocked. Do not start with a Competition rewrite.** This is an evidence-driven
+dependency refinement from the 7 November engineering results, not a rewrite of
+the owner-supplied scenario or permission to launch full Stage 3.
 
 ## Source, scope and current reference
 
@@ -63,10 +66,10 @@ software defect. Keep adverse and null outcomes; do not tune them away.
 
 | Stage | Deliverable | Status / tracking |
 | --- | --- | --- |
-| 0 | Independent-population design, energetic mediation, complete paid Competition observation, individuality challenge, P5d uncertainty | Next; [#1060](https://github.com/josselin-orta-lab/individual-zero/issues/1060), existing #1026/#1054 |
-| 1 | Information value in predicted distress, replacing additive curiosity/relevance/prudence | Planned after Stage-0 design; [#1061](https://github.com/josselin-orta-lab/individual-zero/issues/1061) |
-| 2 | Decide how much to think by value of computation | Planned after Stage-1 decision; [#1062](https://github.com/josselin-orta-lab/individual-zero/issues/1062) |
-| 3 | Change detection, latent causes, then perceived-attribute factorization | Deferred; one gate per mechanism |
+| 0 | Independent-population design, energetic mediation, complete paid Competition observation, individuality challenge, P5d uncertainty | Open in parallel; [#1060](https://github.com/josselin-orta-lab/individual-zero/issues/1060), existing #1026/#1054 |
+| 1 | Information value in predicted distress, replacing additive curiosity/relevance/prudence | Engineering in progress; arithmetic works, but decision impact is blocked by sparse future-opportunity representation; [#1061](https://github.com/josselin-orta-lab/individual-zero/issues/1061) |
+| 2 | Decide how much to think by value of computation | **Blocked** until Stage-1 decision boundary is resolved; [#1062](https://github.com/josselin-orta-lab/individual-zero/issues/1062) |
+| 3 | Change detection, latent causes, then perceived-attribute factorization | Full stage deferred. One minimal generic future-opportunity representation may be tested early only as a Stage-1 prerequisite; do not start the Stage-3 bundle. |
 | 4 | Successor features and delayed credit evaluated by current bodily distress | Deferred after the required model/budget decisions |
 | 5 | Learned topology for obstacles and larger F1 worlds | Deferred; unchanged perception radius |
 | 6 | Multi-family selection of generic learning dispositions | Deferred; independent lineages and random-parent control |
@@ -128,6 +131,40 @@ acceptance targets to engineer. Specify generic priors, unknown outcomes,
 zero-budget paths, source/genome versioning and real branch receipts in #1061.
 Do not silently migrate an existing individual's genome or retain learned
 state at a new birth.
+
+
+#### Observed Stage-1 structural dependency, 7 November 2026
+
+The implemented information arithmetic is no longer the primary unknown. Three
+software results expose a narrower dependency in the current P1.3 substrate:
+
+- **#1099:** without a represented future matching action opportunity, immediate
+  post-trial bodily observation produced zero information value across 160
+  pairwise multi-deficit states;
+- **#1101:** when exact P1.3 explorer-prefix semantics were restored, the water
+  mechanism retained positive information but selected an epistemic trial in
+  0/80 realistic states;
+- **#1105:** carried-food information under one common cognition-depleted
+  forecast body was funded in 27/27 rich competing-need states, was positive in
+  9/27 and raised the meal score in 14/27, yet changed the raw winner in 0/27.
+
+Together these results show that information value can be computed, can survive
+its own v2 cost, and can move an option's score, while still remaining
+sub-decisive because P1.3 represents too little reusable future-opportunity
+structure. More water/food score patches would therefore be local tuning rather
+than a test of the general mechanism.
+
+The next admissible prerequisite is **not full Stage 3**. It is one minimal,
+generic, first-person representation of future matching opportunities, empty at
+birth and learned only from personal observations. It must be renaming
+invariant, paid, bounded to the Stage-1 two/three-branch envelope, and must not
+assume hidden source stock, current-source persistence, schedules, world family,
+or favorable outcomes. Its only purpose is to let Stage 1 ask whether learned
+effect information could matter again later.
+
+If that minimal representation does not make information decision-relevant,
+retain the negative result and reconsider the architecture. Do not jump to
+Stage 2, change Competition, or add an exploration bonus.
 
 ### Stage 2: decide how much to think
 
