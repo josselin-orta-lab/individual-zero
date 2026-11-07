@@ -128,6 +128,56 @@ preserve the anti-forgery checks and historical witness behavior. Only after
 that fix may a new, separately allocated development panel be prospectively
 defined. Stage 2 remains blocked.
 
+## Latest complete diagnostic: 50/51 frontier-water mechanism is real but bootstraps too late
+
+The separately preregistered [50/51 result](studies/stage1-frontier-water-development-50-51/RESULTS.md)
+completed all 36 lives once in run `42365345012`, with all originals archived
+before reduction. The [read-only bootstrap audit](studies/stage1-frontier-water-development-50-51/POSTHOC_BOOTSTRAP_AUDIT.md)
+adds no new life.
+
+The candidate's engineering continuation rule is **met**: 7/12 candidate lives
+contain positive frontier information and 121 frontier options have positive
+information value. This is the first live I3 evidence that the reference-
+preserving value-of-information path becomes numerically positive in ordinary
+paid lives.
+
+The mechanism activates immediately after relevant personal experience. In all
+seven positive-information lives, the first positive information score occurs
+exactly one step after the first positive water uptake. Five other candidate
+lives never experience water, never obtain positive information and all die.
+
+Survival remains adverse and is not a Stage-1 gate result: reference survives
+3/12, storage-only 6/12 and candidate 2/12. Candidate gains no survival block
+relative to either control, loses one block relative to reference and four
+relative to storage-only. These 12 matched blocks are not independent
+populations and no significance claim is made.
+
+The candidate is **not computationally paralyzed**: physical inactivity is only
+1.11% and there are 30 NO_PROCESSING_BUDGET steps. Instead it executes 1021
+waits and only 410 moves, versus 465 waits and 826 moves in storage-only.
+Candidate cognitive cost is also higher on realized trajectories: 0.7612 energy
+and 1.0457 vigilance per lived step versus 0.5851 / 0.7274 for storage-only.
+
+The mechanistic interpretation is now sharper: the conservative #1080 belief
+refuses to invent a bodily consequence for an unseen resource. That keeps the
+model first-person and non-oracular, but creates a circular bootstrap. Before
+the individual has personally learned that water can help its body, discovering
+water has no actionable frontier-information value. Once the first useful water
+experience occurs, the mechanism comes online on the very next step.
+
+Candidate deaths are 7 dehydration and 3 starvation. Food information remains
+explicitly unimplemented, so the three starvation deaths show a known scope
+limit but do not explain the water-bootstrap failure.
+
+**DRIFT DETECTED:** do not respond by restoring curiosity as a hidden bonus,
+tuning 50/51, inventing favorable water behind a frontier, or jumping to Stage
+2. The next Stage-1 work must address unknown-outcome bootstrap generically and
+prospectively. Any new prior must be action/token/world-renaming invariant and
+must not be selected from exposed 44-51 development results.
+
+P1.3 remains reference; I3 remains unregistered. No selection, validation,
+reserve exposure or scientific Stage-1 GO.
+
 ## Current reference and observed limits
 
 | Area | Implemented / observed status |

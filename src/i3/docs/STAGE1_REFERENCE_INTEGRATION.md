@@ -291,3 +291,53 @@ Before any fresh development study, freeze an execution protocol for this
 specific source, its storage-only #1077 control, actual cost receipts,
 frozen-projection and zero-perceived-cost diagnostics, and the exact development
 allocation. Do not reopen 44-47 or automatically consume 48/49.
+
+
+## Fresh 50/51 mechanism result
+
+The prospectively allocated 50/51 development panel completed once after the
+Competition observer repair. See the
+[full result](studies/stage1-frontier-water-development-50-51/RESULTS.md) and
+[bootstrap audit](studies/stage1-frontier-water-development-50-51/POSTHOC_BOOTSTRAP_AUDIT.md).
+
+The engineering question is answered positively but narrowly:
+`reference_frontier_information_v1` can produce positive, physically paid
+frontier information in real lives. Seven of twelve candidate lives contain
+positive information and 121 frontier option scores are positive.
+
+The timing is decisive. Every positive-information life first observes positive
+water uptake, then receives its first positive frontier-information score
+exactly one step later. The five candidate lives that never obtain water never
+activate the information term and all die.
+
+This validates the **post-experience mechanism** while falsifying the assumption
+that the current conservative unsupported-outcome rule is sufficient for
+newborn exploration.
+
+The candidate is usually able to think: aggregate physical inactivity is only
+1.11%. Its adverse behavior instead contains 1021 waits and 410 movements,
+compared with 465 waits and 826 movements in the storage-only control. Survival
+is 2/12 candidate, 6/12 storage-only and 3/12 reference. No independent-
+population inference follows from these small development blocks.
+
+The remaining Stage-1 problem is therefore not another implementation cache or
+Stage-2 compute budget. It is the **bootstrap prior over consequences that have
+never yet been personally experienced**.
+
+The source scenario requires averaging over outcomes the individual's beliefs
+judge possible, but does not prescribe that prior. The 50/51 result must not be
+used to hand-pick a favorable water prior. Any next proposal must be:
+
+- generic across action names, token identities and world families;
+- defined before fresh exposure;
+- paid;
+- compatible with the body's own stakes rather than a fixed drink/eat/explore
+  command;
+- explicit about newborn semantics;
+- separable from the already demonstrated personal empirical branches.
+
+Unknown-food information remains an independent incompleteness. Three candidate
+deaths are starvation deaths, but seven are dehydration deaths, so adding food
+information alone cannot repair the main bootstrap result.
+
+Do not reopen or tune 44-51. Stage 2 remains blocked.

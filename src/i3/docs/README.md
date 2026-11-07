@@ -38,11 +38,30 @@ Implemented software prerequisites are:
   preserves P1.3 repertoire/state/Competition/control and replaces old additive
   curiosity/relevance/prudence with **one-cell water-frontier information only**.
 
-This integrated probe is deliberately incomplete: food-effect risk and
-multi-cell joint frontier outcomes are NOT_IMPLEMENTED. Do not promote it to
-the full Stage-1 gate or open new 48/49 study conditions merely because software
-tests are green. The next scientific step after software integration is a
-source-locked development protocol and cost check, not Stage 2.
+The fresh reference-preserving mechanism now has one complete development
+result: [50/51 results](studies/stage1-frontier-water-development-50-51/RESULTS.md)
+and [bootstrap audit](studies/stage1-frontier-water-development-50-51/POSTHOC_BOOTSTRAP_AUDIT.md).
+
+Its engineering rule is met: 7/12 candidate lives exhibit positive frontier
+information, 121 options score positive information, and in every such life the
+first positive information score occurs exactly one step after first positive
+water uptake. The mechanism is therefore genuinely online after relevant
+personal experience.
+
+But the candidate survives only 2/12 versus reference 3/12 and storage-only
+6/12. Five candidate lives never experience water, never activate positive
+information and all die. The candidate is usually funded, so this is not the
+old computation-paralysis failure. It is a **bootstrap limitation**: before the
+first useful water experience, the conservative no-oracle belief provides no
+actionable bodily consequence for water discovery.
+
+Do not tune 50/51, restore curiosity as a hidden bonus, invent favorable water
+behind an unseen frontier, or jump to Stage 2. Any bootstrap prior must be
+generic, renaming-invariant, paid and frozen before fresh exposure.
+
+Food-effect risk and multi-cell joint frontier outcomes remain NOT_IMPLEMENTED.
+Three candidate deaths are starvation deaths, but seven are dehydration deaths,
+so food information alone cannot explain the dominant failure.
 
 P1.3 remains the reference. I3 remains unregistered. No validation or reserve
 world has been opened.
@@ -58,10 +77,9 @@ This is **ENGINEERING_FAILURE_NOT_A_DEATH**, not a negative candidate result.
 The panel is closed and will not be resumed or rerun. See
 [RESULTS.md](studies/stage1-frontier-water-development/RESULTS.md).
 
-Immediate next work is software-only: update the Competition observer to
-authenticate the explicit frontier information term while retaining all
-historical anti-forgery checks. Do not open another development panel until
-that fix is merged and a new allocation is prospectively frozen.
+The observer incompatibility was repaired in software-only PR #1085 without
+rerunning 48/49. A separately preregistered 50/51 panel then completed and is
+the current mechanism evidence. 48/49 remain permanently closed.
 
 ## Read for the next intervention
 
