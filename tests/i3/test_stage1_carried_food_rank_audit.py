@@ -59,6 +59,36 @@ def cap(body, token="mystery", count=2):
     }
 
 
+def mind_with_rich_competitors(seed=127):
+    mind = mind_with_mixed_food_history(seed)
+    # Bind two externally perceived food labels to the already supported
+    # internal effect keys so the richer capture adds known resource choices
+    # without changing the mystery token's unsupported exact-key status.
+    mind.tokens["known-here"] = "known-safe"
+    mind.external["known-safe"] = "known-here"
+    mind.tokens["known-neighbor"] = "known-toxic"
+    mind.external["known-toxic"] = "known-neighbor"
+    mind.effects.observe(("boire",), (0., 0., 35., 0., 0.))
+    mind.effects.observe(("se_deplacer",), (-2., -.2, -.4, 0., 0.))
+    mind.effects.observe(("collecter", "known-safe"), (-1., 0., 0., 0., 0.))
+    mind.effects.observe(("collecter", "known-toxic"), (-1., 0., 0., 0., 0.))
+    return mind
+
+
+def rich_cap(body, token="mystery", count=2):
+    return {
+        "body": tuple(body),
+        "inventory": ((token, count),),
+        "here": (True, ("known-here",)),
+        "neighbors": (
+            (False, ("known-neighbor",)),
+            (False, ()),
+            (False, ()),
+            (False, ()),
+        ),
+    }
+
+
 class CarriedFoodRawRankAuditTests(unittest.TestCase):
     def test_mixed_history_grid_characterizes_rank_shift_without_policy_change(self):
         rows = []
@@ -126,6 +156,91 @@ class CarriedFoodRawRankAuditTests(unittest.TestCase):
         self.assertGreater(
             stats["positive_information"], 0,
             "mixed food history never produced information")
+
+
+    def test_rich_competing_need_grid_records_rank_shift_without_gate_assumption(self):
+        rows = []
+        mind = mind_with_rich_competitors()
+        for food in (5., 25., 45.):
+            for water in (5., 25., 45.):
+                for integrity in (5., 25., 45.):
+                    body = (60., food, water, integrity, 80.)
+                    result = audit_carried_food_raw_rank(
+                        mind, rich_cap(body), BodyLaws(), "mystery")
+                    rows.append(result)
+
+        complete = [
+            row for row in rows
+            if row["status"] == "COMPLETE_DESCRIPTIVE_RAW_RANK_AUDIT"
+        ]
+        self.assertEqual(len(complete), 27)
+        self.assertTrue(all(
+            row["comparison_status"] == "DESCRIPTIVE_NOT_COST_MATCHED"
+            for row in complete))
+        self.assertTrue(all(
+            row["competition_replayed"] is False
+            and row["control_replayed"] is False
+            and row["world_step_executed"] is False
+            for row in complete))
+
+        # The richer fixture must genuinely present competing P1.3 families.
+        family_counts = {"resource": 0, "movement": 0, "exploration": 0, "rest": 0}
+        nonmeal_reference = 0
+        for row in complete:
+            chosen = row["reference"]["chosen_option"]
+            if chosen != row["meal_option"]:
+                nonmeal_reference += 1
+            # Re-run only the already recorded witness classification semantics
+            # from option names. No decision is replayed here.
+            placement = row["placement_vs_reference_base"]
+            options = (
+                placement["competitors_strictly_above"]
+                + placement["competitors_tied"]
+                + placement["competitors_strictly_below"]
+                + (row["meal_option"],)
+            )
+            for oid in options:
+                if oid in ("dormir", "attendre"):
+                    family_counts["rest"] += 1
+                elif oid.startswith("explorer:"):
+                    family_counts["exploration"] += 1
+                elif oid.startswith("move:"):
+                    family_counts["movement"] += 1
+                else:
+                    family_counts["resource"] += 1
+
+        stats = {
+            "evaluated": len(rows),
+            "complete": len(complete),
+            "positive_information": sum(
+                row["candidate"]["information_value"] > 1e-12
+                for row in complete),
+            "candidate_above_reference_meal_base": sum(
+                row["placement_vs_reference_base"][
+                    "candidate_minus_reference_meal"] > 1e-12
+                for row in complete),
+            "base_rank_improved": sum(
+                row["placement_vs_reference_base"][
+                    "candidate_improves_reference_meal_rank"]
+                for row in complete),
+            "candidate_raw_top_base": sum(
+                row["placement_vs_reference_base"]["candidate_raw_top"]
+                for row in complete),
+            "reference_chose_meal": sum(
+                row["reference"]["chosen_option"] == row["meal_option"]
+                for row in complete),
+            "reference_chose_nonmeal": nonmeal_reference,
+            "max_information_value": max(
+                row["candidate"]["information_value"] for row in complete),
+            "option_family_counts": family_counts,
+        }
+        print("CARRIED_FOOD_RICH_COMPETITOR_AUDIT", stats)
+        self.assertGreater(stats["positive_information"], 0)
+        self.assertGreater(stats["reference_chose_nonmeal"], 0)
+        for family in ("resource", "movement", "exploration", "rest"):
+            self.assertGreater(
+                family_counts[family], 0,
+                "fixture did not expose " + family + " competition")
 
     def test_one_unit_has_zero_information_in_actual_reference_context(self):
         result = audit_carried_food_raw_rank(
