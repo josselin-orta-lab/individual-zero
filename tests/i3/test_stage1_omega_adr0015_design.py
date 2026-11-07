@@ -113,6 +113,9 @@ class OmegaAdr0015DesignTests(unittest.TestCase):
             p["family_survival_noninferiority"]["max_survivor_deficit"], 2)
         self.assertEqual(
             p["omega_zero_selection"], "NEVER_INDEPENDENTLY_SELECTED")
+        self.assertEqual(
+            p["zero_step_physical_death"],
+            "VALID_SELECTION_OUTCOME")
         self.assertEqual(p["reserve"]["policy"], "SEALED_NEVER_OPEN")
 
     def test_plan_rejects_collision_without_silently_shifting_worlds(self):
@@ -165,6 +168,26 @@ class OmegaAdr0015DesignTests(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             D.rank_selection(p, "candidate", receipts[:-1])
+
+    def test_zero_step_physical_death_is_retained_in_selection_ranking(self):
+        p = 0
+        seeds = D.founder_seeds(p)
+        worlds = [
+            row for row in S.world_rows("selection")
+            if row["population"] == p]
+        rows = []
+        for seed in seeds:
+            for world in worlds:
+                rows.append({
+                    "candidate_seed": seed,
+                    "world_index": world["index"],
+                    "terminal": "dead",
+                    "steps_lived": 0 if seed == seeds[0] else 1,
+                    "genome_digest": digest(generation_zero(seed)),
+                })
+        ranked = D.rank_selection(p, "candidate", rows)
+        self.assertNotIn(seeds[0], ranked)
+        self.assertEqual(ranked, seeds[1:6])
 
     def test_revision_rank_keeps_no_exposure_and_failure_in_analysis(self):
         self.assertEqual(
