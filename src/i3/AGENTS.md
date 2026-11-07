@@ -12,9 +12,21 @@ P3 as not executed are historical, not the present source/evidence state.
 [ADR-0016](../../docs/decisions/ADR-0016-i3-generalization-without-imposed-rules.md)
 integrates the owner's 6 November 2026 scenario, whose
 [original text](docs/GENERALIZATION_SCENARIO_SOURCE_2026-11-06.md) is preserved.
-Next: Stage 0 #1060, then Stage 1 #1061 and Stage 2 #1062. Reuse #1026 for the
-same-genome/different-history/common-challenge question and #1054 for P5d's
-unexplained carried-food non-consumption. Stages 3-6 are deferred and gated.
+Stage 0 #1060 remains open, but the immediate bounded implementation is Stage 1
+#1061 on the **reference-preserving path**. The local_information_v1 prototype
+is retired as a gate candidate after the frozen 44-47 development diagnostics.
+PRs #1076-#1078 now provide: fixed paid empirical branches, a storage-only P1.3
+cost control, and paid plan-level replanning over explicit subjective outcomes.
+
+Before adding a live `reference_information_v1` policy, freeze the generic
+first-person belief rule for genuinely unsupported/exploratory outcomes,
+including newborn semantics and paid work. P1.3 has scalar uncertainty and a
+generic resource base rate, but no actionable outcome distribution for an
+unseen cell. Do not invent water/food behind a frontier, recycle old relevance
+as a pseudo-outcome, or choose a favorable prior from exposed development
+indices 44-47. Stage 2 #1062 stays blocked until this Stage-1 belief contract is
+explicit. Reuse #1026 for individuality and #1054 for the P5d carried-food case.
+Stages 3-6 remain deferred and gated.
 
 Do not prioritize a Competition rewrite: P5e did not establish generally
 broken Competition, and its masked arm never carried food. Missing exposure
