@@ -170,6 +170,84 @@ The caller must physically settle the new learning allowance exactly once.
     def _support(self, key: EffectKey) -> tuple[Vector, ...]:
         return self._supports((key,))[key]
 
+    def read_support(self, key: EffectKey, budget: CognitiveBudget, *,
+                     support_index=None, work_receipt: dict | None = None) -> tuple[Vector, ...]:
+        """Paid read of recent empirical branches, without constructing a policy.
+
+        This is the branch-memory substrate for a future reference-repertoire
+        Stage-1 candidate. It returns only personally retained bodily deltas.
+        No unknown prior, continuation, action score or World fact is created.
+        """
+        _key(key)
+        _alive_budget(budget)
+        if work_receipt is not None and type(work_receipt) is not dict:
+            raise ValueError("work_receipt must be a plain dict")
+        if support_index is not None:
+            self._check_support_index(support_index)
+        before = budget.work
+        if support_index is None:
+            budget.spend(CognitiveWork(
+                cycles=1, memory_items=7 * len(self._samples) + 2))
+            access = "direct_scan"
+            try:
+                out = self._supports((key,))[key]
+            except NoPersonalSupport:
+                if work_receipt is not None:
+                    work_receipt.clear()
+                    work_receipt.update({
+                        "schema": "i3-personal-support-read/v1",
+                        "status": "NO_SUPPORT",
+                        "access": access,
+                        "work": {k: getattr(budget.work, k) - getattr(before, k)
+                                 for k in WORK_KEYS},
+                    })
+                raise
+        elif not support_index.built:
+            budget.spend(CognitiveWork(
+                cycles=1, memory_items=7 * len(self._samples) + 2))
+            access = "shared_scan"
+            self._build_support_index(support_index)
+            try:
+                out = self._indexed_supports((key,), support_index)[key]
+            except NoPersonalSupport:
+                if work_receipt is not None:
+                    work_receipt.clear()
+                    work_receipt.update({
+                        "schema": "i3-personal-support-read/v1",
+                        "status": "NO_SUPPORT",
+                        "access": access,
+                        "work": {k: getattr(budget.work, k) - getattr(before, k)
+                                 for k in WORK_KEYS},
+                    })
+                raise
+        else:
+            budget.spend(CognitiveWork(cycles=1, memory_items=2))
+            access = "indexed_lookup"
+            try:
+                out = self._indexed_supports((key,), support_index)[key]
+            except NoPersonalSupport:
+                if work_receipt is not None:
+                    work_receipt.clear()
+                    work_receipt.update({
+                        "schema": "i3-personal-support-read/v1",
+                        "status": "NO_SUPPORT",
+                        "access": access,
+                        "work": {k: getattr(budget.work, k) - getattr(before, k)
+                                 for k in WORK_KEYS},
+                    })
+                raise
+        if work_receipt is not None:
+            work_receipt.clear()
+            work_receipt.update({
+                "schema": "i3-personal-support-read/v1",
+                "status": "COMPLETE",
+                "access": access,
+                "work": {k: getattr(budget.work, k) - getattr(before, k)
+                         for k in WORK_KEYS},
+                "branches": len(out),
+            })
+        return out
+
     def construct(self, probe: EffectKey,
                   continuations: tuple[tuple[str, EffectKey], ...],
                   budget: CognitiveBudget, *,
