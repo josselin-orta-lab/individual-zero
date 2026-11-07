@@ -158,6 +158,8 @@ class InformationMind(Mind):
         opts = local_options(self.pos, self.map, inv)
         prepared = []
         compatibility_scan_savings = CognitiveWork()
+        decision_index_savings = CognitiveWork()
+        support_index = self.personal.begin_support_index()
         self.personal.unknown_reads = 0
         try:
             for opt in opts:
@@ -188,12 +190,22 @@ class InformationMind(Mind):
                     memory_items=7 * len(self.personal._samples) * removed_scans)
                 compatibility_scan_savings = _add_work(
                     compatibility_scan_savings, scan_savings)
+                # After the first paid scan, later option constructions still
+                # pay one lookup cycle and per-key bookkeeping, but do not
+                # traverse the same immutable personal history again.
+                index_savings = CognitiveWork(
+                    memory_items=7 * len(self.personal._samples)
+                    if support_index.built else 0)
+                decision_index_savings = _add_work(
+                    decision_index_savings, index_savings)
                 if entry is not None:
                     entry["forecast_exhaustive_scan_savings"] = asdict(scan_savings)
+                    entry["forecast_decision_index_savings"] = asdict(index_savings)
                 unknown_before = self.personal.unknown_reads
                 outcomes = self.personal.construct(
                     effect_key(opt), continuations, budget,
-                    work_receipt=construction_receipt)
+                    work_receipt=construction_receipt,
+                    support_index=support_index)
                 if entry is not None:
                     entry["personal_construction"] = construction_receipt
                     entry["phase"] = "prepared"
@@ -204,6 +216,8 @@ class InformationMind(Mind):
                 self._observer_cost_profile["batch_setup"] = _work_dict_delta(budget.work, before)
                 self._observer_cost_profile["forecast_exhaustive_scan_savings"] = asdict(
                     compatibility_scan_savings)
+                self._observer_cost_profile["forecast_decision_index_savings"] = asdict(
+                    decision_index_savings)
                 self._observer_cost_profile["phase"] = "kernel_evaluation"
             evaluation_end = budget.work
             for _, outcomes, _ in prepared:
@@ -213,6 +227,8 @@ class InformationMind(Mind):
                     memory_items=len(outcomes) * 7 + cells * 5))
             forecast_evaluation_end = _add_work(
                 evaluation_end, compatibility_scan_savings)
+            forecast_evaluation_end = _add_work(
+                forecast_evaluation_end, decision_index_savings)
             ceiling = _add_work(forecast_evaluation_end, CognitiveWork(cycles=cycles))
             debit_cognition(budget.body, budget.laws, ceiling)  # Quote, NOT spend.
             scored, witnesses = [], []

@@ -186,6 +186,56 @@ class PersonalHistoryTests(unittest.TestCase):
         self.assertEqual(b.work.simulated_steps, 0)
         self.assertEqual(tuple(h._samples), original)
 
+    def test_decision_support_index_reuses_only_history_traversal(self):
+        h = PersonalOutcomes(32)
+        record(h, MEAL, (0., 2., 0., 0., 0.))
+        record(h, REST, (0., -1., 0., 0., 0.))
+        index = h.begin_support_index()
+        b = budget()
+        first_receipt, second_receipt = {}, {}
+        first = h.construct(
+            MEAL, (("rest", REST),), b,
+            work_receipt=first_receipt, support_index=index)
+        first_work = b.work
+        second = h.construct(
+            REST, (("meal", MEAL),), b,
+            work_receipt=second_receipt, support_index=index)
+        self.assertEqual(first_receipt["history_access"], "shared_scan")
+        self.assertEqual(second_receipt["history_access"], "indexed_lookup")
+        self.assertEqual(
+            first_receipt["history_scan"],
+            {"cycles": 1, "simulated_steps": 0,
+             "memory_items": 18, "replays": 0})
+        self.assertEqual(
+            second_receipt["history_scan"],
+            {"cycles": 1, "simulated_steps": 0,
+             "memory_items": 4, "replays": 0})
+        for actual, expected in zip(first[0].probe_delta, (0., 2., 0., 0., 0.)):
+            self.assertAlmostEqual(actual, expected)
+        for actual, expected in zip(second[0].probe_delta, (0., -1., 0., 0., 0.)):
+            self.assertAlmostEqual(actual, expected)
+        self.assertGreater(b.work.cycles, first_work.cycles)
+
+    def test_decision_support_index_rejects_cross_owner_and_stale_history(self):
+        h = PersonalOutcomes(32)
+        record(h, MEAL, (0., 2., 0., 0., 0.))
+        index = h.begin_support_index()
+        h.construct(MEAL, (("again", MEAL),), budget(), support_index=index)
+
+        other, other_budget = PersonalOutcomes(32), budget()
+        record(other, MEAL, (0., 2., 0., 0., 0.))
+        with self.assertRaises(ValueError):
+            other.construct(MEAL, (("again", MEAL),), other_budget,
+                            support_index=index)
+        self.assertEqual(other_budget.work, CognitiveWork())
+
+        record(h, REST, (0., -1., 0., 0., 0.))
+        stale_budget = budget()
+        with self.assertRaises(ValueError):
+            h.construct(MEAL, (("again", MEAL),), stale_budget,
+                        support_index=index)
+        self.assertEqual(stale_budget.work, CognitiveWork())
+
     def test_death_and_mixed_learning_phase_rejected(self):
         h = PersonalOutcomes(32)
         for dead in ((40., 0., 40., 80., 40.), (40., 40., 0., 80., 40.)):
