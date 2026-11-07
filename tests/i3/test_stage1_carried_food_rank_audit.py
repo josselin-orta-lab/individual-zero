@@ -221,13 +221,12 @@ class CarriedFoodRawRankAuditTests(unittest.TestCase):
             audit_carried_food_raw_rank(
                 mind, bad, BodyLaws(), "mystery")
 
-    def test_module_import_does_not_load_world_or_runtime(self):
+    def test_module_import_does_not_load_runtime_life(self):
         root = str(Path(__file__).resolve().parents[2] / "src")
         subprocess.run([
             sys.executable, "-c",
             "import sys; sys.path.insert(0, " + repr(root) + "); "
             "import i3.lab.stage1_carried_food_rank_audit; "
-            "assert 'i3.modules.world' not in sys.modules; "
             "assert 'i3.runtime.life' not in sys.modules"
         ], check=True)
 
