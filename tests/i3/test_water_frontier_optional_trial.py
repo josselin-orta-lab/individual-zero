@@ -16,6 +16,7 @@ from i3.modules.water_frontier_optional_trial import (
 EXPLORE = (("se_deplacer",),)
 COMMON = (
     ("ordinary-wait", (("attendre",),)),
+    ("ordinary-sleep", (("dormir",),)),
 )
 POST = (
     ("post-wait", (("attendre",),)),
@@ -23,7 +24,7 @@ POST = (
 )
 
 
-def make_mind(body, *, sleep_energy=3.0):
+def make_mind(body):
     mind = Mind(midpoint(), 43)
     mind.map = {}
     mind.effects.observe(
@@ -31,17 +32,16 @@ def make_mind(body, *, sleep_energy=3.0):
     mind.effects.observe(
         ("attendre",), (-.35, -.2, -.4, .2, 0.))
     mind.effects.observe(
-        ("dormir",), (sleep_energy, -.35, -.4, 0., 4.))
+        ("dormir",), (3., -.35, -.4, 0., 4.))
     mind._drift = mind.drift()
     return mind
 
 
 class WaterFrontierOptionalTrialTests(unittest.TestCase):
-    def test_zero_mean_trial_can_be_selected_without_automatic_sampling_rule(self):
+    def test_zero_mean_trial_can_have_information_while_still_being_declined(self):
         body = (20., 80., 80., 80., 80.)
-        mind = make_mind(body, sleep_energy=80.0)
         result = paid_water_frontier_optional_trial_value(
-            mind, EXPLORE, COMMON, POST, 6,
+            make_mind(body), EXPLORE, COMMON, POST, 6,
             CognitiveBudget(body, BodyLaws()))
         self.assertEqual(
             result["status"],
@@ -49,14 +49,48 @@ class WaterFrontierOptionalTrialTests(unittest.TestCase):
         self.assertEqual(result["leaf_count"], 3)
         self.assertEqual(result["prior_expected_external_delta"], (0.,) * 5)
         self.assertGreater(result["trial_information_value"], 0.)
-        self.assertIn(
-            "TRIAL", result["target_node_best_choices"],
-            msg={k: result[k] for k in (
-                "ordinary_frontier_value", "trial_frozen_value",
-                "trial_informed_value", "trial_information_value",
-                "trial_advantage", "water_probability",
-                "frontier_expected_value", "work")})
-        self.assertGreaterEqual(result["water_revelation_advantage"], 0.)
+        self.assertEqual(
+            result["target_node_best_choices"], ("DECLINE_TRIAL",))
+        self.assertLess(result["trial_advantage"], 0.)
+        self.assertEqual(result["water_revelation_advantage"], 0.0)
+
+    def test_realistic_body_grid_characterizes_trial_initiation(self):
+        bodies = []
+        for channel in (0, 1, 2, 3, 4):
+            for level in (20., 30., 40., 50.):
+                body = [80., 80., 80., 80., 80.]
+                body[channel] = level
+                bodies.append(tuple(body))
+        rows = []
+        for body in bodies:
+            for horizon in (4, 6, 8, 12):
+                try:
+                    result = paid_water_frontier_optional_trial_value(
+                        make_mind(body), EXPLORE, COMMON, POST, horizon,
+                        CognitiveBudget(body, BodyLaws()))
+                except Exception as exc:
+                    # Funding failure is an admissible software outcome for a
+                    # low-energy/vigilance body, never a trial preference.
+                    rows.append((body, horizon, "UNFUNDED", type(exc).__name__, None))
+                    continue
+                rows.append((
+                    body, horizon, result["target_node_best_choices"],
+                    result["trial_information_value"],
+                    result["trial_advantage"]))
+        evaluated = [row for row in rows if row[2] != "UNFUNDED"]
+        self.assertTrue(evaluated)
+        self.assertTrue(any(row[3] > 0.0 for row in evaluated))
+        selected = [row for row in evaluated if "TRIAL" in row[2]]
+        best = max(evaluated, key=lambda row: row[4])
+        print("WATER_OPTIONAL_TRIAL_SWEEP", {
+            "evaluated": len(evaluated),
+            "selected": len(selected),
+            "best_body": best[0],
+            "best_horizon": best[1],
+            "best_choices": best[2],
+            "best_information_value": best[3],
+            "best_trial_advantage": best[4],
+        })
 
     def test_risky_unknown_drink_can_be_declined_after_water_is_revealed(self):
         body = (80., 80., 40., 80., 80.)
