@@ -12,6 +12,61 @@ That integration changed documentation and priorities only. The subsequent
 Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
+## Latest scientific gate: genomic omega Candidate-F rejected
+
+7 November 2026: the full frozen
+[Stage-1 omega ADR-0015 gate](studies/stage1-omega-adr0015/RESULTS.md)
+completed under execution source
+`ca506554e67eddde08e71ba6872df3b50f3ea4be`, Actions run
+`42416437088`, with durable prerelease
+`i3-stage1-omega-adr0015-ca506554e67e`.
+
+All technical custody completed: 16/16 selection shards, 24/24 validation
+shards, both aggregates, 47 workflow jobs with zero failures, and 85 durable
+release assets. G6 custody passes. The scientific verdict is
+**`FAIL_FROZEN_STAGE1_OMEGA_GATE`**.
+
+Validation survival over 240 main lives per arm is stark:
+
+- P1.3 reference: **82/240** survivors;
+- selected Candidate-F with inherited omega: **0/240**;
+- the same selected candidate genomes with omega forced to zero: **0/240**.
+
+Candidate survival is zero in every F0 family and every population. Reference
+survival is stable 25, depletion 41, pulse 16.
+
+Revision also collapses: candidate complete-rank mean is 401.0 with zero
+reacquisitions, versus reference 282.5875 with 35 reacquisitions. Candidate is
+worse in all 8 populations.
+
+Selection shifts omega upward in only 6/8 populations, below the frozen 7/8
+G3 rule. Pooled omega does shift from 0.076728 in the candidate pools to
+0.154818 among selected genomes, but this does not rescue G3.
+
+Actual omega versus same-genome omega=0 has zero survival difference in all
+8 populations and all three F0 families because both candidate arms die
+universally. Therefore G4/G5 fail as well.
+
+Frozen rule verdicts: **G1 FAIL, G2 FAIL, G3 FAIL, G4 FAIL, G5 FAIL, G6 PASS**.
+
+Candidate cognition on realized validation trajectories costs about
+2.23494 energy / 3.13911 vigilance per lived step, versus 0.58475 / 0.71725
+for P1.3. Omega-zero has nearly the same cost as the candidate. This is
+descriptive, not proof that cost alone causes the collapse.
+
+**DRIFT DETECTED:** Candidate-F/omega is rejected on F0. Do not tune omega,
+change G1-G6, select the six favorable populations, or add a Stage-2 compute
+rule to rescue exposed validation 120..167.
+
+The next bounded Stage-1 question is causal and narrower: preserve P1.3
+decisions while physically paying an equivalent Candidate-F information
+computation burden. That **cost-only reference-choice control** can distinguish
+cost collapse from policy-choice collapse. It must be software-falsified first
+and use fresh development conditions only if later executed.
+
+P1.3 remains reference. I3 remains unregistered. Stage 2 remains blocked and
+the P4 reserve remains sealed.
+
 ## Latest diagnostic: cost paralysis receded, local policy still fails
 
 7 November 2026, [cost-reduced development result](studies/stage1-cost-reduced-development/RESULTS.md)
