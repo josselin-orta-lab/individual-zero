@@ -69,7 +69,9 @@ class EventAwareProjectionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             path = Path(td) / "event-aware.json"
             report = C.run(path)
-            self.assertEqual(report["cases"], 270)
+            self.assertEqual(
+                report["cases"],
+                3 * len(tuple(P.genomes())) * len(tuple(P.bodies())))
             self.assertIn(
                 report["selection"]["verdict"],
                 ("EVENT_AWARE_PROMOTED_AS_OPT_IN_CANDIDATE",
