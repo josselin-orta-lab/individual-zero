@@ -23,19 +23,21 @@ vigilance including cognition; none of 1409 paid option scores has a positive
 information increment above 1e-12. All candidate revision receipts are
 NO_EXPOSURE, not successful or zero-latency revision.
 
-**DRIFT DETECTED:** do not expand spatial cognition over this unaffordable
-comparison loop. Exact payoff-cell reuse and one-pass personal support
-resolution are now integrated. On the same minimal synthetic fixture, the
-populated-memory decision drops from 2.9536 energy / 2.06 vigilance to
-**1.6912 / 1.76**; history scans drop from 1.8972 / 0.45 to **0.6348 / 0.15**,
-while eight unique projected cells remain 0.32 / 0.56. Empty-history total drops
-from 0.7872 / 1.72 to **0.6672 / 1.42**. The removed scan work is still included
-only in the common conservative forecast quote and is not physically billed.
-These remain engineering scaling observations, not survival results. A
-decision-local shared history pass is the next exact reuse candidate; do not
-introduce budget selection, cheaper option-specific scores, free cognition or
-spatial expansion yet. Keep tariffs, physical recovery and original panel
-fixed. P1.3 remains reference.
+**DRIFT DETECTED:** do not expand spatial cognition over an untested paid
+comparison loop. Exact payoff-cell reuse, one-pass support resolution and a
+stale-safe decision-local support index are now implemented. On the same
+minimal populated synthetic fixture, total actual decision cost has fallen
+from 2.9536 energy / 2.06 vigilance before scan optimization to **1.3104 /
+1.76**; history access is now **0.254 / 0.15**, while eight unique projected
+cells remain **0.32 / 0.56** and dominate both currencies. Empty-history total
+remains 0.6672 / 1.42. Saved traversal work remains only in the common
+conservative forecast quote, never physical billing. These are engineering
+scaling observations, not survival results. There is no longer an obvious
+duplicate-work target: reducing unique rollouts would change how much the
+individual computes and therefore crosses into Stage 2. Next #1061: freeze and
+run a fresh bounded development diagnostic of this cost-reduced Stage-1
+candidate on previously unopened development conditions. Keep tariffs, prior,
+physical recovery and the old exposed panel fixed. P1.3 remains reference.
 The local repertoire/memory/prior also differ, so this small unselected panel
 cannot isolate information value or support independent-population inference.
 Stage 0, #1026, #1054 and the later scientific gates remain open. No held-out
@@ -218,14 +220,14 @@ Software checks include actual acquired-history use, a synthetic history-to-moto
 contrast, observer/RNG parity, exact receipts and pinned previous-runner default
 parity. Exact PASS/FAIL/NOT_RUN belongs to the implementation PR.
 
-The first prospective development diagnostic is complete and adverse. Exact
-duplicate-cell reuse is implemented. PR #1072 added observer-side phase receipts;
-PR #1073 resolves all requested supports in one paid history pass per
-construction, preserving exact/same-action semantics and counting only work
-actually executed. Its removed rescans remain only in the conservative common
-forecast quote. On the populated synthetic fixture this cuts total actual
-decision energy by about 43% and vigilance by about 15% relative to #1072.
-A decision-local shared history pass is the remaining obvious exact reuse before
-considering any bounded-choice policy. Full live ablations and the source-locked
+The first prospective development diagnostic remains adverse and immutable.
+PR #1072 added phase receipts; #1073 removed per-key rescans; #1074 adds a
+decision-local, owner/version-bound support index so later option constructions
+pay explicit lookups without retraversing the same history. Forecast-only
+compatibility work preserves the old common predicted body. The minimal
+populated synthetic decision is now 1.3104 energy / 1.76 vigilance, with unique
+rollouts the largest measured phase. **Stop exact-cost optimization here:** the
+next informative step is a new source-locked development diagnostic, not another
+observer or hidden budget heuristic. Full live ablations and the scientific
 survival/revision gate remain open; Stage 0, #1026 and #1054 are not resolved.
 No selection/validation/reserve exposure, activation or scientific GO.
