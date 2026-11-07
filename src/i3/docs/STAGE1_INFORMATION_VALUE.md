@@ -266,6 +266,49 @@ optimization. Before doing that, the cost-reduced Stage-1 local candidate needs
 a fresh bounded development diagnostic on previously unopened development
 conditions to determine whether computational paralysis actually persists.
 
+### Fresh cost-reduced development diagnostic
+
+PR #1075 prospectively opened only development indices 46/47 after #1071-#1074.
+The frozen engineering continuation rule was candidate inactivity <=50% plus at
+least one positive water uptake. It is met: inactivity is **22.49%** and there
+are **12** positive water uptakes. This establishes only that the first panel's
+aggregate funding paralysis is no longer the dominant bottleneck.
+
+The architecture is still not viable: candidate survival is **0/12** versus
+reference 4/12; candidate deaths are 10 dehydration and 2 starvation. Candidate
+sleep accounts for 1241/1792 lived steps. All 8666 paid information scores have
+zero information increment above 1e-12, although 8224 are fully empirically
+supported.
+
+The [read-only audit](studies/stage1-cost-reduced-development/POSTHOC_INFORMATION_ZERO_AUDIT.md)
+uses only archived originals. Among fully supported scores, 4255 introduce at
+least two new exact payoff-cell keys into the decision cache, so the zero
+increments are not explained solely by all payoff computation becoming one
+identical cell. The originals do not retain branch values or conditional-choice
+arrays, so they cannot distinguish whether observable signal classes alias or
+whether the same continuation remains optimal.
+
+The strongest behavioral boundary is spatial and is already explicit in this
+prototype's source. Stable and pulse produce 804 fully funded candidate scoring
+decisions but **zero scored drink options and zero water uptake**. At sensed
+water <=20 there are 400 such decisions: drink is locally available 0 times,
+sleep is chosen 381 times and raw-top 390 times. Hypothetical movement is
+deliberately prohibited from revealing an unseen map cell, so no hidden resource
+discovery benefit enters its score.
+
+Depletion contains 195 scored drink opportunities; 189 are empirically
+supported. Drink's raw local score exceeds sleep only 5 times and is below
+sleep 190 times; Competition chooses drink 12 times. This is not evidence that
+Competition is broken. It shows the local return model itself usually ranks
+sleep above drinking even when a drink action is available.
+
+Therefore the local prototype has served its engineering purpose but should not
+be stretched into the Stage-1 scientific candidate. The next bounded Stage-1
+integration should preserve the reference's first-person spatial repertoire and
+learned state and isolate the information-value substitution much more closely.
+Stage 2 remains separate: it governs how much **unique** computation to buy once
+the Stage-1 mechanism is attached to an otherwise comparable repertoire.
+
 The old bonus terms are absent from the experimental score, not computed and
 then added or discarded. Compatibility witness fields are zero and marked
 `score_kind=local_expected_distress`; `uncertainty=None` is not a calibrated
@@ -306,18 +349,20 @@ Record exact local and full-checkout CI checks in the PR. Do not borrow a
 prior SHA's success or turn short software trajectories into new scientific
 populations. The original report, studies, allocations and P4 reserve are unchanged.
 
-The bounded development diagnostic is complete and adverse. Exact decision-local
-cell reuse is the first cost correction because it removes only duplicate work
-while preserving the exhaustive forecast body and score semantics. Synthetic phase accounting identified repeated personal-history scans as the
-dominant populated-memory energy term. One-pass support resolution and a
-stale-safe decision-local support index now remove the exact scan redundancy
-while preserving the old exhaustive common forecast quote. On the minimal
-populated fixture, history access is 0.254 energy / 0.15 vigilance versus
-0.32 / 0.56 for unique rollouts; the latter now dominate both currencies.
-No further duplicate-work correction is currently justified. Next: a fresh,
-prospectively fixed development diagnostic of the cost-reduced local candidate
-before any Stage-2 budget policy or spatial expansion.
-Do not tune a rescue prior, rewrite Competition, or expand observers instead.
-Full live ablations and the source/genotype/case/margin/multiplicity/stopping/
-compute-locked survival and revision gate remain open. Stage 0, #1026 and #1054
-are not closed by this slice.
+The first diagnostic's cost paralysis has now been directly revisited on fresh
+development conditions after exact duplicate-work removal. The engineering
+continuation rule is met, but survival remains 0/12 and contingent information
+value remains zero across all 8666 scored options. The dominant limitation is
+no longer an obvious duplicate computation.
+
+Do not continue tuning `local_information_v1`. It deliberately changes too
+many things at once: local repertoire, episodic partition and ignorance prior
+in addition to scoring. The next bounded Stage-1 candidate must move back toward
+a one-mechanism comparison by preserving P1.3's first-person repertoire and
+learned state while substituting paid information value for the old additive
+curiosity/relevance/prudence path. Only after that comparable mechanism is
+sustainable should Stage 2 decide how much unique computation to purchase.
+Do not tune a rescue prior, force a resource action, rewrite Competition, or
+rerun exposed development panels 44-47. Full source/genotype/case/margin/
+multiplicity/stopping locks for the scientific survival/revision gate remain
+open. Stage 0, #1026 and #1054 are not closed by this slice.
