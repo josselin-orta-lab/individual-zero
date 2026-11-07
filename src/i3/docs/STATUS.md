@@ -97,6 +97,37 @@ validation or reserve world is authorized by this implementation.
 
 Stage 2 stays blocked. Stage 0, #1026 and #1054 remain open.
 
+## Latest fresh diagnostic: 48/49 stopped by observer engineering failure
+
+The prospectively frozen [48/49 protocol](studies/stage1-frontier-water-development/PROTOCOL.md)
+was opened once in run `42364436764`. It stopped in the first three-arm block
+after two completed lives. See the immutable
+[engineering-failure result](studies/stage1-frontier-water-development/RESULTS.md).
+
+Completed `stable-48-g901` lives:
+
+- P1.3 reference: 128 steps, dehydration death, no water uptake;
+- storage-only control: 128 steps, dehydration death, no water uptake, first
+  NO_PROCESSING at step 34 followed by 95 inactive steps.
+
+The candidate case did **not** produce a complete life. The external P5e
+Competition observer rejected the new frontier witness because its historical
+score identity did not include the explicit `information_value` term.
+Runner status is `ENGINEERING_FAILURE_NOT_A_DEATH`.
+
+The artifact and six original files are archived under execution source
+`a1e53daee016e801289a85c9cd7855798b048051` and evidence commit
+`89a36a9186bb9ff89769598baba021f7c79af62a`.
+
+**No scientific or candidate mechanistic verdict is available.** The
+preregistered 48/49 panel is closed under its no-retry/no-replacement rule.
+Do not resume its remaining cases.
+
+Next: a narrow software-only Competition-observer compatibility fix. It must
+preserve the anti-forgery checks and historical witness behavior. Only after
+that fix may a new, separately allocated development panel be prospectively
+defined. Stage 2 remains blocked.
+
 ## Current reference and observed limits
 
 | Area | Implemented / observed status |
