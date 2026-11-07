@@ -107,10 +107,39 @@ That future comparison remains development-only until branch/replanning
 semantics are frozen. It prevents attributing the physical cost of the new
 empirical branch memory to information use itself.
 
-The hard next design question is plan-level replanning, especially explorer
-observations. Do not solve it by injecting unseen cells or a hidden resource
-oracle. Any spatial observation branch must be generated from explicit personal
-beliefs already available to the individual.
+## Paid plan-level replanning kernel
+
+`modules/plan_information.py` now supplies the next software-only prerequisite.
+
+It accepts exactly two or three caller-supplied subjective probe outcomes and an
+explicit set of existing P1.3 continuation plans. Every branch/continuation cell
+is executed through `Mind.simulate`; no branch is selected by its hidden
+identity. Conditional replanning can use only the declared observable signal
+plus the predicted directly sensed body after the probe.
+
+The kernel quotes a conservative complete-matrix work ceiling before scoring.
+Its common forecast body includes that full ceiling. Every cell is then actually
+executed unless the subjective probe already predicts physical death, which is
+absorbing. Favorable early death/short plans may reduce actual work but cannot
+make the forecast body cheaper. There is no early stopping or Stage-2 compute
+choice.
+
+This closes the **replanning arithmetic** gap without closing the **outcome
+generation** gap. In particular the kernel does not generate an exploration
+branch, edit a map, reveal an unseen cell or read World.
+
+The hard remaining Stage-1 design question is therefore narrower and explicit:
+what personally held belief can generate 2-3 possible outcomes for an
+`explorer:*` observation? The existing P1.3 code has only the generic personal
+resource base rate `p_res` for unseen cells. It does not currently retain an
+outcome distribution that says which newly discovered resource would become
+actionable. Inventing that content, or converting old additive `relevance`
+back into a pseudo-outcome, would recreate a designer curiosity term.
+
+Do not solve this by injecting unseen cells or a hidden resource oracle. Any
+spatial observation branch must be generated from explicit personal beliefs
+already available to the individual, or be introduced as a separately reviewed
+minimal belief mechanism rather than smuggled into the value calculation.
 
 Stage 2 remains separate and blocked: it asks how much unique computation to
 buy, not how to construct the Stage-1 subjective branches.
