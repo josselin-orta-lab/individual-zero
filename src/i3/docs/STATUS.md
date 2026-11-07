@@ -60,39 +60,42 @@ open. No selection/validation/reserve exposure, activation or scientific GO.
 
 ## Current Stage-1 engineering handoff: reference-preserving path
 
-After the adverse local prototype, #1076-#1078 moved Stage 1 back onto the P1.3
-behavioral substrate without opening another scientific panel.
+The adverse local prototype has been replaced by a staged P1.3-preserving path:
 
-- **#1076:** `ReferenceBranchMemory`, a global fixed 18-record ring
-  (3 recent effects × 6 primitive action classes). It is empty at birth,
-  non-inherited, paid to store/read, exact-key then same-action, and does not
-  split `m_max` or alter TD/map/effect/value state.
-- **#1077:** explicit opt-in `reference_branch_memory_v1` storage-only control.
-  Its decision path is inherited P1.3. It computes the exact P1.3 learning and
-  replay purchase first, pays that unchanged work, then buys branch storage
-  only if an additional STORE_WORK block is affordable. Storage cannot steal a
-  replay or improve the reference economy.
-- **#1078:** `paid_plan_information_value`, an exhaustive paid conditional
-  replanning kernel over 2-3 explicit subjective bodily outcomes and existing
-  P1.3 continuation plans. Software tests demonstrate positive information
-  value when a sensed outcome changes the best plan and zero value when
-  observations are indistinguishable. It is not a runtime policy.
+- #1076: fixed paid 18-record empirical branch memory, empty at birth.
+- #1077: `reference_branch_memory_v1`, storage-only P1.3 cost control with
+  unchanged decisions and replay allocation before extra storage.
+- #1078: paid exhaustive conditional replanning over existing P1.3 plans.
+- #1080: conservative frontier belief using P1.3's existing Laplace resource
+  rate; unsupported/newborn resource mass remains non-actionable.
+- #1081: observable branch-specific continuation plans with a fail-closed
+  anti-oracle rule.
 
-The remaining blocker is not computation plumbing. **Value of information is
-undefined without a belief distribution over unknown outcomes.** P1.3 retains
-personal map/history, effect means/scalar uncertainty and the generic frontier
-resource base rate, but it does not retain a distribution that says which
-actionable content/effect an unseen cell or never-experienced action may have.
+The first live integration is now the opt-in
+`reference_frontier_information_v1` **engineering probe**. It preserves
+P1.3 perception, map/history, effects, TD values, option repertoire, concrete
+first motor commands, Competition and Action Control, and inherits #1077's
+branch-memory storage/replay rule. Its experimental score removes additive
+curiosity/relevance/prudence.
 
-Therefore `reference_information_v1` is **NOT IMPLEMENTED**. Before it exists,
-freeze a generic, first-person, renaming-invariant and physically paid rule for
-unsupported outcomes, including newborn semantics. It may not read World,
-inject water/food into a frontier, reinterpret old additive relevance as an
-outcome, or be tuned from exposed development worlds 44-47.
+Its information scope is deliberately narrow: each existing `explorer:*`
+option is treated as one generic newly revealed-cell probe. If #1080 supplies
+personally supported actionable-water belief, the informed forecast may reveal
+the existing travel prefix plus one generic move and `boire`. Food probability
+and all unsupported mass are non-actionable in this partial mechanism.
+Multi-cell independence is not assumed and old `_unknown` counts do not
+multiply the probability.
 
-Stage 2 stays blocked: the current scientific question is *what outcomes the
-individual believes possible*, not *how many unique calculations it should
-buy*. Stage 0, #1026 and #1054 remain open.
+All scored options share one conservative decision-work forecast ceiling.
+Actual work alone is physically billed. The default P1.3 reference is unchanged.
+
+This is **not** the complete Stage-1 candidate: unknown-food integrity-effect
+distributions, multi-cell joint outcomes, frozen-projection ablation,
+zero-perceived-cost diagnostic and scientific source/genotype/case/margin/
+multiplicity/stopping locks remain open. No new 48/49 development, selection,
+validation or reserve world is authorized by this implementation.
+
+Stage 2 stays blocked. Stage 0, #1026 and #1054 remain open.
 
 ## Current reference and observed limits
 
