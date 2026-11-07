@@ -30,14 +30,19 @@ Implemented software prerequisites are:
 - fixed-capacity 18-record paid empirical branch memory, empty at birth;
 - `reference_branch_memory_v1`, a storage-only P1.3 cost control whose decision
   path and replay allocation remain reference-identical before extra storage;
-- a paid exhaustive plan-level information kernel that can replan among existing
-  P1.3 plans when explicit subjective bodily outcomes are supplied.
+- paid exhaustive plan-level information kernels, including branch-specific
+  plans that can appear only after an observable result;
+- a conservative first-person frontier prior that reuses P1.3's existing
+  Laplace resource rate and never invents actionable newborn effects;
+- the opt-in `reference_frontier_information_v1` engineering probe, which
+  preserves P1.3 repertoire/state/Competition/control and replaces old additive
+  curiosity/relevance/prudence with **one-cell water-frontier information only**.
 
-The remaining Stage-1 blocker is **outcome belief generation for the genuinely
-unknown**. P1.3 does not yet contain a first-person distribution specifying
-which actionable content/effect an unseen cell may have. Freeze a generic,
-renaming-invariant, paid prior/empirical sampling rule before creating a live
-information policy. Do not choose that prior from exposed indices 44-47.
+This integrated probe is deliberately incomplete: food-effect risk and
+multi-cell joint frontier outcomes are NOT_IMPLEMENTED. Do not promote it to
+the full Stage-1 gate or open new 48/49 study conditions merely because software
+tests are green. The next scientific step after software integration is a
+source-locked development protocol and cost check, not Stage 2.
 
 P1.3 remains the reference. I3 remains unregistered. No validation or reserve
 world has been opened.
