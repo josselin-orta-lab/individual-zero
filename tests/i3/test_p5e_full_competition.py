@@ -1,4 +1,5 @@
 """P5e full funded competition witness: synthetic and development-only parity."""
+from copy import deepcopy
 from pathlib import Path
 import unittest
 import sys
@@ -152,6 +153,116 @@ class P5eFullCompetitionTests(unittest.TestCase):
                 info=info, action="manger", param="t",
                 work=CognitiveWork(), allowed=allowance,
                 capture={"body": body, "inventory": (("t", 1),)})
+
+
+    def test_frontier_information_score_schema_is_authenticated_separately(self):
+        from i3.modules.body import CognitiveBudget, CognitiveWork, BodyLaws
+        body = (80., 70., 30., 80., 80.)
+        allowance = CognitiveBudget(body, BodyLaws())
+        score = {
+            "option": "explorer:1,0",
+            "base_return": -10.0,
+            "information_value": 1.5,
+            "total_score": -8.5,
+            "score_kind": "frontier_water_expected_distress",
+            "curiosity_bonus_computed": 0.0,
+            "curiosity_bonus_applied": 0.0,
+            "risk_penalty_computed": 0.0,
+            "risk_penalty_applied": 0.0,
+        }
+        info = {
+            "option": "explorer:1,0",
+            "funding": "FUNDED",
+            "observer": {
+                "score_witness": [score],
+                "offered_options": 1,
+                "scored_options": 1,
+                "offered_families": {"explore": 1},
+                "scored_families": {"explore": 1},
+                "decision_outcome": "action_admitted",
+                "competition_witness": {
+                    "scored_order": ["explorer:1,0"],
+                    "winner_before_control": "explorer:1,0",
+                    "control_order": ["explorer:1,0"],
+                    "control_attempts": [{
+                        "option": "explorer:1,0", "admitted": True}],
+                    "final_admitted_option": "explorer:1,0",
+                    "final_admitted_action": "se_deplacer",
+                    "paid_competition_cycles": 0,
+                },
+            },
+        }
+        receipt = capture_competition(
+            info=info, action="se_deplacer", param="E",
+            work=CognitiveWork(), allowed=allowance,
+            capture={"body": body, "inventory": ()})
+        self.assertEqual(
+            receipt["paid_option_scores"][0]["information_value"], 1.5)
+
+        bad_total = deepcopy(info)
+        bad_total["observer"]["score_witness"][0]["total_score"] = -8.4
+        with self.assertRaisesRegex(RuntimeError, "forged"):
+            capture_competition(
+                info=bad_total, action="se_deplacer", param="E",
+                work=CognitiveWork(), allowed=allowance,
+                capture={"body": body, "inventory": ()})
+
+        bad_information = deepcopy(info)
+        bad_information["observer"]["score_witness"][0]["information_value"] = 1.4
+        with self.assertRaisesRegex(RuntimeError, "forged"):
+            capture_competition(
+                info=bad_information, action="se_deplacer", param="E",
+                work=CognitiveWork(), allowed=allowance,
+                capture={"body": body, "inventory": ()})
+
+        bad_addend = deepcopy(info)
+        bad_addend["observer"]["score_witness"][0][
+            "curiosity_bonus_computed"] = 0.1
+        with self.assertRaisesRegex(RuntimeError, "historical addends"):
+            capture_competition(
+                info=bad_addend, action="se_deplacer", param="E",
+                work=CognitiveWork(), allowed=allowance,
+                capture={"body": body, "inventory": ()})
+
+    def test_local_information_field_keeps_historical_score_identity(self):
+        from i3.modules.body import CognitiveBudget, CognitiveWork, BodyLaws
+        body = (80., 70., 30., 80., 80.)
+        allowance = CognitiveBudget(body, BodyLaws())
+        info = {
+            "option": "attendre",
+            "funding": "FUNDED",
+            "observer": {
+                "score_witness": [{
+                    "option": "attendre",
+                    "base_return": -5.0,
+                    "information_value": 2.0,
+                    "total_score": -5.0,
+                    "score_kind": "local_expected_distress",
+                    "curiosity_bonus_applied": 0.0,
+                    "risk_penalty_applied": 0.0,
+                }],
+                "offered_options": 1,
+                "scored_options": 1,
+                "offered_families": {"rest": 1},
+                "scored_families": {"rest": 1},
+                "decision_outcome": "action_admitted",
+                "competition_witness": {
+                    "scored_order": ["attendre"],
+                    "winner_before_control": "attendre",
+                    "control_order": ["attendre"],
+                    "control_attempts": [{
+                        "option": "attendre", "admitted": True}],
+                    "final_admitted_option": "attendre",
+                    "final_admitted_action": "attendre",
+                    "paid_competition_cycles": 0,
+                },
+            },
+        }
+        receipt = capture_competition(
+            info=info, action="attendre", param=None,
+            work=CognitiveWork(), allowed=allowance,
+            capture={"body": body, "inventory": ()})
+        self.assertEqual(receipt["paid_option_scores"][0]["total_score"], -5.0)
 
 
 if __name__ == "__main__":

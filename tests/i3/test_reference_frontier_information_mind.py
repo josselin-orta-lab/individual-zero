@@ -14,6 +14,7 @@ from i3.modules.reference_frontier_information_mind import (
 from i3.modules.reference_memory_mind import ReferenceBranchMemoryMind
 from i3.modules.world import World, WorldSpec
 from i3.runtime.life import run_life
+from i3.runtime.competition_observer import capture_competition
 
 BODY = (95., 75., 22., 80., 95.)
 
@@ -221,6 +222,29 @@ class ReferenceFrontierInformationTests(unittest.TestCase):
         self.assertEqual(
             life["experimental_policy"]["frontier_scope"],
             "one_generic_new_cell_water_only")
+
+
+    def test_full_competition_observer_accepts_real_positive_frontier_witness(self):
+        world = World(fixture())
+        mind = ReferenceFrontierInformationMind(
+            midpoint(), 83, observer_full_competition=True)
+        prime_water_model(mind)
+        allowance = CognitiveBudget(world.body, world.laws)
+        action, param, work, info = mind.decide(
+            world.capture(), allowance)
+        frontier = [
+            row for row in info["observer"]["score_witness"]
+            if row.get("score_kind") == "frontier_water_expected_distress"
+            and row.get("information_value", 0.0) > 1e-12]
+        self.assertGreater(len(frontier), 0)
+        receipt = capture_competition(
+            info=info, action=action, param=param, work=work,
+            allowed=allowance, capture=world.capture())
+        self.assertEqual(receipt["chosen_option"], info["option"])
+        self.assertEqual(receipt["physical_action"], action)
+        self.assertTrue(any(
+            row.get("score_kind") == "frontier_water_expected_distress"
+            for row in receipt["paid_option_scores"]))
 
 
 if __name__ == "__main__":

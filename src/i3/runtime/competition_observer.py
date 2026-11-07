@@ -6,6 +6,23 @@ bill is introduced by this observer.
 """
 from __future__ import annotations
 
+from math import isfinite
+
+
+def _frontier_score(entry):
+    """Authenticate the explicit Stage-1 frontier score schema only."""
+    value = entry.get("information_value")
+    if (type(value) not in (int, float) or isinstance(value, bool) or
+            not isfinite(value)):
+        raise RuntimeError("P5e: invalid frontier information value")
+    for name in (
+            "curiosity_bonus_computed", "curiosity_bonus_applied",
+            "risk_penalty_computed", "risk_penalty_applied"):
+        if entry.get(name) != 0.0:
+            raise RuntimeError(
+                "P5e: frontier score must not contain historical addends")
+    return entry["base_return"] + value
+
 
 def capture_competition(*, info, action, param, work, allowed, capture):
     diagnostic = info["observer"]
@@ -18,9 +35,17 @@ def capture_competition(*, info, action, param, work, allowed, capture):
     if len(set(names)) != len(names):
         raise RuntimeError("P5e: duplicate paid option")
     for entry in witness:
-        if abs(entry["total_score"] - (entry["base_return"] +
-                 entry["curiosity_bonus_applied"] +
-                 entry["risk_penalty_applied"])) > 1e-9:
+        if entry.get("score_kind") == "frontier_water_expected_distress":
+            expected = _frontier_score(entry)
+        else:
+            # Historical P1.3 and local-information witnesses keep their
+            # original identity. In particular local_information_v1 records
+            # information_value as a diagnostic field while base_return is
+            # already the final score, so that field must NOT be added here.
+            expected = (entry["base_return"] +
+                        entry["curiosity_bonus_applied"] +
+                        entry["risk_penalty_applied"])
+        if abs(entry["total_score"] - expected) > 1e-9:
             raise RuntimeError("P5e: forged or inconsistent paid option")
     comp = diagnostic.get("competition_witness")
     if comp is None:
