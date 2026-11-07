@@ -244,3 +244,50 @@ no-support path, frozen-projection ablation and source/case locks are frozen.
 
 Stage 2 remains separate and blocked: it asks how much unique computation to
 buy, not how to invent outcomes the individual has never represented.
+
+
+## Integrated reference frontier-water engineering probe
+
+`modules/reference_frontier_information_mind.py` connects the prerequisites
+above into the opt-in `reference_frontier_information_v1` mechanism.
+
+This name is intentionally narrower than `reference_information_v1`.
+The implementation does **not** claim complete Stage-1 information value.
+
+Inherited unchanged from P1.3/#1077:
+
+- perception and personal map/history;
+- EffectsModel, TD values, replay buffer and `m_max`;
+- complete P1.3 option/BFS/goto/explorer repertoire;
+- concrete first motor commands;
+- Competition and Action Control;
+- branch-memory storage/replay payment semantics.
+
+Changed only in the experimental decision score:
+
+- additive curiosity, relevance and prudence are absent;
+- all options are evaluated in predicted-distress units under one common
+  conservative decision-work forecast body;
+- non-frontier options use their ordinary P1.3 plan return;
+- each `explorer:*` is treated as a conservative **one newly revealed cell**
+  probe, regardless of the physical unknown-neighbor count;
+- #1080 is computed once per decision; only personally supported
+  `ACTIONABLE_WATER` mass is used by this partial probe;
+- food and unsupported mass collapse into the non-actionable branch;
+- with actionable water, #1081 compares the exact explorer travel plan against
+  the observable possibility of that travel plus one generic move and
+  `boire`;
+- without actionable water, explorer information value is zero. There is no
+  newborn rescue branch.
+
+The one-cell rule deliberately undercounts frontiers that can reveal several
+cells. It assumes neither independence nor a favorable union probability.
+Likewise this probe does not use the empirical water-effect samples as a
+distribution; they establish personal support while the P1.3 EffectsModel mean
+remains the water consequence forecast. The source scenario's food integrity
+risk distribution is therefore still unresolved.
+
+Before any fresh development study, freeze an execution protocol for this
+specific source, its storage-only #1077 control, actual cost receipts,
+frozen-projection and zero-perceived-cost diagnostics, and the exact development
+allocation. Do not reopen 44-47 or automatically consume 48/49.
