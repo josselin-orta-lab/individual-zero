@@ -89,6 +89,55 @@ outcome, not assumed independent censoring. A censored non-reacquisition only
 reports the actually observed follow-up. A positive latency measures behavioral
 resource reacquisition, NOT proof of revised internal beliefs or general agency.
 
+## Upper-cost control processing semantics
+
+The 52/53 cost-vs-policy diagnostic exposed one observer-boundary assumption
+that was valid for all earlier one-mind policies but not for the explicit
+upper-cost causal control.
+
+In ordinary policies, public decision funding and total decision-phase work have
+one cognitive owner. Therefore the historical consistency rule remains:
+
+- `NO_PROCESSING_BUDGET` => total decision work is zero;
+- any later funding status => the paid decision work contains at least the
+  three-cycle P1.3 processing base.
+
+The explicit
+`candidate_f_shadow_upper_cost_reference_controller_v1` policy has two paid
+computations in one physical decision phase:
+
+1. Candidate-F shadow cognition;
+2. the P1.3 motor-controller decision.
+
+The public `funding` status is the status returned by the P1.3 motor
+controller. A valid trace can therefore contain paid shadow work followed by
+P1.3 `NO_PROCESSING_BUDGET`.
+
+For this policy only, the revision join first authenticates the upper-cost
+receipt:
+
+- P1.3 is sole motor authority;
+- Candidate-F has no motor authority;
+- cumulative v2 settlement is authoritative;
+- settlement audit gap <=1e-12;
+- total decision work equals shadow work + reference-choice work and equals
+  the physical phase work.
+
+It then applies the historical processing-base rule to
+`reference_choice_work`, not to total decision work.
+
+This does **not** waive or hide shadow cognition. Shadow work remains in the
+physical decision bill and Stage-0 energy receipt. It only prevents a paid
+non-motor causal burden from being misclassified as P1.3 local processing.
+
+The R-depletion endpoint remains unchanged: if P1.3 has
+`NO_PROCESSING_BUDGET`, the event records `processing_paid=false`, even when
+the shadow was paid earlier.
+
+This distinction was frozen after the archived 52/53 failure. Those worlds are
+closed and are not rerun to validate the repair. Regression coverage reproduces
+the exact logical shape synthetically.
+
 ## Consistency and limitations
 
 First reuse `stage0_energy.energy_receipt` for the complete paid life and original
