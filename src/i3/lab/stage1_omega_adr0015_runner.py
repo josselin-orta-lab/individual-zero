@@ -372,6 +372,9 @@ def run_selection_shard(population, arm, output_dir, *,
                 "frontier_information": paid["frontier_information"],
                 "original": result["original"],
             })
+        systematic_probe = (
+            _reference_probes(population, "selection")
+            if arm == "reference" else None)
     except Exception as exc:
         failure = {
             "schema": SELECTION_SHARD,
@@ -385,10 +388,6 @@ def run_selection_shard(population, arm, output_dir, *,
         }
         _write_json(output_dir / "FAILURE.json", failure)
         raise
-
-    systematic_probe = (
-        _reference_probes(population, "selection")
-        if arm == "reference" else None)
 
     report = {
         "schema": SELECTION_SHARD,
@@ -553,6 +552,30 @@ def aggregate_selection(shards):
             "candidate_founders_worse_than_reference": losses,
         }
 
+    genome_descriptive = {}
+    for p in range(D.POPULATIONS):
+        pool = []
+        for seed in D.founder_seeds(p):
+            genome = D.genome_for_arm("candidate", seed)
+            pool.append({
+                "founder_seed": seed,
+                "genome_digest": digest(genome),
+                "omega": genome["genes"]["omega"],
+            })
+        genome_descriptive[str(p)] = {
+            "candidate_pool": pool,
+            "reference_selected": [{
+                "founder_seed": seed,
+                "genome_digest": digest(D.genome_for_arm("reference", seed)),
+                "omega": D.genome_for_arm("reference", seed)["genes"]["omega"],
+            } for seed in selected["reference"][str(p)]],
+            "candidate_selected": [{
+                "founder_seed": seed,
+                "genome_digest": digest(D.genome_for_arm("candidate", seed)),
+                "omega": D.genome_for_arm("candidate", seed)["genes"]["omega"],
+            } for seed in selected["candidate"][str(p)]],
+        }
+
     report = {
         "schema": SELECTION_AGGREGATE,
         "status": "COMPLETE_SELECTION_READY_FOR_VALIDATION",
@@ -564,6 +587,7 @@ def aggregate_selection(shards):
         "rankings": rankings,
         "matched_g0_descriptive": matched,
         "random_g0_descriptive": random_g0,
+        "genome_descriptive": genome_descriptive,
         "systematic_reference_probe": systematic_probe,
         "world_lock": True,
         "observer_valid": observer_valid,
@@ -650,6 +674,9 @@ def run_validation_shard(population, arm, selection_aggregate, output_dir, *,
                 })
                 if not equal:
                     raise ValueError("rank-0 exact replay mismatch")
+        systematic_probe = (
+            _reference_probes(population, "validation")
+            if arm == "reference" else None)
     except Exception as exc:
         failure = {
             "schema": VALIDATION_SHARD,
@@ -665,10 +692,6 @@ def run_validation_shard(population, arm, selection_aggregate, output_dir, *,
         }
         _write_json(output_dir / "FAILURE.json", failure)
         raise
-
-    systematic_probe = (
-        _reference_probes(population, "validation")
-        if arm == "reference" else None)
 
     report = {
         "schema": VALIDATION_SHARD,
