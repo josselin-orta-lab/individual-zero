@@ -77,9 +77,20 @@ def _placement(witnesses, meal_option, field, candidate_score):
             option for option, value in competitors
             if abs(value - top_score) <= 1e-12))
 
+    reference_above = tuple(sorted(
+        option for option, value in competitors
+        if value > reference_meal + 1e-12))
+    reference_tied = tuple(sorted(
+        option for option, value in competitors
+        if abs(value - reference_meal) <= 1e-12))
+
     return {
         "reference_field": field,
         "reference_meal_score": float(reference_meal),
+        "reference_meal_rank_min": 1 + len(reference_above),
+        "reference_meal_rank_max": 1 + len(reference_above) + len(reference_tied),
+        "reference_meal_competitors_strictly_above": reference_above,
+        "reference_meal_competitors_tied": reference_tied,
         "candidate_score": float(candidate_score),
         "candidate_minus_reference_meal": float(
             candidate_score - reference_meal),
@@ -89,6 +100,8 @@ def _placement(witnesses, meal_option, field, candidate_score):
         "candidate_rank_min": 1 + len(above),
         "candidate_rank_max": 1 + len(above) + len(tied),
         "candidate_raw_top": len(above) == 0,
+        "candidate_improves_reference_meal_rank": (
+            1 + len(above) < 1 + len(reference_above)),
         "top_competitor_options": top_competitor,
         "top_competitor_score": top_score,
         "candidate_minus_top_competitor": (
