@@ -238,6 +238,42 @@ class PriorAndBudgetTests(unittest.TestCase):
         self.assertEqual(parts, total)
 
 
+    def test_one_history_pass_preserves_exact_and_same_action_support(self):
+        h = StationaryUnknownOutcomes(16)
+        for key, delta in (
+            (("manger", "a"), (1., 0., 0., 0., 0.)),
+            (("manger", "b"), (2., 0., 0., 0., 0.)),
+            (("manger", "a"), (3., 0., 0., 0., 0.)),
+            (("manger", "b"), (4., 0., 0., 0., 0.)),
+            (("manger", "a"), (5., 0., 0., 0., 0.)),
+        ):
+            remember(h, key, delta)
+        supports = h._supports((
+            ("manger", "a"), ("manger", "new"), ("collecter", "new")))
+        self.assertEqual(
+            [row[0] for row in supports[("manger", "a")]], [1., 3., 5.])
+        self.assertEqual(
+            [row[0] for row in supports[("manger", "new")]], [3., 4., 5.])
+        self.assertEqual(supports[("collecter", "new")], (ZERO,))
+        self.assertEqual(h.unknown_reads, 1)
+
+    def test_construct_charges_one_history_pass_for_all_requested_keys(self):
+        h = StationaryUnknownOutcomes(16)
+        for i in range(5):
+            remember(h, ("manger", "a" if i % 2 == 0 else "b"),
+                     (float(i + 1), 0., 0., 0., 0.))
+        receipt = {}
+        budget = CognitiveBudget(BODY, BodyLaws())
+        h.construct(
+            ("manger", "a"),
+            (("eat-b", ("manger", "b")), ("wait", ("attendre", None))),
+            budget, work_receipt=receipt)
+        self.assertEqual(
+            receipt["history_scan"],
+            {"cycles": 1, "simulated_steps": 0,
+             "memory_items": 41, "replays": 0})
+
+
 class OnlineChoiceTests(unittest.TestCase):
     def test_personal_effect_changes_issued_motor_not_only_a_score(self):
         actions = []
@@ -253,16 +289,17 @@ class OnlineChoiceTests(unittest.TestCase):
 
     def test_online_history_is_recorded_and_used_on_later_decisions(self):
         uses, stores = [], []
-        support = StationaryUnknownOutcomes._support
+        supports = StationaryUnknownOutcomes._supports
         observe = PersonalOutcomes.observe
-        def seen_support(history, key):
-            uses.append(any(s.key[0] == key[0] for s in history._samples))
-            return support(history, key)
+        def seen_supports(history, keys):
+            actions = {key[0] for key in keys}
+            uses.append(any(s.key[0] in actions for s in history._samples))
+            return supports(history, keys)
         def seen_observe(history, key, before, work, budget):
             result = observe(history, key, before, work, budget)
             stores.append(budget.work)
             return result
-        with patch.object(StationaryUnknownOutcomes, "_support", seen_support), \
+        with patch.object(StationaryUnknownOutcomes, "_supports", seen_supports), \
              patch.object(PersonalOutcomes, "observe", seen_observe):
             life = run()
         self.assertGreater(len(stores), 0)
@@ -317,7 +354,13 @@ class OnlineChoiceTests(unittest.TestCase):
             action, param, work, info = m.decide(
                 w.capture(), CognitiveBudget(w.body, w.laws))
             self.assertIsNotNone(action)
-            summary = summarize_decision_cost(info["observer"]["cost_profile"], w.laws)
+            profile = info["observer"]["cost_profile"]
+            summary = summarize_decision_cost(profile, w.laws)
+            saved = CognitiveWork(**profile["forecast_exhaustive_scan_savings"])
+            self.assertEqual(saved.cycles, 6)
+            self.assertEqual(
+                saved.memory_items,
+                7 * len(m.personal._samples) * 6)
             self.assertEqual(summary["total_work"], {
                 "cycles": work.cycles,
                 "simulated_steps": work.simulated_steps,
