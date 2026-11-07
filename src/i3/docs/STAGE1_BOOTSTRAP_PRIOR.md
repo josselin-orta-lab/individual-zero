@@ -392,3 +392,79 @@ the composition would replace an explicit curiosity bonus with an implicit
 
 No fresh development allocation should be opened until that decision sequence
 is represented and tested inside the same at-most-three-leaf envelope.
+
+
+## Water-frontier optional-trial value
+
+The first full three-leaf **decision sequence** is now implemented as a
+software-only kernel in
+`modules/water_frontier_optional_trial.py::paid_water_frontier_optional_trial_value`.
+
+It remains water-specific to the already tested reference-frontier engineering
+scope. No new runtime policy is introduced.
+
+The kernel preserves the existing P1.3 explorer prefix and the #1082
+sensorimotor binding that a newly revealed water cell is reached by one generic
+movement before `boire`.
+
+The stochastic leaves remain exactly those from the bounded prior:
+
+1. no water target;
+2. water then positive unsupported drink effect;
+3. water then negative unsupported drink effect.
+
+Critically, revealing water does **not** automatically execute `boire`.
+
+At the water-observation node the individual compares:
+
+```text
+decline_trial_value
+
+versus
+
+expected_trial_informed_value
+```
+
+The trial value averages the two zero-mean effect branches. Only after the trial
+effect becomes directly observable may the best post-trial continuation differ.
+
+The kernel therefore reports:
+
+- `ordinary_frontier_value`: best ordinary continuation after the existing
+  explorer prefix, with unsupported `boire` forbidden;
+- `trial_frozen_value`: one drink trial, but one common post-trial
+  continuation chosen before observing its effect;
+- `trial_informed_value`: the same trial with effect-conditioned
+  post-trial replanning;
+- `trial_information_value = informed - frozen`;
+- `trial_advantage = informed - ordinary`;
+- `frontier_expected_value`: the water-probability-weighted value after
+  allowing the water node to decline or trial;
+- `water_revelation_advantage = frontier_expected - ordinary`.
+
+This separation means information can be valuable while the physical
+experiment is still rejected. Conversely, if the trial is too dangerous, water
+revelation need not create any positive exploration increment.
+
+Ties at the water node remain explicit as both `DECLINE_TRIAL` and `TRIAL`;
+the kernel contains no hidden tie preference.
+
+All common continuations are forbidden from containing the unsupported drink
+key. Post-trial plans may reuse it through the exact branch-local observed
+effect view.
+
+The complete forecast covers the three-leaf prior, bookkeeping, every ordinary
+continuation, both effect branches times every post-trial continuation, the
+branch-local effect views, ordinary P1.3 simulation work and reduction. When
+local distress is flat, no effect branches exist and the ceiling correspondingly
+omits them.
+
+This remains a score kernel, not a live policy. It does not admit a motor action,
+read World, change Competition, alter P1.3 state or authorize a development
+allocation.
+
+The next integration question is whether this bounded score can replace the
+current water-frontier score inside the reference-preserving decision path
+without changing any other option semantics or creating prohibitive cognitive
+cost. That must be answered by software integration before another world is
+opened.
