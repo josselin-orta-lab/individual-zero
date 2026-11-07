@@ -23,7 +23,7 @@ POST = (
 )
 
 
-def make_mind(body):
+def make_mind(body, *, sleep_energy=3.0):
     mind = Mind(midpoint(), 43)
     mind.map = {}
     mind.effects.observe(
@@ -31,7 +31,7 @@ def make_mind(body):
     mind.effects.observe(
         ("attendre",), (-.35, -.2, -.4, .2, 0.))
     mind.effects.observe(
-        ("dormir",), (3., -.35, -.4, 0., 4.))
+        ("dormir",), (sleep_energy, -.35, -.4, 0., 4.))
     mind._drift = mind.drift()
     return mind
 
@@ -39,7 +39,7 @@ def make_mind(body):
 class WaterFrontierOptionalTrialTests(unittest.TestCase):
     def test_zero_mean_trial_can_be_selected_without_automatic_sampling_rule(self):
         body = (20., 80., 80., 80., 80.)
-        mind = make_mind(body)
+        mind = make_mind(body, sleep_energy=80.0)
         result = paid_water_frontier_optional_trial_value(
             mind, EXPLORE, COMMON, POST, 6,
             CognitiveBudget(body, BodyLaws()))
