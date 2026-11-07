@@ -20,6 +20,7 @@ from ..modules.carried_food_information import (
     _minimum_ceiling as _food_minimum_ceiling,
     paid_carried_unknown_food_information_value)
 from ..modules.information_value import WORK_KEYS, _add_work
+from ..modules.forecast_work import projection_simulated_steps_ceiling
 from ..modules.personal_outcomes import NoPersonalSupport
 from ..modules.reference_memory_mind import ReferenceBranchMemoryMind
 
@@ -49,7 +50,7 @@ def _simulation_upper(model, plan, horizon):
         i += run
         steps += 1
     return CognitiveWork(
-        simulated_steps=steps + len(model.proj_chunks))
+        simulated_steps=steps + projection_simulated_steps_ceiling(model))
 
 
 def _inventory_count(cap, external_token):
