@@ -61,6 +61,38 @@ class OmegaGenomeV4Tests(unittest.TestCase):
         self.assertLess(min(values), 0.0)
         self.assertGreater(max(values), 0.0)
 
+    def test_historical_v3_validation_is_read_only_and_exact(self):
+        archived = G.historical_v3_generation_zero(2000000)
+        self.assertEqual(archived["schema"], "i3-genome-v3")
+        self.assertNotIn("omega", archived["genes"])
+        self.assertEqual(len(archived["genes"]), 30)
+        self.assertIs(G.validate_historical_v3(archived), archived)
+        with self.assertRaises(ValueError):
+            G.validate(archived)
+
+        current = G.generation_zero(2000000)
+        with self.assertRaises(ValueError):
+            G.validate_historical_v3(current)
+
+    def test_historical_v3_reconstruction_matches_frozen_common_draws(self):
+        for seed, expected in COMMON_V3_DIGESTS.items():
+            with self.subTest(seed=seed):
+                archived = G.historical_v3_generation_zero(seed)
+                payload = json.dumps(
+                    archived["genes"], sort_keys=True,
+                    separators=(",", ":")).encode("ascii")
+                self.assertEqual(sha256(payload).hexdigest(), expected)
+
+    def test_historical_v3_mutation_is_deterministic_but_not_current(self):
+        parent = G.historical_v3_generation_zero(2000000)
+        a = G.historical_v3_mutate(parent, 17)
+        b = G.historical_v3_mutate(parent, 17)
+        self.assertEqual(a, b)
+        self.assertEqual(a["schema"], "i3-genome-v3")
+        self.assertNotIn("omega", a["genes"])
+        with self.assertRaises(ValueError):
+            G.validate(a)
+
     def test_v3_mapping_is_rejected_without_migration(self):
         genome = deepcopy(G.generation_zero(4))
         genome["schema"] = "i3-genome-v3"
