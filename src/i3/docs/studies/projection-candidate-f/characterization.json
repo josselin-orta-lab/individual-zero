@@ -1,0 +1,54 @@
+{
+ "candidate": "end_to_end_canonical_plus_event_local_quadratic4",
+ "cases": 486,
+ "lives": 0,
+ "mind_runtime_integration_authorized": true,
+ "omega_rerun_authorized": false,
+ "paid_projection_units": {
+  "max": 112,
+  "mean": 86.61111111111111,
+  "min": 16,
+  "oracle": 255
+ },
+ "projection_equivalent_invariant_max_gap": 3.7778949835143294e-07,
+ "protocol": "STAGE1_PROJECTION_CANDIDATE_F.md",
+ "reference_adoption_authorized": false,
+ "schema": "i3-projection-candidate-f-characterization/v1",
+ "selection": {
+  "decision_bias_limit": 0.001,
+  "decision_bias_pass": true,
+  "final_body_limit": 1e-10,
+  "final_body_pass": true,
+  "invariant_limit": 0.001,
+  "invariant_pass": true,
+  "strictly_cheaper_than_oracle_every_case": true,
+  "verdict": "CANDIDATE_F_PASSES_LAB_SOFTWARE_GATE"
+ },
+ "stats": {
+  "max_abs_prefix_error_vs_oracle": 1.248682360038833e-05,
+  "max_decision_bias_vs_oracle": 1.0273669514948569e-05,
+  "max_direct_final_body_error_vs_oracle": 0.0
+ },
+ "truth": "end_to_end_high_precision_oracle_1117",
+ "world_access": false,
+ "worst_cases": {
+  "decision_bias": {
+   "abs_bias": 1.0273669514948569e-05,
+   "body": [80.0, 80.0, 80.0, 80.0, 10.0],
+   "candidate_gap": -0.14055458907747825,
+   "comparison": "plus_3_waits",
+   "fixture": "sleep_learned",
+   "genome": "g0-6003",
+   "oracle_gap": -0.1405648627469932
+  },
+  "direct_final_body": null,
+  "prefix_error": {
+   "abs_error": 1.248682360038833e-05,
+   "body": [80.0, 80.0, 80.0, 80.0, 10.0],
+   "candidate": -0.43218658519513004,
+   "fixture": "sleep_learned",
+   "genome": "g0-6003",
+   "oracle": -0.43217409837152965
+  }
+ }
+}
