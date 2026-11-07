@@ -96,8 +96,16 @@ available at that point.
 Candidate work is settled before P1.3 begins. Therefore P1.3 receives the real
 lower energy/vigilance state produced by the extra cognition.
 
-The cumulative allowance then settles the reference work. The primitive checks
-that its final body exactly matches sequential suballowance settlement.
+The cumulative allowance then settles the reference work using the ordinary v2
+CognitiveBudget rule: the complete phase bill is recomputed from the phase-start
+body. A detached reference suballowance separately subtracts reference work from
+the already debited post-shadow body.
+
+Because cognition cost is linear in CognitiveWork, those bodies are
+mathematically identical. Their floating-point evaluation order can differ by a
+few machine ulps, so the primitive requires a maximum absolute channel gap
+<=1e-12 rather than byte equality. The cumulative v2 allowance is authoritative
+for the physical body and the sequential body/gap are retained as audit fields.
 
 No unpaid evaluator or fabricated work vector is used.
 
