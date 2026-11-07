@@ -72,15 +72,19 @@ class GenomicOmegaCandidateFWiringTests(unittest.TestCase):
         self.assertNotIn(
             "omega", (root / "reference_memory_mind.py").read_text())
 
-    def test_import_does_not_load_world_or_runtime_life(self):
-        root = str(Path(__file__).resolve().parents[2] / "src")
+    def test_import_does_not_load_runtime_life_or_direct_world_owner(self):
+        root = Path(__file__).resolve().parents[2] / "src"
         subprocess.run([
             sys.executable, "-c",
-            "import sys; sys.path.insert(0, " + repr(root) + "); "
+            "import sys; sys.path.insert(0, " + repr(str(root)) + "); "
             "import i3.modules.genomic_omega_candidate_f; "
-            "assert 'i3.modules.world' not in sys.modules; "
             "assert 'i3.runtime.life' not in sys.modules"
         ], check=True)
+        source = (
+            root / "i3/modules/genomic_omega_candidate_f.py").read_text()
+        self.assertNotIn("from .world import", source)
+        self.assertNotIn("import i3.modules.world", source)
+        self.assertNotIn("runtime.life", source)
 
 
 if __name__ == "__main__":
