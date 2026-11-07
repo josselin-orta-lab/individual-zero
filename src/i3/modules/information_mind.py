@@ -12,7 +12,7 @@ from .body import (CognitiveBudget, CognitiveFundingError, CognitiveWork,
                    VITAL, capacities, debit_cognition)
 from .information_value import WORK_KEYS, _add_work, paid_information_value
 from .mind import DIRS, Mind
-from .personal_outcomes import NoPersonalSupport, PersonalOutcomes, STORE_WORK
+from .personal_outcomes import PersonalOutcomes, STORE_WORK
 
 ZERO = (0.0,) * 5
 
