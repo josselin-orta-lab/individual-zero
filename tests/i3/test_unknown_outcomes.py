@@ -18,8 +18,13 @@ BODY = (50., 50., 50., 80., 50.)
 
 
 def record(mind, memory, key, delta):
-    """Create one personally lived effect in both old mean and new ring."""
-    mind.effects.observe(key, delta)
+    """Create one personally lived effect in both old mean and new ring.
+
+    P1.3 EffectsModel uses one-field keys for non-token actions, while the
+    branch-memory custody key is always (action, token-or-None).
+    """
+    effect_key = key if key[0] in ("manger", "collecter") else (key[0],)
+    mind.effects.observe(effect_key, delta)
     work = CognitiveWork(cycles=2, simulated_steps=1, memory_items=3)
     funded, _ = debit_cognition(BODY, BodyLaws(), work)
     after = tuple(x + d for x, d in zip(funded, delta))
