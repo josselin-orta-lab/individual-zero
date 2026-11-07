@@ -25,7 +25,7 @@ from .body import CognitiveBudget, CognitiveWork, VITAL, debit_cognition
 from .information_value import WORK_KEYS, _add_work
 from .observed_effect_view import (
     VIEW_WORK, paid_simulate_after_observed_effect)
-from .plan_information import _continuation_dict, _validate_plan
+from .plan_information import _validate_plan
 from .reference_branches import ReferenceBranchMemory
 from .rms_three_leaf_target_prior import paid_rms_three_leaf_target_prior
 
@@ -61,6 +61,25 @@ def _validate_explorer_prefix(plan):
     _validate_plan(plan)
     if any(tuple(key) != TARGET_ENTRY for key in plan):
         raise ValueError("existing P1.3 explorer prefix must contain moves only")
+
+
+def _ordinary_continuation_dict(items):
+    """Named suffixes; empty tuple means stop and bootstrap after the prefix."""
+    if type(items) is not tuple or not items:
+        raise ValueError("nonempty named ordinary continuation set required")
+    out = {}
+    for item in items:
+        if type(item) is not tuple or len(item) != 2:
+            raise ValueError("continuation identifier/plan pair required")
+        name, plan = item
+        if type(name) is not str or not name or name in out:
+            raise ValueError("unique nonempty continuation identifier required")
+        if type(plan) is not tuple:
+            raise ValueError("immutable continuation plan required")
+        if plan:
+            _validate_plan(plan)
+        out[name] = plan
+    return out
 
 
 def _future_opportunity_reduction(
@@ -235,8 +254,7 @@ def paid_water_one_future_opportunity_value(
     analytically while every O/R plan cell is genuinely simulated and paid.
     """
     _validate_explorer_prefix(explore_plan)
-    ordinary = _continuation_dict(
-        ordinary_continuations, allow_empty=False)
+    ordinary = _ordinary_continuation_dict(ordinary_continuations)
     if any(_contains(plan, DRINK) for plan in ordinary.values()):
         raise ValueError(
             "ordinary continuation cannot contain unsupported drink")
