@@ -1,0 +1,35 @@
+{
+ "candidate_f_direct_actual": {
+  "cases": 486,
+  "max": 112,
+  "mean": 86.61111111111111,
+  "min": 16
+ },
+ "candidate_f_projection_quote": 256,
+ "gate": {
+  "candidate_f_direct_bound_pass": true,
+  "omega_kernel_ceiling_pass": true,
+  "reference_receipt_unchanged": true,
+  "rejected_modes_fail_closed": true
+ },
+ "lives": 0,
+ "omega_rerun_authorized": true,
+ "omega_zero_kernel": {
+  "all_actual_work_within_ceiling": true,
+  "cases": 80,
+  "evaluated": 80,
+  "max_actual_simulated_steps": 561,
+  "max_forecast_ceiling_simulated_steps": 1293,
+  "unfunded": 0
+ },
+ "protocol": "STAGE1_CANDIDATE_F_FORECAST_CEILING.md",
+ "reference_adoption_authorized": false,
+ "reference_projection_quote": 8,
+ "rejected_dynamic_modes_fail_closed": {
+  "event_quadratic": true,
+  "event_quartic": true
+ },
+ "schema": "i3-candidate-f-forecast-ceiling/v1",
+ "verdict": "CANDIDATE_F_FORECAST_CEILING_PASS",
+ "world_access": false
+}
