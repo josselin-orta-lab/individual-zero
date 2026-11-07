@@ -17,6 +17,9 @@ FUNDING = {
     "NO_FUNDED_MOTOR": "control_rejected",
     "FUNDED": "action_admitted",
 }
+UPPER_COST_POLICY = "candidate_f_shadow_upper_cost_reference_controller_v1"
+UPPER_COST_SCHEMA = "i3-candidate-f-shadow-cost-reference-choice/v1"
+_WORK_KEYS = ("cycles", "simulated_steps", "memory_items", "replays")
 
 
 def _position(value):
@@ -81,6 +84,54 @@ def _timeline(events, *, steps_lived, horizon, terminal):
     }
 
 
+def _work_vector(value, label):
+    if (type(value) is not dict or set(value) != set(_WORK_KEYS) or
+            any(type(value[k]) is not int or value[k] < 0 for k in _WORK_KEYS)):
+        raise ValueError("invalid " + label + " work vector")
+    return value
+
+
+def _processing_work(life, row, total_work):
+    """Work governed by the public P1.3 funding status.
+
+    Ordinary policies have one cognitive owner, so this is the full decision
+    work exactly as before. The explicit upper-cost falsifier has a paid
+    Candidate-F shadow followed by the P1.3 motor controller; its public
+    funding status describes only the latter.
+    """
+    total_work = _work_vector(total_work, "decision")
+    manifest_policy = (
+        life.get("manifest", {}).get("experimental_policy", {}) or {}
+    ).get("name")
+    if manifest_policy != UPPER_COST_POLICY:
+        return total_work
+
+    info = row.get("info", {})
+    if info.get("experimental_policy") != UPPER_COST_POLICY:
+        raise ValueError("upper-cost trace policy mismatch")
+    cc = info.get("cost_control")
+    if type(cc) is not dict or cc.get("schema") != UPPER_COST_SCHEMA:
+        raise ValueError("missing upper-cost processing receipt")
+    if (cc.get("motor_authority") != "P1.3_REFERENCE_ONLY" or
+            cc.get("candidate_motor_authority") is not False or
+            cc.get("settlement_authority") !=
+            "CUMULATIVE_V2_PHASE_START_BODY"):
+        raise ValueError("upper-cost processing authority mismatch")
+    gap = cc.get("sequential_settlement_max_abs_gap")
+    if type(gap) not in (int, float) or gap < 0 or gap > 1e-12:
+        raise ValueError("upper-cost processing settlement mismatch")
+
+    shadow = _work_vector(
+        cc.get("candidate_shadow_work"), "candidate shadow")
+    reference = _work_vector(
+        cc.get("reference_choice_work"), "reference choice")
+    claimed = _work_vector(cc.get("total_work"), "upper-cost total")
+    summed = {k: shadow[k] + reference[k] for k in _WORK_KEYS}
+    if summed != claimed or claimed != total_work:
+        raise ValueError("upper-cost processing work mismatch")
+    return reference
+
+
 def _resource_events(life):
     """Join consumed sidecar fields to the full trace; never inspect source stocks."""
     sidecar = life["observer_resource_acquisition"]
@@ -123,7 +174,8 @@ def _resource_events(life):
                 row["info"]["observer"]["decision_outcome"] != FUNDING[funding]):
             raise ValueError("resource processing status disagreement")
         paid = funding != "NO_PROCESSING_BUDGET"
-        work = phases["decision"]["work"]
+        work = _processing_work(
+            life, row, phases["decision"]["work"])
         if (paid and work["cycles"] < 3) or (not paid and any(work.values())):
             raise ValueError("processing status contradicts paid base block")
         if (funding == "FUNDED") != (row["action"] is not None):
