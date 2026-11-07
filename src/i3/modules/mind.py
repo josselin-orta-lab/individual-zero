@@ -845,6 +845,74 @@ class Mind:
                         p_food = max(p_food, self.presence(q, t))
         return p_water, p_food
 
+    def _simulate_candidate_f(self, body, plan, horizon, budget):
+        """Frozen Candidate F: one canonical state through plan and bootstrap."""
+        with localcontext() as ctx:
+            ctx.prec = 100
+            state = [self._projection_decimal(x) for x in body]
+            steps = 0
+            if self.observer_decision_diagnostics:
+                self._observer_first_forecast = None
+            ret = [0.0, 0.0, 0.0]
+            disc = [1.0, 1.0, 1.0]
+            dead = False
+            u_max = 0.0
+            i, n = 0, len(plan)
+
+            while i < n and steps < horizon:
+                budget.spend(CognitiveWork(simulated_steps=1))
+                key = plan[i]
+                run = 1
+                if key[0] == "se_deplacer":
+                    while (
+                            i + run < n
+                            and plan[i + run] == key
+                            and run < horizon):
+                        run += 1
+                i += run
+
+                mean, u = self._read_plan_prediction(key)
+                if self.observer_decision_diagnostics and steps == 0:
+                    self._observer_first_forecast = {
+                        "action_key": tuple(key),
+                        "delta": tuple(mean), "uncertainty": u}
+                u_max = max(u_max, u)
+
+                drun = Decimal(run)
+                for channel in range(5):
+                    state[channel] += (
+                        drun * self._projection_decimal(mean[channel]))
+                self._projection_decimal_clamp(state)
+
+                steps += 1
+                dead = self._projection_decimal_dead(state)
+                reward = (
+                    -self.d_max if dead else
+                    -self.distress(
+                        self.feats(tuple(float(x) for x in state))))
+                for k, gamma in enumerate(self.gammas):
+                    g_run = gamma ** run
+                    ret[k] += (
+                        disc[k] * reward
+                        * ((1.0 - g_run) / (1.0 - gamma)))
+                    disc[k] *= g_run
+                if dead:
+                    break
+
+            phi = self.feats(tuple(float(x) for x in state))
+            projection = (
+                None if dead else
+                self._project_event_local_quadratic4_decimal_state(
+                    state, *self._drift, budget)[0])
+            out = 0.0
+            for k, gamma in enumerate(self.gammas):
+                boot = (
+                    -self.d_max / (1.0 - gamma)
+                    if dead else self.value(k, phi, projection))
+                out += (1.0 - gamma) * (
+                    ret[k] + disc[k] * boot)
+            return out / 3.0, steps, u_max
+
     def simulate(self, body, plan, horizon, budget):
         """Predicted normalised discounted distress (negated) per horizon, steps used.
 
@@ -853,6 +921,16 @@ class Mind:
         are run before bootstrapping on the learned value. Low vigilance
         shortens both, so a degraded mind sees less far (spec: capacities).
         """
+        if self.simulation_mode not in SIMULATION_MODES:
+            raise ValueError("unknown simulation mode")
+        if self.simulation_mode == "candidate_f":
+            if self.projection_accounting != "event_local_quadratic4":
+                raise ValueError(
+                    "candidate_f simulation requires "
+                    "event_local_quadratic4 projection")
+            return self._simulate_candidate_f(
+                body, plan, horizon, budget)
+
         b = list(body)
         steps = 0
         if self.observer_decision_diagnostics:
