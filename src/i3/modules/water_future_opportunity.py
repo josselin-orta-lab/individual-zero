@@ -215,7 +215,8 @@ def _minimum_ceiling(
 def paid_water_one_future_opportunity_value(
         model, memory: ReferenceBranchMemory, explore_plan,
         ordinary_continuations, horizon, budget: CognitiveBudget, *,
-        forecast_work: CognitiveWork | None = None) -> dict:
+        forecast_work: CognitiveWork | None = None,
+        future_opportunity_probability: float | None = None) -> dict:
     """Value a current unknown drink trial plus one generic future opportunity.
 
     The future opportunity is not the persistence of the current source.
@@ -251,6 +252,12 @@ def paid_water_one_future_opportunity_value(
     if forecast_work is not None and not isinstance(
             forecast_work, CognitiveWork):
         raise ValueError("forecast_work must be CognitiveWork")
+    if (future_opportunity_probability is not None and
+            (type(future_opportunity_probability) not in (int, float) or
+             not isfinite(future_opportunity_probability) or
+             not 0.0 <= future_opportunity_probability <= 1.0)):
+        raise ValueError(
+            "future_opportunity_probability must be finite in [0,1]")
     if (not hasattr(model, "map") or type(model.map) is not dict or
             not hasattr(model, "proj_chunks") or not model.proj_chunks or
             not callable(getattr(model, "simulate", None)) or
@@ -307,8 +314,14 @@ def paid_water_one_future_opportunity_value(
             "schema": SCHEMA,
             "status": prior["status"],
             "water_probability": prior["target_probability"],
-            "future_water_opportunity_probability": prior[
-                "target_probability"],
+            "future_water_opportunity_probability": (
+                prior["target_probability"]
+                if future_opportunity_probability is None
+                else float(future_opportunity_probability)),
+            "future_opportunity_probability_source": (
+                "CURRENT_FIRST_PERSON_MODALITY_PROXY"
+                if future_opportunity_probability is None
+                else "EXPLICIT_PERSONAL_RECURRENCE"),
             "decline_value": decline_value,
             "decline_best_continuations": decline_best,
             "trial_frozen_value": None,
@@ -331,7 +344,9 @@ def paid_water_one_future_opportunity_value(
         raise RuntimeError("RMS water prior must have exactly three leaves")
     no_target, positive, negative = prior["leaves"]
     p_initial = prior["target_probability"]
-    p_future = p_initial
+    p_future = (
+        p_initial if future_opportunity_probability is None
+        else float(future_opportunity_probability))
     if not 0.0 < p_initial < 1.0:
         raise RuntimeError("strict water probability required")
     if no_target["leaf"] != "NO_TARGET_MODALITY":
@@ -418,6 +433,10 @@ def paid_water_one_future_opportunity_value(
         "status": "COMPLETE_ONE_FUTURE_OPPORTUNITY_ESTIMATE_NOT_POLICY",
         "water_probability": p_initial,
         "future_water_opportunity_probability": p_future,
+        "future_opportunity_probability_source": (
+            "CURRENT_FIRST_PERSON_MODALITY_PROXY"
+            if future_opportunity_probability is None
+            else "EXPLICIT_PERSONAL_RECURRENCE"),
         "future_opportunity_semantics": (
             "ONE_GENERIC_FUTURE_ONE_CELL_WATER_OPPORTUNITY_"
             "NOT_CURRENT_SOURCE_PERSISTENCE"),
