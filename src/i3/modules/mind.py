@@ -12,7 +12,7 @@ depend on a world name or absolute coordinate (renaming invariance).
 from __future__ import annotations
 
 from collections import deque
-from math import sqrt, tanh
+from math import floor, sqrt, tanh
 import random
 
 from .body import (ACTION_COSTS, CognitiveBudget, CognitiveFundingError,
@@ -27,7 +27,7 @@ REPLAYS_PER_SLEEP = 16
 BELIEF_FLOOR = 0.05
 # Innate self-projection: geometric chunks covering 255 future steps.
 PROJECTION_CHUNKS = (1, 2, 4, 8, 16, 32, 64, 128)
-PROJECTION_ACCOUNTING = ("chunk_end", "trapezoid")
+PROJECTION_ACCOUNTING = ("chunk_end", "trapezoid", "event_quadratic")
 VETO_INTEGRITY = 10.0
 
 
@@ -199,15 +199,145 @@ class Mind:
             restore = (sleep[1][E], max(0.0, sleep[1][V]), sleep[1][F] - wait[F])
         return (0.0, wait[F], wait[W], wait[I], 0.0), restore
 
-    def project(self, b, drift, budget=None):
-        """Innate self-projection over 255 future steps (chunks 1, 2, 4 ... 128).
+    def _projection_advance(self, body, drift, restore, run):
+        """Continuous endpoint used by event-aware projection accounting."""
+        if type(run) not in (int, float) or run <= 0:
+            raise ValueError("positive projection duration required")
+        b = list(body)
+        for c in (F, W, I):
+            b[c] += run * drift[c]
+        if restore is not None:
+            need = max(0.0, self.theta[E] - b[E]) / restore[0]
+            if restore[1] > 0.0:
+                need = max(need, max(0.0, self.theta[V] - b[V]) / restore[1])
+            n = min(float(run), need)
+            b[E] += n * restore[0]
+            b[V] += n * restore[1]
+            b[F] += n * restore[2]
+        for c in range(5):
+            b[c] = 0.0 if b[c] < 0.0 else 100.0 if b[c] > 100.0 else b[c]
+        dead = b[F] <= 0.0 or b[W] <= 0.0 or b[I] <= 0.0
+        return b, dead
 
-        Death (a vital channel at zero) counts as maximal distress forever.
-        """
+    def _projection_next_event_segment(self, body, drift, restore, remaining):
+        """Return an integer segment bounded by the next bodily regime event."""
+        if type(remaining) is not int or remaining < 1:
+            raise ValueError("positive integer projection remainder required")
+        eps = 1e-12
+        b = tuple(float(x) for x in body)
+        restore_time = None
+        if restore is not None:
+            need_e = max(0.0, self.theta[E] - b[E]) / restore[0]
+            need_v = (max(0.0, self.theta[V] - b[V]) / restore[1]
+                      if restore[1] > 0.0 else 0.0)
+            need = max(need_e, need_v)
+            if need > eps:
+                restore_time = need
+        phase = min(float(remaining), restore_time if restore_time is not None else float(remaining))
+        active_restore = restore_time is not None
+        rates = [
+            restore[0] if active_restore else 0.0,
+            drift[F] + (restore[2] if active_restore else 0.0),
+            drift[W], drift[I],
+            restore[1] if active_restore else 0.0,
+        ]
+        events = []
+        if restore_time is not None and restore_time <= remaining + eps:
+            events.append(restore_time)
+        for channel, rate in enumerate(rates):
+            if abs(rate) <= eps:
+                continue
+            x = b[channel]
+            for target in (0.0, self.theta[channel], 100.0):
+                if rate > 0.0 and x < target - eps:
+                    t = (target - x) / rate
+                elif rate < 0.0 and x > target + eps:
+                    t = (target - x) / rate
+                else:
+                    continue
+                if eps < t <= phase + eps:
+                    events.append(t)
+        if not events:
+            return remaining
+        event = min(events)
+        nearest = round(event)
+        if abs(event - nearest) <= 1e-10:
+            before = int(nearest) - 1
+        else:
+            before = int(floor(event))
+        return max(1, min(remaining, before if before >= 1 else 1))
+
+    def _projection_reward(self, body, dead, budget=None):
         if budget is not None:
-            # One paid model integration unit per geometric projection chunk.
-            budget.spend(CognitiveWork(simulated_steps=len(self.proj_chunks)))
+            budget.spend(CognitiveWork(simulated_steps=1))
+        return -self.d_max if dead else -self.distress(self.feats(body))
+
+    @staticmethod
+    def _discounted_quadratic_sum(r0, rm, rn, run, gamma):
+        """Sum a start/mid/end quadratic at discrete endpoints 1..run."""
+        if run == 1:
+            return rn
+        m = run / 2.0
+        det = m * run * (m - run)
+        a = ((rm - r0) * run - (rn - r0) * m) / det
+        b = (m * m * (rn - r0) - run * run * (rm - r0)) / det
+        total = 0.0
+        power = 1.0
+        for step in range(1, run + 1):
+            value = a * step * step + b * step + r0
+            total += power * value
+            power *= gamma
+        return total
+
+    def _project_event_quadratic(self, b, drift, restore, budget=None):
+        """Event-aware quadratic accounting on the reference geometric horizon."""
+        body = list(b)
+        ret = [0.0, 0.0, 0.0]
+        disc = [1.0, 1.0, 1.0]
+        dead = body[F] <= 0.0 or body[W] <= 0.0 or body[I] <= 0.0
+        r_start = self._projection_reward(body, dead, budget)
+        for outer in self.proj_chunks:
+            remaining = outer
+            while remaining > 0:
+                if dead:
+                    for k, gk in enumerate(self.gammas):
+                        g_run = gk ** remaining
+                        weight = (1.0 - g_run) / (1.0 - gk)
+                        ret[k] += disc[k] * (-self.d_max) * weight
+                        disc[k] *= g_run
+                    remaining = 0
+                    continue
+                run = self._projection_next_event_segment(body, drift, restore, remaining)
+                end_body, end_dead = self._projection_advance(body, drift, restore, run)
+                r_end = self._projection_reward(end_body, end_dead, budget)
+                if run == 1:
+                    r_mid = None
+                else:
+                    mid_body, mid_dead = self._projection_advance(body, drift, restore, run / 2.0)
+                    r_mid = self._projection_reward(mid_body, mid_dead, budget)
+                for k, gk in enumerate(self.gammas):
+                    g_run = gk ** run
+                    segment = r_end if run == 1 else self._discounted_quadratic_sum(r_start, r_mid, r_end, run, gk)
+                    ret[k] += disc[k] * segment
+                    disc[k] *= g_run
+                body = end_body
+                dead = end_dead
+                r_start = r_end
+                remaining -= run
+        r_tail = -self.d_max if dead else r_start
+        for k, gk in enumerate(self.gammas):
+            ret[k] += disc[k] * (r_tail / (1.0 - gk))
+        return ret, body
+
+    def project(self, b, drift, budget=None):
+        """Innate self-projection over 255 future steps; event_quadratic is opt-in."""
         drift, restore = drift
+        if self.projection_accounting not in PROJECTION_ACCOUNTING:
+            raise ValueError("unknown projection accounting mode")
+        if self.projection_accounting == "event_quadratic":
+            return self._project_event_quadratic(b, drift, restore, budget)
+        if budget is not None:
+            budget.spend(CognitiveWork(simulated_steps=len(self.proj_chunks)))
         th = self.theta
         b = list(b)
         ret = [0.0, 0.0, 0.0]
@@ -215,9 +345,7 @@ class Mind:
         dead = False
         r = 0.0
         trapezoid = self.projection_accounting == "trapezoid"
-        if self.projection_accounting not in PROJECTION_ACCOUNTING:
-            raise ValueError("unknown projection accounting mode")
-        r_start = None  # reward at the start of the current chunk
+        r_start = None
         for run in self.proj_chunks:
             if not dead:
                 for c in (F, W, I):
@@ -238,12 +366,8 @@ class Mind:
                 g_run = gk ** run
                 weight_a = (1.0 - g_run) / (1.0 - gk)
                 if trapezoid and r_start is not None and run > 1:
-                    # Linear distress between chunk start and end, exact
-                    # discount weights: sum_j g^(j-1) [r0 + (r1 - r0) j / n].
-                    weight_b = ((1.0 - (run + 1) * g_run + run * g_run * gk)
-                                / ((1.0 - gk) ** 2))
-                    ret[k] += disc[k] * (r_start * weight_a
-                                         + (r - r_start) * weight_b / run)
+                    weight_b = ((1.0 - (run + 1) * g_run + run * g_run * gk) / ((1.0 - gk) ** 2))
+                    ret[k] += disc[k] * (r_start * weight_a + (r - r_start) * weight_b / run)
                 else:
                     ret[k] += disc[k] * r * weight_a
                 disc[k] *= g_run
