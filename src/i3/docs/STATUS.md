@@ -251,6 +251,45 @@ P1.3 remains the reference. I3 remains unregistered. No new scientific life,
 selection, validation or reserve exposure follows from these software results.
 Stage 2 remains blocked; Stage 0, #1026 and historical #1054 remain open.
 
+## Stage-1 future-opportunity prerequisite: recurrence crosses the boundary sparsely
+
+The minimal future-opportunity dependency is now implemented and physically
+costed without a live consumer.
+
+- **#1107:** `OpportunityRecurrenceMemory` is empty at birth and retains only
+  generic water/token perception onsets plus the latest three completed
+  onset-to-onset gaps. Continuous visibility creates one onset only. There is
+  no position, source identity, token identity, stock, schedule, World input or
+  newborn recurrence prior. Exact CI: 576 I3 tests.
+- **#1108:** a paid personal water-recurrence estimate feeds the existing
+  one-future-opportunity Stage-1 kernel while exact P1.3 explorer semantics
+  stop/bootstrap after the movement prefix. With the prospectively frozen
+  personal gaps 2/6/10, 80/80 software states were evaluated: **1/80** selected
+  an epistemic trial with positive information, versus **0/80** in rejected
+  #1101 using the old current-modality proxy. Explicit declines occurred in
+  27/80; max information was 0.0023841357 and trial advantage ranged from
+  -0.0648996 to +0.1084834. The result is sparse but nonzero.
+- **#1109:** `reference_opportunity_memory_v1` gives the recurrence memory a
+  real storage-only lifecycle. The current decision exactly matches
+  `reference_branch_memory_v1`; recurrence storage is purchased only after
+  existing reference learning/replay and branch-memory storage, and no
+  recurrence estimate is read by the decision. Exact CI: 590 I3 tests.
+
+This supports the scientific diagnosis from #1099-#1105: reusable
+future-opportunity representation is a real Stage-1 dependency rather than an
+additive exploration bonus. It does **not** establish that recurrence is
+sufficient for a viable policy.
+
+**Next bounded falsifier:** before any live consumer or fresh world, place the
+recurrence-informed explorer value beside the complete ordinary P1.3 option
+repertoire under one conservative common cognition-depleted forecast body.
+Record whether the raw predicted-distress winner changes. Zero changes are an
+admissible rejection of this prerequisite.
+
+Do not tune the 2/6/10 recurrence history, add source persistence, start Stage
+2, or open a new development allocation. P1.3 remains reference; I3 remains
+unregistered.
+
 ## Current reference and observed limits
 
 | Area | Implemented / observed status |
