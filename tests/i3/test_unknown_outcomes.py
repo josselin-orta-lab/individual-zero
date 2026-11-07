@@ -66,9 +66,10 @@ class FrontierActionableBeliefTests(unittest.TestCase):
             [(r["signal"], r["probability"]) for r in result["branches"]],
             [("NO_ACTIONABLE_PERSONAL_MODEL", .5),
              ("ACTIONABLE_WATER", .5)])
-        self.assertEqual(
-            result["branches"][1]["resource_effects"],
-            ((0., 0., 10., 0., 0.),))
+        actual = result["branches"][1]["resource_effects"][0]
+        expected = (0., 0., 10., 0., 0.)
+        for got, want in zip(actual, expected):
+            self.assertAlmostEqual(got, want)
 
     def test_water_and_food_make_at_most_three_normalized_branches(self):
         mind = Mind(midpoint(), 3)
@@ -93,9 +94,10 @@ class FrontierActionableBeliefTests(unittest.TestCase):
             [("NO_ACTIONABLE_PERSONAL_MODEL", .4),
              ("ACTIONABLE_WATER", .3),
              ("ACTIONABLE_FOOD_TOKEN", .3)])
-        self.assertEqual(
-            rows[2]["resource_effects"],
-            ((0., 8., 0., -1., 0.),))
+        actual = rows[2]["resource_effects"][0]
+        expected = (0., 8., 0., -1., 0.)
+        for got, want in zip(actual, expected):
+            self.assertAlmostEqual(got, want)
 
     def test_unsupported_modality_mass_collapses_to_nonactionable(self):
         mind = Mind(midpoint(), 4)
