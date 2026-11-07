@@ -28,7 +28,10 @@ from .observed_effect_view import (
     VIEW_WORK, paid_simulate_after_observed_effect)
 from .plan_information import _validate_plan
 from .reference_branches import ReferenceBranchMemory
-from .rms_three_leaf_target_prior import paid_rms_three_leaf_target_prior
+from .rms_three_leaf_target_prior import (
+    paid_rms_three_leaf_target_prior,
+    rms_three_leaf_target_prior_work_ceiling,
+)
 
 SCHEMA = "i3-water-one-future-opportunity-value/v1"
 DRINK = ("boire",)
@@ -232,6 +235,38 @@ def _minimum_ceiling(
     for block in (prep, decline_work, trial_work, reduction):
         total = _add_work(total, block)
     return prep, total
+
+
+def water_one_future_opportunity_work_ceiling(
+        model, memory: ReferenceBranchMemory, explore_plan,
+        ordinary_continuations, horizon) -> CognitiveWork:
+    """Conservative incremental work quote for one complete kernel call.
+
+    The quote reads only structural container sizes. It never evaluates the
+    personal RMS samples. With >=2 retained generic effects it reserves the
+    full two-effect-branch matrix even if those samples later prove all-zero;
+    unused work remains unbilled.
+    """
+    _validate_explorer_prefix(explore_plan)
+    ordinary = _ordinary_continuation_dict(ordinary_continuations)
+    if any(_contains(plan, DRINK) for plan in ordinary.values()):
+        raise ValueError(
+            "ordinary continuation cannot contain unsupported drink")
+    if not isinstance(memory, ReferenceBranchMemory):
+        raise ValueError("ReferenceBranchMemory required")
+    if type(horizon) is not int or horizon < 1:
+        raise ValueError("positive integer planning horizon required")
+    if (not hasattr(model, "map") or type(model.map) is not dict or
+            not hasattr(model, "proj_chunks") or not model.proj_chunks or
+            not callable(getattr(model, "simulate", None))):
+        raise ValueError("current P1.3-compatible model required")
+
+    prior = rms_three_leaf_target_prior_work_ceiling(model.map, memory)
+    effect_branches = 2 if len(memory._samples) >= 2 else 0
+    _prep, total = _minimum_ceiling(
+        model, tuple(explore_plan), ordinary, horizon, prior,
+        effect_branches=effect_branches)
+    return total
 
 
 def paid_water_one_future_opportunity_value(
@@ -507,4 +542,7 @@ def paid_water_one_future_opportunity_value(
     }
 
 
-__all__ = ["SCHEMA", "paid_water_one_future_opportunity_value"]
+__all__ = [
+    "SCHEMA", "paid_water_one_future_opportunity_value",
+    "water_one_future_opportunity_work_ceiling",
+]
