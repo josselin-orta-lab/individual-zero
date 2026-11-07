@@ -168,7 +168,7 @@ def run(out_path):
                     worst["prefix_error"] = {
                         "fixture": fixture_name,
                         "genome": genome_name,
-                        "body": body,
+                        "body": list(body),
                         "event_exact": event["prefix"],
                         "per_step": truth["prefix"],
                         "abs_error": prefix_error,
@@ -182,7 +182,7 @@ def run(out_path):
                     worst["decision_bias"] = {
                         "fixture": fixture_name,
                         "genome": genome_name,
-                        "body": body,
+                        "body": list(body),
                         "comparison": (
                             "plus_1_wait" if bias_1 >= bias_3
                             else "plus_3_waits"),
@@ -208,7 +208,7 @@ def run(out_path):
                     worst["quartic_decision_difference"] = {
                         "fixture": fixture_name,
                         "genome": genome_name,
-                        "body": body,
+                        "body": list(body),
                         "comparison": (
                             "plus_1_wait" if qdiff_1 >= qdiff_3
                             else "plus_3_waits"),
@@ -239,10 +239,10 @@ def run(out_path):
                     worst["final_body_error"] = {
                         "fixture": fixture_name,
                         "genome": genome_name,
-                        "body": body,
+                        "body": list(body),
                         "channel": channel,
-                        "event_exact_final_body": event_body,
-                        "per_step_final_body": truth_body,
+                        "event_exact_final_body": list(event_body),
+                        "per_step_final_body": list(truth_body),
                         "abs_error": body_error,
                     }
 
