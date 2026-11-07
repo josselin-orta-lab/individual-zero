@@ -265,3 +265,62 @@ A later frontier composition must first establish that the resource action is
 observable/available from the frontier branch. Only then can this nested trial
 calculation be attached. Seeing a water source remains distinct from knowing
 what drinking will do.
+
+
+## Frontier observation modality prior
+
+The next independent uncertainty is **what kind of opportunity an unseen cell
+will expose**, not what that opportunity will do to the body.
+
+`modules/frontier_modality_prior.py::paid_frontier_modality_prior` extends the
+same Laplace symmetry already used by P1.3 without consulting body need or
+utility.
+
+Resource presence remains exactly:
+
+```text
+p_resource = (resource_cells + 1) / (seen_passable_cells + 2)
+```
+
+Conditional on resource presence, the two existing first-person resource sensor
+modalities receive a symmetric Dirichlet/Laplace prior:
+
+```text
+q_water = (water_incidences + 1)
+          / (water_incidences + token_incidences + 2)
+
+q_token = (token_incidences + 1)
+          / (water_incidences + token_incidences + 2)
+```
+
+The three subjective observation classes are therefore:
+
+- `NO_RESOURCE`: `1 - p_resource`;
+- `WATER_MODALITY`: `p_resource * q_water`;
+- `TOKEN_MODALITY`: `p_resource * q_token`.
+
+At zero personal incidence the distribution is 0.5 / 0.25 / 0.25. This is not
+a claim about environmental frequencies and is not fitted from development
+50/51. It is the maximum-symmetry extension of P1.3's already existing
+Beta(1,1) resource-presence prior to the two resource sensor classes already
+present in its perception interface.
+
+A personally seen mixed water+token cell contributes one incidence to each
+modality and the two incidence counts are normalized. There is deliberately no
+fourth mixed branch, keeping the Stage-1 two/three-branch approximation. This
+means the modality model is categorical and does not represent joint
+water+token discovery.
+
+The prior reads only the individual's map. Relative positions and token names
+do not affect probabilities. Edge cells do not enter counts but are still paid
+to scan. No body channel, distress, action effect, action command or World fact
+enters the distribution.
+
+This prior therefore answers **what may become observable**. #1088/#1090 answer
+a different question: **what might an unsupported newly available action do,
+and is one trial plus adaptation worth it?**
+
+A future frontier-bootstrap composition must keep those layers distinct.
+Observing `WATER_MODALITY` can make `boire` available to the subjective
+branch, but must not provide a favorable drinking effect. That effect remains
+zero-mean and unknown until the nested trial model.
