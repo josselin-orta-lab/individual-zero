@@ -34,7 +34,8 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
             "reference", "local_information_v1", "reference_branch_memory_v1",
             "reference_opportunity_memory_v1",
             "reference_frontier_information_v1",
-            "genomic_omega_frontier_information_v1"):
+            "genomic_omega_frontier_information_v1",
+            "candidate_f_shadow_upper_cost_reference_controller_v1"):
         raise ValueError("unknown decision policy")
     if decision_policy != "reference" and (
             learning_mode != "normal" or effect_readout != "full" or
@@ -108,6 +109,19 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
             "frontier_scope": "one_generic_new_cell_water_only",
             "food_information": "NOT_IMPLEMENTED",
             "multi_cell_joint_outcomes": "NOT_IMPLEMENTED"}
+    elif decision_policy == "candidate_f_shadow_upper_cost_reference_controller_v1":
+        manifest["experimental_policy"] = {
+            "name": decision_policy,
+            "scope": "DEVELOPMENT_CAUSAL_FALSIFIER_NOT_STAGE1_GATE",
+            "motor_authority": "P1.3_REFERENCE_ONLY",
+            "decision_cost": "CANDIDATE_F_SHADOW_PLUS_P1.3_REFERENCE",
+            "learning_cost":
+                "P1.3_REFERENCE_PLUS_CANDIDATE_PRIVATE_STORE_IF_FUNDED",
+            "cost_matching_claim": "UPPER_COST_NOT_EXACT_MATCH",
+            "shadow_policy": "genomic_omega_frontier_information_v1",
+            "shadow_common_state": "REALIGNED_TO_ACTUAL_P1.3_BEFORE_EACH_DECISION",
+            "shadow_private_memory": "global18_recent_actual_P1.3_effects_v1",
+            "reference_score": "P1.3_reference_unchanged"}
     manifest_id = digest(manifest)
     evidence_head = manifest_id
     totals = {c: {k: 0.0 for k in ("requested", "paid", "unpaid")}
@@ -137,6 +151,10 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
         from i3.modules.genomic_omega_frontier_information_mind import (
             GenomicOmegaFrontierInformationMind)
         mind_type = GenomicOmegaFrontierInformationMind
+    elif decision_policy == "candidate_f_shadow_upper_cost_reference_controller_v1":
+        from i3.modules.candidate_f_upper_cost_reference_controller import (
+            CandidateFUpperCostReferenceController)
+        mind_type = CandidateFUpperCostReferenceController
     mind = mind_type(genome, life_seed, effect_readout=effect_readout,
                 observer_decision_diagnostics=(observer_decision_diagnostics or
                                                observer_resource_acquisition or
@@ -309,7 +327,8 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
     elif decision_policy in (
             "reference_branch_memory_v1", "reference_opportunity_memory_v1",
             "reference_frontier_information_v1",
-            "genomic_omega_frontier_information_v1"):
+            "genomic_omega_frontier_information_v1",
+            "candidate_f_shadow_upper_cost_reference_controller_v1"):
         out["experimental_policy"] = dict(manifest["experimental_policy"])
         out["branch_effect_memory"] = {
             "capacity": mind.branch_memory._samples.maxlen,
@@ -350,6 +369,26 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
                 "projection_accounting": mind.projection_accounting,
                 "food_information": "NOT_IMPLEMENTED",
                 "multi_cell_joint_outcomes": "NOT_IMPLEMENTED"}
+        if decision_policy == "candidate_f_shadow_upper_cost_reference_controller_v1":
+            out["candidate_f_cost_control"] = {
+                "schema": "candidate_f_shadow_upper_cost_reference_controller_v1",
+                "motor_authority": "P1.3_REFERENCE_ONLY",
+                "decision_cost":
+                    "CANDIDATE_F_SHADOW_PLUS_P1.3_REFERENCE",
+                "learning_cost":
+                    "P1.3_REFERENCE_PLUS_CANDIDATE_PRIVATE_STORE_IF_FUNDED",
+                "cost_matching_claim": "UPPER_COST_NOT_EXACT_MATCH",
+                "decisions": mind.decisions,
+                "shadow_branch_commits": mind.shadow_branch_commits,
+                "shadow_branch_retained": len(mind.branch_memory._samples),
+                "shadow_first_contact_omega": mind.first_contact_omega,
+                "shadow_first_contact_queries": mind.shadow.first_contact_queries,
+                "shadow_frontier_options_scored":
+                    mind.shadow.frontier_options_scored,
+                "shadow_positive_information_options":
+                    mind.shadow.positive_information_options,
+                "common_state_authority": "P1.3_REFERENCE",
+                "shadow_motor_authority": False}
         if observer_mind_digest:
             out["branch_outcomes_sha256"] = digest(
                 [asdict(s) for s in mind.branch_memory._samples])
