@@ -9,6 +9,13 @@ For channel c:
 The two unsupported-effect hypotheses are +s and -s with probability .5 each.
 Thus the external expected delta is exactly zero while the per-channel second
 moment matches the recent personal raw second moment.
+
+Optional innate expectation toward the unknown, omega in [-1, 1] (owner
+decision A, STAGE1_OMEGA_SOFTWARE_FALSIFIER.md): the hypotheses become
+(omega + 1) * s and (omega - 1) * s. The spread s is unchanged; the mean is
+omega * s on every channel (uniform, need-agnostic). omega = 0 is exactly the
+zero-mean prior. omega is an inherited disposition, never learned and never
+derived from World facts.
 """
 from __future__ import annotations
 
@@ -30,10 +37,21 @@ def _work_delta(after, before):
     }
 
 
+def _validate_omega(omega):
+    if (type(omega) not in (int, float) or type(omega) is bool or
+            not isfinite(omega) or not -1.0 <= omega <= 1.0):
+        raise ValueError("omega must be a finite number in [-1, 1]")
+    return float(omega)
+
+
 def paid_recent_rms_zero_mean_effect_prior(
         memory: ReferenceBranchMemory, budget: CognitiveBudget, *,
-        work_receipt: dict | None = None) -> dict:
-    """Build two symmetric branches from recent personal per-channel RMS scale."""
+        work_receipt: dict | None = None, omega: float = 0.0) -> dict:
+    """Build two branches from recent personal per-channel RMS scale.
+
+    Symmetric (+s, -s) when omega = 0; otherwise shifted by omega * s.
+    """
+    omega = _validate_omega(omega)
     if not isinstance(memory, ReferenceBranchMemory):
         raise ValueError("ReferenceBranchMemory required")
     if not isinstance(budget, CognitiveBudget):
@@ -69,8 +87,8 @@ def paid_recent_rms_zero_mean_effect_prior(
             outcomes = ()
             status = "NO_EMPIRICAL_SCALE"
         else:
-            positive = tuple(float(x) for x in scale)
-            negative = tuple(-x for x in positive)
+            positive = tuple((omega + 1.0) * float(x) for x in scale)
+            negative = tuple((omega - 1.0) * float(x) for x in scale)
             outcomes = (
                 PlanSubjectiveOutcome(.5, SIGNAL, positive),
                 PlanSubjectiveOutcome(.5, SIGNAL, negative),
@@ -86,9 +104,9 @@ def paid_recent_rms_zero_mean_effect_prior(
                 out.probability * (out.probe_delta[c] ** 2)
                 for out in outcomes)
             for c in range(5))
-        if any(abs(x) > 1e-12 for x in expected):
-            raise RuntimeError("RMS uncertainty prior acquired nonzero mean")
-        if any(abs(a - b) > 1e-10
+        if any(abs(x - omega * s_c) > 1e-12 for x, s_c in zip(expected, scale)):
+            raise RuntimeError("RMS uncertainty prior mean differs from omega * s")
+        if any(abs(a - (1.0 + omega * omega) * b) > 1e-10
                for a, b in zip(branch_second_moment, second_moment)):
             raise RuntimeError(
                 "RMS uncertainty prior failed second-moment preservation")
@@ -107,6 +125,7 @@ def paid_recent_rms_zero_mean_effect_prior(
         "expected_external_delta": tuple(expected),
         "source": "RECENT_ACTION_AGNOSTIC_PERSONAL_BRANCH_MEMORY_SCALE_ONLY",
         "mean_transfer": False,
+        "innate_mean_shift_omega": omega,
         "action_identity_used": False,
         "token_identity_used": False,
         "body_need_used": False,

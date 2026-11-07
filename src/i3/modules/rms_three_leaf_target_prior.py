@@ -8,7 +8,9 @@ For target modality m:
     TARGET + RMS positive effect P = p(m) * 0.5
     TARGET + RMS negative effect P = p(m) * 0.5
 
-The whole-tree expected external effect is exactly zero.
+The whole-tree expected external effect is exactly zero, unless an innate
+expectation omega is passed: then it is p(m) * omega * s (see
+recent_rms_effect_prior).
 """
 from __future__ import annotations
 
@@ -34,7 +36,8 @@ def _work_delta(after, before):
 
 def paid_rms_three_leaf_target_prior(
         personal_map, memory: ReferenceBranchMemory, target_modality,
-        budget: CognitiveBudget, *, work_receipt: dict | None = None) -> dict:
+        budget: CognitiveBudget, *, work_receipt: dict | None = None,
+        omega: float = 0.0) -> dict:
     """Compose target observation probability with symmetric personal RMS scale."""
     if target_modality not in TARGETS:
         raise ValueError("target_modality must be 'water' or 'token'")
@@ -50,7 +53,8 @@ def paid_rms_three_leaf_target_prior(
     start = budget.work
     modality = paid_frontier_modality_prior(personal_map, budget)
     after_modality = budget.work
-    effect = paid_recent_rms_zero_mean_effect_prior(memory, budget)
+    effect = paid_recent_rms_zero_mean_effect_prior(memory, budget, omega=omega)
+    omega = effect["innate_mean_shift_omega"]
     after_effect = budget.work
     budget.spend(COMPOSE_WORK)
 
@@ -106,8 +110,11 @@ def paid_rms_three_leaf_target_prior(
     expected = tuple(
         fsum(row["probability"] * row["effect_delta"][c] for row in leaves)
         for c in range(5)) if leaves else ZERO
-    if any(abs(value) > 1e-12 for value in expected):
-        raise RuntimeError("RMS target prior acquired nonzero expected effect")
+    intended = tuple(
+        target_probability * omega * scale_c
+        for scale_c in effect["rms_scale"]) if leaves else ZERO
+    if any(abs(value - want) > 1e-12 for value, want in zip(expected, intended)):
+        raise RuntimeError("RMS target prior mean differs from p * omega * s")
 
     work = _work_delta(budget.work, start)
     result = {
@@ -119,6 +126,7 @@ def paid_rms_three_leaf_target_prior(
         "leaves": leaves,
         "leaf_count": len(leaves),
         "expected_external_delta": expected,
+        "innate_mean_shift_omega": omega,
         "effect_prior_status": effect["status"],
         "effect_support_records": effect["support_records"],
         "rms_scale": tuple(effect["rms_scale"]),

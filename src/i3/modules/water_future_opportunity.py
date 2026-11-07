@@ -288,7 +288,7 @@ def paid_water_one_future_opportunity_value(
 
     original_work = budget.work
     prior = paid_rms_three_leaf_target_prior(
-        model.map, memory, "water", budget)
+        model.map, memory, "water", budget, omega=omega)
     after_prior = budget.work
 
     effect_branches = 2 if prior["leaves"] else 0
@@ -351,6 +351,7 @@ def paid_water_one_future_opportunity_value(
             "target_node_best_choices": ("DECLINE_TRIAL",),
             "frontier_expected_value": decline_value,
             "water_revelation_advantage": 0.0,
+            "innate_mean_shift_omega": prior["innate_mean_shift_omega"],
             "subjective_leaf_count": 0,
             "work": asdict(actual),
             "forecast_work_ceiling": asdict(ceiling),
@@ -465,6 +466,7 @@ def paid_water_one_future_opportunity_value(
         "trial_frozen_value": frozen,
         "trial_informed_value": informed,
         "trial_information_value": information,
+        "innate_mean_shift_omega": prior["innate_mean_shift_omega"],
         "trial_advantage": trial_advantage,
         "target_node_best_choices": target_choices,
         "frontier_expected_value": frontier_expected,
