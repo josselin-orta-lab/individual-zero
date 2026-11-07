@@ -27,6 +27,7 @@ REPLAYS_PER_SLEEP = 16
 BELIEF_FLOOR = 0.05
 # Innate self-projection: geometric chunks covering 255 future steps.
 PROJECTION_CHUNKS = (1, 2, 4, 8, 16, 32, 64, 128)
+PROJECTION_ACCOUNTING = ("chunk_end", "trapezoid")
 VETO_INTEGRITY = 10.0
 
 
@@ -116,6 +117,10 @@ class Mind:
         # Learned residual on top of the innate self-projection (starts at zero).
         self.values = [[0.0] * 6 for _ in self.gammas]
         self.proj_chunks = PROJECTION_CHUNKS
+        # Opt-in projection accounting (STAGE1_PROJECTION_CONSISTENCY.md).
+        # "chunk_end" is the P1.3 reference; "trapezoid" interpolates distress
+        # inside each chunk with exact discount weights at identical cost.
+        self.projection_accounting = "chunk_end"
         self.rng = random.Random(f"i3-life:{life_seed}")
         self._budget_rng = random.Random(f"i3-budget-order:{life_seed}")
         self.effects = EffectsModel()
@@ -209,6 +214,10 @@ class Mind:
         disc = [1.0, 1.0, 1.0]
         dead = False
         r = 0.0
+        trapezoid = self.projection_accounting == "trapezoid"
+        if self.projection_accounting not in PROJECTION_ACCOUNTING:
+            raise ValueError("unknown projection accounting mode")
+        r_start = None  # reward at the start of the current chunk
         for run in self.proj_chunks:
             if not dead:
                 for c in (F, W, I):
@@ -227,8 +236,18 @@ class Mind:
                 r = -self.d_max if dead else -self.distress(self.feats(b))
             for k, gk in enumerate(self.gammas):
                 g_run = gk ** run
-                ret[k] += disc[k] * r * ((1.0 - g_run) / (1.0 - gk))
+                weight_a = (1.0 - g_run) / (1.0 - gk)
+                if trapezoid and r_start is not None and run > 1:
+                    # Linear distress between chunk start and end, exact
+                    # discount weights: sum_j g^(j-1) [r0 + (r1 - r0) j / n].
+                    weight_b = ((1.0 - (run + 1) * g_run + run * g_run * gk)
+                                / ((1.0 - gk) ** 2))
+                    ret[k] += disc[k] * (r_start * weight_a
+                                         + (r - r_start) * weight_b / run)
+                else:
+                    ret[k] += disc[k] * r * weight_a
                 disc[k] *= g_run
+            r_start = r
         for k, gk in enumerate(self.gammas):
             ret[k] += disc[k] * (r / (1.0 - gk))
         return ret, b
