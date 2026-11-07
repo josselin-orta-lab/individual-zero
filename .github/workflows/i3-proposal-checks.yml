@@ -114,7 +114,7 @@ jobs:
           PY
           git diff --check "$EXPECTED_BASE_SHA" "$SOURCE_SHA"
 
-custody-init:
+  custody-init:
     name: Create durable prerelease before world 72
     needs: execution-preflight
     if: >-
