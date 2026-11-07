@@ -22,6 +22,9 @@ ORDINARY = (
     ("ordinary-wait", (("attendre",),)),
     ("ordinary-sleep", (("dormir",),)),
 )
+STOP_AFTER_PREFIX = (
+    ("stop-after-prefix", ()),
+)
 
 
 def record(memory, key, delta):
@@ -160,6 +163,53 @@ class WaterOneFutureOpportunityTests(unittest.TestCase):
         self.assertTrue(
             declined,
             "future-opportunity model forces all trials: " + repr(stats))
+
+    def test_exact_explorer_prefix_semantics_remain_selectively_epistemic(self):
+        memory = realistic_memory()
+        rows = []
+        for channel in range(5):
+            for level in (20., 30., 40., 50.):
+                body = [80., 80., 80., 80., 80.]
+                body[channel] = level
+                body = tuple(body)
+                for horizon in (4, 6, 8, 12):
+                    try:
+                        result = paid_water_one_future_opportunity_value(
+                            make_mind(), memory, EXPLORE, STOP_AFTER_PREFIX,
+                            horizon, CognitiveBudget(body, BodyLaws()))
+                    except CognitiveFundingError:
+                        continue
+                    rows.append((
+                        result["target_node_best_choices"],
+                        result["trial_information_value"],
+                        result["trial_advantage"],
+                    ))
+        self.assertTrue(rows)
+        selected = [
+            row for row in rows
+            if "TRIAL" in row[0] and row[1] > 1e-12
+        ]
+        declined = [
+            row for row in rows
+            if row[0] == ("DECLINE_TRIAL",)
+        ]
+        stats = {
+            "evaluated": len(rows),
+            "selected_epistemic": len(selected),
+            "declined": len(declined),
+            "max_information_value": max(row[1] for row in rows),
+            "best_trial_advantage": max(row[2] for row in rows),
+            "worst_trial_advantage": min(row[2] for row in rows),
+        }
+        print("PREFIX_IDENTITY_FUTURE_OPPORTUNITY_SWEEP", stats)
+        self.assertTrue(
+            selected,
+            "future-opportunity value depended on forced post-prefix action: "
+            + repr(stats))
+        self.assertTrue(
+            declined,
+            "empty-suffix frontier value forces experimentation: "
+            + repr(stats))
 
     def test_high_personal_scale_can_reject_trial(self):
         body = (80., 80., 25., 80., 80.)
