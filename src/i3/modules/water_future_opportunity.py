@@ -63,6 +63,94 @@ def _validate_explorer_prefix(plan):
         raise ValueError("existing P1.3 explorer prefix must contain moves only")
 
 
+def _future_opportunity_reduction(
+        conditional, ordinary_rows, reuse_rows, p_future):
+    """Reduce two learned-effect branches and one observable availability event.
+
+    Availability itself is not a simulated outcome branch. When absent, only
+    ordinary plans exist. When present, a matching-action reuse plan is also
+    available. The informed policy knows the learned effect branch; the frozen
+    comparator does not, while both may condition on observed availability.
+    """
+    if (type(conditional) is not tuple or len(conditional) != 2 or
+            any(type(q) not in (int, float) or not isfinite(q) or q <= 0.0
+                for q in conditional) or
+            abs(fsum(conditional) - 1.0) > 1e-12):
+        raise ValueError("two normalized positive effect probabilities required")
+    if (type(p_future) not in (int, float) or not isfinite(p_future) or
+            not 0.0 <= p_future <= 1.0):
+        raise ValueError("future opportunity probability must be in [0,1]")
+    if (type(ordinary_rows) is not tuple or type(reuse_rows) is not tuple or
+            len(ordinary_rows) != 2 or len(reuse_rows) != 2):
+        raise ValueError("two ordinary/reuse effect rows required")
+    names = tuple(sorted(ordinary_rows[0]))
+    if not names:
+        raise ValueError("nonempty continuation rows required")
+    for rows in (ordinary_rows, reuse_rows):
+        for row in rows:
+            if type(row) is not dict or tuple(sorted(row)) != names:
+                raise ValueError("continuation rows must share names")
+            if any(type(v) not in (int, float) or not isfinite(v)
+                   for v in row.values()):
+                raise ValueError("finite continuation values required")
+
+    informed_parts = []
+    branch_choices = []
+    for i in range(2):
+        best_o = max(ordinary_rows[i].values())
+        best_r = max(reuse_rows[i].values())
+        present = max(best_o, best_r)
+        informed_branch = (
+            (1.0 - p_future) * best_o
+            + p_future * present)
+        informed_parts.append(
+            conditional[i] * informed_branch)
+        branch_choices.append({
+            "best_without_future_opportunity": tuple(
+                name for name in names
+                if ordinary_rows[i][name] == best_o),
+            "best_reuse_continuations_if_available": tuple(
+                name for name in names
+                if reuse_rows[i][name] == best_r),
+            "future_opportunity_choice": (
+                "REUSE" if best_r > best_o + 1e-12
+                else "DECLINE_REUSE" if best_o > best_r + 1e-12
+                else "TIE"),
+        })
+    informed = fsum(informed_parts)
+
+    mean_o = {
+        name: fsum(
+            conditional[i] * ordinary_rows[i][name]
+            for i in range(2))
+        for name in names
+    }
+    mean_r = {
+        name: fsum(
+            conditional[i] * reuse_rows[i][name]
+            for i in range(2))
+        for name in names
+    }
+    frozen_absent = max(mean_o.values())
+    frozen_present = max(
+        max(mean_o.values()), max(mean_r.values()))
+    frozen = (
+        (1.0 - p_future) * frozen_absent
+        + p_future * frozen_present)
+
+    information = informed - frozen
+    if information < -1e-10:
+        raise RuntimeError("effect information reduced expected value")
+    if abs(information) < 1e-12:
+        information = 0.0
+    return {
+        "informed_value": informed,
+        "frozen_value": frozen,
+        "information_value": information,
+        "branch_choices": tuple(branch_choices),
+    }
+
+
 def _minimum_ceiling(
         model, explore, ordinary, horizon, original_work, *,
         effect_branches):
@@ -293,63 +381,16 @@ def paid_water_one_future_opportunity_value(
         raise RuntimeError(
             "future-opportunity reduction exceeded funded ceiling")
 
-    # Informed: effect identity is known after the current trial. Future
-    # opportunity availability is observed when it occurs, so each branch may
-    # choose its best ordinary continuation when absent and best ordinary/reuse
-    # continuation when present.
-    informed_parts = []
+    reduced = _future_opportunity_reduction(
+        tuple(conditional), tuple(ordinary_rows), tuple(reuse_rows), p_future)
+    informed = reduced["informed_value"]
+    frozen = reduced["frozen_value"]
+    information = reduced["information_value"]
     branch_choices = []
-    for i in range(2):
-        best_o = max(ordinary_rows[i].values())
-        best_r = max(reuse_rows[i].values())
-        present = max(best_o, best_r)
-        informed_branch = (
-            (1.0 - p_future) * best_o
-            + p_future * present)
-        informed_parts.append(
-            conditional[i] * informed_branch)
-        branch_choices.append({
-            "effect_delta": tuple(effect_leaves[i]["effect_delta"]),
-            "best_without_future_opportunity": tuple(
-                name for name in sorted(ordinary)
-                if ordinary_rows[i][name] == best_o),
-            "best_reuse_continuations_if_available": tuple(
-                name for name in sorted(ordinary)
-                if reuse_rows[i][name] == best_r),
-            "future_opportunity_choice": (
-                "REUSE" if best_r > best_o + 1e-12
-                else "DECLINE_REUSE" if best_o > best_r + 1e-12
-                else "TIE"),
-        })
-    informed = fsum(informed_parts)
-
-    # Frozen with respect to drink effect: availability may still be observed,
-    # but the policy cannot condition its action choice on which effect branch
-    # was learned.
-    mean_o = {
-        name: fsum(
-            conditional[i] * ordinary_rows[i][name]
-            for i in range(2))
-        for name in sorted(ordinary)
-    }
-    mean_r = {
-        name: fsum(
-            conditional[i] * reuse_rows[i][name]
-            for i in range(2))
-        for name in sorted(ordinary)
-    }
-    frozen_absent = max(mean_o.values())
-    frozen_present = max(
-        max(mean_o.values()), max(mean_r.values()))
-    frozen = (
-        (1.0 - p_future) * frozen_absent
-        + p_future * frozen_present)
-
-    information = informed - frozen
-    if information < -1e-10:
-        raise RuntimeError("effect information reduced expected value")
-    if abs(information) < 1e-12:
-        information = 0.0
+    for leaf, row in zip(effect_leaves, reduced["branch_choices"]):
+        item = dict(row)
+        item["effect_delta"] = tuple(leaf["effect_delta"])
+        branch_choices.append(item)
 
     trial_advantage = informed - decline_value
     target_value = max(decline_value, informed)
