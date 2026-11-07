@@ -168,6 +168,27 @@ A computational error propagates instead of becoming a physical death or a
 partial score. Physical death prohibits further decision or learning. Sleep
 never retroactively finances an unaffordable comparison.
 
+### Exact decision-local cell reuse after the adverse diagnostic
+
+The first complete development diagnostic showed that exhaustive local scoring
+can exhaust vigilance before the individual can continue acting. The first
+response is implementation-level reuse, not a new budget policy: within one
+decision only, two payoff cells with exactly the same predicted first and
+second body under the same decision-local model state may share the already
+computed scalar projection result.
+
+The common forecast body remains the **old exhaustive batch ceiling**, including
+the Competition ceiling. Therefore reuse cannot improve a score merely by
+predicting that its implementation is cheaper. Only work actually executed is
+charged. No cache crosses a decision boundary, no hidden World fact or branch
+label enters the key, and a failed partial calculation still returns no command
+and no refund.
+
+This is deliberately narrower than Stage 2. It does not decide whether another
+cycle is worth buying, change inherited ceilings, alter tariffs, or skip a
+unique forecast. A later budget-allocation policy would be a separate mechanism
+and require its own prospective comparison.
+
 The old bonus terms are absent from the experimental score, not computed and
 then added or discarded. Compatibility witness fields are zero and marked
 `score_kind=local_expected_distress`; `uncertainty=None` is not a calibrated
@@ -208,9 +229,13 @@ Record exact local and full-checkout CI checks in the PR. Do not borrow a
 prior SHA's success or turn short software trajectories into new scientific
 populations. The original report, studies, allocations and P4 reserve are unchanged.
 
-Next: a bounded prospectively specified development diagnostic of the integrated
-candidate's own histories and failure modes, then the missing personally grounded
-spatial information model needed by the scenario. Do not tune a rescue prior,
-rewrite Competition, or expand observers instead. Full live ablations and the
-source/genotype/case/margin/multiplicity/stopping/compute-locked survival and
-revision gate remain open. Stage 0, #1026 and #1054 are not closed by this slice.
+The bounded development diagnostic is complete and adverse. Exact decision-local
+cell reuse is the first cost correction because it removes only duplicate work
+while preserving the exhaustive forecast body and score semantics. Next: verify
+whether remaining unique work is still unaffordable on unexposed software
+fixtures before introducing any policy-changing bounded allocation. Spatial
+information remains deferred until the paid comparison itself is sustainable.
+Do not tune a rescue prior, rewrite Competition, or expand observers instead.
+Full live ablations and the source/genotype/case/margin/multiplicity/stopping/
+compute-locked survival and revision gate remain open. Stage 0, #1026 and #1054
+are not closed by this slice.
