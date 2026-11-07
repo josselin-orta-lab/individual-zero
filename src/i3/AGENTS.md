@@ -15,18 +15,20 @@ integrates the owner's 6 November 2026 scenario, whose
 Stage 0 #1060 remains open, but the immediate bounded implementation is Stage 1
 #1061 on the **reference-preserving path**. The local_information_v1 prototype
 is retired as a gate candidate after the frozen 44-47 development diagnostics.
-PRs #1076-#1078 now provide: fixed paid empirical branches, a storage-only P1.3
-cost control, and paid plan-level replanning over explicit subjective outcomes.
+PRs #1076-#1081 now provide paid empirical branches, a P1.3 storage-only cost
+control, paid plan-level replanning, conservative first-person frontier beliefs
+and anti-oracle branch-specific continuation availability.
 
-Before adding a live `reference_information_v1` policy, freeze the generic
-first-person belief rule for genuinely unsupported/exploratory outcomes,
-including newborn semantics and paid work. P1.3 has scalar uncertainty and a
-generic resource base rate, but no actionable outcome distribution for an
-unseen cell. Do not invent water/food behind a frontier, recycle old relevance
-as a pseudo-outcome, or choose a favorable prior from exposed development
-indices 44-47. Stage 2 #1062 stays blocked until this Stage-1 belief contract is
-explicit. Reuse #1026 for individuality and #1054 for the P5d carried-food case.
-Stages 3-6 remain deferred and gated.
+The current integrated engineering probe is
+`reference_frontier_information_v1`: P1.3 repertoire/state/Competition/control
+plus one-cell **water-frontier** information, with additive
+curiosity/relevance/prudence removed. It is intentionally not the complete
+Stage-1 candidate. Unknown-food integrity distributions and multi-cell joint
+frontier outcomes remain unresolved. Do not silently generalize this water-only
+probe into `reference_information_v1`, invent favorable food outcomes, or tune
+on exposed development indices 44-47. Stage 2 #1062 remains blocked. Reuse
+#1026 for individuality and #1054 for the P5d carried-food case. Stages 3-6
+remain deferred and gated.
 
 Do not prioritize a Competition rewrite: P5e did not establish generally
 broken Competition, and its masked arm never carried food. Missing exposure
