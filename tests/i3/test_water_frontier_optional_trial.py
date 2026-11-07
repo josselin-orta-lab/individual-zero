@@ -49,7 +49,13 @@ class WaterFrontierOptionalTrialTests(unittest.TestCase):
         self.assertEqual(result["leaf_count"], 3)
         self.assertEqual(result["prior_expected_external_delta"], (0.,) * 5)
         self.assertGreater(result["trial_information_value"], 0.)
-        self.assertIn("TRIAL", result["target_node_best_choices"])
+        self.assertIn(
+            "TRIAL", result["target_node_best_choices"],
+            msg={k: result[k] for k in (
+                "ordinary_frontier_value", "trial_frozen_value",
+                "trial_informed_value", "trial_information_value",
+                "trial_advantage", "water_probability",
+                "frontier_expected_value", "work")})
         self.assertGreaterEqual(result["water_revelation_advantage"], 0.)
 
     def test_risky_unknown_drink_can_be_declined_after_water_is_revealed(self):
