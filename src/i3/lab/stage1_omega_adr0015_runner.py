@@ -13,6 +13,7 @@ import argparse
 import gzip
 from hashlib import sha256
 import json
+from math import fsum
 from pathlib import Path
 import subprocess
 
@@ -151,7 +152,12 @@ def _selected_for(selection_aggregate, arm, population):
     if (type(selection_aggregate) is not dict
             or selection_aggregate.get("schema") != SELECTION_AGGREGATE
             or selection_aggregate.get("protocol_sha256")
-            != protocol_manifest()["sha256"]):
+            != protocol_manifest()["sha256"]
+            or selection_aggregate.get("sha256")
+            != digest_json({
+                k: v for k, v in selection_aggregate.items()
+                if k != "sha256"
+            })):
         raise ValueError("valid immutable selection aggregate required")
     try:
         values = selection_aggregate["selected"][arm][str(population)]
@@ -236,6 +242,9 @@ def _life_summary(life, paid):
         "evidence_head": paid["evidence_head"],
         "inactive_steps": paid["inactive_steps"],
         "paid": dict(paid["paid"]),
+        "final_body": list(life["final_body"]),
+        "actions": dict(life["actions"]),
+        "cognitive_accounting": dict(life["cognitive_accounting"]),
         "competition_steps": len(competition["steps"]),
         "cognitive_shortfall_steps":
             life["cognitive_accounting"]["shortfall_steps"],
@@ -295,6 +304,39 @@ def _run_case(case, output_dir, expected_source_pin=None, *, replay=False):
     }, source_pin
 
 
+def _reference_probes(population, phase):
+    """Descriptive systematic-search comparator on the declared shard worlds.
+
+    This is NOT a cost-matched I3 life and never enters selection/ranking.
+    It is executed once per world in the reference shard only.
+    """
+    from i3.lab import p2_ecologies, probes
+
+    population = _validate_population(population)
+    if phase not in ("selection", "validation"):
+        raise ValueError("probe phase must be selection/validation")
+    rows = [
+        row for row in S.world_rows(phase)
+        if row["population"] == population
+    ]
+    out = []
+    for row in rows:
+        spec = p2_ecologies.world_for(
+            row["family"], phase, row["index"])
+        survived = probes.reference_survival(spec, D.HORIZON)
+        out.append({
+            "population": population,
+            "family": row["family"],
+            "world_index": row["index"],
+            "world_seed": row["world_seed"],
+            "steps_survived": survived,
+            "censored": survived >= D.HORIZON,
+            "interpretation":
+                "DESCRIPTIVE_SYSTEMATIC_SEARCH_NOT_COST_MATCHED",
+        })
+    return out
+
+
 def run_selection_shard(population, arm, output_dir, *,
                         expected_sha, expected_protocol):
     validate_launch(expected_sha, expected_protocol)
@@ -344,6 +386,10 @@ def run_selection_shard(population, arm, output_dir, *,
         _write_json(output_dir / "FAILURE.json", failure)
         raise
 
+    systematic_probe = (
+        _reference_probes(population, "selection")
+        if arm == "reference" else None)
+
     report = {
         "schema": SELECTION_SHARD,
         "status": "COMPLETE",
@@ -356,6 +402,7 @@ def run_selection_shard(population, arm, output_dir, *,
         "expected_lives": len(cases),
         "completed_lives": len(rows),
         "receipts": rows,
+        "systematic_reference_probe": systematic_probe,
     }
     _write_json(output_dir / "selection-shard.json", report)
     return report
@@ -471,12 +518,11 @@ def aggregate_selection(shards):
 def _replay_equal(first, second):
     keys = (
         "trace_head", "evidence_head", "terminal",
-        "steps_lived", "world_sha256")
-    return (
-        all(first["summary"][key] == second["summary"][key] for key in keys)
-        and first["summary"]["paid"] == second["summary"]["paid"]
-        and first["summary"]["inactive_steps"]
-        == second["summary"]["inactive_steps"])
+        "steps_lived", "world_sha256", "final_body", "actions",
+        "cognitive_accounting")
+    return all(
+        first["summary"][key] == second["summary"][key]
+        for key in keys)
 
 
 def run_validation_shard(population, arm, selection_aggregate, output_dir, *,
@@ -562,6 +608,10 @@ def run_validation_shard(population, arm, selection_aggregate, output_dir, *,
         _write_json(output_dir / "FAILURE.json", failure)
         raise
 
+    systematic_probe = (
+        _reference_probes(population, "validation")
+        if arm == "reference" else None)
+
     report = {
         "schema": VALIDATION_SHARD,
         "status": "COMPLETE",
@@ -579,6 +629,7 @@ def run_validation_shard(population, arm, selection_aggregate, output_dir, *,
         "completed_replays": len(replay_rows),
         "receipts": rows,
         "rank0_replays": replay_rows,
+        "systematic_reference_probe": systematic_probe,
     }
     _write_json(output_dir / "validation-shard.json", report)
     return report
