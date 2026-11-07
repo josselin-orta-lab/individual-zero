@@ -152,8 +152,10 @@ class InformationMind(Mind):
             ceiling = _add_work(evaluation_end, CognitiveWork(cycles=cycles))
             debit_cognition(budget.body, budget.laws, ceiling)  # Quote, NOT spend.
             scored, witnesses = [], []
+            cell_cache = {}
             for opt, outcomes, unknown in prepared:
-                value = paid_information_value(self, outcomes, budget, forecast_work=ceiling)
+                value = paid_information_value(
+                    self, outcomes, budget, forecast_work=ceiling, cell_cache=cell_cache)
                 score = value["informed_value"]
                 scored.append((opt[0], score))
                 if self.observer_decision_diagnostics:
@@ -167,9 +169,10 @@ class InformationMind(Mind):
                         "unknown_support_queries": unknown,
                         "forecast_start_body": value["forecast_start_body"],
                         "kernel_work": value["work"],
+                        "kernel_cell_reuse": value["cell_reuse"],
                         "forecast_work_ceiling": asdict(ceiling)})
-            if budget.work != evaluation_end:
-                raise RuntimeError("local evaluation work differs from the common quote")
+            if any(getattr(budget.work, k) > getattr(evaluation_end, k) for k in WORK_KEYS):
+                raise RuntimeError("reused local evaluation exceeded exhaustive work ceiling")
         except CognitiveFundingError:
             # No complete comparison, no command and no refund. The ordinary
             # runtime settles all consumed work and advances passive physiology.
