@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 import sys
 
-from ..modules.body import BodyLaws, CognitiveBudget, CognitiveWork
+from ..modules.body import BodyLaws, CognitiveBudget, CognitiveWork, F, W, I
 from . import projection_consistency_characterization as P
 from . import projection_event_quartic_characterization as D
 
@@ -35,7 +35,7 @@ def project_event_exact(mind, b, drift_spec, budget=None):
     body = list(b)
     ret = [0.0, 0.0, 0.0]
     disc = [1.0, 1.0, 1.0]
-    dead = body[P.F] <= 0.0 or body[P.W] <= 0.0 or body[P.I] <= 0.0
+    dead = body[F] <= 0.0 or body[W] <= 0.0 or body[I] <= 0.0
     last_reward = -mind.d_max if dead else -mind.distress(mind.feats(body))
 
     for outer in mind.proj_chunks:
