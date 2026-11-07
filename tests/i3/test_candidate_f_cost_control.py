@@ -67,7 +67,11 @@ class CandidateFCostControlTests(unittest.TestCase):
         self.assertEqual(actual[3]["option"], expected[3]["option"])
         self.assertEqual(actual[2], add(candidate_work, expected[2]))
         self.assertEqual(actual[2], outer.work)
-        self.assertEqual(tuple(outer.remaining), tuple(rb.remaining))
+        for actual_body, sequential_body in zip(outer.remaining, rb.remaining):
+            self.assertAlmostEqual(actual_body, sequential_body, places=12)
+        self.assertLessEqual(
+            actual[3]["cost_control"]["sequential_settlement_max_abs_gap"],
+            1e-12)
 
     def test_shadow_action_has_no_motor_authority(self):
         reference, candidate = pair()
@@ -108,6 +112,10 @@ class CandidateFCostControlTests(unittest.TestCase):
             c["body_after_candidate_shadow"][4], BODY[4])
         self.assertEqual(
             c["body_after_reference_choice"], tuple(outer.remaining))
+        self.assertEqual(
+            c["settlement_authority"], "CUMULATIVE_V2_PHASE_START_BODY")
+        self.assertLessEqual(
+            c["sequential_settlement_max_abs_gap"], 1e-12)
         self.assertEqual(
             c["cost_matching_claim"], "UPPER_COST_NOT_EXACT_MATCH")
 
