@@ -15,20 +15,32 @@ integrates the owner's 6 November 2026 scenario, whose
 Stage 0 #1060 remains open, but the immediate bounded implementation is Stage 1
 #1061 on the **reference-preserving path**. The local_information_v1 prototype
 is retired as a gate candidate after the frozen 44-47 development diagnostics.
-PRs #1076-#1081 now provide paid empirical branches, a P1.3 storage-only cost
-control, paid plan-level replanning, conservative first-person frontier beliefs
-and anti-oracle branch-specific continuation availability.
+PRs #1076-#1081 provide the reference-preserving branch memory,
+storage-only cost control, paid replanning, conservative frontier belief and
+anti-oracle branch-specific continuation substrate. The first integrated
+`reference_frontier_information_v1` water probe completed fresh 50/51:
+information becomes positive in 7/12 lives, always exactly one step after first
+positive water uptake, but survival is 2/12 versus 6/12 storage-only. Five lives
+never bootstrap water information and all die. Do not tune or rerun 44-51.
 
-The current integrated engineering probe is
-`reference_frontier_information_v1`: P1.3 repertoire/state/Competition/control
-plus one-cell **water-frontier** information, with additive
-curiosity/relevance/prudence removed. It is intentionally not the complete
-Stage-1 candidate. Unknown-food integrity distributions and multi-cell joint
-frontier outcomes remain unresolved. Do not silently generalize this water-only
-probe into `reference_information_v1`, invent favorable food outcomes, or tune
-on exposed development indices 44-47. Stage 2 #1062 remains blocked. Reuse
-#1026 for individuality and #1054 for the P5d carried-food case. Stages 3-6
-remain deferred and gated.
+PRs #1088-#1091 now isolate the generic bootstrap ingredients without opening a
+world: zero-mean stake-projected unsupported effects; exact branch-local reuse
+after an observed effect; nested one-trial value separating epistemic value
+from overall trial advantage; and an action-neutral first-person frontier
+modality prior. A synthetic test proves that a strictly zero-mean unsupported
+effect can have positive information value when the observed body changes the
+best continuation.
+
+**DRIFT DETECTED:** the owner scenario caps Stage-1 uncertainty at 2-3 simulated
+branches. Do not compose the 3-way modality prior and 2-way effect prior as an
+unbounded 3x2 tree, and do not jump to Stage 2. The next bounded design must fit
+frontier observation plus unsupported-action trial into at most three outcome
+branches while preserving P1.3 repertoire and the distinction between seeing a
+resource and knowing its effect. Water remains the existing engineering scope;
+food, joint modality outcomes and the scientific gate remain unresolved.
+
+Reuse #1026 for individuality and #1054 for the P5d carried-food case. Stages
+3-6 remain deferred and gated.
 
 Do not prioritize a Competition rewrite: P5e did not establish generally
 broken Competition, and its masked arm never carried food. Missing exposure
