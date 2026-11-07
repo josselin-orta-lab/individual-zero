@@ -27,7 +27,7 @@ REPLAYS_PER_SLEEP = 16
 BELIEF_FLOOR = 0.05
 # Innate self-projection: geometric chunks covering 255 future steps.
 PROJECTION_CHUNKS = (1, 2, 4, 8, 16, 32, 64, 128)
-PROJECTION_ACCOUNTING = ("chunk_end", "trapezoid", "event_quadratic")
+PROJECTION_ACCOUNTING = ("chunk_end", "trapezoid", "event_quadratic", "event_quartic")
 VETO_INTEGRITY = 10.0
 
 
@@ -329,13 +329,95 @@ class Mind:
             ret[k] += disc[k] * (r_tail / (1.0 - gk))
         return ret, body
 
+    @staticmethod
+    def _discounted_lagrange5_sum(samples, run, gamma):
+        """Sum fixed five-node interpolation at discrete endpoints."""
+        if run == 1:
+            return samples[-1]
+        nodes = (0.0, 0.25, 0.5, 0.75, 1.0)
+        total = 0.0
+        power = 1.0
+        for step in range(1, run + 1):
+            x = step / run
+            value = 0.0
+            for i, xi in enumerate(nodes):
+                basis = 1.0
+                for j, xj in enumerate(nodes):
+                    if i != j:
+                        basis *= (x - xj) / (xi - xj)
+                value += samples[i] * basis
+            total += power * value
+            power *= gamma
+        return total
+
+    def _project_event_quartic(self, b, drift, restore, budget=None):
+        """Event-aware fixed five-node accounting on geometric chunks."""
+        body = list(b)
+        ret = [0.0, 0.0, 0.0]
+        disc = [1.0, 1.0, 1.0]
+        dead = body[F] <= 0.0 or body[W] <= 0.0 or body[I] <= 0.0
+        r_start = self._projection_reward(body, dead, budget)
+        for outer in self.proj_chunks:
+            remaining = outer
+            while remaining > 0:
+                if dead:
+                    for k, gk in enumerate(self.gammas):
+                        g_run = gk ** remaining
+                        weight = (1.0 - g_run) / (1.0 - gk)
+                        ret[k] += disc[k] * (-self.d_max) * weight
+                        disc[k] *= g_run
+                    remaining = 0
+                    continue
+
+                run = self._projection_next_event_segment(
+                    body, drift, restore, remaining)
+                if run == 1:
+                    end_body, end_dead = self._projection_advance(
+                        body, drift, restore, 1)
+                    r_end = self._projection_reward(
+                        end_body, end_dead, budget)
+                    samples = (r_start, r_end)
+                else:
+                    values = [r_start]
+                    end_body = end_dead = None
+                    for fraction in (0.25, 0.5, 0.75, 1.0):
+                        sample_body, sample_dead = self._projection_advance(
+                            body, drift, restore, run * fraction)
+                        values.append(self._projection_reward(
+                            sample_body, sample_dead, budget))
+                        if fraction == 1.0:
+                            end_body, end_dead = sample_body, sample_dead
+                    samples = tuple(values)
+                    r_end = samples[-1]
+
+                for k, gk in enumerate(self.gammas):
+                    g_run = gk ** run
+                    segment = (
+                        r_end if run == 1 else
+                        self._discounted_lagrange5_sum(
+                            samples, run, gk))
+                    ret[k] += disc[k] * segment
+                    disc[k] *= g_run
+
+                body = end_body
+                dead = end_dead
+                r_start = r_end
+                remaining -= run
+
+        r_tail = -self.d_max if dead else r_start
+        for k, gk in enumerate(self.gammas):
+            ret[k] += disc[k] * (r_tail / (1.0 - gk))
+        return ret, body
+
     def project(self, b, drift, budget=None):
-        """Innate self-projection over 255 future steps; event_quadratic is opt-in."""
+        """Innate self-projection over 255 future steps; event modes are opt-in."""
         drift, restore = drift
         if self.projection_accounting not in PROJECTION_ACCOUNTING:
             raise ValueError("unknown projection accounting mode")
         if self.projection_accounting == "event_quadratic":
             return self._project_event_quadratic(b, drift, restore, budget)
+        if self.projection_accounting == "event_quartic":
+            return self._project_event_quartic(b, drift, restore, budget)
         if budget is not None:
             budget.spend(CognitiveWork(simulated_steps=len(self.proj_chunks)))
         th = self.theta
