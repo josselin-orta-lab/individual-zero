@@ -50,10 +50,14 @@ def realistic_memory():
 
 def harmful_memory():
     memory = ReferenceBranchMemory()
+    # Two close harmful effects retain a small positive integrity component;
+    # the third is broadly harmful with negative integrity. The compressed
+    # branches are therefore clipping-safe observable alternatives while the
+    # recent personal distribution remains adverse overall.
     for key, delta in (
-        (("se_deplacer", None), (-2., -.2, -.4, 0., 0.)),
-        (("attendre", None), (-1., -1., -1., -.5, -.5)),
-        (("dormir", None), (-3., -.5, -2., -.2, -1.)),
+        (("se_deplacer", None), (-2., -.2, -.4, .2, 0.)),
+        (("attendre", None), (-2.2, -.3, -.5, .1, -.1)),
+        (("dormir", None), (-3., -1., -2., -1., -1.)),
     ):
         record(memory, key, delta)
     return memory
