@@ -1,0 +1,79 @@
+{
+ "boundary_witness": {
+  "body": [80.0, 10.0, 80.0, 80.0, 80.0],
+  "final_body": [80.0, 0.0, 60.0, 90.0, 80.0],
+  "pass": true
+ },
+ "candidate_promoted": false,
+ "cases": 486,
+ "classification": "END_TO_END_HIGH_PRECISION_ORACLE_AUTHORIZED_FOR_FUTURE_CANDIDATES",
+ "comparisons": {
+  "event_exact": {
+   "max_abs_prefix_error_vs_oracle": 0.02527230673804759,
+   "max_decision_bias_vs_oracle": 0.01813728111589108,
+   "max_final_body_channel_error_vs_oracle": 0.4000000000000057
+  },
+  "historical_per_step": {
+   "max_abs_prefix_error_vs_oracle": 0.02527230673804759,
+   "max_decision_bias_vs_oracle": 3.311296478480941e-05,
+   "max_final_body_channel_error_vs_oracle": 0.40000000000020464
+  }
+ },
+ "decimal_precision": 100,
+ "direct_projection_units": {
+  "expected": 255,
+  "max": 255,
+  "mean": 255.0,
+  "min": 255,
+  "pass": true
+ },
+ "gate": {
+  "boundary_pass": true,
+  "cost_pass": true,
+  "invariant_pass": true,
+  "runtime_mode_added": false
+ },
+ "historical_gates_changed": false,
+ "lives": 0,
+ "numerical_tolerance": 1e-10,
+ "omega_rerun_authorized": false,
+ "oracle_authorized_for_future_candidates": true,
+ "oracle_projection_equivalent_invariant_max_gap": 1.1102230246251565e-15,
+ "protocol": "STAGE1_END_TO_END_NUMERIC_ORACLE.md",
+ "schema": "i3-end-to-end-high-precision-oracle/v1",
+ "world_access": false,
+ "worst_cases": {
+  "event_exact_decision_bias": {
+   "abs_bias": 0.01813728111589108,
+   "body": [80.0, 10.0, 80.0, 80.0, 80.0],
+   "comparison": "plus_3_waits",
+   "fixture": "sleep_learned",
+   "genome": "g0-6003"
+  },
+  "event_exact_final_body": {
+   "abs_error": 0.4000000000000057,
+   "body": [80.0, 20.0, 80.0, 80.0, 80.0],
+   "channel": 2,
+   "comparison_final_body": [80.0, 0.0, 39.599999999999994, 100.0, 80.0],
+   "fixture": "sleep_learned",
+   "genome": "midpoint",
+   "oracle_final_body": [80.0, 0.0, 40.0, 100.0, 80.0]
+  },
+  "historical_per_step_decision_bias": {
+   "abs_bias": 3.311296478480941e-05,
+   "body": [80.0, 10.0, 80.0, 80.0, 80.0],
+   "comparison": "plus_3_waits",
+   "fixture": "sleep_unlearned",
+   "genome": "g0-6004"
+  },
+  "historical_per_step_final_body": {
+   "abs_error": 0.40000000000020464,
+   "body": [80.0, 10.0, 80.0, 80.0, 80.0],
+   "channel": 2,
+   "comparison_final_body": [80.0, 0.0, 59.599999999999795, 90.20000000000014, 80.0],
+   "fixture": "sleep_learned",
+   "genome": "midpoint",
+   "oracle_final_body": [80.0, 0.0, 60.0, 90.0, 80.0]
+  }
+ }
+}
