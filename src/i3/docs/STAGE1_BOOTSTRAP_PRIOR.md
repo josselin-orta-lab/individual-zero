@@ -847,3 +847,111 @@ Those restrictions keep Stage 1 bounded and auditable. More general recurrence,
 change detection or latent ecological causes remain later-stage questions.
 
 No runtime policy or scientific world is authorized by this kernel.
+
+
+## Carried unknown food: information without ecological recurrence
+
+The water work isolates an important limitation: information about an action
+effect matters only if the individual represents a future opportunity to use
+that learned effect. Exact P1.3 water exploration does not provide such an
+opportunity cleanly without additional ecological recurrence assumptions.
+
+The owner scenario also explicitly names an **unknown food** case. Carried food
+provides a cleaner Stage-1 falsifier because its future opportunity is already
+inside first-person inventory.
+
+`modules/carried_food_information.py::paid_carried_unknown_food_information_value`
+uses:
+
+- one internal carried token identity;
+- the individual's current count of that token;
+- existing paid `ReferenceBranchMemory`;
+- the current P1.3 simulator and cognitive budget.
+
+No World/source state is read.
+
+### Subjective effect branches
+
+The branch memory is queried for:
+
+```text
+("manger", token)
+```
+
+Existing precedence is unchanged:
+
+1. latest exact-token support, if present;
+2. otherwise latest same-action `manger` support from other personally eaten
+   tokens;
+3. no global/cross-action fallback.
+
+One retained effect is duplicated into two identical half-weight branches only
+to satisfy the existing 2-branch kernel shape. Because both branches are
+identical, this creates no information.
+
+Two or three support rows retain equal empirical probabilities.
+
+### Inventory-bounded future opportunity
+
+One carried unit is the current trial.
+
+If `inventory_count == 1`, there is no represented repeat opportunity:
+
+```text
+information_value = 0
+option_score = expected value of one trial
+```
+
+If at least two units are carried, the kernel models exactly one possible
+repeat, regardless of larger inventory:
+
+```text
+STOP_i   = eat one unit under effect branch i, then stop/bootstrap
+REPEAT_i = eat one unit, observe effect i, eat one further carried unit
+           under the learned same effect, then stop/bootstrap
+```
+
+The informed value is:
+
+```text
+sum_i q_i * max(STOP_i, REPEAT_i)
+```
+
+The frozen comparator, which cannot condition repeat choice on the observed
+effect, is:
+
+```text
+max(
+  sum_i q_i STOP_i,
+  sum_i q_i REPEAT_i
+)
+```
+
+and:
+
+```text
+information_value = informed - frozen
+```
+
+This is ordinary expected predicted-distress return. There is no additive
+curiosity term.
+
+### Why this case is scientifically useful
+
+A safe-versus-toxic personal food history can make information useful:
+
+- after a benign first bite, eating the second unit may be rational;
+- after an integrity-damaging first bite, stopping may be rational.
+
+The urgency and risk then arise from the individual's current bodily projection
+and its own empirical effect distribution.
+
+The kernel does **not** command `manger`. It returns only an option score.
+A future live policy would still have to compare that score against every other
+P1.3 option under one common decision-work forecast and unchanged
+Competition/Action Control.
+
+This is also a direct software route back to #1054's unresolved carried-food
+case without rewriting P5d evidence.
+
+No scientific study or runtime policy is authorized by this slice.
