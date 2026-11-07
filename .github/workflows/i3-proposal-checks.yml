@@ -51,3 +51,114 @@ jobs:
       - name: Check current navigation
         if: matrix.python-version == '3.11'
         run: python tools/check_repo_navigation.py --scope entrypoints
+
+
+  stage1-cost-vs-policy-development-once:
+    name: Frozen Stage-1 cost-vs-policy development diagnostic (one shot)
+    needs: software
+    if: >-
+      github.event.action == 'opened' && github.run_attempt == '1' &&
+      github.event.pull_request.head.repo.full_name == 'josselin-orta-lab/individual-zero' &&
+      github.head_ref == 'i3/stage1-cost-vs-policy-fresh54-55-execute-20261108' &&
+      github.event.pull_request.base.sha == 'eb79c7b50b8cfb1ef275441a2faaa87d1e69c904'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    env:
+      PYTHONPATH: src
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Execute frozen 36-life fresh 54-55 cost-vs-policy panel once
+        run: >-
+          python -m i3.lab.stage1_candidate_f_cost_vs_policy_fresh_diagnostic
+          --expected-sha "$SOURCE_SHA"
+          --expected-protocol e1c8bd89e9e6cfa921fb0332bf9376e44181f649d19c896e7f736e888c1845c4
+          --output "$RUNNER_TEMP/i3-stage1-cost-vs-policy-54-55-original"
+      - name: Preserve all originals including partial failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-stage1-cost-vs-policy-54-55-original-${{ github.run_id }}
+          path: ${{ runner.temp }}/i3-stage1-cost-vs-policy-54-55-original/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Archive only original outputs to a new evidence branch
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import base64
+          import json
+          import os
+          from pathlib import Path
+          import subprocess
+          import urllib.request
+
+          repo = os.environ['GITHUB_REPOSITORY']
+          if repo != 'josselin-orta-lab/individual-zero':
+              raise RuntimeError('wrong repository')
+          head = os.environ['SOURCE_SHA']
+          if subprocess.check_output(
+                  ['git','rev-parse','HEAD'], text=True).strip() != head:
+              raise RuntimeError('wrong archive parent')
+          folder = (
+              Path(os.environ['RUNNER_TEMP'])
+              / 'i3-stage1-cost-vs-policy-54-55-original')
+          files = sorted(p for p in folder.iterdir() if p.is_file())
+          if not files:
+              raise RuntimeError('no originals to archive')
+
+          def api(path, data):
+              req = urllib.request.Request(
+                  'https://api.github.com/repos/' + repo + path,
+                  data=json.dumps(data).encode(), method='POST',
+                  headers={
+                      'Authorization': 'Bearer ' + os.environ['GH_TOKEN'],
+                      'Accept': 'application/vnd.github+json',
+                      'Content-Type': 'application/json'})
+              with urllib.request.urlopen(req, timeout=30) as response:
+                  return json.load(response)
+
+          entries = []
+          for p in files:
+              blob = api('/git/blobs', {
+                  'encoding': 'base64',
+                  'content': base64.b64encode(p.read_bytes()).decode()})
+              entries.append({
+                  'path':
+                      'src/i3/docs/studies/'
+                      'stage1-candidate-f-cost-vs-policy-development-54-55/'
+                      'original/' + p.name,
+                  'mode': '100644',
+                  'type': 'blob',
+                  'sha': blob['sha']})
+          base = subprocess.check_output(
+              ['git','rev-parse','HEAD^{tree}'], text=True).strip()
+          tree = api('/git/trees', {
+              'base_tree': base,
+              'tree': entries})
+          commit = api('/git/commits', {
+              'message':
+                  'research(i3): archive original 54-55 cost-vs-policy diagnostic, no rerun',
+              'tree': tree['sha'],
+              'parents': [head]})
+          ref = (
+              'refs/heads/i3/evidence-stage1-cost-vs-policy-54-55-'
+              + os.environ['GITHUB_RUN_ID'])
+          api('/git/refs', {'ref': ref, 'sha': commit['sha']})
+          print('ORIGINAL_ARCHIVE ' + json.dumps({
+              'ref': ref,
+              'sha': commit['sha'],
+              'tree': tree['sha'],
+              'files': len(entries)}))
+          PY
