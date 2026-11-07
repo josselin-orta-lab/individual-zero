@@ -5,7 +5,10 @@ opportunity, so no World/source-persistence model is needed.
 
 Effect hypotheses come only from existing paid ReferenceBranchMemory:
 exact-token support first, otherwise the existing same-action "manger"
-fallback. The kernel compares one trial with an optional second carried unit.
+fallback. The kernel compares one trial with optional further carried units:
+by default one repeat (#1102); opt-in `max_future_repeats` represents up to
+that many further carried units as first-person future uses (characterization
+STAGE1_CARRIED_FOOD_REUSE_CHARACTERIZATION.md).
 
 It emits a score, never a motor command.
 """
@@ -39,20 +42,19 @@ def _simulation_upper(model, plan):
 
 
 def _minimum_ceiling(
-        model, branches, repeat_available, original_work):
-    cells_per_branch = 2 if repeat_available else 1
+        model, branches, repeats, original_work):
+    cells_per_branch = repeats + 1
     cells = branches * cells_per_branch
-    plan_items = branches * (1 + (2 if repeat_available else 0))
+    plan_items = branches * (repeats + 1) * (repeats + 2) // 2
     prep = CognitiveWork(
         cycles=1,
         memory_items=branches * 7 + cells * 5 + 2 * plan_items + 6)
 
     matrix = CognitiveWork()
     stop = (("manger", "_placeholder"),)
-    repeat = stop + stop
     for _ in range(branches):
-        plans = (stop, repeat) if repeat_available else (stop,)
-        for plan in plans:
+        for units in range(1, repeats + 2):
+            plan = stop * units
             cell = _add_work(CognitiveWork(cycles=1), VIEW_WORK)
             cell = _add_work(cell, _simulation_upper(model, plan))
             matrix = _add_work(matrix, cell)
@@ -64,19 +66,29 @@ def _minimum_ceiling(
     return prep, total
 
 
+def _plan_name(units):
+    if units == 1:
+        return "STOP_AFTER_TRIAL"
+    if units == 2:
+        return "REPEAT_ONCE"
+    return f"REPEAT_{units - 1}_TIMES"
+
+
 def paid_carried_unknown_food_information_value(
         model, memory: ReferenceBranchMemory, token, inventory_count,
         budget: CognitiveBudget, *,
         support_index=None,
-        forecast_work: CognitiveWork | None = None) -> dict:
-    """Value learning one carried token's effect with at most one repeat.
+        forecast_work: CognitiveWork | None = None,
+        max_future_repeats: int = 1) -> dict:
+    """Value learning one carried token's effect over carried future uses.
 
     inventory_count is the individual's current carried count for this internal
-    token. One unit is the trial. If at least two units are carried, a second
-    unit is a certain first-person future matching opportunity.
-
-    More than two units do not create additional repeats in this bounded Stage-1
-    kernel.
+    token. One unit is the trial. Each further carried unit is a certain
+    first-person future matching opportunity. At most
+    `r = min(max_future_repeats, inventory_count - 1)` further units are
+    represented; the default (1) is exactly the bounded #1102 kernel.
+    Outcome branches stay the two or three personal effect rows; the r + 1
+    plans per branch are all simulated and paid before comparison.
     """
     key = _key(token)
     if type(inventory_count) is not int or inventory_count < 1:
@@ -90,6 +102,8 @@ def paid_carried_unknown_food_information_value(
     if forecast_work is not None and not isinstance(
             forecast_work, CognitiveWork):
         raise ValueError("forecast_work must be CognitiveWork")
+    if type(max_future_repeats) is not int or max_future_repeats < 1:
+        raise ValueError("max_future_repeats must be a positive integer")
     if (not callable(getattr(model, "simulate", None)) or
             not hasattr(model, "proj_chunks") or not model.proj_chunks or
             not hasattr(model, "d_max") or
@@ -111,10 +125,10 @@ def paid_carried_unknown_food_information_value(
         deltas = deltas * 2
     branch_count = len(deltas)
     probabilities = tuple(1.0 / branch_count for _ in deltas)
-    repeat_available = inventory_count >= 2
+    repeats = min(max_future_repeats, inventory_count - 1)
 
     prep, minimum = _minimum_ceiling(
-        model, branch_count, repeat_available, budget.work)
+        model, branch_count, repeats, budget.work)
     budget.spend(prep)
     after_prep = budget.work
 
@@ -125,20 +139,16 @@ def paid_carried_unknown_food_information_value(
     forecast_body, _ = debit_cognition(
         budget.body, budget.laws, ceiling)
 
-    stop_values = []
-    repeat_values = []
+    plan_values = []          # plan_values[i][j]: eat j + 1 units, branch i
     for effect_delta in deltas:
-        budget.spend(CognitiveWork(cycles=1))
-        stop_result = paid_simulate_after_observed_effect(
-            model, forecast_body, (key,), 1,
-            key, effect_delta, budget)
-        stop_values.append(stop_result["value"])
-        if repeat_available:
+        row = []
+        for units in range(1, repeats + 2):
             budget.spend(CognitiveWork(cycles=1))
-            repeat_result = paid_simulate_after_observed_effect(
-                model, forecast_body, (key, key), 2,
+            result = paid_simulate_after_observed_effect(
+                model, forecast_body, (key,) * units, units,
                 key, effect_delta, budget)
-            repeat_values.append(repeat_result["value"])
+            row.append(result["value"])
+        plan_values.append(row)
         if not _leq(budget.work, ceiling):
             raise RuntimeError("carried-food matrix exceeded funded ceiling")
 
@@ -147,42 +157,28 @@ def paid_carried_unknown_food_information_value(
     if not _leq(budget.work, ceiling):
         raise RuntimeError("carried-food reduction exceeded funded ceiling")
 
-    stop_expected = fsum(
-        p * value for p, value in zip(probabilities, stop_values))
-    if repeat_available:
-        repeat_expected = fsum(
-            p * value for p, value in zip(probabilities, repeat_values))
-        frozen = max(stop_expected, repeat_expected)
-        informed_parts = []
-        choices = []
-        for p, stop, repeat, delta in zip(
-                probabilities, stop_values, repeat_values, deltas):
-            best = max(stop, repeat)
-            informed_parts.append(p * best)
-            choices.append({
-                "effect_delta": delta,
-                "probability": p,
-                "stop_value": stop,
-                "repeat_value": repeat,
-                "best_choices": tuple(
-                    name for name, value in (
-                        ("STOP_AFTER_TRIAL", stop),
-                        ("REPEAT_ONCE", repeat))
-                    if value >= best - 1e-12),
-            })
-        informed = fsum(informed_parts)
-    else:
-        repeat_expected = None
-        frozen = stop_expected
-        informed = stop_expected
-        choices = tuple({
+    plan_expected = tuple(
+        fsum(p * row[j] for p, row in zip(probabilities, plan_values))
+        for j in range(repeats + 1))
+    stop_expected = plan_expected[0]
+    repeat_expected = plan_expected[1] if repeats >= 1 else None
+    frozen = max(plan_expected)
+    informed = fsum(
+        p * max(row) for p, row in zip(probabilities, plan_values))
+    choices = []
+    for p, row, delta in zip(probabilities, plan_values, deltas):
+        best = max(row)
+        choices.append({
             "effect_delta": delta,
             "probability": p,
-            "stop_value": stop,
-            "repeat_value": None,
-            "best_choices": ("STOP_AFTER_TRIAL",),
-        } for p, stop, delta in zip(
-            probabilities, stop_values, deltas))
+            "stop_value": row[0],
+            "repeat_value": row[1] if repeats >= 1 else None,
+            "plan_values": tuple(row),
+            "best_choices": tuple(
+                _plan_name(j + 1) for j, value in enumerate(row)
+                if value >= best - 1e-12),
+        })
+    choices = tuple(choices)
 
     information = informed - frozen
     if information < -1e-10:
@@ -199,14 +195,16 @@ def paid_carried_unknown_food_information_value(
         "token": token,
         "inventory_count": inventory_count,
         "trial_units": 1,
-        "future_repeat_units_modelled": 1 if repeat_available else 0,
+        "max_future_repeats": max_future_repeats,
+        "future_repeat_units_modelled": repeats,
         "additional_units_ignored_by_stage1_bound": max(
-            0, inventory_count - 2),
+            0, inventory_count - 1 - repeats),
         "support_records": len(support),
         "subjective_branches": branch_count,
         "support_access": support_receipt.get("access"),
         "stop_expected_value": stop_expected,
         "repeat_expected_value": repeat_expected,
+        "plan_expected_values": plan_expected,
         "frozen_value": frozen,
         "informed_value": informed,
         "information_value": information,

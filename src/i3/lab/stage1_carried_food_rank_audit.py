@@ -112,8 +112,11 @@ def _placement(witnesses, meal_option, field, candidate_score):
 
 def audit_carried_food_raw_rank(
         mind: ReferenceBranchMemoryMind, cap, laws: BodyLaws,
-        external_token: str) -> dict:
+        external_token: str, *, max_future_repeats: int = 1) -> dict:
     """Place the Stage-1 carried-food score beside actual P1.3 score witnesses.
+
+    max_future_repeats is passed unchanged to the carried-food kernel; the
+    default 1 is the original #1102/#1103 audit.
 
     The reference decision is executed only on a deep copy. Its chosen action is
     observed but never returned as an authorization. The Stage-1 candidate is
@@ -176,7 +179,7 @@ def audit_carried_food_raw_rank(
     try:
         candidate = paid_carried_unknown_food_information_value(
             reference, reference.branch_memory, internal_token, count,
-            candidate_budget)
+            candidate_budget, max_future_repeats=max_future_repeats)
     except NoPersonalSupport:
         return {
             "schema": SCHEMA,
@@ -235,6 +238,7 @@ def audit_carried_food_raw_rank(
             "subjective_branches": candidate["subjective_branches"],
             "future_repeat_units_modelled": candidate[
                 "future_repeat_units_modelled"],
+            "max_future_repeats": candidate["max_future_repeats"],
             "work": dict(candidate["work"]),
         },
         "placement_vs_reference_base": base,

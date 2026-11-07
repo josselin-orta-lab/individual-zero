@@ -77,3 +77,33 @@ steps, memory items) and its ratio to `n = 2`.
 Either way: no runtime integration, no Competition change, no world, no tuning
 of grid, seeds or fixtures after the first run. Results are recorded as they
 come, labeled `DESCRIPTIVE_NOT_COST_MATCHED` like #1103.
+
+## Amendment 1 — before any characterization metric was computed
+
+**Trigger.** The frozen defect check "harmful history yields positive
+information at any `n` → implementation defect" fired in the new software test,
+with information 0.0373 for the harmful fixture `(+5 food, −20 integrity)` /
+`(+10 food, −30 integrity)` in a hungry state `(80, 5, 80, 80, 80)`.
+
+**Diagnosis.** Not an implementation defect of this slice:
+
+- the default `max_future_repeats=1` reproduces the original #1102 module
+  exactly (24 cases compared against the `1eaa26f` source: values, choices,
+  paid work, ceilings and bodies identical), and the original #1102 kernel
+  already returns 0.0373 in that state;
+- the value is genuine: under the less nutritious, less toxic branch the best
+  plan is to eat a second unit, under the more nutritious, more toxic branch
+  it is to stop. Knowing which effect occurred changes the best plan.
+
+The premise "uniformly harmful support ⇒ zero information" is therefore false
+in general. It held for the specific #1102 and #1103 test states, where both
+branches agree on the best plan.
+
+**Corrected invariant (replaces the harmful-history defect rule).** Information
+is positive only when the personally best plan differs between effect branches;
+when all branches share a best plan, it must be exactly zero. Default `k = 1`
+must equal #1102. The harmful-history control is still run and reported at every
+`n`, as a description, not as a stop rule.
+
+**Unchanged.** The question, grid, fixtures, `n` values, metrics and the
+"bound causal / not causal" decision rule above.
