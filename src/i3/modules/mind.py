@@ -30,6 +30,7 @@ BELIEF_FLOOR = 0.05
 PROJECTION_CHUNKS = (1, 2, 4, 8, 16, 32, 64, 128)
 PROJECTION_ACCOUNTING = ("chunk_end", "trapezoid", "event_quadratic", "event_quartic",
                          "event_local_quadratic4")
+SIMULATION_MODES = ("reference", "candidate_f")
 VETO_INTEGRITY = 10.0
 
 
@@ -80,11 +81,15 @@ class Mind:
                  *, effect_readout: str = "full",
                  observer_decision_diagnostics: bool = False,
                  observer_full_competition: bool = False,
-                 score_addend_mode: str = "normal"):
+                 score_addend_mode: str = "normal",
+                 simulation_mode: str = "reference"):
         if type(observer_decision_diagnostics) is not bool:
             raise TypeError("observer diagnostics flag must be bool")
         if type(observer_full_competition) is not bool:
             raise TypeError("full competition observer flag must be bool")
+        if simulation_mode not in SIMULATION_MODES:
+            raise ValueError("unknown simulation mode")
+        self.simulation_mode = simulation_mode
         # Laboratory witness only. It is never consulted to score, control,
         # learn or fund an option, and does not enter first-person capture.
         self.observer_full_competition = observer_full_competition
