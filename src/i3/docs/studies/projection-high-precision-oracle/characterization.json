@@ -1,0 +1,69 @@
+{
+ "candidate_promoted": false,
+ "cases": 486,
+ "classification": "EVENT_SEGMENTATION_DIFFERS_FROM_HIGH_PRECISION_ORACLE",
+ "comparisons": {
+  "event_exact": {
+   "max_abs_prefix_error_vs_oracle": 0.01813728111588997,
+   "max_decision_bias_vs_oracle": 0.01813728111589108,
+   "max_final_body_channel_error_vs_oracle": 0.4000000000000057,
+   "projection_equivalent_invariant_max_gap": 0.018137281115890636
+  },
+  "historical_per_step": {
+   "max_abs_prefix_error_vs_oracle": 0.015452842600112815,
+   "max_decision_bias_vs_oracle": 0.015452842600112593,
+   "max_final_body_channel_error_vs_oracle": 0.40000000000020464,
+   "projection_equivalent_invariant_max_gap": 8.881784197001252e-16
+  }
+ },
+ "decimal_precision": 100,
+ "historical_gates_changed": false,
+ "lives": 0,
+ "numerical_tolerance": 1e-10,
+ "omega_rerun_authorized": false,
+ "oracle_authorized_for_future_candidates": false,
+ "oracle_projection_equivalent_invariant_max_gap": 0.015334056168815335,
+ "paid_high_precision_projection_units": {
+  "historical_per_step": 255,
+  "max": 255,
+  "mean": 255.0,
+  "min": 255
+ },
+ "protocol": "STAGE1_PROJECTION_HIGH_PRECISION_ORACLE.md",
+ "schema": "i3-projection-high-precision-oracle/v1",
+ "world_access": false,
+ "worst_cases": {
+  "event_exact_decision_bias": {
+   "abs_bias": 0.01813728111589108,
+   "body": [80.0, 10.0, 80.0, 80.0, 80.0],
+   "comparison": "plus_3_waits",
+   "fixture": "sleep_learned",
+   "genome": "g0-6003"
+  },
+  "event_exact_final_body": {
+   "abs_error": 0.4000000000000057,
+   "body": [80.0, 20.0, 80.0, 80.0, 80.0],
+   "channel": 2,
+   "comparison_final_body": [80.0, 0.0, 39.599999999999994, 100.0, 80.0],
+   "fixture": "sleep_learned",
+   "genome": "midpoint",
+   "oracle_final_body": [80.0, 0.0, 40.0, 100.0, 80.0]
+  },
+  "historical_per_step_decision_bias": {
+   "abs_bias": 0.015452842600112593,
+   "body": [80.0, 80.0, 30.0, 80.0, 80.0],
+   "comparison": "plus_1_wait",
+   "fixture": "sleep_learned",
+   "genome": "g0-6004"
+  },
+  "historical_per_step_final_body": {
+   "abs_error": 0.40000000000020464,
+   "body": [80.0, 10.0, 80.0, 80.0, 80.0],
+   "channel": 2,
+   "comparison_final_body": [80.0, 0.0, 59.599999999999795, 90.20000000000014, 80.0],
+   "fixture": "sleep_learned",
+   "genome": "midpoint",
+   "oracle_final_body": [80.0, 0.0, 60.0, 90.0, 80.0]
+  }
+ }
+}
