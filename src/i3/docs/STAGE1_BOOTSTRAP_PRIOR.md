@@ -750,3 +750,100 @@ A pass would establish only that personally learned uncertainty scale can, in
 principle, create **selective epistemic experimentation** without an additive
 curiosity bonus. It would not establish survival benefit or authorize a fresh
 development world.
+
+
+## One future matching opportunity without current-source persistence
+
+The persistence-free #1099 probe establishes that observing the immediate body
+after an unsupported drink trial has zero information value under the ordinary
+wait/sleep continuation set, even across 160 competing-need states.
+
+The missing quantity is therefore not another effect prior. It is whether the
+learned action effect can matter at a **future matching opportunity**.
+
+`modules/water_future_opportunity.py::paid_water_one_future_opportunity_value`
+tests the smallest bounded representation of that idea.
+
+It does not assume the currently revealed source remains after the first drink.
+Instead it represents one generic future one-cell water opportunity with the
+same current first-person water-modality probability already supplied by the
+frontier prior.
+
+For each learned RMS effect branch `i` and ordinary continuation `j`:
+
+```text
+O_ij = current water trial + ordinary continuation j
+
+R_ij = current water trial
+       + one generic future move
+       + future boire
+       + ordinary continuation j
+```
+
+The future `boire` uses the exact effect learned in branch `i`.
+
+Let `p` be the current first-person probability that one generic future cell
+offers water.
+
+If no future opportunity appears, only `O` plans exist. If it appears, the
+individual may choose between ordinary and reuse plans.
+
+Availability is analytically marginalized rather than expanded into another
+simulated subjective outcome:
+
+```text
+informed =
+  sum_i q_i * [
+      (1-p) * max_j O_ij
+      + p * max(max_j O_ij, max_j R_ij)
+  ]
+
+frozen =
+  (1-p) * max_j sum_i q_i O_ij
+  + p * max(
+      max_j sum_i q_i O_ij,
+      max_j sum_i q_i R_ij
+    )
+
+information_value = informed - frozen
+```
+
+The informed policy knows the learned effect branch after the current trial.
+The frozen comparator may still observe whether a future action opportunity
+exists, but cannot condition its action choice on the unknown effect.
+
+Therefore `information_value >= 0` is the value of learning the action effect,
+not the expected physical payoff of the future action added as a separate
+curiosity bonus.
+
+### Branch and cost discipline
+
+The subjective Stage-1 envelope remains:
+
+1. no initial water target;
+2. water + RMS-positive effect;
+3. water + RMS-negative effect.
+
+The future availability event is not an additional simulated effect branch.
+However all ordinary and future-reuse plan cells are actually simulated and
+charged before comparison. There is no early stop or value-of-computation rule.
+
+The future opportunity probability is frozen during this calculation. The
+kernel does not recursively update the map or run another frontier prior after
+the hypothetical observation.
+
+### Explicit limitations
+
+This remains a one-opportunity approximation:
+
+- it represents one future matching opportunity only;
+- the future opportunity is one generic movement away;
+- it uses the current first-person water-modality probability rather than a
+  learned temporal hazard;
+- it does not claim the current source persists;
+- it does not recursively value subsequent information.
+
+Those restrictions keep Stage 1 bounded and auditable. More general recurrence,
+change detection or latent ecological causes remain later-stage questions.
+
+No runtime policy or scientific world is authorized by this kernel.
