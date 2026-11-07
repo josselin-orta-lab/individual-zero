@@ -1,8 +1,10 @@
 # Stage 1 — first contact: decision required before any implementation
 
-**Status: OPEN DECISION, NOT IMPLEMENTED.** The leading option changes the
-genome, hence the definition of the individual. Per the owner's working rules
-it is consigned here, not crossed silently.
+**Status: DECIDED, 7 November 2026: the owner chose option A.** The
+implementation starts with a frozen software falsifier,
+[STAGE1_OMEGA_SOFTWARE_FALSIFIER.md](STAGE1_OMEGA_SOFTWARE_FALSIFIER.md). That
+document amends the shift direction (uniform, not along the distress gradient)
+and defers the genome schema change to its own slice.
 
 ## Blocker
 
@@ -67,4 +69,4 @@ new mechanism, and an honest negative.
     - It also fails if survival depends on `ω` only in water-poor families, which
       would signal ecology-specific calibration.
 
-Until the owner chooses A or B, no code for either is written.
+Option B is not pursued. A's falsifier 1 runs first; nothing in the genome or the live path changes before it passes.
