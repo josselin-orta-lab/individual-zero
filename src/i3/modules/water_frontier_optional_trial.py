@@ -225,10 +225,17 @@ def paid_water_frontier_optional_trial_value(
 
     plus_delta = tuple(plus["effect_delta"])
     minus_delta = tuple(minus["effect_delta"])
-    if (not any(abs(x) > 1e-12 for x in plus_delta) or
-            any(abs(a + b) > 1e-12
-                for a, b in zip(plus_delta, minus_delta))):
-        raise RuntimeError("water trial effects must be nonzero exact opposites")
+    if plus_delta == minus_delta:
+        raise RuntimeError("water trial effect branches must be distinct")
+    # The full pre-trial body after explorer travel is not exposed by
+    # Mind.simulate. To prevent hidden branch identity from leaking through
+    # clipping, require a conservative sufficient condition: at least one
+    # bodily channel has strictly opposite-signed branch deltas. Then the two
+    # directly sensed post-trial bodies differ on that channel for every
+    # possible starting value in [0,100].
+    if not any(a * b < 0.0 for a, b in zip(plus_delta, minus_delta)):
+        raise RuntimeError(
+            "water trial effect branches lack clipping-safe body separation")
 
     effect_leaves = (plus, minus)
     trial_rows = []
