@@ -40,13 +40,24 @@ under one common cognition-depleted forecast body: 27/27 are funded, information
 is positive in 9/27 and raises the meal score in 14/27, but the raw winner
 changes in **0/27**.
 
-**DRIFT DETECTED:** stop local water/food score patches and do not jump to Stage
-2. The next code slice may test only one minimal generic first-person
-future-opportunity representation needed by Stage 1. It must be empty at birth,
-paid, renaming invariant, bounded to 2-3 outcome branches and unable to read
-hidden stock, source persistence, schedules or world identity. This is not
-authorization to implement full Stage 3 change detection/latent causes/
-factorization.
+That prerequisite is now implemented narrowly. #1107 adds an empty-at-birth,
+paid generic water/token onset-recurrence memory with no position/source/token
+identity or smoothing. #1108 feeds only its personally supported recurrence
+probability into the existing Stage-1 water kernel: under exact P1.3 explorer
+stop semantics, a frozen 2/6/10-gap history moves epistemic selection from the
+#1101 result of 0/80 to **1/80**, while 27/80 explicitly decline. #1109 adds the
+storage-only life-cycle control; its current decision is exactly the existing
+branch-memory reference path and recurrence is recorded only after prior
+learning/storage work is paid.
+
+**DRIFT DETECTED:** do not tune the recurrence history, add source persistence,
+or create another local water/food heuristic. The next allowed code slice is
+one software-only **full-repertoire common-ceiling audit**: compare
+recurrence-informed explorer values against all ordinary P1.3 base alternatives
+from one shared cognition-depleted forecast body and record whether the raw
+winner changes. A zero result rejects recurrence as sufficient. No live
+recurrence-consuming policy or new world before that boundary is resolved.
+Stage 2 stays blocked; full Stage 3 remains deferred.
 
 Reuse #1026 for individuality and #1054 for the historical P5d uncertainty.
 Stages 3-6 otherwise remain deferred and gated.
