@@ -95,19 +95,31 @@ The caller must physically settle the new learning allowance exactly once.
         delta[V] += bill["vigilance"]["paid"]
         self._samples.append(_ExperiencedEffect(key, tuple(delta)))
 
-    def _support(self, key: EffectKey) -> tuple[Vector, ...]:
-        # Called only after funding a complete scan. No preference by sign,
-        # current need, world name or token spelling; exact key precedes action.
-        exact, same_action = deque(maxlen=WINDOW), deque(maxlen=WINDOW)
+    def _missing_support(self, key: EffectKey) -> tuple[Vector, ...]:
+        raise NoPersonalSupport("NO_PERSONAL_SUPPORT for action " + key[0])
+
+    def _supports(self, keys: tuple[EffectKey, ...]) -> dict[EffectKey, tuple[Vector, ...]]:
+        """Resolve many keys from one history pass, preserving old precedence/order."""
+        if type(keys) is not tuple or not keys:
+            raise ValueError("nonempty effect-key tuple required")
+        for key in keys:
+            _key(key)
+        exact = {key: deque(maxlen=WINDOW) for key in keys}
+        actions = {key[0] for key in keys}
+        same_action = {action: deque(maxlen=WINDOW) for action in actions}
         for sample in self._samples:
-            if sample.key[0] == key[0]:
-                same_action.append(sample.delta)
-                if sample.key == key:
-                    exact.append(sample.delta)
-        support = exact or same_action
-        if not support:
-            raise NoPersonalSupport("NO_PERSONAL_SUPPORT for action " + key[0])
-        return tuple(support)
+            if sample.key[0] in same_action:
+                same_action[sample.key[0]].append(sample.delta)
+            if sample.key in exact:
+                exact[sample.key].append(sample.delta)
+        result = {}
+        for key in keys:
+            support = exact[key] or same_action[key[0]]
+            result[key] = tuple(support) if support else self._missing_support(key)
+        return result
+
+    def _support(self, key: EffectKey) -> tuple[Vector, ...]:
+        return self._supports((key,))[key]
 
     def construct(self, probe: EffectKey,
                   continuations: tuple[tuple[str, EffectKey], ...],
@@ -160,14 +172,13 @@ mean. This persistence approximation is not a learned change detector.
             work_receipt["total"] = delta(budget.work, start_work)
             work_receipt["phase"] = "history_scan"
         keys = tuple(dict.fromkeys((probe, *(key for _, key in continuations))))
-        supports = {}
         scan_start = budget.work
-        for key in keys:
-            budget.spend(CognitiveWork(cycles=1, memory_items=7 * len(self._samples) + 2))
-            if work_receipt is not None:
-                work_receipt["history_scan"] = delta(budget.work, scan_start)
-                work_receipt["total"] = delta(budget.work, start_work)
-            supports[key] = self._support(key)
+        budget.spend(CognitiveWork(
+            cycles=1, memory_items=7 * len(self._samples) + 2 * len(keys)))
+        if work_receipt is not None:
+            work_receipt["history_scan"] = delta(budget.work, scan_start)
+            work_receipt["total"] = delta(budget.work, start_work)
+        supports = self._supports(keys)
         count = max(2, len(supports[probe]))
         if work_receipt is not None:
             work_receipt["phase"] = "branch_build"

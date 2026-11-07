@@ -24,16 +24,18 @@ information increment above 1e-12. All candidate revision receipts are
 NO_EXPOSURE, not successful or zero-latency revision.
 
 **DRIFT DETECTED:** do not expand spatial cognition over this unaffordable
-comparison loop. Exact decision-local payoff-cell reuse is integrated. A new
-software-only phase profile now shows the next concrete redundancy: on the
-minimal synthetic fixture, populated-history scans cost 1.8972 energy / 0.45
-vigilance versus 0.32 / 0.56 for eight unique projected cells; total decision
-cost is 2.9536 / 2.06. The empty-history fixture is 0.7872 / 1.72 total. These
-are engineering scaling observations, not survival results. Next #1061: remove
-only exact repeated history scans while preserving support semantics and the
-common exhaustive forecast body. Do not introduce budget selection, cheaper
-perceived scores, free cognition or spatial expansion yet. Keep tariffs,
-physical recovery and original panel fixed. P1.3 remains reference.
+comparison loop. Exact payoff-cell reuse and one-pass personal support
+resolution are now integrated. On the same minimal synthetic fixture, the
+populated-memory decision drops from 2.9536 energy / 2.06 vigilance to
+**1.6912 / 1.76**; history scans drop from 1.8972 / 0.45 to **0.6348 / 0.15**,
+while eight unique projected cells remain 0.32 / 0.56. Empty-history total drops
+from 0.7872 / 1.72 to **0.6672 / 1.42**. The removed scan work is still included
+only in the common conservative forecast quote and is not physically billed.
+These remain engineering scaling observations, not survival results. A
+decision-local shared history pass is the next exact reuse candidate; do not
+introduce budget selection, cheaper option-specific scores, free cognition or
+spatial expansion yet. Keep tariffs, physical recovery and original panel
+fixed. P1.3 remains reference.
 The local repertoire/memory/prior also differ, so this small unselected panel
 cannot isolate information value or support independent-population inference.
 Stage 0, #1026, #1054 and the later scientific gates remain open. No held-out
@@ -217,12 +219,13 @@ contrast, observer/RNG parity, exact receipts and pinned previous-runner default
 parity. Exact PASS/FAIL/NOT_RUN belongs to the implementation PR.
 
 The first prospective development diagnostic is complete and adverse. Exact
-duplicate-cell reuse is implemented. PR #1072 adds observer-side phase receipts
-that reconcile to existing decision work and converts them through current
-BodyLaws; it does not add cognitive work or a new policy. On two deterministic
-synthetic fixtures, repeated history scans are the dominant energy term as
-personal memory fills, while unique rollouts become the largest vigilance term.
-This identifies exact history-scan reuse as the next bounded cost correction.
-Full live ablations and the source-locked survival/revision gate remain open;
-Stage 0, #1026 and #1054 are not resolved. No selection/validation/reserve
-exposure, activation or scientific GO.
+duplicate-cell reuse is implemented. PR #1072 added observer-side phase receipts;
+PR #1073 resolves all requested supports in one paid history pass per
+construction, preserving exact/same-action semantics and counting only work
+actually executed. Its removed rescans remain only in the conservative common
+forecast quote. On the populated synthetic fixture this cuts total actual
+decision energy by about 43% and vigilance by about 15% relative to #1072.
+A decision-local shared history pass is the remaining obvious exact reuse before
+considering any bounded-choice policy. Full live ablations and the source-locked
+survival/revision gate remain open; Stage 0, #1026 and #1054 are not resolved.
+No selection/validation/reserve exposure, activation or scientific GO.

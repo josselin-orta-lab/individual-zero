@@ -166,7 +166,7 @@ class PersonalHistoryTests(unittest.TestCase):
 
     def test_no_history_read_without_funding(self):
         h, b = PersonalOutcomes(32), budget((0., 40., 40., 80., 40.))
-        with patch.object(h, "_support", side_effect=AssertionError("unpaid read")):
+        with patch.object(h, "_supports", side_effect=AssertionError("unpaid read")):
             with self.assertRaises(CognitiveFundingError):
                 h.construct(MEAL, (("again", MEAL),), b)
         self.assertEqual(b.work, CognitiveWork())
@@ -179,7 +179,10 @@ class PersonalHistoryTests(unittest.TestCase):
         with patch.object(m, "project", side_effect=AssertionError("partial forecast")):
             with self.assertRaises(NoPersonalSupport):
                 paid_personal_information(m, h, MEAL, (("rest", REST),), b)
-        self.assertEqual(b.work.cycles, 3)
+        # Setup plus one actually executed shared history pass. The missing
+        # continuation aborts before branch construction; removed rescans are
+        # not fictitiously billed.
+        self.assertEqual(b.work.cycles, 2)
         self.assertEqual(b.work.simulated_steps, 0)
         self.assertEqual(tuple(h._samples), original)
 

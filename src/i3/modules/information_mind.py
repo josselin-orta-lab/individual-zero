@@ -12,7 +12,7 @@ from .body import (CognitiveBudget, CognitiveFundingError, CognitiveWork,
                    VITAL, capacities, debit_cognition)
 from .information_value import WORK_KEYS, _add_work, paid_information_value
 from .mind import DIRS, Mind
-from .personal_outcomes import NoPersonalSupport, PersonalOutcomes, STORE_WORK
+from .personal_outcomes import PersonalOutcomes, STORE_WORK
 
 ZERO = (0.0,) * 5
 
@@ -79,13 +79,9 @@ class StationaryUnknownOutcomes(PersonalOutcomes):
         super().__init__(capacity)
         self.unknown_reads = 0
 
-    def _support(self, key):
-        # The caller has already prepaid this history scan in construct().
-        try:
-            return super()._support(key)
-        except NoPersonalSupport:
-            self.unknown_reads += 1
-            return (ZERO,)  # Not appended to experience, never inherited.
+    def _missing_support(self, key):
+        self.unknown_reads += 1
+        return (ZERO,)  # Not appended to experience, never inherited.
 
 
 class InformationMind(Mind):
@@ -161,6 +157,7 @@ class InformationMind(Mind):
         inv = self.perceive(cap, miss)
         opts = local_options(self.pos, self.map, inv)
         prepared = []
+        compatibility_scan_savings = CognitiveWork()
         self.personal.unknown_reads = 0
         try:
             for opt in opts:
@@ -183,6 +180,16 @@ class InformationMind(Mind):
                     entry["phase"] = "personal_construction"
                     construction_receipt = {}
                 continuations = continuation_options(self.pos, self.map, inv, opt)
+                support_keys = tuple(dict.fromkeys(
+                    (effect_key(opt), *(key for _, key in continuations))))
+                removed_scans = max(0, len(support_keys) - 1)
+                scan_savings = CognitiveWork(
+                    cycles=removed_scans,
+                    memory_items=7 * len(self.personal._samples) * removed_scans)
+                compatibility_scan_savings = _add_work(
+                    compatibility_scan_savings, scan_savings)
+                if entry is not None:
+                    entry["forecast_exhaustive_scan_savings"] = asdict(scan_savings)
                 unknown_before = self.personal.unknown_reads
                 outcomes = self.personal.construct(
                     effect_key(opt), continuations, budget,
@@ -195,6 +202,8 @@ class InformationMind(Mind):
             budget.spend(CognitiveWork(cycles=1, memory_items=5 * len(prepared)))
             if self._observer_cost_profile is not None:
                 self._observer_cost_profile["batch_setup"] = _work_dict_delta(budget.work, before)
+                self._observer_cost_profile["forecast_exhaustive_scan_savings"] = asdict(
+                    compatibility_scan_savings)
                 self._observer_cost_profile["phase"] = "kernel_evaluation"
             evaluation_end = budget.work
             for _, outcomes, _ in prepared:
@@ -202,7 +211,9 @@ class InformationMind(Mind):
                 evaluation_end = _add_work(evaluation_end, CognitiveWork(
                     cycles=cells + 2, simulated_steps=cells * (2 + len(self.proj_chunks)),
                     memory_items=len(outcomes) * 7 + cells * 5))
-            ceiling = _add_work(evaluation_end, CognitiveWork(cycles=cycles))
+            forecast_evaluation_end = _add_work(
+                evaluation_end, compatibility_scan_savings)
+            ceiling = _add_work(forecast_evaluation_end, CognitiveWork(cycles=cycles))
             debit_cognition(budget.body, budget.laws, ceiling)  # Quote, NOT spend.
             scored, witnesses = [], []
             cell_cache = {}

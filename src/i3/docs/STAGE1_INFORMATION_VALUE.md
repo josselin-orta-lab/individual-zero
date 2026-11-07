@@ -99,12 +99,18 @@ their own personal mean; their full uncertainty is not propagated. This is a
 fallible local-persistence approximation, not a posterior or change detector.
 All constructed signals are body_only. It grants no inventory or spatial facts.
 With N stored items, A continuations, Q unique queried keys, B branches and
-S returned support vectors, construction prepays:
+S returned support vectors, construction now resolves all Q supports in one
+bounded history pass and prepays:
 
 ```text
-cycles       = 1 + Q + 1
-memory_items = (2 + 3*A) + Q*(7*N + 2) + 5*S + B*(7 + 5*A)
+cycles       = 1 + 1 + 1
+memory_items = (2 + 3*A) + (7*N + 2*Q) + 5*S + B*(7 + 5*A)
 ```
+
+The one-pass resolver keeps a WINDOW=3 deque per requested exact key and action
+while traversing the same history once, then applies exact-key precedence and
+same-action fallback in the original order. It is not a learned index and is
+not retained across constructions or decisions.
 
 `paid_personal_information` distinguishes `construction_work`, kernel `work`
 and combined `total_work`, all on the same real allowance. The original tests
@@ -218,11 +224,21 @@ as memory fills, while unique rollouts dominate **vigilance**. This is an
 engineering scaling observation, not a survival result and not evidence that
 the same ranking holds on larger maps with more options.
 
-The next cost-only correction may therefore remove exact repeated history scans,
-but must preserve returned support sets, unknown-query semantics, paid work
-truth and the common forecast body. Skipping a unique query or choosing a
-smaller cognitive budget would instead be policy-changing and belongs to a
-separate prospective mechanism.
+PR #1073 implements that first scan correction. On the same software fixture,
+the empty-history decision falls from 0.7872 energy / 1.72 vigilance to
+**0.6672 / 1.42**; its three per-option shared scans cost 0.0636 / 0.15.
+With 136 synthetic personal samples, total cost falls from 2.9536 / 2.06 to
+**1.6912 / 1.76**. History scanning falls from 1.8972 / 0.45 to **0.6348 /
+0.15**, while the eight unique projected cells remain 0.32 / 0.56.
+
+The removed scan work is added back only to the common **forecast quote** for
+this cost-isolation slice, so funded score semantics remain conservative and
+comparable to the pre-reuse candidate; that compatibility amount is never
+physically billed. On the populated fixture, history still leads energy but
+unique rollouts now clearly lead vigilance. The next exact redundancy, if
+pursued, is reuse of one decision-local history pass across option constructions.
+Skipping a unique support query or choosing a smaller cognitive budget would
+instead be policy-changing.
 
 The old bonus terms are absent from the experimental score, not computed and
 then added or discarded. Compatibility witness fields are zero and marked
@@ -266,12 +282,14 @@ populations. The original report, studies, allocations and P4 reserve are unchan
 
 The bounded development diagnostic is complete and adverse. Exact decision-local
 cell reuse is the first cost correction because it removes only duplicate work
-while preserving the exhaustive forecast body and score semantics. Synthetic
-phase accounting now shows repeated personal-history scans dominating energy
-once memory is populated, while unique rollouts dominate vigilance on the
-minimal fixture. The next bounded intervention is exact scan reuse, not a
-policy-changing budget allocator. Spatial information remains deferred until
-the paid comparison itself is sustainable.
+while preserving the exhaustive forecast body and score semantics. Synthetic phase accounting identified repeated personal-history scans as the
+dominant populated-memory energy term. One-pass support resolution per
+construction now removes two thirds of that scan work on the minimal fixture
+while preserving the old exhaustive common forecast quote. Remaining populated
+scan energy is 0.6348 versus 0.32 for unique rollouts; rollout vigilance is
+0.56 versus 0.15 for scans. A decision-local shared scan is the next possible
+exact reuse before any policy-changing budget allocator. Spatial information
+remains deferred until the paid comparison itself is sustainable.
 Do not tune a rescue prior, rewrite Competition, or expand observers instead.
 Full live ablations and the source/genotype/case/margin/multiplicity/stopping/
 compute-locked survival and revision gate remain open. Stage 0, #1026 and #1054
