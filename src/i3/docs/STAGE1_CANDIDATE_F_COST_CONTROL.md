@@ -128,3 +128,81 @@ The next step, only if this primitive is software-valid, is to design the
 smallest continuing-life controller with authentic learning/state custody.
 No fresh development allocation should be opened before that controller has an
 explicit falsifier and observer contract.
+
+
+## Continuing-life state custody prerequisite
+
+The one-decision upper-cost falsifier is not sufficient by itself for a life.
+A Candidate-F shadow that keeps its own non-motor choices would accumulate a
+fictional first-person history.
+
+The next software-only custody layer therefore enforces this rule:
+
+> **the shadow computes from the control individual's actual lived history, not
+> from the actions the shadow wanted to execute.**
+
+Before each future shadow decision,
+`synchronize_candidate_shadow(reference, candidate)` deep-copies the common
+P1.3 state retained by the actual reference controller:
+
+- effects statistics;
+- personal map/history/visible cells/position;
+- token mapping;
+- TD values and replay buffer;
+- previous action state;
+- Competition accumulators and intention;
+- perception RNG and option-order RNG states.
+
+The copy is experimental counterfactual apparatus, not cognition performed by
+the individual, and is not billed. The **shadow decision itself remains fully
+executed and paid** by the upper-cost primitive.
+
+The alignment deliberately preserves Candidate-F-private state:
+
+- inherited omega;
+- paid personal branch memory and record count;
+- experimental architecture/cost counters.
+
+Mutable common structures are deep-copied. The shadow cannot mutate the real
+P1.3 effects, map, values or replay buffer.
+
+### Learning from the action that really happened
+
+After P1.3's selected action is physically applied, the shadow may retain one
+extra personal branch-memory sample only if:
+
+1. ordinary P1.3 learning was funded;
+2. an additional `STORE_WORK` block is physically affordable and prepaid;
+3. the life is still alive.
+
+The sample key comes from **P1.3's actual admitted action**, never the shadow
+candidate action.
+
+P1.3 sees the body after shadow cognition. Therefore its stored `last.before`
+already excludes the earlier shadow debit. The branch sample removes only the
+P1.3 decision work from the later post-physics delta. This recovers the
+personally lived action consequence without double-correcting shadow cognition.
+
+The common learned model is not recomputed a second time for the shadow. At the
+next decision it is copied from the reference controller again. The shadow's
+extra branch memory is the only separately retained learned component required
+by Candidate-F information scoring.
+
+This yields a conservative continuing-life cost shape:
+
+```text
+decision:
+    paid Candidate-F shadow computation
+  + paid P1.3 decision computation
+
+learning:
+    ordinary paid P1.3 learning
+  + paid Candidate-F branch STORE_WORK when affordable
+```
+
+Candidate-F therefore receives no free private memory, while its non-motor
+choice cannot create a fake action/outcome history.
+
+This is still software custody, not a runtime policy and not a scientific life.
+The next slice must compose this custody with the one-decision controller and
+prove multi-step P1.3 action parity before any fresh allocation.
