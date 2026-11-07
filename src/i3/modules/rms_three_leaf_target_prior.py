@@ -34,6 +34,43 @@ def _work_delta(after, before):
     }
 
 
+def rms_three_leaf_target_prior_work_ceiling(
+        personal_map, memory: ReferenceBranchMemory) -> CognitiveWork:
+    """Exact structural work quote without reading empirical sample values.
+
+    This is a funding formula, not cognition. The paid implementation below
+    still performs every map/memory read. The quote depends only on container
+    sizes and therefore cannot leak sample signs, effects or World facts.
+    """
+    if type(personal_map) is not dict:
+        raise ValueError("plain first-person map required")
+    if not isinstance(memory, ReferenceBranchMemory):
+        raise ValueError("ReferenceBranchMemory required")
+    retained = len(memory._samples)
+    support = min(retained, 3)
+
+    # paid_frontier_modality_prior
+    cycles = 1
+    memory_items = 2 * len(personal_map) + 8
+
+    # ReferenceBranchMemory.recent_generic_effects
+    cycles += 1
+    memory_items += 7 * retained + 2
+
+    # paid_recent_rms_zero_mean_effect_prior construction
+    if support < 2:
+        cycles += 1
+        memory_items += 2
+    else:
+        cycles += 2
+        memory_items += 5 * support + 12
+
+    # RMS target composition
+    cycles += COMPOSE_WORK.cycles
+    memory_items += COMPOSE_WORK.memory_items
+    return CognitiveWork(cycles=cycles, memory_items=memory_items)
+
+
 def paid_rms_three_leaf_target_prior(
         personal_map, memory: ReferenceBranchMemory, target_modality,
         budget: CognitiveBudget, *, work_receipt: dict | None = None,
@@ -171,4 +208,5 @@ def paid_rms_three_leaf_target_prior(
 __all__ = [
     "COMPOSE_WORK", "SCHEMA", "TARGETS",
     "paid_rms_three_leaf_target_prior",
+    "rms_three_leaf_target_prior_work_ceiling",
 ]
