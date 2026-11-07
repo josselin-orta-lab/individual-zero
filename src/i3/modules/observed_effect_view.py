@@ -50,6 +50,14 @@ class _ObservedEffectView:
             return self._effect_delta, 0.0
         return self._owner._read_plan_prediction(key)
 
+    def _simulate_candidate_f(self, body, plan, horizon, budget):
+        """Preserve this proxy through Candidate F helper dispatch."""
+        helper = getattr(self._owner, "_simulate_candidate_f", None)
+        function = getattr(helper, "__func__", None)
+        if not callable(function):
+            raise ValueError("candidate_f helper unavailable on owner model")
+        return function(self, body, plan, horizon, budget)
+
 
 def paid_simulate_after_observed_effect(
         model, body, plan, horizon, effect_key, effect_delta,
