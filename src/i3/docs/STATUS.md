@@ -12,6 +12,27 @@ That integration changed documentation and priorities only. The subsequent
 Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
+## Latest diagnostic: local candidate not ready for the Stage-1 gate
+
+7 November 2026, [original results and complete traces](studies/stage1-local-information-development/RESULTS.md),
+PR #1070: 24 prospectively specified development lives, no retries or runtime
+changes. Candidate 0/12 survivors, 12 dehydration deaths, 1189/1422 inactive
+steps (83.61%), zero positive water/food uptake. Reference 3/12 survivors,
+563/3332 inactive steps (16.90%). Candidate's 194 sleep steps all lose net
+vigilance including cognition; none of 1409 paid option scores has a positive
+information increment above 1e-12. All candidate revision receipts are
+NO_EXPOSURE, not successful or zero-latency revision.
+
+**DRIFT DETECTED:** do not expand spatial cognition over this unaffordable
+exhaustive comparison loop. Next #1061: remove redundant paid computation or
+specify a bounded complete-choice calculation, separating exact-result reuse
+from policy-changing budget rules. Keep tariffs, physical recovery and original
+panel fixed; no tuning on these exposed conditions. P1.3 remains reference.
+The local repertoire/memory/prior also differ, so this small unselected panel
+cannot isolate information value or support independent-population inference.
+Stage 0, #1026, #1054 and the later scientific gates remain open. No held-out
+world, reserve exposure, activation or scientific GO.
+
 ## Current reference and observed limits
 
 | Area | Implemented / observed status |
@@ -189,8 +210,9 @@ Software checks include actual acquired-history use, a synthetic history-to-moto
 contrast, observer/RNG parity, exact receipts and pinned previous-runner default
 parity. Exact PASS/FAIL/NOT_RUN belongs to the implementation PR.
 
-Next: a bounded prospectively specified development diagnostic of its own
-histories and failures, then the missing first-person spatial information model.
-Do not tune a rescue prior or expand observers. Full live ablations and the
-source-locked survival/revision gate remain open; Stage 0, #1026 and #1054 are
-not resolved. No selection/validation/reserve exposure, activation or scientific GO.
+The first prospective development diagnostic is now complete and adverse; see
+the latest diagnostic above. Address the paid-comparison bottleneck before the
+missing spatial model, without a rescue prior or another observer framework.
+Full live ablations and the source-locked survival/revision gate remain open;
+Stage 0, #1026 and #1054 are not resolved. No selection/validation/reserve
+exposure, activation or scientific GO.

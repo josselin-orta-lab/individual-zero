@@ -5,6 +5,16 @@ The [engine contract](../engine.json) has no active entrypoints; the
 [registry](../../../config/engine-registry.json) keeps I1 active.
 A green software test is not a scientific GO.
 
+## Current handoff after the 7 November development diagnostic
+
+[Original 24-life results](studies/stage1-local-information-development/RESULTS.md):
+local_information_v1 has 0/12 survivors and 83.61% inactivity; reference 3/12 and
+16.90%. Every candidate sleep step loses net vigilance including paid cognition.
+**Next #1061: make the existing paid comparison sustainable before spatial
+expansion.** Preserve prices and originals; do not tune on this exposed panel.
+P1.3 remains the reference. This is an adverse development diagnostic, not an
+isolated information-value effect or a selected-genome scientific gate.
+
 ## Read for the next intervention
 
 1. [Current status](STATUS.md): implemented source, original evidence and open limits.
@@ -135,6 +145,6 @@ default P1.3 reference remains unchanged and the policy is bound before birth.
 
 This prototype uses local primitive actions, a declared stationary unknown
 prior and a shared episodic-memory partition. It is not spatial information
-value or a clean one-mechanism survival gate. Next: a bounded prospective
-development diagnostic of its actual histories/failures and the missing spatial
-model, not more observers or a rescue rule. All original open gates remain open.
+value or a clean one-mechanism survival gate. Its first frozen development
+diagnostic is now complete and adverse; see the current handoff above. The
+missing spatial model follows the funding decision. All original gates remain open.
