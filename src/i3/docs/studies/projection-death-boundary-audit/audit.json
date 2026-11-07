@@ -1,0 +1,70 @@
+{
+ "algebraic_endpoint": {
+  "dead_body": [
+   80.0,
+   0.0,
+   60.0,
+   90.0,
+   80.0
+  ],
+  "first_dead_step": 50,
+  "trace": {
+   "49": {
+    "body": [80.0, 0.1999999999999993, 60.4, 89.8, 80.0],
+    "dead": false
+   },
+   "50": {
+    "body": [80.0, 0.0, 60.0, 90.0, 80.0],
+    "dead": true
+   }
+  }
+ },
+ "candidate_promoted": false,
+ "classification": "FLOAT_ACCUMULATION_DELAYS_REFERENCE_DEATH_BOUNDARY",
+ "death_endpoint_body_delta_repeated_minus_algebraic": [
+  0.0,
+  0.0,
+  -0.40000000000020464,
+  0.20000000000014495,
+  0.0
+ ],
+ "decimal_food": {
+  "49": "0.2",
+  "50": "0.0",
+  "51": "-0.2"
+ },
+ "drift": [0.0, -0.2, -0.4, 0.2, 0.0],
+ "event_exact_final_body": [80.0, 0.0, 59.99999999999999, 90.0, 80.0],
+ "historical_gate_changed": false,
+ "initial_restore_need": 0.0,
+ "lives": 0,
+ "omega_rerun_authorized": false,
+ "per_step_final_body": [80.0, 0.0, 59.599999999999795, 90.20000000000014, 80.0],
+ "protocol": "STAGE1_PROJECTION_DEATH_BOUNDARY_AUDIT.md",
+ "repeated_unit": {
+  "dead_body": [80.0, 0.0, 59.599999999999795, 90.20000000000014, 80.0],
+  "first_dead_step": 51,
+  "trace": {
+   "49": {
+    "body": [80.0, 0.20000000000000207, 60.39999999999979, 89.80000000000014, 80.0],
+    "dead": false
+   },
+   "50": {
+    "body": [80.0, 2.0539125955565396e-15, 59.999999999999794, 90.00000000000014, 80.0],
+    "dead": false
+   },
+   "51": {
+    "body": [80.0, 0.0, 59.599999999999795, 90.20000000000014, 80.0],
+    "dead": true
+   }
+  }
+ },
+ "restore": [3.0, 4.0, -0.14999999999999997],
+ "schema": "i3-projection-death-boundary-audit/v1",
+ "source_case": {
+  "body": [80.0, 10.0, 80.0, 80.0, 80.0],
+  "fixture": "sleep_learned",
+  "genome": "midpoint"
+ },
+ "world_access": false
+}
