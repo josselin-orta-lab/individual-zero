@@ -324,3 +324,71 @@ A future frontier-bootstrap composition must keep those layers distinct.
 Observing `WATER_MODALITY` can make `boire` available to the subjective
 branch, but must not provide a favorable drinking effect. That effect remains
 zero-mean and unknown until the nested trial model.
+
+
+## Bounded three-leaf target composition
+
+The source scenario limits Stage-1 subjective simulation to **two or three
+branches**. Therefore the modality and effect priors must not be multiplied into
+a generic six-leaf tree.
+
+`modules/three_leaf_target_prior.py::paid_three_leaf_target_prior` performs a
+target-specific composition that remains within three leaves.
+
+For one target modality `m`:
+
+```text
+NO_TARGET_MODALITY               P = 1 - p(m)
+TARGET_MODALITY_TRIAL_POSITIVE   P = p(m) * 0.5
+TARGET_MODALITY_TRIAL_NEGATIVE   P = p(m) * 0.5
+```
+
+`p(m)` comes only from the first-person modality prior. The positive/negative
+effect pair comes only from the zero-mean stake prior. Therefore:
+
+- target identity changes only the observation probability;
+- target identity cannot rotate the effect direction toward a favorable bodily
+  channel;
+- the full three-leaf expected external bodily effect remains exactly zero.
+
+For a water-specific valuation, `NO_TARGET_MODALITY` aggregates
+`NO_RESOURCE` plus `TOKEN_MODALITY`. Their individual probability masses are
+retained in `non_target_probability_breakdown`.
+
+This aggregation means only that **token-specific information receives no
+credit in the water-only engineering valuation**. It does not claim that the
+real individual would perceive a token and an empty cell identically, and it
+does not remove token perception from runtime.
+
+The symmetric statement holds for a token-specific valuation.
+
+If current distress is locally flat, the zero-mean effect prior returns no
+stake-relevant uncertainty and the composition creates no trial leaves.
+
+The composition pays:
+
+1. the full first-person modality scan;
+2. the zero-mean stake-prior construction;
+3. one cycle plus 18 memory items for composition bookkeeping.
+
+It does not simulate a plan, reveal a World fact, execute an action or mutate a
+Mind.
+
+### Why this is not yet the live frontier score
+
+The three leaves establish the **probability/effect envelope** only. A later
+kernel still has to model the temporal sequence correctly:
+
+1. follow the existing explorer prefix;
+2. observe whether the target modality became available;
+3. if it did, decide from the individual's own predicted stakes whether one
+   unsupported trial is worth taking;
+4. only after the trial body's effect is observed may branch-local replanning
+   reuse that effect.
+
+The trial must not be automatic merely because the modality appeared. Otherwise
+the composition would replace an explicit curiosity bonus with an implicit
+"always sample the unknown resource" rule.
+
+No fresh development allocation should be opened until that decision sequence
+is represented and tested inside the same at-most-three-leaf envelope.
