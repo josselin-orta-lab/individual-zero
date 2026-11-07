@@ -94,7 +94,8 @@ def _reward(model, body) -> float:
 
 def paid_information_value(model: PersonalProjection, outcomes: tuple[SubjectiveOutcome, ...],
                            budget: CognitiveBudget, *, perceive_cost: bool = True,
-                           forecast_work: CognitiveWork | None = None) -> dict:
+                           forecast_work: CognitiveWork | None = None,
+                           cell_cache: dict | None = None) -> dict:
     """Score one probe and one contingent continuation in existing value units.
 
 Both alternatives use the SAME paid payoff matrix: sum_o max_a sum_{b in o}
@@ -119,45 +120,86 @@ must settle budget.work normally; an allowance is not a World debit receipt.
     if forecast_work is not None and (
             not isinstance(forecast_work, CognitiveWork) or not perceive_cost):
         raise ValueError("common forecast work requires an actual-cost forecast")
+    if cell_cache is not None and type(cell_cache) is not dict:
+        raise ValueError("decision-local cell cache must be a plain dict")
+    if cell_cache is not None and forecast_work is None:
+        raise ValueError("cell reuse requires an explicit common forecast work ceiling")
     original_work, original_body = budget.work, budget.remaining
     cells = len(outcomes) * len(names)
     # One preparation block; scan probe/continuation vectors and signal weights.
     prep = CognitiveWork(cycles=1, memory_items=len(outcomes) * 7 + cells * 5)
     budget.spend(prep)
     drift = model.drift()
-    # Two explicit one-step transitions and one existing geometric projection
-    # per matrix cell; one score block per cell and one expectation/replan block.
-    remaining_work = CognitiveWork(cycles=cells + 1,
-                                  simulated_steps=cells * (2 + len(model.proj_chunks)))
-    quoted_work = _add_work(budget.work, remaining_work)
-    quoted_body, _ = debit_cognition(budget.body, budget.laws, quoted_work)
-    forecast_body = quoted_body if perceive_cost else original_body
+    # A caller may reuse exact matrix cells only within one decision. The
+    # common forecast body remains based on the caller's exhaustive ceiling, so
+    # cheaper execution cannot make an option look better merely by predicting
+    # a cheaper body. The cache key contains only bodies derived from subjective
+    # deltas; no World fact or outcome label enters it.
+    forecast_body = original_body
     if forecast_work is not None:
-        # The caller can compare a whole batch at one conservative cost point.
-        # This predicts later work, never spends or bills that work here.
-        if any(getattr(forecast_work, k) < getattr(quoted_work, k) for k in WORK_KEYS):
-            raise ValueError("common forecast cannot omit this call's actual work")
         forecast_body, _ = debit_cognition(budget.body, budget.laws, forecast_work)
-    values, groups = [], {}
+    planned = []
+    seen_misses = set()
+    miss_count = 0
     for branch in outcomes:
         effects = dict(branch.continuations)
         row = []
         for name in names:
-            budget.spend(CognitiveWork(cycles=1, simulated_steps=2))
             first = _advance(forecast_body, branch.probe_delta)
             second = _advance(first, effects[name])
-            # Still execute/pay the geometric projection for terminal branches,
-            # using an absorbing forecast, never revival through learned sleep.
-            dead = any(second[k] <= 0 for k in VITAL)
-            projection, _ = model.project(
-                second, ((0.0,) * 5, None) if dead else drift, budget)
-            phi = model.feats(second)
-            r_first, r_second = _reward(model, first), _reward(model, second)
-            value = fsum((1 - g) * (r_first + g * (r_second + g * (
-                -model.d_max / (1 - g) if dead else model.value(k, phi, projection))))
-                         for k, g in enumerate(model.gammas)) / 3
-            if not isfinite(value):
-                raise ValueError("nonfinite subjective projection; no valid score")
+            key = (first, second)
+            if cell_cache is not None and key not in cell_cache and key not in seen_misses:
+                seen_misses.add(key)
+                miss_count += 1
+            elif cell_cache is None:
+                miss_count += 1
+            row.append((name, first, second, key))
+        planned.append(row)
+    remaining_work = CognitiveWork(
+        cycles=miss_count + 1,
+        simulated_steps=miss_count * (2 + len(model.proj_chunks)))
+    quoted_work = _add_work(budget.work, remaining_work)
+    quoted_body, _ = debit_cognition(budget.body, budget.laws, quoted_work)
+    if forecast_work is None:
+        forecast_body = quoted_body if perceive_cost else original_body
+        # No cache is allowed on this path, so planned bodies were only a work
+        # count prepass. Rebuild them from the actual forecast body below.
+        planned = []
+        for branch in outcomes:
+            effects = dict(branch.continuations)
+            row = []
+            for name in names:
+                first = _advance(forecast_body, branch.probe_delta)
+                second = _advance(first, effects[name])
+                row.append((name, first, second, None))
+            planned.append(row)
+    elif any(getattr(forecast_work, k) < getattr(quoted_work, k) for k in WORK_KEYS):
+        raise ValueError("common forecast cannot omit this call's actual work")
+    values, groups = [], {}
+    reused = 0
+    for branch, planned_row in zip(outcomes, planned):
+        row = []
+        for name, first, second, key in planned_row:
+            if cell_cache is not None and key in cell_cache:
+                value = cell_cache[key]
+                reused += 1
+            else:
+                budget.spend(CognitiveWork(cycles=1, simulated_steps=2))
+                # Still execute/pay the geometric projection for terminal
+                # branches, using an absorbing forecast, never revival through
+                # learned sleep.
+                dead = any(second[k] <= 0 for k in VITAL)
+                projection, _ = model.project(
+                    second, ((0.0,) * 5, None) if dead else drift, budget)
+                phi = model.feats(second)
+                r_first, r_second = _reward(model, first), _reward(model, second)
+                value = fsum((1 - g) * (r_first + g * (r_second + g * (
+                    -model.d_max / (1 - g) if dead else model.value(k, phi, projection))))
+                             for k, g in enumerate(model.gammas)) / 3
+                if not isfinite(value):
+                    raise ValueError("nonfinite subjective projection; no valid score")
+                if cell_cache is not None:
+                    cell_cache[key] = value
             row.append(value)
         values.append(row)
         # Body channels are directly perceived by current I3. An unseen latent
@@ -187,6 +229,8 @@ must settle budget.work normally; an allowance is not a World debit receipt.
             "common_best_continuations": tuple(n for n, v in zip(names, means) if v == uninformed),
             "conditional_choices": choices, "continuation_order": names,
             "branch_values": values, "work": asdict(work),
+            "cell_reuse": {"computed": miss_count, "reused": reused,
+                           "cache_size": len(cell_cache) if cell_cache is not None else 0},
             "body_after_computation": budget.remaining, "forecast_start_body": forecast_body,
             "perceived_incremental_cost": "actual" if perceive_cost else "zero_diagnostic_still_payable",
             "cost_is_physical_settlement_receipt": False}

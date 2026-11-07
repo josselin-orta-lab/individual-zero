@@ -24,10 +24,13 @@ information increment above 1e-12. All candidate revision receipts are
 NO_EXPOSURE, not successful or zero-latency revision.
 
 **DRIFT DETECTED:** do not expand spatial cognition over this unaffordable
-exhaustive comparison loop. Next #1061: remove redundant paid computation or
-specify a bounded complete-choice calculation, separating exact-result reuse
-from policy-changing budget rules. Keep tariffs, physical recovery and original
-panel fixed; no tuning on these exposed conditions. P1.3 remains reference.
+exhaustive comparison loop. The first correction under #1061 is now exact
+decision-local payoff-cell reuse: duplicate subjective first/second-body cells
+share one already paid projection, while every option keeps the original
+exhaustive common forecast body. This removes only repeated model work; it does
+not introduce a budget-selection policy, cheaper perceived score, free cognition,
+or cross-decision cache. Keep tariffs, physical recovery and original panel
+fixed; no tuning on these exposed conditions. P1.3 remains reference.
 The local repertoire/memory/prior also differ, so this small unselected panel
 cannot isolate information value or support independent-population inference.
 Stage 0, #1026, #1054 and the later scientific gates remain open. No held-out
@@ -211,8 +214,12 @@ contrast, observer/RNG parity, exact receipts and pinned previous-runner default
 parity. Exact PASS/FAIL/NOT_RUN belongs to the implementation PR.
 
 The first prospective development diagnostic is now complete and adverse; see
-the latest diagnostic above. Address the paid-comparison bottleneck before the
-missing spatial model, without a rescue prior or another observer framework.
-Full live ablations and the source-locked survival/revision gate remain open;
-Stage 0, #1026 and #1054 are not resolved. No selection/validation/reserve
-exposure, activation or scientific GO.
+the latest diagnostic above. Exact duplicate-cell reuse is implemented as the
+first cost-only correction. Its software falsifier requires identical kernel
+values/conditional choices/common forecast body versus uncached execution when
+both are funded, alongside strictly lower actual declared work when duplicates
+exist. Remaining unique work must be diagnosed on unexposed software fixtures
+before any policy-changing bounded allocation or spatial expansion. Full live
+ablations and the source-locked survival/revision gate remain open; Stage 0,
+#1026 and #1054 are not resolved. No selection/validation/reserve exposure,
+activation or scientific GO.
