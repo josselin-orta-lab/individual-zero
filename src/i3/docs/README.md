@@ -96,11 +96,21 @@ So Stage 1 is no longer blocked by information arithmetic or by a hidden
 cost-parity ambiguity. It is blocked by P1.3's sparse representation of
 **future matching opportunities**.
 
-**Current handoff:** no more local water/food score patches. Before another live
-Stage-1 candidate, test one minimal generic first-person future-opportunity
-representation, empty at birth and learned from personal observations only.
-This is an evidence-driven Stage-1 prerequisite, not the start of full Stage 3.
-Stage 2 remains blocked.
+The minimal prerequisite is now implemented in
+[STAGE1_FUTURE_OPPORTUNITY.md](STAGE1_FUTURE_OPPORTUNITY.md). #1107 retains only
+paid personal water/token onset recurrence, empty at birth and with no
+source/position/token identity or smoothing. #1108 feeds that personal
+recurrence into the exact-prefix water kernel: on the frozen 2/6/10-gap
+software history, epistemic selection moves from #1101's **0/80** to **1/80**,
+with 27/80 explicit declines. #1109 then gives recurrence a real storage-only
+life cycle whose current decision remains exactly the branch-memory P1.3
+control.
+
+**Current handoff:** this is evidence that future-opportunity representation is
+a real dependency, not evidence that it is sufficient. Do not tune recurrence
+or integrate a live consumer yet. The next bounded test is a full-repertoire,
+common-ceiling raw-winner audit comparing recurrence-informed explorers against
+all ordinary P1.3 alternatives. Stage 2 remains blocked.
 
 P1.3 remains the reference. I3 remains unregistered. No validation or reserve
 world has been opened.
