@@ -32,6 +32,7 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
     started = time.perf_counter()
     if decision_policy not in (
             "reference", "local_information_v1", "reference_branch_memory_v1",
+            "reference_opportunity_memory_v1",
             "reference_frontier_information_v1"):
         raise ValueError("unknown decision policy")
     if decision_policy != "reference" and (
@@ -72,6 +73,14 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
             "score": "P1.3_reference_unchanged",
             "branch_memory": "global18_recent_personal_effects_v1",
             "td_memory": "P1.3_unchanged"}
+    elif decision_policy == "reference_opportunity_memory_v1":
+        manifest["experimental_policy"] = {
+            "name": decision_policy,
+            "score": "P1.3_reference_unchanged",
+            "branch_memory": "global18_recent_personal_effects_v1",
+            "opportunity_memory": "generic_onset_recurrence_latest3_v1",
+            "opportunity_use": "STORAGE_ONLY_NOT_READ_BY_DECISION",
+            "td_memory": "P1.3_unchanged"}
     elif decision_policy == "reference_frontier_information_v1":
         manifest["experimental_policy"] = {
             "name": decision_policy,
@@ -100,6 +109,10 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
     elif decision_policy == "reference_branch_memory_v1":
         from i3.modules.reference_memory_mind import ReferenceBranchMemoryMind
         mind_type = ReferenceBranchMemoryMind
+    elif decision_policy == "reference_opportunity_memory_v1":
+        from i3.modules.reference_opportunity_memory_mind import (
+            ReferenceOpportunityMemoryMind)
+        mind_type = ReferenceOpportunityMemoryMind
     elif decision_policy == "reference_frontier_information_v1":
         from i3.modules.reference_frontier_information_mind import (
             ReferenceFrontierInformationMind)
@@ -274,7 +287,8 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
             out["personal_outcomes_sha256"] = digest(
                 [asdict(s) for s in mind.personal._samples])
     elif decision_policy in (
-            "reference_branch_memory_v1", "reference_frontier_information_v1"):
+            "reference_branch_memory_v1", "reference_opportunity_memory_v1",
+            "reference_frontier_information_v1"):
         out["experimental_policy"] = dict(manifest["experimental_policy"])
         out["branch_effect_memory"] = {
             "capacity": mind.branch_memory._samples.maxlen,
@@ -282,6 +296,12 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
             "recorded": mind.branch_records,
             "td_capacity": mind.m_max,
             "td_retained": len(mind.buffer)}
+        if decision_policy == "reference_opportunity_memory_v1":
+            out["opportunity_recurrence_memory"] = {
+                "schema": "i3-opportunity-recurrence-runtime-summary/v1",
+                "recorded": mind.opportunity_records,
+                "snapshot": mind.opportunity_memory.snapshot(),
+                "decision_use": "STORAGE_ONLY_NOT_READ_BY_DECISION"}
         if decision_policy == "reference_frontier_information_v1":
             out["frontier_information"] = {
                 "scope": "one_generic_new_cell_water_only",
@@ -294,6 +314,9 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
         if observer_mind_digest:
             out["branch_outcomes_sha256"] = digest(
                 [asdict(s) for s in mind.branch_memory._samples])
+            if decision_policy == "reference_opportunity_memory_v1":
+                out["opportunity_recurrence_sha256"] = digest(
+                    mind.opportunity_memory.snapshot())
     if effect_readout != "full" or observer_decision_diagnostics:
         out["effect_readout"] = effect_readout
     if score_addend_mode != "normal" or observer_decision_diagnostics:
