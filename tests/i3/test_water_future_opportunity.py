@@ -69,9 +69,11 @@ def make_mind():
 class FutureOpportunityReductionTests(unittest.TestCase):
     def test_zero_future_opportunity_collapses_information_to_zero(self):
         conditional = (.5, .5)
+        # Same ordinary best continuation in both effect branches:
+        # any information must therefore come from future matching-action use.
         ordinary = (
-            {"wait": 1.0, "sleep": 2.0},
             {"wait": 2.0, "sleep": 1.0},
+            {"wait": 1.5, "sleep": 1.0},
         )
         reuse = (
             {"wait": 10.0, "sleep": 0.0},
@@ -80,8 +82,8 @@ class FutureOpportunityReductionTests(unittest.TestCase):
         result = _future_opportunity_reduction(
             conditional, ordinary, reuse, 0.0)
         self.assertEqual(result["information_value"], 0.0)
-        self.assertAlmostEqual(result["informed_value"], 1.5)
-        self.assertAlmostEqual(result["frozen_value"], 1.5)
+        self.assertAlmostEqual(result["informed_value"], 1.75)
+        self.assertAlmostEqual(result["frozen_value"], 1.75)
 
     def test_future_opportunity_can_make_effect_information_positive(self):
         conditional = (.5, .5)
