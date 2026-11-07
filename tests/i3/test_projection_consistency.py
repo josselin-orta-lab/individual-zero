@@ -29,7 +29,7 @@ class ProjectionAccountingTests(unittest.TestCase):
     def test_default_is_reference_and_unknown_mode_rejected(self):
         mind = P.make_mind(G.midpoint())
         self.assertEqual(mind.projection_accounting, "chunk_end")
-        self.assertEqual(PROJECTION_ACCOUNTING, ("chunk_end", "trapezoid", "event_quadratic", "event_quartic"))
+        self.assertEqual(PROJECTION_ACCOUNTING, ("chunk_end", "trapezoid", "event_quadratic", "event_quartic", "event_local_quadratic4"))
         mind.projection_accounting = "midpoint"
         with self.assertRaises(ValueError):
             mind.project((80.,) * 5, mind._drift)
