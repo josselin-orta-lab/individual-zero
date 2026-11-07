@@ -237,7 +237,8 @@ def paid_water_one_future_opportunity_value(
         model, memory: ReferenceBranchMemory, explore_plan,
         ordinary_continuations, horizon, budget: CognitiveBudget, *,
         forecast_work: CognitiveWork | None = None,
-        future_opportunity_probability: float | None = None) -> dict:
+        future_opportunity_probability: float | None = None,
+        omega: float = 0.0) -> dict:
     """Value a current unknown drink trial plus one generic future opportunity.
 
     The future opportunity is not the persistence of the current source.

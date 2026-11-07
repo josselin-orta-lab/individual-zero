@@ -40,13 +40,23 @@ under one common cognition-depleted forecast body: 27/27 are funded, information
 is positive in 9/27 and raises the meal score in 14/27, but the raw winner
 changes in **0/27**.
 
-**DRIFT DETECTED:** stop local water/food score patches and do not jump to Stage
-2. The next code slice may test only one minimal generic first-person
-future-opportunity representation needed by Stage 1. It must be empty at birth,
-paid, renaming invariant, bounded to 2-3 outcome branches and unable to read
-hidden stock, source persistence, schedules or world identity. This is not
-authorization to implement full Stage 3 change detection/latent causes/
-factorization.
+**Update after imported projection consistency:** the P1.3 plan-length bias is a
+confirmed bootstrap inconsistency. The same-cost trapezoid failed its frozen
+selection, so `chunk_end` remains the default. The declared per-step D1
+diagnostic eliminates the bias and makes Stage-1 information decisive on the
+frozen software grid while ω acts strongly. Per-step projection costs 255 units
+versus 8 and is diagnostic only. The next imported projection candidate is
+event-aware accounting, which still requires its own frozen protocol and any
+reference adoption must pass an ADR-0015 gate. ω remains kernel-only, absent
+from the genome/live path. Do not reinterpret absolute Stage-1 advantages
+measured with `chunk_end` as unbiased evidence.
+
+**DRIFT DETECTED:** retain the newer main boundary: stop local water/food score
+patches and do not jump to Stage 2. Any generic first-person future-opportunity
+work must remain empty at birth, paid, renaming invariant, bounded to 2-3
+outcome branches and unable to read hidden stock, source persistence, schedules
+or world identity. The imported ω/projection work does not authorize full Stage
+3 change detection/latent causes/factorization.
 
 Reuse #1026 for individuality and #1054 for the historical P5d uncertainty.
 Stages 3-6 otherwise remain deferred and gated.

@@ -989,4 +989,3 @@ The frozen falsifier passed R0–R3 on the #1101 grid
 the P1.3 projection rewards plan length. Absolute trial and revelation
 advantages from this kernel family must be re-read after a bootstrap-consistency
 fix.
-

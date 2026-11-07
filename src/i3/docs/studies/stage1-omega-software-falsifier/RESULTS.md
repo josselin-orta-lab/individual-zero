@@ -83,4 +83,3 @@ Only then can ω's genome slice and live integration be judged on unbiased value
 **Follow-up:** the bias was confirmed and characterized; under an unbiased
 projection ω acts strongly and monotonically. See
 [projection-consistency results](../projection-consistency/RESULTS.md).
-
