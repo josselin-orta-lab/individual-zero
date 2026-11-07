@@ -57,6 +57,19 @@ class _ExperiencedEffect:
     delta: Vector
 
 
+class _DecisionSupportIndex:
+    """Ephemeral same-decision history index, invalidated by any new sample."""
+
+    __slots__ = ("owner", "version", "exact", "same_action", "built")
+
+    def __init__(self, owner: int, version: int):
+        self.owner = owner
+        self.version = version
+        self.exact = {}
+        self.same_action = {}
+        self.built = False
+
+
 class PersonalOutcomes:
     """Empty at birth. Capacity must later be bound to the candidate's genome.
 
@@ -68,6 +81,19 @@ cognitive charges and do not supply an empirical outcome distribution.
         if type(capacity) is not int or not 1 <= capacity <= 512:
             raise ValueError("explicit capacity in 1..512 required")
         self._samples: deque[_ExperiencedEffect] = deque(maxlen=capacity)
+        self._version = 0
+
+    def begin_support_index(self):
+        """Create an empty ephemeral index token; no history work happens here."""
+        return _DecisionSupportIndex(id(self), self._version)
+
+    def _check_support_index(self, index) -> None:
+        if not isinstance(index, _DecisionSupportIndex):
+            raise ValueError("decision support index required")
+        if index.owner != id(self):
+            raise ValueError("support index belongs to another personal history")
+        if index.version != self._version:
+            raise ValueError("stale decision support index")
 
     def observe(self, key: EffectKey, before: Vector,
                 decision_work: CognitiveWork, budget: CognitiveBudget) -> None:
@@ -94,6 +120,7 @@ The caller must physically settle the new learning allowance exactly once.
         delta[E] += bill["energy"]["paid"]
         delta[V] += bill["vigilance"]["paid"]
         self._samples.append(_ExperiencedEffect(key, tuple(delta)))
+        self._version += 1
 
     def _missing_support(self, key: EffectKey) -> tuple[Vector, ...]:
         raise NoPersonalSupport("NO_PERSONAL_SUPPORT for action " + key[0])
@@ -118,13 +145,36 @@ The caller must physically settle the new learning allowance exactly once.
             result[key] = tuple(support) if support else self._missing_support(key)
         return result
 
+    def _build_support_index(self, index: _DecisionSupportIndex) -> None:
+        self._check_support_index(index)
+        exact, same_action = {}, {}
+        for sample in self._samples:
+            exact.setdefault(sample.key, deque(maxlen=WINDOW)).append(sample.delta)
+            same_action.setdefault(sample.key[0], deque(maxlen=WINDOW)).append(sample.delta)
+        index.exact = {key: tuple(rows) for key, rows in exact.items()}
+        index.same_action = {key: tuple(rows) for key, rows in same_action.items()}
+        index.built = True
+
+    def _indexed_supports(self, keys: tuple[EffectKey, ...],
+                          index: _DecisionSupportIndex) -> dict[EffectKey, tuple[Vector, ...]]:
+        self._check_support_index(index)
+        if not index.built:
+            raise ValueError("support index has not been paid and built")
+        result = {}
+        for key in keys:
+            _key(key)
+            support = index.exact.get(key) or index.same_action.get(key[0])
+            result[key] = support if support else self._missing_support(key)
+        return result
+
     def _support(self, key: EffectKey) -> tuple[Vector, ...]:
         return self._supports((key,))[key]
 
     def construct(self, probe: EffectKey,
                   continuations: tuple[tuple[str, EffectKey], ...],
                   budget: CognitiveBudget, *,
-                  work_receipt: dict | None = None) -> tuple[SubjectiveOutcome, ...]:
+                  work_receipt: dict | None = None,
+                  support_index=None) -> tuple[SubjectiveOutcome, ...]:
         """Construct two/three hypotheses, all with a body-only observation.
 
 Latest <=3 exact-key samples; otherwise latest <=3 same-action samples. No
@@ -137,6 +187,8 @@ mean. This persistence approximation is not a learned change detector.
         _alive_budget(budget)
         if work_receipt is not None and type(work_receipt) is not dict:
             raise ValueError("work_receipt must be a plain dict")
+        if support_index is not None:
+            self._check_support_index(support_index)
         zero_work = {k: 0 for k in WORK_KEYS}
         start_work = budget.work
         if work_receipt is not None:
@@ -147,6 +199,7 @@ mean. This persistence approximation is not a learned change detector.
                 "phase": "validate",
                 "setup": dict(zero_work),
                 "history_scan": dict(zero_work),
+                "history_access": "unstarted",
                 "branch_build": dict(zero_work),
                 "total": dict(zero_work),
             })
@@ -173,12 +226,27 @@ mean. This persistence approximation is not a learned change detector.
             work_receipt["phase"] = "history_scan"
         keys = tuple(dict.fromkeys((probe, *(key for _, key in continuations))))
         scan_start = budget.work
-        budget.spend(CognitiveWork(
-            cycles=1, memory_items=7 * len(self._samples) + 2 * len(keys)))
+        if support_index is None:
+            budget.spend(CognitiveWork(
+                cycles=1, memory_items=7 * len(self._samples) + 2 * len(keys)))
+            supports = self._supports(keys)
+            access = "direct_scan"
+        elif not support_index.built:
+            budget.spend(CognitiveWork(
+                cycles=1, memory_items=7 * len(self._samples) + 2 * len(keys)))
+            self._build_support_index(support_index)
+            supports = self._indexed_supports(keys, support_index)
+            access = "shared_scan"
+        else:
+            # Lookup is still explicit paid work; only the repeated history
+            # traversal is reused. No free query or cross-decision persistence.
+            budget.spend(CognitiveWork(cycles=1, memory_items=2 * len(keys)))
+            supports = self._indexed_supports(keys, support_index)
+            access = "indexed_lookup"
         if work_receipt is not None:
             work_receipt["history_scan"] = delta(budget.work, scan_start)
+            work_receipt["history_access"] = access
             work_receipt["total"] = delta(budget.work, start_work)
-        supports = self._supports(keys)
         count = max(2, len(supports[probe]))
         if work_receipt is not None:
             work_receipt["phase"] = "branch_build"
