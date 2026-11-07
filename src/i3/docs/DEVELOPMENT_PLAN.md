@@ -7,12 +7,14 @@ request to integrate the supplied scenario. This is the continuation of
 second roadmap. Decision: [ADR-0016](../../../docs/decisions/ADR-0016-i3-generalization-without-imposed-rules.md).
 Integration tracking: [#1059](https://github.com/josselin-orta-lab/individual-zero/issues/1059).
 
-**Current operational intervention: finish Stage 1 only after supplying the
-smallest first-person representation of future matching opportunities that its
-information calculation demonstrably needs. Stage 0 remains open; Stage 2 stays
-blocked. Do not start with a Competition rewrite.** This is an evidence-driven
-dependency refinement from the 7 November engineering results, not a rewrite of
-the owner-supplied scenario or permission to launch full Stage 3.
+**Current operational intervention: diagnose the failed Stage-1 Candidate-F
+architecture before proposing another information mechanism. The frozen
+eight-population omega gate is complete and rejected: candidate 0/240 survivors,
+omega-zero 0/240, P1.3 82/240; G1-G5 fail and G6 custody passes. The next
+bounded control keeps P1.3 decisions while actually paying Candidate-F
+information cognition, so cost and changed policy can be separated. Stage 0
+remains open; Stage 2 stays blocked.** Do not tune omega or reopen exposed
+selection/validation worlds.
 
 ## Source, scope and current reference
 
@@ -67,7 +69,7 @@ software defect. Keep adverse and null outcomes; do not tune them away.
 | Stage | Deliverable | Status / tracking |
 | --- | --- | --- |
 | 0 | Independent-population design, energetic mediation, complete paid Competition observation, individuality challenge, P5d uncertainty | Open in parallel; [#1060](https://github.com/josselin-orta-lab/individual-zero/issues/1060), existing #1026/#1054 |
-| 1 | Information value in predicted distress, replacing additive curiosity/relevance/prudence | Engineering in progress; arithmetic works, but decision impact is blocked by sparse future-opportunity representation; [#1061](https://github.com/josselin-orta-lab/individual-zero/issues/1061) |
+| 1 | Information value in predicted distress, replacing additive curiosity/relevance/prudence | **Current Candidate-F/omega architecture rejected by frozen F0 gate.** Diagnose physical cognition cost versus changed policy with a cost-only reference-choice control before any new architecture; [#1061](https://github.com/josselin-orta-lab/individual-zero/issues/1061) |
 | 2 | Decide how much to think by value of computation | **Blocked** until Stage-1 decision boundary is resolved; [#1062](https://github.com/josselin-orta-lab/individual-zero/issues/1062) |
 | 3 | Change detection, latent causes, then perceived-attribute factorization | Full stage deferred. One minimal generic future-opportunity representation may be tested early only as a Stage-1 prerequisite; do not start the Stage-3 bundle. |
 | 4 | Successor features and delayed credit evaluated by current bodily distress | Deferred after the required model/budget decisions |

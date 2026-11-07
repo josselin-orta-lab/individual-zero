@@ -5,6 +5,41 @@ The [engine contract](../engine.json) has no active entrypoints; the
 [registry](../../../config/engine-registry.json) keeps I1 active.
 A green software test is not a scientific GO.
 
+## Current top-level result: frozen omega gate rejected
+
+The first full eight-population Stage-1 architecture gate is complete:
+[final result](studies/stage1-omega-adr0015/RESULTS.md).
+
+The selected genomic-omega Candidate-F architecture has **0/240 validation
+survivors**, as does the exact same selected candidate set with `omega := 0`.
+P1.3 has **82/240**. Candidate revision has 0 reacquisitions versus 35 for P1.3.
+
+The frozen verdict is:
+
+```text
+G1 survival non-inferiority       FAIL
+G2 revision superiority           FAIL
+G3 selection favors omega         FAIL (6/8, required >=7/8)
+G4 actual omega beats omega=0     FAIL
+G5 benefit across >=2 families    FAIL
+G6 custody                         PASS
+overall                            FAIL_FROZEN_STAGE1_OMEGA_GATE
+```
+
+This closes Candidate-F/omega as the current Stage-1 architecture candidate.
+Software capacity evidence remains historically valid, but it did not translate
+into persistence or revision under the full funded architecture.
+
+**Next intervention:** do not tune omega. Build the smallest software-only
+**cost-only reference-choice control**: P1.3 keeps its ordinary decisions while
+the extra Candidate-F information work is actually computed and physically
+charged. The current omega=0 arm is not this control because it keeps the
+candidate policy and only removes inherited omega.
+
+No fresh scientific panel is authorized by this handoff. If the control becomes
+well-defined and software-valid, it must receive a new prospective development
+allocation, never exposed 44..167 or the P4 reserve.
+
 ## Current handoff after the 7 November Stage-1 diagnostics
 
 The original local-information prototype is now a **failed engineering
