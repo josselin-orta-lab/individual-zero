@@ -12,7 +12,12 @@ from pathlib import Path
 import sys
 
 from i3.lab import p3_schedule
-from i3.modules.genome import digest as genome_digest, generation_zero, mutate, validate
+from i3.modules.genome import (
+    digest_historical_v3 as genome_digest,
+    historical_v3_generation_zero as generation_zero,
+    historical_v3_mutate as mutate,
+    validate_historical_v3 as validate,
+)
 
 SOURCE_SHA = "52476fec3f39a7fd70bf611877b01d9c13d26009"
 SCHEDULE_SHA = "230cd653f0a8e580682b351fa3474b9f4dbd9f3e98e7eec1fa61361c0e7289db"
