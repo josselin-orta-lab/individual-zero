@@ -31,35 +31,36 @@ This is a clean scientific rejection of the current Candidate-F/omega
 architecture on F0. Preserve all earlier software falsifiers as bounded evidence,
 but do not use them to override the live gate.
 
-**Current intervention:** isolate the architecture-level failure before inventing
-another cognition mechanism. The smallest useful control is:
+**Current post-gate interpretation:** the 54/55 cost-versus-policy diagnostic
+is complete. Candidate-F and the deliberately overcharged P1.3-choice control
+both have 0/12 survivors; ordinary P1.3 has 4/12. The preregistered strict
+survival counterexample to universal cost sufficiency was not observed.
 
-> P1.3 chooses with its ordinary reference policy while the Candidate-F
-> information computation is still actually performed and physically paid.
+Do not misread that null. The upper-cost control pays Candidate-F shadow
+cognition **plus** P1.3 cognition, so it is not cost matched and cannot prove
+that cost alone causes Candidate-F mortality.
 
-This is a **cost-only reference-choice control**. It must not waive charges,
-reuse the candidate score, secretly choose the candidate action, or bill
-unperformed fictional work. The candidate computation must be real and its
-receipts authentic; only motor choice remains P1.3.
+Secondary paired evidence implicates policy as well:
 
-The existing `omega=0` arm is not a cost-only control. It retains Candidate-F
-information scoring and changed decisions, so its universal mortality cannot
-separate cognition cost from policy effect.
+- upper-cost lives longer than Candidate-F in 7/12 blocks, shorter in 1, ties 4;
+- aggregate water uptake is 25 upper-cost versus 4 Candidate-F;
+- in all four reference-survivor blocks, Candidate-F obtains zero water while
+  upper-cost obtains water and outlives Candidate-F;
+- shadow and actual P1.3 motor choices differ on 510/2395 upper-cost decisions.
 
-Before any life:
+Cost remains severe: upper-cost has 868 P1.3 NO_PROCESSING_BUDGET steps and
+36.24% physical inactivity.
 
-1. define the exact point at which both reference choice and candidate work are
-   computed from the same first-person pre-decision state;
-2. define how physically paid candidate work changes the body before the
-   reference command is admitted, without recomputing a hidden cheaper choice;
-3. prove observer/RNG/map/learning custody and no duplicate motor authority;
-4. demonstrate the default reference remains exact when the control is off;
-5. freeze a small **fresh development-only** allocation if software falsifiers
-   pass.
+**DRIFT DETECTED:** Candidate-F/omega is scientifically rejected. Do not tune
+omega, reopen 54/55, change the frozen gate, or build a free-cognition,
+reimbursed-body or forced-action control merely to isolate mediation. A further
+causal control is justified only if it preserves paid cognition and physical
+state without hidden rescue. Otherwise close this decomposition as **cost and
+policy both implicated; exact mediation unresolved**, and return Stage 1 to a
+new architecture hypothesis.
 
-Do not reopen selection/validation 72..167, tune omega, change G1-G6, or launch
-Stage 2. Do not rewrite Competition or force survival actions to repair the
-negative gate.
+Do not reopen selection/validation 72..167 or the P4 reserve. Do not launch
+Stage 2 to rescue the rejected candidate.
 
 Stage 0 #1060, individuality #1026 and historical P5d uncertainty #1054 remain
 open in parallel. Stage 2 stays blocked.
