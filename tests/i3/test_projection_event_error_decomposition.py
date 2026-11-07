@@ -1,6 +1,7 @@
 """Stage-1 event projection residual-source decomposition."""
 from pathlib import Path
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -72,11 +73,17 @@ class EventProjectionErrorDecompositionTests(unittest.TestCase):
                     "paid_event_exact_projection_units":
                         report["paid_event_exact_projection_units"],
                     "classification": report["classification"],
+                    "worst_cases": report["worst_cases"],
                 }, sort_keys=True))
 
     def test_diagnostic_import_does_not_load_runtime_life(self):
-        import i3.lab.projection_event_error_decomposition  # noqa: F401
-        self.assertNotIn("i3.runtime.life", sys.modules)
+        root = str(Path(__file__).resolve().parents[2] / "src")
+        subprocess.run([
+            sys.executable, "-c",
+            "import sys; sys.path.insert(0, " + repr(root) + "); "
+            "import i3.lab.projection_event_error_decomposition; "
+            "assert 'i3.runtime.life' not in sys.modules"
+        ], check=True)
 
 
 if __name__ == "__main__":
