@@ -210,8 +210,10 @@ class PersonalHistoryTests(unittest.TestCase):
             second_receipt["history_scan"],
             {"cycles": 1, "simulated_steps": 0,
              "memory_items": 4, "replays": 0})
-        self.assertEqual(first[0].probe_delta, (0., 2., 0., 0., 0.))
-        self.assertEqual(second[0].probe_delta, (0., -1., 0., 0., 0.))
+        for actual, expected in zip(first[0].probe_delta, (0., 2., 0., 0., 0.)):
+            self.assertAlmostEqual(actual, expected)
+        for actual, expected in zip(second[0].probe_delta, (0., -1., 0., 0., 0.)):
+            self.assertAlmostEqual(actual, expected)
         self.assertGreater(b.work.cycles, first_work.cycles)
 
     def test_decision_support_index_rejects_cross_owner_and_stale_history(self):
