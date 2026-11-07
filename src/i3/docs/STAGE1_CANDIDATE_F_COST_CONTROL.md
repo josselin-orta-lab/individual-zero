@@ -206,3 +206,65 @@ choice cannot create a fake action/outcome history.
 This is still software custody, not a runtime policy and not a scientific life.
 The next slice must compose this custody with the one-decision controller and
 prove multi-step P1.3 action parity before any fresh allocation.
+
+
+## Multi-step controller composition
+
+The custody pieces are composed by
+`CandidateFUpperCostReferenceController`, still software-only and deliberately
+**not registered** in `runtime.life`.
+
+It owns two internal minds:
+
+- `reference`: exact plain P1.3, the only actor;
+- `shadow`: Candidate-F + genomic omega, cognition-only.
+
+Each decision performs:
+
+1. deep-align the shadow common state to the actual P1.3 retained state;
+2. execute/pay the Candidate-F shadow decision;
+3. expose the post-shadow body to P1.3;
+4. execute/pay the P1.3 decision;
+5. return only the P1.3 motor command.
+
+Each nonfatal learning phase performs:
+
+1. ordinary P1.3 orientation update;
+2. ordinary P1.3 learning allocation/replay purchase;
+3. if that reference learning exists and another STORE_WORK is affordable,
+   prepay one candidate-private branch record from the actual P1.3 action;
+4. execute P1.3 learning;
+5. commit only that prepaid actual-action sample to shadow branch memory.
+
+At the next decision the shadow's common learned state is replaced again by
+P1.3's actual state. Shadow-selected actions, shadow Competition accumulators,
+shadow intention, shadow map drift and shadow TD/effect mutations cannot persist
+as lived history.
+
+Candidate-private branch samples do persist because Candidate-F actually needs
+that private memory to execute the architecture whose cost is being measured.
+The inherited omega and diagnostic counters also persist.
+
+The controller therefore gives the causal falsifier one actor, one physical
+history and two paid decision computations.
+
+### Why the controller is still not a runtime policy
+
+Software fixtures can step it across a World to verify state and billing
+semantics, but `runtime.life` still rejects its policy name. That separation is
+intentional.
+
+Before registration, tests must establish:
+
+- P1.3 is the sole motor authority over multiple steps;
+- the candidate shadow is aligned at every decision boundary;
+- actual actions, not shadow actions, enter candidate-private branch memory;
+- P1.3 learning/replay allocation is unchanged before optional STORE_WORK;
+- shadow-private storage is genuinely paid and can fail without stealing
+  reference learning;
+- common mutable structures are never aliased between minds;
+- the default P1.3 runtime remains untouched.
+
+Only after those properties pass should a separate runtime-wiring slice add a
+development-only policy and observers. No fresh world allocation follows from
+the controller class alone.
