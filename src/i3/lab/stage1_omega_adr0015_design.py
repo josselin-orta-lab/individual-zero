@@ -372,8 +372,7 @@ def analyze_gate(selected_reference, selected_candidate, validation_receipts,
         if (terminal not in ("dead", "censored")
                 or type(steps) is not int or isinstance(steps, bool)
                 or not 0 <= steps <= HORIZON
-                or (terminal == "censored" and steps != HORIZON)
-                or (terminal == "dead" and steps == HORIZON)):
+                or (terminal == "censored" and steps != HORIZON)):
             raise ValueError("invalid validation physical outcome")
         if meta["family"] == "depletion":
             _revision_rank(
