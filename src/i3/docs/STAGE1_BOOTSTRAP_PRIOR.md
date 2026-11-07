@@ -468,3 +468,51 @@ current water-frontier score inside the reference-preserving decision path
 without changing any other option semantics or creating prohibitive cognitive
 cost. That must be answered by software integration before another world is
 opened.
+
+
+### Adverse software characterization: zero-mean radius 100 does not initiate a trial
+
+The predeclared synthetic falsifier that at least one plausible P1.3 state
+should select the optional unsupported trial **failed**.
+
+A bounded software sweep evaluated 80 combinations:
+
+- one bodily channel set to 20, 30, 40 or 50;
+- the other four channels at 80;
+- each of the five channels stressed in turn;
+- horizons 4, 6, 8 and 12;
+- ordinary learned movement/wait/sleep effects kept at the current P1.3-like
+  magnitudes;
+- the same ordinary wait/sleep continuation repertoire available before and
+  after the trial.
+
+Result:
+
+- 80/80 cases evaluated;
+- **0/80 selected the unknown drink trial**;
+- at least one case had positive inner trial information value;
+- best observed inner information value: about `2.38825e-5`;
+- best total trial advantage remained negative: about `-0.0678657`.
+
+Therefore the current zero-mean **radius-100** ignorance prior can represent
+useful information, but under this realistic software grid its physical/cognitive
+risk dominates before the first unsupported trial.
+
+This is not a world-level or survival result. It is a software falsification of
+the claim that the current prior is already sufficient to bootstrap the live
+water-frontier candidate.
+
+Do **not** integrate this kernel into runtime or open another development panel.
+
+The next prior question should use information already available to the
+individual rather than a designer-chosen smaller favorable radius. The 50/51
+originals show that the five no-water candidate lives nevertheless recorded
+95, 133, 127, 95 and 95 paid branch effects respectively, with 18 retained in
+each ring. A generic action-agnostic empirical consequence distribution can
+therefore be investigated without inventing water-specific knowledge or new
+memory.
+
+That investigation must remain distinct from the failed P5b global point prior:
+its purpose would be to provide **uncertainty branches for an unsupported
+action**, not to replace action-specific learned predictions with one global
+mean.
