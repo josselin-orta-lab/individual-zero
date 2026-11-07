@@ -712,3 +712,41 @@ Promotion requires both:
 
 A harmful recent history must also remain rejectable. Failure of any of those
 conditions blocks runtime integration and any new development panel.
+
+
+## RMS three-leaf software probe
+
+The zero-mean RMS prior is now composed with the first-person target-modality
+probability in
+`modules/rms_three_leaf_target_prior.py::paid_rms_three_leaf_target_prior`.
+
+For one target modality:
+
+```text
+NO_TARGET                    P = 1 - p_target
+TARGET + RMS positive effect P = p_target / 2
+TARGET + RMS negative effect P = p_target / 2
+```
+
+The full three-leaf expected external bodily delta remains exactly zero.
+
+The target composition also exposes an approximation that must stay visible:
+the symmetric `+RMS / -RMS` pair preserves each channel's marginal recent raw
+second moment, but represents them through one common-sign rank-one uncertainty
+direction. It does not preserve the full empirical cross-channel covariance.
+
+This PR does **not** bind that prior into production cognition. Tests inject it
+only into the existing optional water-trial arithmetic from #1094.
+
+The prospective software promotion criteria are:
+
+1. at least one realistic P1.3-like state selects `TRIAL` with strictly
+   positive `trial_information_value`;
+2. at least one state declines the trial;
+3. a high-magnitude personal uncertainty history still permits rejection;
+4. the composed prior remains exactly zero mean.
+
+A pass would establish only that personally learned uncertainty scale can, in
+principle, create **selective epistemic experimentation** without an additive
+curiosity bonus. It would not establish survival benefit or authorize a fresh
+development world.
