@@ -20,6 +20,16 @@ POSITIVE = (0.0, 0.0, 10.0, 0.0, 0.0)
 NEGATIVE = (0.0, 0.0, -10.0, 0.0, 0.0)
 HORIZON = 4
 
+def _json_forecast(value):
+    if value is None:
+        return None
+    return {
+        "action_key": list(value["action_key"]),
+        "delta": list(value["delta"]),
+        "uncertainty": value["uncertainty"],
+    }
+
+
 
 def _evaluate(simulation_mode, effect):
     mind = W.make_mind()
@@ -68,9 +78,9 @@ def run(out_path):
                 reference_positive["value"]
                 - reference_negative["value"]),
             "positive_first_forecast":
-                reference_positive["first_forecast"],
+                _json_forecast(reference_positive["first_forecast"]),
             "negative_first_forecast":
-                reference_negative["first_forecast"],
+                _json_forecast(reference_negative["first_forecast"]),
         },
         "candidate_f": {
             "positive_value": candidate_positive["value"],
@@ -79,9 +89,9 @@ def run(out_path):
                 candidate_positive["value"]
                 - candidate_negative["value"]),
             "positive_first_forecast":
-                candidate_positive["first_forecast"],
+                _json_forecast(candidate_positive["first_forecast"]),
             "negative_first_forecast":
-                candidate_negative["first_forecast"],
+                _json_forecast(candidate_negative["first_forecast"]),
         },
         "reference_separates_observed_effects": reference_separates,
         "candidate_f_collapses_observed_effects": candidate_collapses,
