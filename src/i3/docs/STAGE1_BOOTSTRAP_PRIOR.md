@@ -516,3 +516,97 @@ That investigation must remain distinct from the failed P5b global point prior:
 its purpose would be to provide **uncertainty branches for an unsupported
 action**, not to replace action-specific learned predictions with one global
 mean.
+
+
+## Prior B: recent action-agnostic empirical effect uncertainty
+
+The adverse #1094 sweep shows that the maximally broad symmetric ±100 prior can
+represent information yet still makes every tested first unsupported trial
+unattractive. The next alternative therefore does not choose a smaller radius
+by hand.
+
+`ReferenceBranchMemory.recent_generic_effects` exposes a new paid read of the
+existing ring:
+
+- scan the same fixed 18-record memory already paid/stored by #1077;
+- return only the last `WINDOW=3` bodily deltas;
+- return **no action or token identity**;
+- allocate no new memory and inherit nothing across births.
+
+`modules/recent_generic_effect_prior.py::paid_recent_generic_effect_prior`
+then compresses those recent personal effects into exactly two unsupported-
+action hypotheses.
+
+### Two samples
+
+With exactly two recent effects, both are retained directly at probability
+0.5 / 0.5.
+
+### Three samples
+
+With three recent effects:
+
+1. compute all three squared Euclidean distances in five-channel bodily-delta
+   space;
+2. choose the closest pair, with chronological pair order resolving an exact
+   distance tie;
+3. average that pair into one branch with probability 2/3;
+4. retain the remaining sample as the second branch with probability 1/3.
+
+This deterministic 3 -> 2 compression preserves the empirical three-sample mean
+exactly:
+
+```text
+(2/3) * mean(close_pair) + (1/3) * singleton
+= mean(sample_1, sample_2, sample_3)
+```
+
+If fewer than two records exist, the result is
+`INSUFFICIENT_GENERIC_SUPPORT`. If the two resulting branch deltas are
+identical, the result is `NO_EMPIRICAL_DIVERSITY`; the code does not duplicate
+one effect merely to satisfy a two-branch API.
+
+### Why this is not the P5b global prior
+
+P5b's action-agnostic point readout collapsed action identity into one prediction
+and produced 0/288 survival in that ablation.
+
+This new prior does something different:
+
+- it is used only when the candidate action has **no personal support**;
+- it preserves two explicit consequence branches rather than one global mean;
+- existing exact/same-action predictions remain authoritative when available;
+- it is a temporary uncertainty model for deciding whether an unsupported
+  action is worth learning, not a replacement effect model.
+
+### Why this is admissible after 50/51
+
+The five 50/51 candidate lives that never experienced water still recorded
+95, 133, 127, 95 and 95 paid branch effects respectively; all retained the full
+18-record ring by death. So an action-agnostic empirical uncertainty model has
+personal data available well before the missing water experience in those
+closed lives.
+
+That fact motivates this software mechanism but does not evaluate it on those
+closed trajectories. No 50/51 decision is replayed or rescored here.
+
+### Boundaries
+
+The prior has:
+
+- no target action argument;
+- no token identity output;
+- no body-need or distress input;
+- no World or hidden-stock input;
+- no designer-selected effect magnitude;
+- exactly two branches when complete.
+
+Its expected external delta may be nonzero because it is the empirical mean of
+personally lived generic effects. That is a personal belief, not an injected
+reward. The later body projection remains responsible for deciding whether
+those possible consequences matter now.
+
+This slice is not a live policy. The next question is whether replacing #1088
+inside the three-leaf target composition with this empirical two-branch prior
+can make an unsupported trial selectively worthwhile while still allowing
+dangerous empirical priors to reject it.
