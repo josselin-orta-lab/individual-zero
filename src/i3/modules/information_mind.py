@@ -17,6 +17,10 @@ from .personal_outcomes import NoPersonalSupport, PersonalOutcomes, STORE_WORK
 ZERO = (0.0,) * 5
 
 
+def _work_dict_delta(after, before):
+    return {k: getattr(after, k) - getattr(before, k) for k in WORK_KEYS}
+
+
 def local_options(pos, mapping, inventory):
     """Structural possibilities in the PERSONAL map, not unseen World cells."""
     water, tokens = mapping[pos]
@@ -96,6 +100,7 @@ class InformationMind(Mind):
         self.personal_records = 0
         self._pending_personal = None
         self._decision_work = CognitiveWork()
+        self._observer_cost_profile = None
 
     def _finish(self, budget, opts, scored, witnesses, outcome, funding,
                 action=None, param=None, oid=None, rejected=0, comp=None):
@@ -110,6 +115,10 @@ class InformationMind(Mind):
                 "pre_body": budget.body, "score_witness": witnesses}
             if comp is not None:
                 diag["competition_witness"] = comp
+            if self._observer_cost_profile is not None:
+                self._observer_cost_profile["status"] = outcome
+                self._observer_cost_profile["actual_total_work"] = asdict(budget.work)
+                diag["cost_profile"] = self._observer_cost_profile
             info["observer"] = diag
         self._decision_work = budget.work
         return action, param, budget.work, info
@@ -121,14 +130,33 @@ class InformationMind(Mind):
             raise ValueError("no decision after physical death")
         self.last = None
         self._pending_personal = None
+        self._observer_cost_profile = None
+        if self.observer_decision_diagnostics:
+            zero = {k: 0 for k in WORK_KEYS}
+            self._observer_cost_profile = {
+                "schema": "i3-local-decision-cost-profile/v1",
+                "status": "STARTED",
+                "phase": "base_processing",
+                "base_processing": dict(zero),
+                "options": [],
+                "batch_setup": dict(zero),
+                "competition": dict(zero),
+                "actual_total_work": dict(zero),
+            }
         slots = (len(self.buffer) + 2 * len(self.map) + len(self.effects.stats)
                  + len(self.tokens) + len(self.external) + len(self.acc)
                  + sum(len(v) for v in self.values) + 12
                  + 7 * len(self.personal._samples) + len(cap["inventory"])
                  + sum(len(c[1]) for c in (cap["here"], *cap["neighbors"])
                        if c is not None))
+        before = budget.work
         if not budget.try_spend(CognitiveWork(cycles=3, memory_items=slots)):
+            if self._observer_cost_profile is not None:
+                self._observer_cost_profile["phase"] = "base_processing_unfunded"
             return self._finish(budget, [], [], [], "no_processing_budget", "NO_PROCESSING_BUDGET")
+        if self._observer_cost_profile is not None:
+            self._observer_cost_profile["base_processing"] = _work_dict_delta(budget.work, before)
+            self._observer_cost_profile["phase"] = "option_preparation"
         cycles, _, miss = capacities(budget.body, self.n_base, self.h_max)
         inv = self.perceive(cap, miss)
         opts = local_options(self.pos, self.map, inv)
@@ -136,13 +164,38 @@ class InformationMind(Mind):
         self.personal.unknown_reads = 0
         try:
             for opt in opts:
+                entry = None
+                construction_receipt = None
+                if self._observer_cost_profile is not None:
+                    entry = {
+                        "option": opt[0],
+                        "phase": "hypothetical_setup",
+                        "hypothetical_setup": {k: 0 for k in WORK_KEYS},
+                        "personal_construction": {},
+                        "kernel": {},
+                    }
+                    self._observer_cost_profile["options"].append(entry)
                 # Fund the detached hypothetical local map/inventory operation.
+                before = budget.work
                 budget.spend(CognitiveWork(cycles=1, memory_items=2 * len(self.map) + len(inv) + 8))
+                if entry is not None:
+                    entry["hypothetical_setup"] = _work_dict_delta(budget.work, before)
+                    entry["phase"] = "personal_construction"
+                    construction_receipt = {}
                 continuations = continuation_options(self.pos, self.map, inv, opt)
                 unknown_before = self.personal.unknown_reads
-                outcomes = self.personal.construct(effect_key(opt), continuations, budget)
+                outcomes = self.personal.construct(
+                    effect_key(opt), continuations, budget,
+                    work_receipt=construction_receipt)
+                if entry is not None:
+                    entry["personal_construction"] = construction_receipt
+                    entry["phase"] = "prepared"
                 prepared.append((opt, outcomes, self.personal.unknown_reads - unknown_before))
+            before = budget.work
             budget.spend(CognitiveWork(cycles=1, memory_items=5 * len(prepared)))
+            if self._observer_cost_profile is not None:
+                self._observer_cost_profile["batch_setup"] = _work_dict_delta(budget.work, before)
+                self._observer_cost_profile["phase"] = "kernel_evaluation"
             evaluation_end = budget.work
             for _, outcomes, _ in prepared:
                 cells = len(outcomes) * len(outcomes[0].continuations)
@@ -153,9 +206,16 @@ class InformationMind(Mind):
             debit_cognition(budget.body, budget.laws, ceiling)  # Quote, NOT spend.
             scored, witnesses = [], []
             cell_cache = {}
-            for opt, outcomes, unknown in prepared:
+            for index, (opt, outcomes, unknown) in enumerate(prepared):
+                if self._observer_cost_profile is not None:
+                    self._observer_cost_profile["phase"] = "kernel:" + opt[0]
                 value = paid_information_value(
                     self, outcomes, budget, forecast_work=ceiling, cell_cache=cell_cache)
+                if self._observer_cost_profile is not None:
+                    entry = self._observer_cost_profile["options"][index]
+                    entry["kernel"] = value["work_breakdown"]
+                    entry["cell_reuse"] = value["cell_reuse"]
+                    entry["phase"] = "scored"
                 score = value["informed_value"]
                 scored.append((opt[0], score))
                 if self.observer_decision_diagnostics:
@@ -177,7 +237,14 @@ class InformationMind(Mind):
             # No complete comparison, no command and no refund. The ordinary
             # runtime settles all consumed work and advances passive physiology.
             return self._finish(budget, opts, [], [], "no_funded_score", "NO_FUNDED_SCORE")
+        before_competition = budget.work
+        if self._observer_cost_profile is not None:
+            self._observer_cost_profile["phase"] = "competition"
         winner, _ = self._compete(scored, cycles, budget)
+        if self._observer_cost_profile is not None:
+            self._observer_cost_profile["competition"] = _work_dict_delta(
+                budget.work, before_competition)
+            self._observer_cost_profile["phase"] = "motor_control"
         ranked = [winner] + [o for o, _ in sorted(scored, key=lambda x: -x[1]) if o != winner]
         by_id = {o[0]: o for o in opts}
         comp = self._observer_competition if self.observer_full_competition else None
