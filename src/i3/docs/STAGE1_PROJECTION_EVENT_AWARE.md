@@ -57,7 +57,7 @@ Use exactly the existing projection-consistency grid:
 - prefix / +1 wait / +3 waits;
 - per-step 255-unit projection as truth.
 
-Total: 270 cases per scheme.
+Total: **486 cases per scheme** (3 fixtures x 6 genomes x 27 bodies).
 
 ## Prospective gate
 
@@ -83,3 +83,14 @@ rerun the already-frozen omega falsifier. Reference adoption remains a separate
 ADR-0015 decision.
 
 The default remains `chunk_end` whatever the result.
+
+
+## Amendment A1 — grid count metadata, before reading Candidate C metrics
+
+The inherited projection-consistency prose described the grid as 270 cases per
+scheme, but its executable frozen loops are 3 fixtures x 6 genomes x 27 bodies
+= **486**. The first Candidate-C CI stopped on a test assertion checking the
+incorrect 270 metadata before printing Candidate-C metrics.
+
+Only this count is corrected. Fixtures, genomes, bodies, plans, algorithm,
+thresholds and selection rule are unchanged.
