@@ -197,6 +197,7 @@ def plan(occupied_world_seeds=()):
         "founder_seeds": {str(p): list(v) for p, v in pools.items()},
         "selection_rule": [
             "censored_count_desc", "lived_steps_desc", "founder_seed_asc"],
+        "zero_step_physical_death": "VALID_SELECTION_OUTCOME",
         "selection_arms": ["reference", "candidate"],
         "validation_arms": ["reference", "candidate", "omega_zero"],
         "omega_zero_selection": "NEVER_INDEPENDENTLY_SELECTED",
@@ -260,7 +261,12 @@ def plan(occupied_world_seeds=()):
 
 
 def rank_selection(population, arm, receipts):
-    """ADR-0015 persistence ranking with current-genome custody."""
+    """ADR-0015 persistence ranking with current-genome custody.
+
+    A zero-lived-step *physical death* is a valid persistence outcome. Historical
+    Stage-0 arithmetic required steps>=1, so Stage 1 implements the unchanged
+    ranking directly rather than misclassifying a real birth death as a crash.
+    """
     if arm not in ("reference", "candidate"):
         raise ValueError("only independently selected architecture arms")
     expected_seeds = set(founder_seeds(population))
@@ -268,7 +274,7 @@ def rank_selection(population, arm, receipts):
         row["index"] for row in _world_rows("selection")
         if row["population"] == population
     }
-    stripped = []
+    totals = {seed: [0, 0] for seed in expected_seeds}
     seen = set()
     for row in receipts:
         if type(row) is not dict or set(row) != SELECTION_FIELDS:
@@ -279,17 +285,26 @@ def rank_selection(population, arm, receipts):
             raise ValueError("foreign selection candidate/world")
         if row["genome_digest"] != digest(_base_genome(seed)):
             raise ValueError("selection genome digest mismatch")
+        terminal, steps = row["terminal"], row["steps_lived"]
+        if (terminal not in ("dead", "censored")
+                or type(steps) is not int or isinstance(steps, bool)
+                or not 0 <= steps <= HORIZON
+                or (terminal == "censored" and steps != HORIZON)):
+            raise ValueError("invalid physical selection outcome")
         key = (seed, index)
         if key in seen:
             raise ValueError("duplicate selection receipt")
         seen.add(key)
-        stripped.append({
-            "candidate_seed": seed,
-            "world_index": index,
-            "terminal": row["terminal"],
-            "steps_lived": row["steps_lived"],
-        })
-    return S.rank_candidates(population, stripped)
+        totals[seed][0] += terminal == "censored"
+        totals[seed][1] += steps
+    if len(seen) != CANDIDATES * len(expected_worlds):
+        raise ValueError(
+            "incomplete selection; no reranking of successful subset")
+    return tuple(sorted(
+        expected_seeds,
+        key=lambda seed: (
+            -totals[seed][0], -totals[seed][1], seed)
+    )[:KEEP])
 
 
 def _revision_rank(status, latency):
