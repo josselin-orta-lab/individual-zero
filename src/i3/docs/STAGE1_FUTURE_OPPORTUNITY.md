@@ -131,3 +131,62 @@ A useful result would require all of the following without tuning:
 If recurrence support merely becomes another generic exploration bonus, or if
 it cannot change any decision-boundary comparison, reject this prerequisite
 rather than adding another local patch.
+
+
+## Storage-only life-cycle control
+
+`modules/reference_opportunity_memory_mind.py::ReferenceOpportunityMemoryMind`
+connects the recurrence substrate to an ordinary reference life without letting
+the recurrence estimate affect any decision.
+
+Runtime policy name:
+
+```text
+reference_opportunity_memory_v1
+```
+
+This control extends `reference_branch_memory_v1`, not the Stage-1
+information policy.
+
+### Decision phase
+
+The decision delegates unchanged to the existing P1.3 branch-memory control.
+
+Only after P1.3 has successfully paid its normal perception block does the
+control copy two booleans from the already perceived personal state:
+
+- any visible perceived water;
+- any visible perceived token.
+
+No raw capture, hidden source or World state enters the recurrence memory.
+
+The two booleans remain a phase handoff only. They are not consulted by scoring,
+option generation, Competition or Action Control.
+
+### Learning phase
+
+The existing reference learning/replay purchase is computed first.
+
+Then the existing branch-memory storage block is attempted exactly as before.
+
+Only after those existing operations may the control purchase one
+`OBSERVE_WORK` recurrence-storage block. Therefore recurrence storage cannot
+steal a reference replay or displace the already-established branch-memory
+control.
+
+The recurrence observation is committed only after the World has physically
+settled the complete prepaid learning work. If storage is not funded, the
+personal recurrence chronology does not advance.
+
+A dead birth records nothing. No work occurs postmortem.
+
+### Interpretation
+
+This is the physical memory-cost control required before a Stage-1 consumer can
+read recurrence during decision making.
+
+The control may change later physiology because the extra memory work is real.
+It must not be interpreted as a behaviorally identical whole-life reference.
+The exact current decision before an added storage payment remains the P1.3
+decision path; future trajectories may diverge because real cognition has real
+cost.
