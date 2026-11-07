@@ -17,7 +17,14 @@ permissions:
 
 concurrency:
   group: i3-proposal-checks-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  cancel-in-progress: false
+
+env:
+  PYTHONPATH: src
+  EXPECTED_BASE_SHA: 034349844ced2f3d6ba00efe7a0fdc42e74fbbaa
+  EXPECTED_DESIGN_SHA: e4934b4994bc97043deee9b9760df9fe31481aeb8ed4d0a75715eebc5f5e5d48
+  EXPECTED_PROTOCOL: 125d708706bce266abb41446ef577dbe0096ba96d0e7be60169165e327d11944
+  EXECUTION_BRANCH: i3/stage1-omega-adr0015-execute2-20261107
 
 jobs:
   software:
@@ -51,3 +58,516 @@ jobs:
       - name: Check current navigation
         if: matrix.python-version == '3.11'
         run: python tools/check_repo_navigation.py --scope entrypoints
+
+  execution-preflight:
+    name: Frozen omega execution registration preflight
+    needs: software
+    if: >-
+      needs.software.result == 'success' &&
+      github.event.action == 'opened' &&
+      github.run_attempt == 1 &&
+      github.event.pull_request.head.repo.full_name == 'josselin-orta-lab/individual-zero' &&
+      github.head_ref == 'i3/stage1-omega-adr0015-execute2-20261107' &&
+      github.event.pull_request.base.sha == '034349844ced2f3d6ba00efe7a0fdc42e74fbbaa'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: Checkout exact replacement execution candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify exact three-path replacement and frozen digests
+        run: |
+          python - <<'PY'
+          import os
+          import subprocess
+          from i3.lab.stage1_omega_adr0015_design import plan
+          from i3.lab.stage1_omega_adr0015_runner import (
+              protocol_manifest, validate_launch)
+
+          base = os.environ["EXPECTED_BASE_SHA"]
+          head = os.environ["SOURCE_SHA"]
+          changed = set(subprocess.check_output(
+              ["git", "diff", "--name-only", base, head],
+              text=True).splitlines())
+          expected = {
+              ".github/workflows/i3-proposal-checks.yml",
+              "src/i3/docs/studies/stage1-omega-adr0015/PROTOCOL.md",
+              "tests/i3/test_stage1_omega_adr0015_execution_registration.py",
+          }
+          if changed != expected:
+              raise SystemExit(
+                  "replacement execution PR path drift: "
+                  + repr(sorted(changed)))
+          if plan()["sha256"] != os.environ["EXPECTED_DESIGN_SHA"]:
+              raise SystemExit("design digest drift")
+          if protocol_manifest()["sha256"] != os.environ["EXPECTED_PROTOCOL"]:
+              raise SystemExit("runner protocol digest drift")
+          validate_launch(head, os.environ["EXPECTED_PROTOCOL"])
+          PY
+          git diff --check "$EXPECTED_BASE_SHA" "$SOURCE_SHA"
+
+custody-init:
+    name: Create durable prerelease before world 72
+    needs: execution-preflight
+    if: >-
+      needs.execution-preflight.result == 'success' &&
+      github.event.action == 'opened' &&
+      github.run_attempt == 1 &&
+      github.event.pull_request.base.sha == '034349844ced2f3d6ba00efe7a0fdc42e74fbbaa'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+    env:
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Exact launch preflight before release creation
+        run: |
+          python - <<'PY'
+          import os
+          from i3.lab.stage1_omega_adr0015_runner import (
+              protocol_manifest, validate_launch)
+          if protocol_manifest()["sha256"] != os.environ["EXPECTED_PROTOCOL"]:
+              raise SystemExit("protocol drift")
+          validate_launch(
+              os.environ["SOURCE_SHA"], os.environ["EXPECTED_PROTOCOL"])
+          PY
+          python -m i3.lab.stage1_omega_adr0015_runner plan --json             > "$RUNNER_TEMP/protocol-manifest.json"
+      - name: Create exact-source prerelease
+        id: release
+        run: |
+          TAG="i3-stage1-omega-adr0015-${SOURCE_SHA:0:12}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          cat > "$RUNNER_TEMP/release-notes.md" <<EOF
+          # I3 Stage-1 omega ADR-0015 campaign
+
+          Execution source: $SOURCE_SHA
+          Design SHA-256: $EXPECTED_DESIGN_SHA
+          Runner protocol SHA-256: $EXPECTED_PROTOCOL
+
+          Status: STARTED_AFTER_FULL_SOFTWARE_PREFLIGHT
+
+          Selection and validation evidence is uploaded shard-by-shard.
+          Completed evidence is retained even if a later technical failure stops the campaign.
+          EOF
+          gh release create "$TAG"             --repo "$GITHUB_REPOSITORY"             --target "$SOURCE_SHA"             --title "I3 Stage-1 omega ADR-0015 evidence"             --notes-file "$RUNNER_TEMP/release-notes.md"             --prerelease
+          gh release upload "$TAG"             "$RUNNER_TEMP/protocol-manifest.json"             --repo "$GITHUB_REPOSITORY"
+      - name: Preserve protocol manifest as Actions artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-stage1-omega-protocol-${{ github.run_id }}
+          path: ${{ runner.temp }}/protocol-manifest.json
+          retention-days: 90
+          if-no-files-found: error
+
+  selection:
+    name: Selection p${{ matrix.population }} ${{ matrix.arm }}
+    needs: custody-init
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      max-parallel: 16
+      matrix:
+        population: [0, 1, 2, 3, 4, 5, 6, 7]
+        arm: [reference, candidate]
+    env:
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+      CAMPAIGN_TAG: ${{ needs.custody-init.outputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+      POPULATION: ${{ matrix.population }}
+      ARM: ${{ matrix.arm }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Execute complete frozen selection shard
+        id: execute
+        run: |
+          OUT="$RUNNER_TEMP/selection-p$POPULATION-$ARM"
+          mkdir -p "$OUT"
+          python -m i3.lab.stage1_omega_adr0015_runner selection-shard             "$POPULATION" "$ARM" "$OUT"             --expected-sha "$SOURCE_SHA"             --expected-protocol "$EXPECTED_PROTOCOL"
+      - name: Stage complete shard summary
+        if: steps.execute.outcome == 'success'
+        run: |
+          mkdir -p "$RUNNER_TEMP/selection-summary"
+          cp "$RUNNER_TEMP/selection-p$POPULATION-$ARM/selection-shard.json"              "$RUNNER_TEMP/selection-summary/selection-p$POPULATION-$ARM.json"
+      - name: Upload shard summary for barrier aggregation
+        if: steps.execute.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: selection-summary-p${{ matrix.population }}-${{ matrix.arm }}
+          path: ${{ runner.temp }}/selection-summary/selection-p${{ matrix.population }}-${{ matrix.arm }}.json
+          retention-days: 90
+          if-no-files-found: error
+      - name: Bundle completed or partial selection evidence
+        if: always()
+        id: bundle
+        run: |
+          OUT="$RUNNER_TEMP/selection-p$POPULATION-$ARM"
+          ASSETS="$RUNNER_TEMP/selection-assets"
+          mkdir -p "$ASSETS"
+          if [ -n "$(find "$OUT" -type f -print -quit 2>/dev/null)" ]; then
+            export OUT
+            export BUNDLE="$ASSETS/selection-p$POPULATION-$ARM.zip"
+            export RECEIPT="$ASSETS/selection-p$POPULATION-$ARM.receipt.json"
+            export LABEL="selection-p$POPULATION-$ARM"
+            python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from i3.lab.stage1_omega_evidence_custody import (
+              bundle_directory, verify_bundle)
+          receipt = bundle_directory(
+              os.environ["OUT"], os.environ["BUNDLE"],
+              label=os.environ["LABEL"])
+          verified = verify_bundle(os.environ["BUNDLE"])
+          if receipt["bundle_sha256"] != verified["bundle_sha256"]:
+              raise SystemExit("bundle verification digest mismatch")
+          Path(os.environ["RECEIPT"]).write_text(
+              json.dumps(receipt, sort_keys=True, separators=(",", ":")) + "\n")
+          PY
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Preserve selection bundle as Actions artifact
+        if: always() && steps.bundle.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: selection-bundle-p${{ matrix.population }}-${{ matrix.arm }}
+          path: |
+            ${{ runner.temp }}/selection-assets/selection-p${{ matrix.population }}-${{ matrix.arm }}.zip
+            ${{ runner.temp }}/selection-assets/selection-p${{ matrix.population }}-${{ matrix.arm }}.receipt.json
+          retention-days: 90
+          if-no-files-found: error
+      - name: Upload durable selection bundle to prerelease
+        if: always() && steps.bundle.outputs.ready == 'true'
+        run: |
+          gh release upload "$CAMPAIGN_TAG"             "$RUNNER_TEMP/selection-assets/selection-p$POPULATION-$ARM.zip"             "$RUNNER_TEMP/selection-assets/selection-p$POPULATION-$ARM.receipt.json"             --repo "$GITHUB_REPOSITORY"
+
+  aggregate-selection:
+    name: All-16 selection barrier and ranking
+    needs: [custody-init, selection]
+    if: needs.selection.result == 'success'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CAMPAIGN_TAG: ${{ needs.custody-init.outputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Download all complete selection summaries
+        uses: actions/download-artifact@v4
+        with:
+          pattern: selection-summary-*
+          path: ${{ runner.temp }}/selection-summaries
+          merge-multiple: true
+      - name: Aggregate only after complete 16-shard barrier
+        run: |
+          mapfile -t SHARDS < <(find "$RUNNER_TEMP/selection-summaries" -type f -name '*.json' | sort)
+          test "${#SHARDS[@]}" -eq 16
+          python -m i3.lab.stage1_omega_adr0015_runner aggregate-selection             "$RUNNER_TEMP/selection-aggregate.json" "${SHARDS[@]}"
+      - name: Upload immutable selection aggregate for validation
+        uses: actions/upload-artifact@v4
+        with:
+          name: selection-aggregate
+          path: ${{ runner.temp }}/selection-aggregate.json
+          retention-days: 90
+          if-no-files-found: error
+      - name: Upload selection aggregate to durable prerelease
+        run: |
+          gh release upload "$CAMPAIGN_TAG"             "$RUNNER_TEMP/selection-aggregate.json"             --repo "$GITHUB_REPOSITORY"
+
+  validation:
+    name: Validation p${{ matrix.population }} ${{ matrix.arm }}
+    needs: [custody-init, aggregate-selection]
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      max-parallel: 24
+      matrix:
+        population: [0, 1, 2, 3, 4, 5, 6, 7]
+        arm: [reference, candidate, omega_zero]
+    env:
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+      CAMPAIGN_TAG: ${{ needs.custody-init.outputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+      POPULATION: ${{ matrix.population }}
+      ARM: ${{ matrix.arm }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Download immutable selection aggregate
+        uses: actions/download-artifact@v4
+        with:
+          name: selection-aggregate
+          path: ${{ runner.temp }}/selection-aggregate
+      - name: Execute complete frozen validation shard
+        id: execute
+        run: |
+          OUT="$RUNNER_TEMP/validation-p$POPULATION-$ARM"
+          mkdir -p "$OUT"
+          python -m i3.lab.stage1_omega_adr0015_runner validation-shard             "$POPULATION" "$ARM"             "$RUNNER_TEMP/selection-aggregate/selection-aggregate.json"             "$OUT"             --expected-sha "$SOURCE_SHA"             --expected-protocol "$EXPECTED_PROTOCOL"
+      - name: Stage complete validation summary
+        if: steps.execute.outcome == 'success'
+        run: |
+          mkdir -p "$RUNNER_TEMP/validation-summary"
+          cp "$RUNNER_TEMP/validation-p$POPULATION-$ARM/validation-shard.json"              "$RUNNER_TEMP/validation-summary/validation-p$POPULATION-$ARM.json"
+      - name: Upload validation summary for barrier aggregation
+        if: steps.execute.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-summary-p${{ matrix.population }}-${{ matrix.arm }}
+          path: ${{ runner.temp }}/validation-summary/validation-p${{ matrix.population }}-${{ matrix.arm }}.json
+          retention-days: 90
+          if-no-files-found: error
+      - name: Bundle completed or partial validation evidence
+        if: always()
+        id: bundle
+        run: |
+          OUT="$RUNNER_TEMP/validation-p$POPULATION-$ARM"
+          ASSETS="$RUNNER_TEMP/validation-assets"
+          mkdir -p "$ASSETS"
+          if [ -n "$(find "$OUT" -type f -print -quit 2>/dev/null)" ]; then
+            export OUT
+            export BUNDLE="$ASSETS/validation-p$POPULATION-$ARM.zip"
+            export RECEIPT="$ASSETS/validation-p$POPULATION-$ARM.receipt.json"
+            export LABEL="validation-p$POPULATION-$ARM"
+            python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from i3.lab.stage1_omega_evidence_custody import (
+              bundle_directory, verify_bundle)
+          receipt = bundle_directory(
+              os.environ["OUT"], os.environ["BUNDLE"],
+              label=os.environ["LABEL"])
+          verified = verify_bundle(os.environ["BUNDLE"])
+          if receipt["bundle_sha256"] != verified["bundle_sha256"]:
+              raise SystemExit("bundle verification digest mismatch")
+          Path(os.environ["RECEIPT"]).write_text(
+              json.dumps(receipt, sort_keys=True, separators=(",", ":")) + "\n")
+          PY
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Preserve validation bundle as Actions artifact
+        if: always() && steps.bundle.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-bundle-p${{ matrix.population }}-${{ matrix.arm }}
+          path: |
+            ${{ runner.temp }}/validation-assets/validation-p${{ matrix.population }}-${{ matrix.arm }}.zip
+            ${{ runner.temp }}/validation-assets/validation-p${{ matrix.population }}-${{ matrix.arm }}.receipt.json
+          retention-days: 90
+          if-no-files-found: error
+      - name: Upload durable validation bundle to prerelease
+        if: always() && steps.bundle.outputs.ready == 'true'
+        run: |
+          gh release upload "$CAMPAIGN_TAG"             "$RUNNER_TEMP/validation-assets/validation-p$POPULATION-$ARM.zip"             "$RUNNER_TEMP/validation-assets/validation-p$POPULATION-$ARM.receipt.json"             --repo "$GITHUB_REPOSITORY"
+
+  aggregate-validation:
+    name: All-24 validation barrier and frozen G1-G6
+    needs: [custody-init, aggregate-selection, validation]
+    if: needs.validation.result == 'success'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CAMPAIGN_TAG: ${{ needs.custody-init.outputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/download-artifact@v4
+        with:
+          name: selection-aggregate
+          path: ${{ runner.temp }}/selection-aggregate
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: validation-summary-*
+          path: ${{ runner.temp }}/validation-summaries
+          merge-multiple: true
+      - name: Aggregate only after complete 24-shard barrier
+        run: |
+          mapfile -t SHARDS < <(find "$RUNNER_TEMP/validation-summaries" -type f -name '*.json' | sort)
+          test "${#SHARDS[@]}" -eq 24
+          python -m i3.lab.stage1_omega_adr0015_runner aggregate-validation             "$RUNNER_TEMP/selection-aggregate/selection-aggregate.json"             "$RUNNER_TEMP/validation-aggregate.json" "${SHARDS[@]}"
+      - name: Preserve final aggregate as Actions artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-aggregate
+          path: ${{ runner.temp }}/validation-aggregate.json
+          retention-days: 90
+          if-no-files-found: error
+      - name: Upload final aggregate to durable prerelease
+        run: |
+          gh release upload "$CAMPAIGN_TAG"             "$RUNNER_TEMP/validation-aggregate.json"             --repo "$GITHUB_REPOSITORY"
+
+  finalize-custody:
+    name: Publish campaign status and durable asset inventory
+    needs:
+      - custody-init
+      - selection
+      - aggregate-selection
+      - validation
+      - aggregate-validation
+    if: always() && needs.custody-init.result == 'success'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+      CAMPAIGN_TAG: ${{ needs.custody-init.outputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+      SELECTION_RESULT: ${{ needs.selection.result }}
+      SELECTION_AGGREGATE_RESULT: ${{ needs.aggregate-selection.result }}
+      VALIDATION_RESULT: ${{ needs.validation.result }}
+      VALIDATION_AGGREGATE_RESULT: ${{ needs.aggregate-validation.result }}
+    steps:
+      - name: Download final aggregate when available
+        if: needs.aggregate-validation.result == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: validation-aggregate
+          path: ${{ runner.temp }}/validation-aggregate
+      - name: Build campaign status and asset index
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$CAMPAIGN_TAG"             > "$RUNNER_TEMP/release.json"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          final_path = Path(os.environ["RUNNER_TEMP"]) / "validation-aggregate" / "validation-aggregate.json"
+          final = json.loads(final_path.read_text()) if final_path.exists() else None
+          if final is not None:
+              status = "COMPLETE"
+              verdict = final["scientific_verdict"]
+          elif os.environ["SELECTION_RESULT"] != "success":
+              status = "ENGINEERING_FAILURE_SELECTION"
+              verdict = "NOT_EVALUATED"
+          elif os.environ["SELECTION_AGGREGATE_RESULT"] != "success":
+              status = "ENGINEERING_FAILURE_SELECTION_AGGREGATE"
+              verdict = "NOT_EVALUATED"
+          elif os.environ["VALIDATION_RESULT"] != "success":
+              status = "ENGINEERING_FAILURE_VALIDATION"
+              verdict = "NOT_EVALUATED"
+          else:
+              status = "ENGINEERING_FAILURE_VALIDATION_AGGREGATE"
+              verdict = "NOT_EVALUATED"
+
+          release = json.loads(
+              (Path(os.environ["RUNNER_TEMP"]) / "release.json").read_text())
+          assets = [{
+              "id": asset["id"],
+              "name": asset["name"],
+              "size": asset["size"],
+              "digest": asset.get("digest"),
+              "browser_download_url": asset["browser_download_url"],
+              "created_at": asset["created_at"],
+          } for asset in sorted(release["assets"], key=lambda x: x["name"])]
+
+          campaign = {
+              "schema": "i3-stage1-omega-adr0015-campaign-status/v1",
+              "status": status,
+              "scientific_verdict": verdict,
+              "execution_sha": os.environ["SOURCE_SHA"],
+              "protocol_sha256": os.environ["EXPECTED_PROTOCOL"],
+              "selection_result": os.environ["SELECTION_RESULT"],
+              "selection_aggregate_result":
+                  os.environ["SELECTION_AGGREGATE_RESULT"],
+              "validation_result": os.environ["VALIDATION_RESULT"],
+              "validation_aggregate_result":
+                  os.environ["VALIDATION_AGGREGATE_RESULT"],
+              "release_tag": os.environ["CAMPAIGN_TAG"],
+              "completed_asset_count_before_status": len(assets),
+          }
+          index = {
+              "schema": "i3-stage1-omega-adr0015-release-assets/v1",
+              "release_tag": os.environ["CAMPAIGN_TAG"],
+              "execution_sha": os.environ["SOURCE_SHA"],
+              "assets": assets,
+          }
+          root = Path(os.environ["RUNNER_TEMP"])
+          (root / "campaign-status.json").write_text(
+              json.dumps(campaign, sort_keys=True, separators=(",", ":")) + "\n")
+          (root / "campaign-asset-index.json").write_text(
+              json.dumps(index, sort_keys=True, separators=(",", ":")) + "\n")
+          (root / "final-notes.md").write_text(
+              "# I3 Stage-1 omega ADR-0015 campaign\n\n"
+              f"Execution source: `{os.environ['SOURCE_SHA']}`\n\n"
+              f"Protocol SHA-256: `{os.environ['EXPECTED_PROTOCOL']}`\n\n"
+              f"Status: **{status}**\n\n"
+              f"Frozen gate verdict: **{verdict}**\n\n"
+              "Completed evidence assets are retained even on engineering failure.\n"
+              "No retry or replacement execution is authorized.\n")
+          PY
+      - name: Upload final custody records and update prerelease notes
+        run: |
+          gh release upload "$CAMPAIGN_TAG"             "$RUNNER_TEMP/campaign-status.json"             "$RUNNER_TEMP/campaign-asset-index.json"             --repo "$GITHUB_REPOSITORY"
+          gh release edit "$CAMPAIGN_TAG"             --repo "$GITHUB_REPOSITORY"             --notes-file "$RUNNER_TEMP/final-notes.md"             --prerelease
+      - name: Preserve final custody records as Actions artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: campaign-custody
+          path: |
+            ${{ runner.temp }}/campaign-status.json
+            ${{ runner.temp }}/campaign-asset-index.json
+          retention-days: 90
+          if-no-files-found: error
+
