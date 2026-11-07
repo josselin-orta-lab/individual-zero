@@ -85,3 +85,14 @@ Whatever happens, the default stays `chunk_end`.
   candidate if one passes, and report both runs side by side.
 - Draft, but do not execute, the ADR-0015 gate for adopting the candidate into
   the reference cognition.
+
+## Addendum D1 — declared after the selection verdict, before running
+
+The frozen selection returned `NO_CANDIDATE_PROMOTED`. Declared before
+execution, as a **descriptive diagnostic only** (no adoption, no decision
+rule): rerun the frozen ω falsifier unchanged except the model's projection set
+to per-step exact (255 unit chunks, `chunk_end` accounting).
+
+Question: does ω's monotone effect on the water revelation advantage survive an
+evaluation free of plan-length bias, and how many states can still fund the
+unbiased cost (states the kernel cannot fund are reported as `UNFUNDED`)?
