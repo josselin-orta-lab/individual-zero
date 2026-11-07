@@ -81,3 +81,7 @@ so no conventional confirmatory inference or global GO.
 Independent original-custody checks all experiment identities,
 actual phase charges, computed/applied score terms, and no
 postmortem work, without any additional study life.
+
+| Carried-food future reuse | `tests/i3/test_carried_food_future_reuse.py`: default equals #1102, repeats bounded by carried units, branches stay personal rows, information only from branch disagreement, every plan paid, renaming invariance | Implemented |
+| Carried-food raw-rank audit | `tests/i3/test_stage1_carried_food_rank_audit.py`: audit boundary (no runtime, no World built or stepped), descriptive placement | Implemented |
+

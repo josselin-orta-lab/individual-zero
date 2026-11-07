@@ -955,3 +955,23 @@ This is also a direct software route back to #1054's unresolved carried-food
 case without rewriting P5d evidence.
 
 No scientific study or runtime policy is authorized by this slice.
+
+
+## Carried-food raw-rank audit (#1103) and future-reuse characterization
+
+The #1103 audit placed the #1102 score beside actual P1.3 witnesses on 27
+synthetic states: information positive in 18, **meal rank improved in 0**, P1.3
+already eats in 24. A frozen follow-up added opt-in `max_future_repeats`
+(default 1 is #1102 exactly) and represented 1, 2, 4 and 8 carried future uses:
+still **0/27 improvements**, raw-top fixed at 15/27, information saturating
+(0.126 → 0.148) while paid kernel work grows ×3.6–4.8. Verdict
+`BOUND_NOT_CAUSAL`: [results](studies/stage1-carried-food-reuse/RESULTS.md).
+
+Harmful personal histories can carry genuine information when their branches
+disagree on the best plan (Amendment 1); "harmful ⇒ zero" held only for the
+earlier test states.
+
+Information value is bounded by how much the best plan differs between imagined
+effects, not by how often it is reused. First contact is the remaining Stage-1
+blocker: [decision note](STAGE1_FIRST_CONTACT_DECISION.md).
+

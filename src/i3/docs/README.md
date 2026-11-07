@@ -105,6 +105,19 @@ Stage 2 remains blocked.
 P1.3 remains the reference. I3 remains unregistered. No validation or reserve
 world has been opened.
 
+## Latest: carried food closed as decision-neutral; first contact needs a decision
+
+After #1102, the carried-food path was audited (#1103) and characterized
+(inventory-bounded future reuse, frozen, executed once, no world): **0/27 meal
+rank improvements at 1–8 represented future uses**; information saturates.
+The one-reuse bound is not causal, so do not patch recurrence. See
+[results](studies/stage1-carried-food-reuse/RESULTS.md).
+
+The open Stage-1 blocker is **first contact**: before personal experience,
+information value cannot pay for a risky unsupported trial. Owner decision
+required: [STAGE1_FIRST_CONTACT_DECISION.md](STAGE1_FIRST_CONTACT_DECISION.md).
+Do not implement either option before that decision.
+
 ## 48/49 diagnostic closed by engineering failure
 
 The fresh three-arm 48/49 diagnostic did not complete. Two

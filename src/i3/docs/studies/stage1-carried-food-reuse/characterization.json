@@ -1,0 +1,206 @@
+{
+ "harmful": {
+  "2": {
+   "base_rank_improved": 0,
+   "candidate_above_reference_meal_base": 9,
+   "candidate_raw_top_base": 15,
+   "candidate_raw_top_total": 15,
+   "complete": 27,
+   "evaluated": 27,
+   "max_information": 0.13216099295717254,
+   "mean_kernel_work": {
+    "cycles": 11.0,
+    "memory_items": 96.0,
+    "replays": 0.0,
+    "simulated_steps": 24.0
+   },
+   "median_information": 0.0,
+   "positive_information": 12,
+   "reference_chose_meal": 18,
+   "total_rank_improved": 0
+  },
+  "3": {
+   "base_rank_improved": 0,
+   "candidate_above_reference_meal_base": 9,
+   "candidate_raw_top_base": 15,
+   "candidate_raw_top_total": 15,
+   "complete": 27,
+   "evaluated": 27,
+   "max_information": 0.13216098992479597,
+   "mean_kernel_work": {
+    "cycles": 15.0,
+    "memory_items": 132.0,
+    "replays": 0.0,
+    "simulated_steps": 31.0
+   },
+   "median_information": 0.0,
+   "positive_information": 12,
+   "reference_chose_meal": 18,
+   "total_rank_improved": 0
+  },
+  "5": {
+   "base_rank_improved": 0,
+   "candidate_above_reference_meal_base": 9,
+   "candidate_raw_top_base": 15,
+   "candidate_raw_top_total": 15,
+   "complete": 27,
+   "evaluated": 27,
+   "max_information": 0.13215951706758,
+   "mean_kernel_work": {
+    "cycles": 23.0,
+    "memory_items": 216.0,
+    "replays": 0.0,
+    "simulated_steps": 40.333333333333336
+   },
+   "median_information": 0.0,
+   "positive_information": 12,
+   "reference_chose_meal": 18,
+   "total_rank_improved": 0
+  },
+  "9": {
+   "base_rank_improved": 0,
+   "candidate_above_reference_meal_base": 9,
+   "candidate_raw_top_base": 15,
+   "candidate_raw_top_total": 15,
+   "complete": 27,
+   "evaluated": 27,
+   "max_information": 0.13215917317616377,
+   "mean_kernel_work": {
+    "cycles": 39.0,
+    "memory_items": 432.0,
+    "replays": 0.0,
+    "simulated_steps": 59.0
+   },
+   "median_information": 0.0,
+   "positive_information": 12,
+   "reference_chose_meal": 18,
+   "total_rank_improved": 0
+  }
+ },
+ "label": "DESCRIPTIVE_NOT_COST_MATCHED",
+ "lives": 0,
+ "mixed": {
+  "2": {
+   "base_rank_improved": 0,
+   "candidate_above_reference_meal_base": 9,
+   "candidate_raw_top_base": 15,
+   "candidate_raw_top_total": 15,
+   "complete": 27,
+   "evaluated": 27,
+   "max_information": 0.12592348976924028,
+   "mean_kernel_work": {
+    "cycles": 11.0,
+    "memory_items": 96.0,
+    "replays": 0.0,
+    "simulated_steps": 29.666666666666668
+   },
+   "median_information": 0.006025213388387796,
+   "positive_information": 18,
+   "reference_chose_meal": 24,
+   "total_rank_improved": 0,
+   "work_ratio_to_n2": {
+    "cycles": 1.0,
+    "memory_items": 1.0,
+    "replays": null,
+    "simulated_steps": 1.0
+   }
+  },
+  "3": {
+   "base_rank_improved": 0,
+   "candidate_above_reference_meal_base": 9,
+   "candidate_raw_top_base": 15,
+   "candidate_raw_top_total": 15,
+   "complete": 27,
+   "evaluated": 27,
+   "max_information": 0.13395055514536103,
+   "mean_kernel_work": {
+    "cycles": 15.0,
+    "memory_items": 132.0,
+    "replays": 0.0,
+    "simulated_steps": 42.666666666666664
+   },
+   "median_information": 0.008659332272600073,
+   "positive_information": 18,
+   "reference_chose_meal": 24,
+   "total_rank_improved": 0,
+   "work_ratio_to_n2": {
+    "cycles": 1.3636363636363635,
+    "memory_items": 1.375,
+    "replays": null,
+    "simulated_steps": 1.4382022471910112
+   }
+  },
+  "5": {
+   "base_rank_improved": 0,
+   "candidate_above_reference_meal_base": 9,
+   "candidate_raw_top_base": 15,
+   "candidate_raw_top_total": 15,
+   "complete": 27,
+   "evaluated": 27,
+   "max_information": 0.13866243056695282,
+   "mean_kernel_work": {
+    "cycles": 23.0,
+    "memory_items": 216.0,
+    "replays": 0.0,
+    "simulated_steps": 71.66666666666667
+   },
+   "median_information": 0.013827746163011079,
+   "positive_information": 18,
+   "reference_chose_meal": 24,
+   "total_rank_improved": 0,
+   "work_ratio_to_n2": {
+    "cycles": 2.090909090909091,
+    "memory_items": 2.25,
+    "replays": null,
+    "simulated_steps": 2.4157303370786516
+   }
+  },
+  "9": {
+   "base_rank_improved": 0,
+   "candidate_above_reference_meal_base": 11,
+   "candidate_raw_top_base": 15,
+   "candidate_raw_top_total": 15,
+   "complete": 27,
+   "evaluated": 27,
+   "max_information": 0.14798602724923338,
+   "mean_kernel_work": {
+    "cycles": 39.0,
+    "memory_items": 432.0,
+    "replays": 0.0,
+    "simulated_steps": 141.66666666666666
+   },
+   "median_information": 0.023726261155473938,
+   "positive_information": 17,
+   "reference_chose_meal": 24,
+   "total_rank_improved": 0,
+   "work_ratio_to_n2": {
+    "cycles": 3.5454545454545454,
+    "memory_items": 4.5,
+    "replays": null,
+    "simulated_steps": 4.775280898876404
+   }
+  }
+ },
+ "one_unit": {
+  "base_rank_improved": 0,
+  "candidate_above_reference_meal_base": 0,
+  "candidate_raw_top_base": 15,
+  "candidate_raw_top_total": 15,
+  "complete": 27,
+  "evaluated": 27,
+  "max_information": 0.0,
+  "mean_kernel_work": {
+   "cycles": 7.0,
+   "memory_items": 64.0,
+   "replays": 0.0,
+   "simulated_steps": 15.333333333333334
+  },
+  "median_information": 0.0,
+  "positive_information": 0,
+  "reference_chose_meal": 24,
+  "total_rank_improved": 0
+ },
+ "protocol": "STAGE1_CARRIED_FOOD_REUSE_CHARACTERIZATION.md",
+ "schema": "i3-stage1-carried-food-reuse-characterization/v1",
+ "world_access": false
+}
