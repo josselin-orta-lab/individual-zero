@@ -130,10 +130,20 @@ followed by a zero-work P1.3 Stage B whose public status is
 `NO_PROCESSING_BUDGET`. Total work remains physically paid, but R-depletion
 processing semantics belong to Stage B.
 
-Next work is software-only and prospectively frozen in
-[STAGE1_MULTIPHASE_PROCESSING_REDUCER_REPAIR.md](docs/STAGE1_MULTIPHASE_PROCESSING_REDUCER_REPAIR.md).
-Use synthetic fixtures only for acceptance. Do not modify Candidate-H/I policy,
-omega/RMS, costs, physics or J1-J7.
+The frozen
+[multi-phase processing reducer repair](docs/studies/stage1-multiphase-processing-reducer-repair/RESULTS.md)
+now **PASSes M0-M9** on tested source
+`252419ff099fbb95990fb7a19426864c0a5a8346`, Actions
+`42523805013`. Total decision work remains the full physical bill; only the
+authenticated route-specific processing owner is tested against public funding.
+
+64/65 remain permanently closed. The read-only archived-life confirmation is
+forensic only and creates no J1-J7 evidence.
+
+**Do not allocate another fresh panel yet.** Next freeze a successor lifecycle
+preflight preserving L0-L11 plus an explicit paid-Stage-A / zero-Stage-B /
+`NO_PROCESSING_BUDGET` reducer case. No H/I policy, omega/RMS, costs, physics
+or J1-J7 changes are authorized.
 
 Do not widen omega, rescale RMS, add resource-specific inherited coefficients,
 alter K80/P80/F108 or reuse 56/57/58/59. Selection, validation, reserve and
