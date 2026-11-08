@@ -111,17 +111,29 @@ now **PASSes L0-L11** on tested source
 DEVELOPMENT-0 smokes plus the F/R/N/P/Z lifecycle micro-cycles complete with
 zero custody failure.
 
-The fresh successor is now prospectively specified in
-[Candidate-I 64/65](docs/studies/stage1-candidate-i-development-64-65/PROTOCOL.md).
-The machine plan uses DEVELOPMENT 64/65, world 2064/2065, G0 905/906 and
-life-seed base 7,500,000, with the exact four arms and J1-J7 from 60/61 and
-62/63. Its canonical digest is
-`4c921d59a3eaeb8a85b994a6fade72a791669a24ddb33847e3269def128e7093`.
+The fresh
+[Candidate-I 64/65](docs/studies/stage1-candidate-i-development-64-65/RESULTS.md)
+panel has now been opened once and stopped after 35 admitted reductions. The
+36th original completed, then the Stage-0 revision reducer rejected a valid
+multi-phase receipt with
+`ValueError: processing status contradicts paid base block`.
+Evidence is archived on
+`evidence/i3-stage1-candidate-i-64-65-427eedd37457` at
+`f09806130d0ea0d9d9a66a12d6baa3afe5b66d15`. #1195 is closed/unmerged.
 
-**Do not open 64/65 in the protocol PR.** After protocol/plan merge, add only
-the source-locked runner/reducer and preflight in a separate PR. That preflight
-must rerun lifecycle stress on already-exposed fixtures. Actual exposure still
-requires a separate reviewed one-shot transport.
+**64/65 are permanently exposed and closed. There is no J1-J7 verdict.**
+Do not rerun, resume, replace the failing life, complete the remaining cases or
+use partial metrics to tune Candidate-I.
+
+The current defect is reducer ownership: a paid Candidate-H/I Stage A may be
+followed by a zero-work P1.3 Stage B whose public status is
+`NO_PROCESSING_BUDGET`. Total work remains physically paid, but R-depletion
+processing semantics belong to Stage B.
+
+Next work is software-only and prospectively frozen in
+[STAGE1_MULTIPHASE_PROCESSING_REDUCER_REPAIR.md](docs/STAGE1_MULTIPHASE_PROCESSING_REDUCER_REPAIR.md).
+Use synthetic fixtures only for acceptance. Do not modify Candidate-H/I policy,
+omega/RMS, costs, physics or J1-J7.
 
 Do not widen omega, rescale RMS, add resource-specific inherited coefficients,
 alter K80/P80/F108 or reuse 56/57/58/59. Selection, validation, reserve and
