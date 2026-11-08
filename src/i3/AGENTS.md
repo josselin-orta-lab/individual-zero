@@ -140,14 +140,20 @@ authenticated route-specific processing owner is tested against public funding.
 64/65 remain permanently closed. The read-only archived-life confirmation is
 forensic only and creates no J1-J7 evidence.
 
-**Do not allocate another fresh panel yet.** The successor lifecycle preflight
-is now prospectively frozen in
-[STAGE1_CANDIDATE_I_LIFECYCLE_CUSTODY_STRESS_V2.md](docs/STAGE1_CANDIDATE_I_LIFECYCLE_CUSTODY_STRESS_V2.md).
-Implement V0-V8 exactly. Preserve the complete historical L0-L11 gate and use
-the frozen generic 0.15-energy / 5-cycle Stage-A fixture to force actual H,
-I-native and I-omega0 production decisions through Stage-B
-`NO_PROCESSING_BUDGET` and the repaired reducer. Do not use 64/65 originals.
-No H/I policy, omega/RMS, costs, physics or J1-J7 changes are authorized.
+The frozen
+[Candidate-I lifecycle-custody stress v2](docs/studies/stage1-candidate-i-lifecycle-custody-stress-v2/RESULTS.md)
+now **PASSes V0-V8** on tested source
+`f9544cf2e22f69a953fdd4141adc6991547c7e16`, Actions
+`42524858889`, with 1008 tests on the I3 suite.
+
+Historical L0-L11 remains green. The actual H/I sequential
+paid-Stage-A / zero-Stage-B `NO_PROCESSING_BUDGET` boundary now crosses the
+production reducer before any fresh exposure.
+
+A new fresh Candidate-I DEVELOPMENT successor may now be **proposed and frozen
+only**. Do not open it in the protocol PR. Preserve the same scientific
+question/J1-J7 unless a separate prospective scientific decision explicitly
+changes them. 60/61, 62/63 and 64/65 remain closed.
 
 Do not widen omega, rescale RMS, add resource-specific inherited coefficients,
 alter K80/P80/F108 or reuse 56/57/58/59. Selection, validation, reserve and
