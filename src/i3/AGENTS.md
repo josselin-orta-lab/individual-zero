@@ -72,20 +72,34 @@ projection refinements to recover them. Candidate-F's event-local projector is
 the current canonical Stage-1 projection target on #1146 at mean 470.05
 simulated steps/state.
 
-#1156 now completes that separation: the bounded software gate for Candidate-G
-personal recurrence + Candidate-F projection **without genomic omega** passes
-(`PERSONAL_RECURRENCE_CANDIDATE_G_INTEGRATION_PASS`). Persistent mode remains
-P1.3 `reference/chunk_end`; the canonical projector is decision-local and only
-enters when a paid personal information path exists.
+#1156 completed the bounded no-omega Candidate-G software gate. The subsequent
+frozen 56/57 DEVELOPMENT pilot is now complete
+([result](docs/studies/stage1-candidate-g-development-56-57/RESULTS.md)).
 
-**Next work is already frozen, not yet executed:** follow
-[the 56/57 DEVELOPMENT protocol](docs/studies/stage1-candidate-g-development-56-57/PROTOCOL.md).
-Do not alter its arms, seeds, horizon or continuation rules after exposure. Do
-not open 56/57 from an ordinary development PR: they require a separately
-reviewed one-shot transport after exact-head Python 3.11/3.12 checks. The pilot
-tests activation plus physical affordability against P1.3 and rejected
-Candidate-F; survival is descriptive only. No selection, validation, reserve,
-reference adoption or Stage 2.
+Frozen continuation verdict:
+**`CANDIDATE_G_56_57_ENGINEERING_CONTINUATION_FAIL`**.
+
+Observed:
+
+- 368 information-active decisions and 1213 reference-only decisions;
+- energy/lived-step 0.9161 Candidate-G vs 2.1983 rejected Candidate-F;
+- vigilance/lived-step 1.2723 vs 3.1118;
+- frozen R5 FAIL: `NO_PROCESSING_BUDGET` 2.8463% vs 2.0436%;
+- descriptive survival: Candidate-G 0/12 censored, P1.3 3/12;
+- positive water uptake: 16 Candidate-G vs 196 P1.3.
+
+The posthoc fact that total non-funded decisions are lower for Candidate-G
+(9.1082% vs 21.4578%) does not replace R5. It only identifies different
+failure-mode composition: Candidate-F often fails at `NO_FUNDED_SCORE`, while
+Candidate-G reaches processing failure more often.
+
+**DRIFT DETECTED:** 56/57 are exposed. Do not tune recurrence support,
+activation frequency, projector choice, funding thresholds, seeds, horizon or
+the R5 definition on them. Do not open another live panel to rescue this
+candidate. Close the Candidate-G live path and return to read-only evidence
+analysis or a new software-only architecture falsifier. Preserve no-omega,
+personal-observation-only cognition, paid work and P1.3 reference. Selection,
+validation, reserve, adoption and Stage 2 remain blocked.
 
 **History after #1154:** exact cache/reward reuse cannot reach Candidate-F cost
 parity even under an impossible free-memo lower bound
