@@ -191,12 +191,26 @@ at decision 134: Candidate-H Stage A was fully paid
 and the final public status was `NO_PROCESSING_BUDGET`. The Stage-0 reducer
 incorrectly applied that Stage-B status to total Stage-A+Stage-B work.
 
-The next admissible intervention is the prospectively frozen software-only
-[multi-phase processing reducer repair](STAGE1_MULTIPHASE_PROCESSING_REDUCER_REPAIR.md).
-It must authenticate Candidate-H/I Stage-A+Stage-B receipts and apply the
-R-depletion processing predicate only to the actual public processing owner,
-while keeping all earlier work physically charged. No 64/65 original may be an
-acceptance fixture.
+The prospectively frozen software-only
+[multi-phase processing reducer repair](studies/stage1-multiphase-processing-reducer-repair/RESULTS.md)
+now returns **`MULTIPHASE_PROCESSING_REDUCER_REPAIR_PASS`** on tested source
+`252419ff099fbb95990fb7a19426864c0a5a8346`, Actions
+`42523805013`. Python 3.11/3.12 pass **999 tests**; M0-M9 are all green.
+
+The reducer now authenticates total work separately from route-specific
+processing ownership: Candidate-H finals, Candidate-I P1.3 fallback and
+post-contact use Stage B; Candidate-I `INFORMATION_FINAL` uses its retained
+Stage A. All cognition remains physically charged.
+
+After this independent PASS, a read-only check of the archived 36th 64/65
+original found zero processing/work contradictions across all 141 trace rows;
+the former t=134 failure reduces as Stage-B `processing_paid=false`. This does
+not admit the life to J1-J7.
+
+**Do not propose another fresh Candidate-I panel yet.** The next admissible
+intervention is a successor lifecycle-custody preflight that preserves L0-L11
+and explicitly forces the sequential reducer boundary:
+paid Stage A -> zero-work Stage B -> public `NO_PROCESSING_BUDGET`.
 
 ## Current handoff: 58/59 exposed, no Candidate-H continuation verdict
 
