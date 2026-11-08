@@ -221,7 +221,7 @@ def run(out_path):
             and post_low["frontier_phase"] == "POST_CONTACT_PERSONAL"
             and post_low["decision_projection_mode"] == "candidate_f",
         "R6_recurrence_empty_at_birth":
-            make_mind().opportunity_memory.snapshot()["retained_gap_count"] == 0,
+            make_mind().opportunity_memory.snapshot()["gaps"]["water"] == (),
         "R7_kernel_canonical_counts":
             kernel["selected_epistemic"] == 24
             and kernel["selected_water_deficit"] == 0
