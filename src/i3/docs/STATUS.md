@@ -207,10 +207,14 @@ original found zero processing/work contradictions across all 141 trace rows;
 the former t=134 failure reduces as Stage-B `processing_paid=false`. This does
 not admit the life to J1-J7.
 
-**Do not propose another fresh Candidate-I panel yet.** The next admissible
-intervention is a successor lifecycle-custody preflight that preserves L0-L11
-and explicitly forces the sequential reducer boundary:
-paid Stage A -> zero-work Stage B -> public `NO_PROCESSING_BUDGET`.
+**Do not propose another fresh Candidate-I panel yet.** The next intervention is
+now prospectively frozen in
+[STAGE1_CANDIDATE_I_LIFECYCLE_CUSTODY_STRESS_V2.md](STAGE1_CANDIDATE_I_LIFECYCLE_CUSTODY_STRESS_V2.md).
+It preserves the entire historical L0-L11 gate and adds V0-V8 around actual
+production Candidate-H / Candidate-I decisions forced into the sequential
+boundary: generic paid Stage A -> zero-work Stage B -> public
+`NO_PROCESSING_BUDGET`, followed by the production Stage-0 revision join.
+No exposed-panel original is an acceptance fixture.
 
 ## Current handoff: 58/59 exposed, no Candidate-H continuation verdict
 
