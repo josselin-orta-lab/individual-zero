@@ -10,7 +10,7 @@ Source: the 36 originals preserved on
 
 Reduction: `src/i3/lab/stage1_candidate_g_56_57_posthoc_first_contact.py`,
 run as `python -m i3.lab.stage1_candidate_g_56_57_posthoc_first_contact
-<evidence-directory>`. Output: [posthoc-first-contact.json](posthoc-first-contact.json).
+<evidence-directory>`. Its JSON stdout may be preserved as `posthoc-first-contact.json` when the reduction is rerun against the authenticated archive; the reducer and immutable originals remain the authority, not a copied snapshot.
 Before reading any life, the script checks every digest listed in the archive's
 `SHA256.json`, each case's compressed and uncompressed digests, every life
 identity, both genome digests and the frozen execution SHA. Its inputs are the
