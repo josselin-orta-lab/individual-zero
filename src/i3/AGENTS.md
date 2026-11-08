@@ -13,6 +13,27 @@ P3 as not executed are historical, not the present source/evidence state.
 remains the governing direction. P1.3 on funded v2 remains the reference and I3
 remains unregistered.
 
+**Current handoff after 58/59 exposure:** run `42484179997` opened the frozen
+Candidate-H DEVELOPMENT panel and then stopped on a post-life reduction
+engineering error. The evidence branch is
+`evidence/i3-stage1-candidate-h-58-59-c2f63445ce8a`. Per the frozen no-retry
+rule, 58/59 are exposed and closed. There is no H1-H6 Candidate-H verdict.
+Do not rerun, replace seeds, repair the reducer and replay the panel, or use the
+partial Candidate-H original to tune cognition.
+
+The 56/57 read-only first-contact audit is now part of the handoff. It observes
+that a never-performed action receives the paid unsupported-effect prior on the
+imagined frontier path but not when the resource is directly perceived.
+Exploration without P1.3's designer addend is also sparse. These are descriptive
+findings on immutable originals, not permission to tune 56/57.
+
+**Next work is software-only:** implement exactly
+[STAGE1_SHARED_FIRST_CONTACT_PRIOR.md](docs/STAGE1_SHARED_FIRST_CONTACT_PRIOR.md)
+after its frozen document commit. Preserve its omega arms, K80/P80/F108 fixtures,
+negative controls, D0-D7 defect stops and R1 capacity criterion. Do not widen
+omega or rescale the RMS prior after exposure. Do not touch Candidate-H runtime,
+World/life, 58/59, selection, validation, reserve or Stage 2.
+
 The full frozen Stage-1 genomic-omega Candidate-F gate has now completed.
 Read [the final result](docs/studies/stage1-omega-adr0015/RESULTS.md) before any
 Stage-1 edit.
@@ -124,27 +145,10 @@ U0-U9 are all PASS under Python 3.11/3.12. The fixed routing panel contains
 37 P1.3 final routes and 23 Candidate-F final routes, observes all five required
 routing classes, has zero omega mismatches and zero fallback identity failures.
 
-**Next work:** freeze a new **DEVELOPMENT-only live protocol before runtime
-registration or World exposure**. Do not change either relevance predicate.
-The future protocol may add Candidate-H to an explicit opt-in development path
-only after allocation, arms, seeds, horizon, custody and continuation rules are
-frozen.
-
-Required boundaries remain:
-
-1. P1.3 stays the reference and active engine remains I1;
-2. first contact uses personal recurrence, omega=0, and #1162 relevance;
-3. post contact uses personal actionable belief and #1163 top-effect relevance;
-4. fallback pays the probe plus a complete P1.3 decision;
-5. relevant decisions use one commensurate Candidate-F geometry;
-6. persistent mode returns to `reference/chunk_end`;
-7. no 56/57 reuse, no selection/validation/reserve, no Stage 2;
-8. no World/life, no 56/57 read, no engine registration;
-9. software PASS may authorize only a future fresh DEVELOPMENT protocol, never
-   selection/validation/reserve directly.
-
-Do not reopen the semantics that already passed unless a concrete integration
-contradiction is observed.
+**Historical handoff after #1164:** the unified software PASS authorized a
+prospectively frozen DEVELOPMENT-only protocol. #1165 froze it and #1168 later
+opened it once. That live handoff is now superseded by the exposed engineering
+failure above. Do not create a replacement DEVELOPMENT panel.
 
 **History after #1154:** exact cache/reward reuse cannot reach Candidate-F cost
 parity even under an impossible free-memo lower bound
