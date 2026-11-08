@@ -98,8 +98,7 @@ def synchronize_candidate_shadow(
     candidate._budget_rng.setstate(reference._budget_rng.getstate())
 
     candidate._pending_branch = None
-    candidate._branch_decision_start_body = None
-    candidate._branch_decision_work = CognitiveWork()
+    candidate._clear_branch_decision_settlement()
     candidate._observer_first_forecast = None
     candidate._observer_competition = None
 
