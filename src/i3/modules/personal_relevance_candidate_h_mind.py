@@ -228,6 +228,14 @@ class PersonalRelevanceCandidateHMind(PersonalRecurrenceCandidateGMind):
             raise RuntimeError(
                 "Candidate-H persistent mode must remain P1.3 reference")
 
+        # DEVELOPMENT runtime hygiene frozen before implementation in the
+        # 58/59 protocol. A probe-only failure must never retain learning
+        # authority from the preceding physical action.
+        self._pending_branch = None
+        self._pending_opportunity_presence = None
+        self._pending_opportunity_commit = None
+        self.last = None
+
         self.relevance_probes += 1
         stage_a = self._probe(cap, budget)
 
@@ -251,6 +259,24 @@ class PersonalRelevanceCandidateHMind(PersonalRecurrenceCandidateGMind):
                 "persistent_projection_accounting": "chunk_end",
                 "omega_source": "NONE_PERSONAL_ONLY",
             }
+            if self.observer_decision_diagnostics:
+                outcome = (
+                    "no_processing_budget"
+                    if stage_a["funding"] == "NO_PROCESSING_BUDGET"
+                    else "no_funded_score")
+                empty_families = {
+                    family: 0 for family in (
+                        "resource", "movement", "exploration", "rest")}
+                info["observer"] = {
+                    "offered_options": 0,
+                    "scored_options": 0,
+                    "rejected_controls": 0,
+                    "decision_outcome": outcome,
+                    "offered_families": dict(empty_families),
+                    "scored_families": dict(empty_families),
+                    "pre_body": budget.body,
+                    "score_witness": [],
+                }
             if (self.simulation_mode, self.projection_accounting) != (
                     "reference", "chunk_end"):
                 raise RuntimeError("Candidate-H probe leaked projector mode")
