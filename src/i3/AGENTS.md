@@ -161,13 +161,22 @@ commit `18a7e27bd79de81280e171fdf682f8a5f4195830`.
 resume, complete or retroactively admit archived lives after repair. Do not use
 partial lived metrics to tune Candidate-I.
 
-The next work is software-only and prospectively frozen in
-[STAGE1_POST_CONTACT_PROBE_REDUCER_REPAIR.md](docs/STAGE1_POST_CONTACT_PROBE_REDUCER_REPAIR.md).
-Implement Q0-Q9 exactly. Candidate-I post-contact must delegate reducer
-processing ownership to the nested Candidate-H route: complete H finals keep
-Stage-B ownership; nested H `PROBE_UNFUNDED` uses authenticated Stage A with
-zero Stage B and incomplete nested funding. Preserve direct-H, M0-M9 and V0-V8
-semantics. 66/67 originals are forbidden as acceptance fixtures.
+The
+[post-contact probe reducer repair](docs/studies/stage1-post-contact-probe-reducer-repair/RESULTS.md)
+now **PASSes Q0-Q9** on tested source
+`78d09c98127fb55aebb5eca729fa4ce4795d007a`, Actions
+`42533323063`, merged authority
+`4bcb2f28488f289625558960cd93c7c65c69b107`. Direct H and I post-contact
+share one processing-owner definition; complete H uses Stage B and H
+`PROBE_UNFUNDED` uses authenticated Stage A with zero Stage B.
+
+**Do not propose another fresh panel yet.** The next gate is prospectively
+frozen in
+[STAGE1_CANDIDATE_I_LIFECYCLE_CUSTODY_STRESS_V3.md](docs/STAGE1_CANDIDATE_I_LIFECYCLE_CUSTODY_STRESS_V3.md).
+Implement W0-W9 exactly. Use the fixed ten-value energy ladder and actual
+production H/I classes; do not alter the ladder to obtain both incomplete
+funding classes. The gate is software-only and may not read 66/67 originals as
+acceptance fixtures.
 
 Do not widen omega, rescale RMS, add resource-specific inherited coefficients,
 alter K80/P80/F108 or reuse 56/57/58/59. Selection, validation, reserve and
