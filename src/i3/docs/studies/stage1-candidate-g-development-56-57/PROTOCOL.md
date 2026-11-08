@@ -63,7 +63,13 @@ sealed.
 
 Canonical plan SHA-256:
 
-`77ac7b0e606b385d890410996ac13e6e5581265f4e759d55ae79ef7cd65f01f4`.
+`5837c98a9f94b10255e87526a0d4fa4718db09f3a9638cba3f9ff591246ba798`.
+
+Fingerprint note: the initial protocol commit recorded a pre-runner draft
+fingerprint. This value is the canonical digest of the machine-readable plan
+implemented after that freeze. The correction occurred before any world import
+or life exposure and changes no allocation, arm, seed, horizon, criterion or
+interpretation rule. Runtime/source locking remains a separate exact-SHA guard.
 
 ## Arms
 
