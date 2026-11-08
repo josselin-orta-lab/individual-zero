@@ -5,6 +5,7 @@ Software only: no World, life, runtime registration or motor authority.
 """
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import asdict
 import json
 import math
@@ -82,9 +83,9 @@ def _same_scores(left, right):
     return worst <= TOL, worst
 
 
-def _reference_perceived_phase(body, horizon, action_key):
+def _reference_perceived_phase(body, horizon, action_key, mind=None):
     """P1.3 score geometry for ordinary plans plus the directly offered trial."""
-    mind = G.make_mind()
+    mind = G.make_mind() if mind is None else deepcopy(mind)
     plans = dict(ORDINARY_PLANS)
     plans["perceived_trial"] = (tuple(action_key),)
     ceiling = CognitiveWork()
@@ -333,8 +334,8 @@ def _supported_negative_control(mind, body, horizon, action_key):
     """Supported first actions must bypass the unsupported-action probe."""
     if not _has_personal_action_support(mind, action_key):
         raise RuntimeError("negative control lacks frozen personal action support")
-    final = _reference_perceived_phase(body, horizon, action_key)
-    control = _reference_perceived_phase(body, horizon, action_key)
+    final = _reference_perceived_phase(body, horizon, action_key, mind)
+    control = _reference_perceived_phase(body, horizon, action_key, mind)
     if final["status"] != control["status"]:
         raise RuntimeError("negative-control reference status mismatch")
     if final["status"] != "FUNDED":
