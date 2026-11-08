@@ -166,10 +166,18 @@ already-exposed DEVELOPMENT-0 smokes reduce with `smoke_failures=[]`.
 This is engineering readiness only. It does not evaluate survival, uptake,
 route frequency, omega direction or J1-J7.
 
-A new fresh Candidate-I DEVELOPMENT successor may now be **proposed and frozen**
-on disjoint conditions, but not opened until its own protocol, machine plan and
-source-locked runner pass prospectively. 60/61 and 62/63 remain permanently
-closed and are not calibration data.
+The next fresh successor is now prospectively specified on
+[Candidate-I 64/65](studies/stage1-candidate-i-development-64-65/PROTOCOL.md).
+It preserves the exact four arms and byte-identical J1-J7 while allocating only
+new DEVELOPMENT indices **64/65**, world seeds **2064/2065**, G0 seeds
+**905/906** and life-seed base **7,500,000**. Machine plan digest:
+`4c921d59a3eaeb8a85b994a6fade72a791669a24ddb33847e3269def128e7093`.
+
+This protocol/plan PR cannot open 64/65. After merge, the next admissible work
+is a separate source-locked runner/reducer and preflight which must rerun the
+lifecycle stress on already-exposed fixtures. Actual 64/65 exposure remains a
+later separately reviewed one-shot transport. 60/61 and 62/63 stay closed and
+are not calibration data.
 
 ## Current handoff: 58/59 exposed, no Candidate-H continuation verdict
 
