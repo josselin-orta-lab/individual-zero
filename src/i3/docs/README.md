@@ -5,6 +5,25 @@ The [engine contract](../engine.json) has no active entrypoints; the
 [registry](../../../config/engine-registry.json) keeps I1 active.
 A green software test is not a scientific GO.
 
+## Current handoff: no-omega Candidate-G is integrated, live pilot not yet opened
+
+The bounded #1156 software gate passed:
+`PERSONAL_RECURRENCE_CANDIDATE_G_INTEGRATION_PASS`. Candidate-G keeps the
+P1.3 projector persistently and activates the canonical Candidate-F projector
+only for a personally supported information decision. It reads no genomic
+omega. On the frozen #1146 kernel it reproduces the canonical 24/0/24/40
+decision set at mean 470.05 simulated steps/state.
+
+The next step is the frozen
+[56/57 DEVELOPMENT pilot](studies/stage1-candidate-g-development-56-57/PROTOCOL.md):
+reference versus no-omega Candidate-G versus the rejected Candidate-F cost
+anchor. The pilot asks whether conditional activation actually occurs and lowers
+realized energy, vigilance and processing-budget collapse. **Survival is
+descriptive, not a pass criterion.**
+
+The 56/57 worlds are still unopened. No selection, validation, reserve,
+reference adoption or Stage 2 is authorized.
+
 ## Current top-level result: frozen omega gate rejected
 
 The first full eight-population Stage-1 architecture gate is complete:
