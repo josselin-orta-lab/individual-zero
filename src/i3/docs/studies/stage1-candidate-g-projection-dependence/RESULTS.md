@@ -5,6 +5,21 @@ declared at `4a5600d`, before execution. Executed once. Software only: **no
 World, no life, no study index, nothing adopted**; Candidate-G's #1146 verdict
 is unchanged. Data: [diagnostic.json](diagnostic.json).
 
+## Resolution after canonical numerical audit (#1155)
+
+The 32-state historical `per_step` count below is **not canonical truth**.
+A later frozen audit using the already-authorized end-to-end high-precision
+oracle at the same 255-unit cost/forecast selects **24 states, 0 water**, exactly
+the same selected-state set as Candidate-F
+([result](../stage1-candidate-g-canonical-numeric-audit/RESULTS.md)).
+
+The eight historical extra water selections are caused by repeated-float
+numerical semantics at vital boundaries. Do not design a future projector to
+recover them. The durable conclusion of this study is therefore: consistent
+projection raises Candidate-G from 1 to **24 canonical selected states**; the
+remaining 24->32 historical difference is numerical artifact, not lost
+canonical decision relevance.
+
 ## Result
 
 The reference arm reproduces #1146 exactly, so the diagnostic is valid.

@@ -67,6 +67,37 @@ and use fresh development conditions only if later executed.
 P1.3 remains reference. I3 remains unregistered. Stage 2 remains blocked and
 the P4 reserve remains sealed.
 
+## Latest correction: canonical Candidate-G set is 24, not historical 32
+
+8 November 2026: the frozen canonical numerical audit
+([result](studies/stage1-candidate-g-canonical-numeric-audit/RESULTS.md))
+completed at source `ce6c16bbae6bdf9d3f46cdb38bebbdcd0dc776ee`,
+Actions `42474206334`, Python 3.11/3.12 PASS.
+
+Historical float per-step and canonical high precision both pay exactly
+18 cycles, 201 memory items and 1288 simulated steps/state. Yet canonical high
+precision selects **24 states / 0 water**, while historical float selects
+32 / 8 water. The only eight changed state identities are water 40 and 50 at
+horizons 4/6/8/12.
+
+Crucially, canonical high precision's selected set is **identical 24/24** to
+Candidate-F's event-local projection set, with no extras or misses. Candidate-F
+uses mean 470.05 simulated steps/state.
+
+Classification:
+**`HISTORICAL_WATER_SELECTIONS_NUMERIC_ARTIFACT`**.
+
+This resolves the residual noted after #1149. Do not spend further Stage-1 work
+trying to recover the historical eight water states. The projection question is
+now sufficiently answered for this grid: Candidate-F is cheap and
+decision-equivalent to the canonical oracle.
+
+Next bounded question: separate Candidate-F's projection from the rejected
+genomic-omega live architecture. Freeze a Candidate-G integration gate that
+uses personal recurrence plus Candidate-F projection **without omega**, and
+measures whether projection cognition itself is fundable before any new life
+panel.
+
 ## Latest negative diagnostic: exact distress reuse remains too expensive
 
 8 November 2026: the declared exact distress-reuse diagnostic

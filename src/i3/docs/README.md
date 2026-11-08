@@ -53,6 +53,24 @@ scientifically defensible; otherwise return to Stage-1 architecture design.
 
 No fresh scientific panel is authorized by this handoff.
 
+## Latest: canonical oracle resolves the Candidate-F water residual
+
+Frozen numerical audit
+([results](studies/stage1-candidate-g-canonical-numeric-audit/RESULTS.md))
+shows that historical float per-step's 8 water selections are a numerical
+artifact. At the **same 1288-step cost**, the authorized high-precision oracle
+selects exactly **24 states / 0 water**, identical state-for-state to the
+Candidate-F projection arm.
+
+Candidate-F therefore reproduces the complete canonical #1146 selected set at
+about **470.05 vs 1288 simulated steps/state**. Do not optimize future
+projectors toward historical repeated-float parity. Projection redesign is no
+longer the immediate Stage-1 target.
+
+Next isolate the integrated candidate:
+**personal Candidate-G recurrence + Candidate-F canonical projection, without
+genomic omega**, before any new World/life allocation.
+
 ## Latest: exact distress reuse cannot close the remaining cost gap
 
 Declared diagnostic

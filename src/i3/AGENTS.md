@@ -62,15 +62,24 @@ new architecture hypothesis.
 Do not reopen selection/validation 72..167 or the P4 reserve. Do not launch
 Stage 2 to rescue the rejected candidate.
 
-**Update after #1154:** exact distress-evaluation reuse is insufficient
-([results](docs/studies/stage1-distress-reuse-diagnostic/RESULTS.md)). Consecutive
-reuse bottoms out at 778.5 simulated steps/state; even an ideal decision-wide
-feature memo with free memory bottoms out at 657.9, above Candidate-F's frozen
-470. **DRIFT DETECTED:** do not build another exact cache/refactoring campaign.
-Return to projection architecture. Audit the Candidate-F versus exact residual,
-especially the 8 exact water-deficit selections Candidate-F misses, for generic
-death/threshold/restoration event localization. No water- or action-specific
-repair is allowed.
+**Update after #1155:** the canonical high-precision audit resolves the
+Candidate-F residual
+([results](docs/studies/stage1-candidate-g-canonical-numeric-audit/RESULTS.md)).
+At the same 1288-step cost as historical per-step, canonical numerics select
+24 states / 0 water, **exactly the Candidate-F selected set**. The historical
+eight water selections are repeated-float boundary artifacts. Do not design
+projection refinements to recover them. Candidate-F's event-local projector is
+the current canonical Stage-1 projection target on #1146 at mean 470.05
+simulated steps/state.
+
+Next separate projector from policy: freeze Candidate-G personal recurrence +
+Candidate-F projection **without genomic omega** under a bounded funding/
+integration gate before any new World/life panel.
+
+**History after #1154:** exact cache/reward reuse cannot reach Candidate-F cost
+parity even under an impossible free-memo lower bound
+([results](docs/studies/stage1-distress-reuse-diagnostic/RESULTS.md)). That route
+is closed.
 
 **History after #1153:** exact death truncation is valid and useful
 ([results](docs/studies/stage1-death-truncated-per-step/RESULTS.md)): 853.3
