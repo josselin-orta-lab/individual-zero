@@ -1,0 +1,74 @@
+{
+  "schema": "i3-stage1-candidate-h-relevance-fallback-summary/v1",
+  "verdict": "CANDIDATE_H_FIRST_CONTACT_SOFTWARE_GATE_PASS",
+  "confirmation": {
+    "final_run": 42478647427,
+    "python": [
+      "3.11",
+      "3.12"
+    ],
+    "final_head": "919c8cfcb6f9d7cf2731117a4cbdd3d6f4ae88f7"
+  },
+  "canonical_probe": {
+    "relevant": 24,
+    "fallback": 56,
+    "declined": 40,
+    "mean_simulated_steps": 470.05
+  },
+  "fallback": {
+    "funded": 56,
+    "unfunded": 0,
+    "score_identity_max_error": 0,
+    "top_identity_all": true,
+    "top_changes_vs_preprobe_reference": 0,
+    "prior_1161_drift_states": 20,
+    "prior_1161_drift_states_returned_to_preprobe": 20,
+    "prior_1161_drift_states_changed_after_paid_probe": 0
+  },
+  "work": {
+    "relevant": {
+      "states": 24,
+      "mean_combined_simulated_steps": 478.6666666666667,
+      "max_combined_simulated_steps": 545,
+      "mean_combined_energy": 1.3575333333333337,
+      "max_combined_energy": 1.4902000000000002,
+      "mean_combined_vigilance": 1.8573333333333337,
+      "max_combined_vigilance": 1.9900000000000002
+    },
+    "fallback": {
+      "states": 56,
+      "mean_combined_simulated_steps": 503.35714285714283,
+      "max_combined_simulated_steps": 603,
+      "mean_combined_energy": 1.4069142857142862,
+      "max_combined_energy": 1.6061999999999999,
+      "mean_combined_vigilance": 1.9067142857142854,
+      "max_combined_vigilance": 2.106
+    }
+  },
+  "rules": {
+    "H0_canonical_identity": true,
+    "H1_all_56_fallback_states_funded": true,
+    "H2_fallback_reference_identity": true,
+    "H3_relevant_path_preserved_without_fallback": true,
+    "H4_physical_accounting_exact_and_funded": true,
+    "H5_authority_boundaries": true
+  },
+  "verification_correction": {
+    "first_run": 42478455412,
+    "first_h4": false,
+    "defect": "H4 reconstructed fixture bodies with captured outer level=50 instead of row['level']",
+    "candidate_or_gate_changed": false
+  },
+  "authorizations": {
+    "runtime_candidate": false,
+    "post_contact_generalization": false,
+    "fresh_live_panel": false,
+    "reuse_56_57": false,
+    "selection": false,
+    "validation": false,
+    "reserve": false,
+    "reference_adoption": false,
+    "stage2": false,
+    "next_post_contact_software_falsifier": true
+  }
+}
