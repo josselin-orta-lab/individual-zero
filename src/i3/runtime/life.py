@@ -34,6 +34,7 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
             "reference", "local_information_v1", "reference_branch_memory_v1",
             "reference_opportunity_memory_v1",
             "reference_frontier_information_v1",
+            "reference_recurrence_frontier_information_v1",
             "genomic_omega_frontier_information_v1",
             "candidate_f_shadow_upper_cost_reference_controller_v1"):
         raise ValueError("unknown decision policy")
@@ -94,6 +95,25 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
             "frontier_scope": "one_generic_new_cell_water_only",
             "food_information": "NOT_IMPLEMENTED",
             "multi_cell_joint_outcomes": "NOT_IMPLEMENTED"}
+    elif decision_policy == "reference_recurrence_frontier_information_v1":
+        manifest["experimental_policy"] = {
+            "name": decision_policy,
+            "score":
+                "p13_reference_projection_personal_recurrence_information_v1",
+            "old_addends": "curiosity_relevance_prudence_removed",
+            "simulation_mode": "reference",
+            "projection_accounting": "chunk_end",
+            "first_contact_expectation":
+                "paid_personal_onset_recurrence_no_numeric_fallback",
+            "first_contact_kernel": "one_future_water_opportunity_v1",
+            "first_contact_unknown_effect": "recent_rms_zero_mean_omega0",
+            "post_contact": "personal_frontier_information_omega_free_v1",
+            "branch_memory": "global18_recent_personal_effects_v1",
+            "opportunity_memory": "generic_onset_recurrence_latest3_v1",
+            "td_memory": "P1.3_unchanged",
+            "frontier_scope": "one_generic_new_cell_water_only",
+            "food_information": "NOT_IMPLEMENTED",
+            "multi_cell_joint_outcomes": "NOT_IMPLEMENTED"}
     elif decision_policy == "genomic_omega_frontier_information_v1":
         manifest["experimental_policy"] = {
             "name": decision_policy,
@@ -147,6 +167,10 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
         from i3.modules.reference_frontier_information_mind import (
             ReferenceFrontierInformationMind)
         mind_type = ReferenceFrontierInformationMind
+    elif decision_policy == "reference_recurrence_frontier_information_v1":
+        from i3.modules.reference_recurrence_frontier_information_mind import (
+            ReferenceRecurrenceFrontierInformationMind)
+        mind_type = ReferenceRecurrenceFrontierInformationMind
     elif decision_policy == "genomic_omega_frontier_information_v1":
         from i3.modules.genomic_omega_frontier_information_mind import (
             GenomicOmegaFrontierInformationMind)
@@ -327,6 +351,7 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
     elif decision_policy in (
             "reference_branch_memory_v1", "reference_opportunity_memory_v1",
             "reference_frontier_information_v1",
+            "reference_recurrence_frontier_information_v1",
             "genomic_omega_frontier_information_v1",
             "candidate_f_shadow_upper_cost_reference_controller_v1"):
         out["experimental_policy"] = dict(manifest["experimental_policy"])
@@ -336,12 +361,18 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
             "recorded": mind.branch_records,
             "td_capacity": mind.m_max,
             "td_retained": len(mind.buffer)}
-        if decision_policy == "reference_opportunity_memory_v1":
+        if decision_policy in (
+                "reference_opportunity_memory_v1",
+                "reference_recurrence_frontier_information_v1"):
             out["opportunity_recurrence_memory"] = {
                 "schema": "i3-opportunity-recurrence-runtime-summary/v1",
                 "recorded": mind.opportunity_records,
                 "snapshot": mind.opportunity_memory.snapshot(),
-                "decision_use": "STORAGE_ONLY_NOT_READ_BY_DECISION"}
+                "decision_use": (
+                    "PAID_FIRST_CONTACT_FUTURE_OPPORTUNITY_ESTIMATE"
+                    if decision_policy ==
+                    "reference_recurrence_frontier_information_v1"
+                    else "STORAGE_ONLY_NOT_READ_BY_DECISION")}
         if decision_policy == "reference_frontier_information_v1":
             out["frontier_information"] = {
                 "scope": "one_generic_new_cell_water_only",
@@ -349,6 +380,28 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
                 "actionable_water_queries": mind.actionable_water_queries,
                 "frontier_options_scored": mind.frontier_options_scored,
                 "positive_information_options": mind.positive_information_options,
+                "food_information": "NOT_IMPLEMENTED",
+                "multi_cell_joint_outcomes": "NOT_IMPLEMENTED"}
+        if decision_policy == "reference_recurrence_frontier_information_v1":
+            out["frontier_information"] = {
+                "scope": "one_generic_new_cell_water_only",
+                "belief_queries": mind.frontier_belief_queries,
+                "actionable_water_queries": mind.actionable_water_queries,
+                "frontier_options_scored": mind.frontier_options_scored,
+                "positive_information_options": mind.positive_information_options,
+                "first_contact_queries": mind.first_contact_queries,
+                "first_contact_options_scored": mind.first_contact_options_scored,
+                "positive_first_contact_options":
+                    mind.positive_first_contact_options,
+                "post_contact_queries": mind.post_contact_queries,
+                "recurrence_queries": mind.recurrence_queries,
+                "recurrence_supported_queries":
+                    mind.recurrence_supported_queries,
+                "recurrence_unsupported_queries":
+                    mind.recurrence_unsupported_queries,
+                "omega_use": "ABSENT",
+                "simulation_mode": mind.simulation_mode,
+                "projection_accounting": mind.projection_accounting,
                 "food_information": "NOT_IMPLEMENTED",
                 "multi_cell_joint_outcomes": "NOT_IMPLEMENTED"}
         if decision_policy == "genomic_omega_frontier_information_v1":
@@ -392,7 +445,9 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
         if observer_mind_digest:
             out["branch_outcomes_sha256"] = digest(
                 [asdict(s) for s in mind.branch_memory._samples])
-            if decision_policy == "reference_opportunity_memory_v1":
+            if decision_policy in (
+                    "reference_opportunity_memory_v1",
+                    "reference_recurrence_frontier_information_v1"):
                 out["opportunity_recurrence_sha256"] = digest(
                     mind.opportunity_memory.snapshot())
     if effect_readout != "full" or observer_decision_diagnostics:
