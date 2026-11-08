@@ -1,0 +1,84 @@
+{
+ "schema": "i3-stage1-death-truncated-per-step-summary/v1",
+ "protocol_commit": "5fe2edb52f73e133178fbd77c579b2f9b6149c04",
+ "source_commit": "0c3dc70d1de64a3c62c5e60e7ac6e1392b0fd549",
+ "workflow_run": 42472935275,
+ "world_access": false,
+ "lives": 0,
+ "verdict": "DEATH_TRUNCATED_PER_STEP_EXACT_PASS",
+ "candidate_f_cost_parity": false,
+ "runtime_candidate_authorized": false,
+ "projection_grid": {
+  "cases": 486,
+  "max_abs_option_value_error": 2.220446049250313e-15,
+  "max_pairwise_decision_bias": 1.3322676295501878e-15,
+  "max_final_body_channel_error": 0.0
+ },
+ "nonlinear_option_set": {
+  "bodies": 10,
+  "plans_per_body": 6,
+  "max_abs_option_value_error": 1.7763568394002505e-15,
+  "max_pairwise_decision_bias": 1.9984014443252818e-15,
+  "max_final_body_channel_error": 0.0
+ },
+ "candidate_g": {
+  "evaluated": 80,
+  "complete": 80,
+  "selected_epistemic": 32,
+  "selected_water_deficit": 8,
+  "selected_other_deficit": 24,
+  "declined": 40,
+  "max_information_value": 0.001490535916073621,
+  "best_trial_advantage": 0.036660356519959025,
+  "worst_trial_advantage": -0.07444535353193471,
+  "mean_work": {
+   "cycles": 18.0,
+   "simulated_steps": 853.3,
+   "memory_items": 201.0,
+   "replays": 0.0
+  },
+  "max_work": {
+   "cycles": 18,
+   "simulated_steps": 1002,
+   "memory_items": 201,
+   "replays": 0
+  },
+  "mean_forecast_ceiling": {
+   "cycles": 18.0,
+   "simulated_steps": 1288.0,
+   "memory_items": 201.0,
+   "replays": 0.0
+  },
+  "mean_bill": {
+   "energy": 2.1068000000000007,
+   "vigilance": 2.606599999999998
+  },
+  "max_bill": {
+   "energy": 2.4042,
+   "vigilance": 2.904
+  },
+  "projection": {
+   "project_calls": 400,
+   "early_death_calls": 400,
+   "no_death_calls": 0,
+   "paid_projection_steps": 67224,
+   "mean_paid_steps_per_projection": 168.06,
+   "death_step_min": 46,
+   "death_step_mean": 168.06,
+   "death_step_max": 199
+  },
+  "actual_work_ceiling_violations": 0
+ },
+ "baselines": {
+  "candidate_f": {
+   "selected_epistemic": 24,
+   "mean_simulated_steps": 470,
+   "mean_bill": {"energy": 1.3402, "vigilance": 1.84}
+  },
+  "per_step": {
+   "selected_epistemic": 32,
+   "mean_simulated_steps": 1288,
+   "mean_bill": {"energy": 2.9762, "vigilance": 3.476}
+  }
+ }
+}

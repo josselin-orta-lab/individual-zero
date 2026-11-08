@@ -53,6 +53,24 @@ scientifically defensible; otherwise return to Stage-1 architecture design.
 
 No fresh scientific panel is authorized by this handoff.
 
+## Latest: exact death truncation removes one third of per-step work
+
+Frozen-before-code result
+([results](studies/stage1-death-truncated-per-step/RESULTS.md)):
+`DEATH_TRUNCATED_PER_STEP_EXACT_PASS`.
+
+The candidate keeps the full 255-unit common forecast but settles actual
+projection one endpoint at a time and stops at the first predicted vital zero.
+All 400 Candidate-G projection calls die predictively before 255
+(mean step **168.06**, range 46..199). Mean kernel work falls from 1288 to
+**853.3 simulated steps/state**, while the #1146 decisions remain exactly
+32 selected / 8 water / 24 other / 40 declined.
+
+Mean physical bill falls from 2.976/3.476 to **2.107 energy / 2.607 vigilance**.
+That is still above Candidate-F's 1.340/1.840, so no runtime candidate is
+authorized. Next measure exact common-prefix reuse among the five projections
+inside one state before adding any new cache representation.
+
 ## Latest: full exact-trace cache is funded but physically too expensive
 
 Frozen accounting sensitivity on the #1146 80-state grid
