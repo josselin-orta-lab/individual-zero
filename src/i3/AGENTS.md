@@ -62,17 +62,21 @@ new architecture hypothesis.
 Do not reopen selection/validation 72..167 or the P4 reserve. Do not launch
 Stage 2 to rescue the rejected candidate.
 
-**Update after #1152:** the full stored-trace exact cache funds all 80 #1146
-states under both frozen compute-price bounds, but fails the separate
-runtime-advance rule because its paid memory is far more expensive than
-Candidate-F ([results](docs/studies/stage1-separable-cache-accounting/RESULTS.md)).
-Even the lower arm averages 7.759 energy / 3.532 vigilance; only 7.6% of trace
-accesses hit. Do not integrate this representation or pick the lower tariff
-post hoc. Before another cache target, test exact **death-truncated per-step projection**:
-stop at first predicted vital zero and sum the absorbing tail analytically.
-The current per-step diagnostic pays all 255 chunks despite no new distress
-evaluation after predicted death. This candidate may change work only, never
-values. Open sparse exact checkpoints only if death truncation remains too costly.
+**Update after #1153:** exact death-truncated per-step projection passes
+the frozen structural gate
+([results](docs/studies/stage1-death-truncated-per-step/RESULTS.md)). All 400
+#1146 projection calls terminate predictively before 255, mean step 168.06.
+Mean kernel work falls from 1288 to 853.3 simulated steps/state while decisions
+remain exactly 32 selected / 8 water / 24 other / 40 declined. Mean bill is
+2.107 energy / 2.607 vigilance, still above Candidate-F, so no runtime candidate
+is authorized. Next run a descriptive exact common-prefix reuse probe over the
+five projections per state. Do not build another cache unless measured reuse can
+plausibly close the remaining ~383 simulated-step/state gap.
+
+**History after #1152:** the full stored-trace cache is fundable but physically
+wasteful ([results](docs/studies/stage1-separable-cache-accounting/RESULTS.md)):
+only 7.6% trace hits and even its lower arm costs 7.759 energy / 3.532 vigilance.
+Do not revive that representation or choose its lower tariff post hoc.
 
 **History after #1151:** exact separability/reuse is real at numerical-noise
 accuracy ([structural result](docs/studies/stage1-separable-projection-cache/RESULTS.md)).
