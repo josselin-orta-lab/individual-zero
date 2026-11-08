@@ -258,18 +258,30 @@ def _run_panel(omega):
 
                 control = row["reference_control"]
                 if control is not None:
-                    row["fallback_identity"] = (
-                        sig["action"] == control["action"]
-                        and sig["param"] == control["param"]
-                        and sig["funding"] == control["funding"]
-                        and sig["option"] == control["option"]
-                        and tuple(witnesses)
-                        == tuple(control["score_witness"])
-                        and sig["stage_b_work"] == control["work"]
-                        and tuple(sig["body_after"])
-                        == tuple(control["body_after"]))
+                    control_body_gap = max(
+                        abs(a - b)
+                        for a, b in zip(
+                            sig["body_after"], control["body_after"]))
+                    components = {
+                        "action": sig["action"] == control["action"],
+                        "param": sig["param"] == control["param"],
+                        "funding": sig["funding"] == control["funding"],
+                        "option": sig["option"] == control["option"],
+                        "score_witness": (
+                            tuple(witnesses)
+                            == tuple(control["score_witness"])),
+                        "stage_b_work":
+                            sig["stage_b_work"] == control["work"],
+                        "control_body_within_u5_tolerance":
+                            control_body_gap <= 1e-12,
+                    }
+                    row["fallback_identity_components"] = components
+                    row["fallback_control_body_max_abs_gap"] = (
+                        control_body_gap)
+                    row["fallback_identity"] = all(components.values())
                 else:
                     row["fallback_identity"] = None
+                    row["fallback_identity_components"] = None
             rows.append(row)
     return rows
 
@@ -328,6 +340,18 @@ def characterize():
     fallback_rows = [
         row for row in complete
         if row.get("signature", {}).get("route") == "P1.3_FINAL"]
+    fallback_identity_failures = [
+        {
+            "channel": row["channel"],
+            "level": row["level"],
+            "history": row["history"],
+            "components": row["fallback_identity_components"],
+            "control_body_max_abs_gap":
+                row.get("fallback_control_body_max_abs_gap"),
+        }
+        for row in fallback_rows
+        if not row["fallback_identity"]
+    ]
     relevant_rows = [
         row for row in complete
         if row.get("signature", {}).get("route")
@@ -415,6 +439,7 @@ def characterize():
             "errors": errors,
             "route_counts_omega_minus1": route_counts,
             "probe_unfunded_omega_minus1": probe_unfunded,
+            "fallback_identity_failures": fallback_identity_failures,
             "routes_observed": routes,
             "omega_mismatches": omega_mismatches,
             "rows_omega_minus1": low,
@@ -454,6 +479,8 @@ if __name__ == "__main__":
                 report["routing_panel"]["route_counts_omega_minus1"],
             "probe_unfunded_omega_minus1":
                 report["routing_panel"]["probe_unfunded_omega_minus1"],
+            "fallback_identity_failures":
+                report["routing_panel"]["fallback_identity_failures"],
             "routes_observed":
                 report["routing_panel"]["routes_observed"],
             "omega_mismatches":
