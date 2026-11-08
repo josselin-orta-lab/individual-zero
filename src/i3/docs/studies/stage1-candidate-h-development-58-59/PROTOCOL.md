@@ -226,6 +226,43 @@ Within each matched block, report Candidate-H versus Candidate-G and reference:
 
 No paired survival threshold is declared.
 
+## Pre-implementation runtime custody clarification
+
+Source inspection after the allocation freeze, but before any Candidate-H runtime
+edit or 58/59 exposure, identified one lifecycle boundary that the software-only
+single-decision gate did not exercise.
+
+The explicit DEVELOPMENT adapter is allowed, and required, to do only these two
+runtime-hygiene operations:
+
+1. at the start of every Candidate-H decision, clear stale actual-individual
+   decision state exactly as Candidate-G already does
+   (`last`, pending branch and pending opportunity commit/presence) before the
+   detached Stage-A probe;
+2. when Stage A is `PROBE_UNFUNDED`, emit a complete **final-decision**
+   observer receipt with zero final scored/offered options and a standard
+   `no_processing_budget` or `no_funded_score` outcome derived from the
+   Stage-A funding status. Stage-A phase/work/funding remains separately
+   preserved in Candidate-H receipts.
+
+This clarification prevents a no-Stage-B step from learning against the prior
+physical action and lets existing external observers authenticate the final
+absence of a motor decision.
+
+It does **not** authorize any change to:
+
+- first-contact or post-contact relevance;
+- Stage-A work;
+- Stage-B scoring;
+- route selection;
+- score sharing;
+- funding thresholds;
+- action control;
+- memory content;
+- omega use.
+
+Any other Candidate-H behavioral change requires a new prospective protocol.
+
 ## Runtime boundary
 
 This protocol itself contains no runtime edit.
