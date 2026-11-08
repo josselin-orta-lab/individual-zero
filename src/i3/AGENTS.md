@@ -35,15 +35,26 @@ energy/vigilance state, not a water-deficit state; F108 saturates, and K80 is
 non-monotone. Treat this as **generic inherited first-contact capacity**, not a
 water-specific adaptation.
 
-**Next work remains software-only. The two admissible tasks are now prospectively frozen before implementation:**
+The two previously frozen prerequisites now PASS:
 
-1. [Candidate-I shared-prior integration](docs/STAGE1_CANDIDATE_I_SHARED_PRIOR_INTEGRATION.md): first-contact FALLBACK uses P1.3 base scores with both legacy addends removed; post-contact #1163 stays equivalent and all cognition remains paid;
-2. [composite-funding reducer repair](docs/STAGE1_COMPOSITE_FUNDING_REDUCER_REPAIR.md): synthetic reproduction plus fail-closed engineering repair. Never rerun 58/59.
+- Candidate-I shared-prior integration: I0-I9 PASS, zero fallback identity,
+  addend, accounting or renaming failures;
+- composite-funding reducer repair: R0-R6 PASS, with 58/59 still permanently
+  exposed/closed and no retroactive verdict.
 
-Do not widen omega, rescale the RMS prior, add action/water-specific inherited
-weights, reinterpret K80 non-monotonicity as a defect, or open another live
-panel. A fresh DEVELOPMENT protocol is admissible only after both software
-boundaries pass. Selection, validation, reserve and Stage 2 remain blocked.
+**Next work is still software-only:** implement exactly
+[STAGE1_CANDIDATE_I_RUNTIME_INTEGRATION.md](docs/STAGE1_CANDIDATE_I_RUNTIME_INTEGRATION.md).
+
+Do not collapse this into a forced trial action. Every simultaneously offered
+unsupported water/food trial must enter one commensurable Candidate-F matrix,
+and a RELEVANT decision must still pass through the shared P1.3 Competition and
+ActionControl semantics. The one-trial path must reduce state-for-state to
+#1170/#1174. First-contact FALLBACK remains addend-free; post-contact remains
+#1163 unchanged.
+
+Do not allocate/open 60/61 yet. Do not widen omega, rescale RMS, add
+action/resource-specific inherited coefficients, alter K80 non-monotonicity,
+reuse 56/57 or 58/59, or start selection/validation/reserve/Stage 2.
 
 The full frozen Stage-1 genomic-omega Candidate-F gate has now completed.
 Read [the final result](docs/studies/stage1-omega-adr0015/RESULTS.md) before any
