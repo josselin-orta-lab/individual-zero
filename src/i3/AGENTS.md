@@ -118,21 +118,27 @@ The post-contact relevance gate now also passes
 but no top-set effect, and all 12/12 fund an exact P1.3 fallback with zero
 pre-probe top changes.
 
-**Next software-only work:** freeze a unified Candidate-H runtime integration
-gate before code. Do not invent a third relevance definition. The integration
-must reuse the already-passed first-contact and post-contact rules verbatim.
+The unified Candidate-H software integration is now complete and passes
+([result](docs/studies/stage1-candidate-h-unified-integration/RESULTS.md)):
+U0-U9 are all PASS under Python 3.11/3.12. The fixed routing panel contains
+37 P1.3 final routes and 23 Candidate-F final routes, observes all five required
+routing classes, has zero omega mismatches and zero fallback identity failures.
 
-Required constraints:
+**Next work:** freeze a new **DEVELOPMENT-only live protocol before runtime
+registration or World exposure**. Do not change either relevance predicate.
+The future protocol may add Candidate-H to an explicit opt-in development path
+only after allocation, arms, seeds, horizon, custody and continuation rules are
+frozen.
 
-1. persistent/default mode remains P1.3 `reference/chunk_end`;
-2. first contact uses personal recurrence, omega=0, and the #1162 strict
-   relevance rule;
-3. post contact uses only personally learned actionable belief, no recurrence
-   proxy, and the post-contact top-effect relevance rule;
-4. every fallback pays the probe plus a complete P1.3 final decision;
-5. every relevant final decision uses one commensurate Candidate-F geometry;
-6. no Candidate-F projector leakage after decision exit;
-7. exact forecast ceilings, work/body receipts and no hidden reimbursement;
+Required boundaries remain:
+
+1. P1.3 stays the reference and active engine remains I1;
+2. first contact uses personal recurrence, omega=0, and #1162 relevance;
+3. post contact uses personal actionable belief and #1163 top-effect relevance;
+4. fallback pays the probe plus a complete P1.3 decision;
+5. relevant decisions use one commensurate Candidate-F geometry;
+6. persistent mode returns to `reference/chunk_end`;
+7. no 56/57 reuse, no selection/validation/reserve, no Stage 2;
 8. no World/life, no 56/57 read, no engine registration;
 9. software PASS may authorize only a future fresh DEVELOPMENT protocol, never
    selection/validation/reserve directly.
