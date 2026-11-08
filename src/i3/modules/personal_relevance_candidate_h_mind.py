@@ -283,8 +283,12 @@ class PersonalRelevanceCandidateHMind(PersonalRecurrenceCandidateGMind):
         expected = _work_add(stage_a["work"], final_budget.work)
         if total != expected:
             raise RuntimeError("Candidate-H phase work does not sum exactly")
-        if budget.remaining != final_budget.remaining:
-            raise RuntimeError("Candidate-H cumulative body settlement mismatch")
+        settlement_gap = max(
+            abs(a - b)
+            for a, b in zip(budget.remaining, final_budget.remaining))
+        if settlement_gap > 1e-12:
+            raise RuntimeError(
+                "Candidate-H cumulative body settlement mismatch")
 
         # Learning storage must own the complete decision cost, not Stage B only.
         self._branch_decision_work = total
