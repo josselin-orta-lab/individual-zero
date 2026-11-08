@@ -10,9 +10,6 @@ import json
 import sys
 
 from ..modules.body import BodyLaws, CognitiveBudget
-from . import stage1_candidate_g_no_omega_integration as I
-from . import stage1_candidate_g_projection_dependence as D
-from . import stage1_candidate_g_reference_recurrence_falsifier as G
 
 SCHEMA = "i3-stage1-candidate-g-support-vs-relevance/v1"
 ORDINARY_PLANS = {
@@ -24,7 +21,7 @@ ORDINARY_PLANS = {
 TOL = 1e-12
 
 
-def _ordinary_scores(body, horizon, arm):
+def _ordinary_scores(body, horizon, arm, G, D):
     values = {}
     work = {}
     for name, plan in ORDINARY_PLANS.items():
@@ -145,6 +142,13 @@ def _class_summary(rows):
 
 
 def characterize():
+    # Lazy lab imports keep importing this diagnostic itself detached from
+    # Mind's transitive modules.world DIRECTIONS dependency. Characterization
+    # still uses Mind, but never constructs, generates or reads a World.
+    from . import stage1_candidate_g_no_omega_integration as I
+    from . import stage1_candidate_g_projection_dependence as D
+    from . import stage1_candidate_g_reference_recurrence_falsifier as G
+
     kernel_rows, kernel = I.evaluate_kernel()
     if len(kernel_rows) != 80:
         raise RuntimeError("canonical Candidate-G kernel grid changed")
@@ -157,9 +161,9 @@ def characterize():
         horizon = kernel_row["horizon"]
 
         ref_values, ref_work, ref_top = _ordinary_scores(
-            body, horizon, "reference")
+            body, horizon, "reference", G, D)
         cand_values, cand_work, cand_top = _ordinary_scores(
-            body, horizon, "candidate_f")
+            body, horizon, "candidate_f", G, D)
         shift, pair = _max_pairwise_gap_shift(
             ref_values, cand_values)
         strict = (
