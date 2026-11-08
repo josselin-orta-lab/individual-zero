@@ -218,6 +218,21 @@ In addition to H0-H5, report:
 
 These outputs do not affect the frozen gate.
 
+## Verification correction after first execution
+
+The first implementation CI run (`42478455412`) exposed H0/H1/H2/H3/H5 as
+PASS and H4 as FAIL. H4's verifier reconstructed every fixture body with the
+outer loop variable `level` after the sweep had finished, so that captured
+value was 50 rather than each row's stored level. The candidate computations,
+fallback funding, scores and work receipts themselves were unchanged.
+
+Before any merge or further architecture work, H4 was repaired to reconstruct
+the body from `row["level"]` and to emit explicit mismatch receipts. No fixture,
+threshold, rule, Candidate-H computation or result-selection logic changed.
+The confirming run (`42478647427`) passes H4 on Python 3.11 and 3.12.
+
+This is a verifier correction, not a gate revision.
+
 ## Interpretation
 
 A PASS means only that **support can be separated from relevance without
