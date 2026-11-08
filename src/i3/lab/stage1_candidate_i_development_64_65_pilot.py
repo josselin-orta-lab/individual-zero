@@ -81,7 +81,7 @@ def validate_launch(expected_sha, expected_protocol):
         "src/i3/lab/stage1_candidate_i_lifecycle_custody_stress.py",
         "src/i3/docs/STAGE1_CANDIDATE_I_LIFECYCLE_CUSTODY_STRESS.md",
         "src/i3/lab/stage1_candidate_i_development_64_65_plan.py",
-        "src/i3/docs/studies/stage1-candidate-i-development-62-63/PROTOCOL.md",
+        "src/i3/docs/studies/stage1-candidate-i-development-64-65/PROTOCOL.md",
         "config/engine-registry.json")
     if protected:
         raise ValueError(
