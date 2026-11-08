@@ -145,7 +145,7 @@ class PersonalSharedPriorCandidateIRuntimeTests(unittest.TestCase):
             life, expected_protocol=protocol,
             expected_source_sha256=source)
         self.assertEqual(
-            energy["scientific_verdict"], "NOT_EVALUATED")
+            energy["schema"], "i3-stage0-energy/v1")
         self.assertEqual(
             revision["scientific_verdict"], "NOT_EVALUATED")
 
