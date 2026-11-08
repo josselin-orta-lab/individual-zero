@@ -5,6 +5,23 @@ The [engine contract](../engine.json) has no active entrypoints; the
 [registry](../../../config/engine-registry.json) keeps I1 active.
 A green software test is not a scientific GO.
 
+## Latest: Candidate-I passes, but runnable multi-option composition is still gated
+
+[Candidate-I integration](studies/stage1-candidate-i-shared-prior-integration/RESULTS.md)
+passes I0-I9: every frozen first-contact fallback is funded, applies zero
+curiosity/prudence addends and matches an independent same-body base-score
+control. The independent
+[reducer repair](studies/stage1-composite-funding-reducer-repair/RESULTS.md)
+also passes R0-R6.
+
+Before opening a fresh DEVELOPMENT world, one runtime-only gap remains:
+simultaneously offered unknown water/food actions must compete in one
+commensurable score matrix and then use the same Competition and ActionControl
+as P1.3. That boundary is now frozen in
+[STAGE1_CANDIDATE_I_RUNTIME_INTEGRATION.md](STAGE1_CANDIDATE_I_RUNTIME_INTEGRATION.md).
+
+No 60/61 World has been allocated or opened.
+
 ## Latest: shared first-contact prior has capacity, but it is generic
 
 The frozen
