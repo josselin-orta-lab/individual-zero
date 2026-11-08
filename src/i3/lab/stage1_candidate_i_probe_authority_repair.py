@@ -275,6 +275,12 @@ def _fallback_fresh_authority():
             mind._branch_decision_start_body == BODY
             and mind._branch_decision_work == result[2] == budget.work))
     current_presence = mind._pending_opportunity_presence
+    cells = [
+        mind.map[q] for q in mind.visible
+        if mind.map.get(q) is not None]
+    expected_presence = (
+        any(cell[0] for cell in cells),
+        any(bool(cell[1]) for cell in cells))
     return {
         "route": info["candidate_i_route"],
         "single_current_cell_observation":
@@ -282,7 +288,7 @@ def _fallback_fresh_authority():
         "last_is_fresh": last_is_fresh,
         "settlement_aligned": settlement_aligned,
         "current_opportunity_presence":
-            current_presence == (True, False),
+            current_presence == expected_presence,
         "phase_work_exact":
             stage_sum == info["candidate_i_total_work"],
         "addends_zero": bool(witness) and all(
