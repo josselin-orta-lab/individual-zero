@@ -10,10 +10,10 @@ Final frozen verdict:
 `CANDIDATE_I_PROBE_AUTHORITY_REPAIR_PASS`
 
 Repair-code authority:
-`486ec9fede132e817eae11ab6576e6e79e0bfac8`.
+`5ca8f2dcb7f87c18880ea3c45b773eec0daab2d4`.
 
 GitHub Actions:
-`42508586491`.
+`42517714784`.
 
 Python 3.11 and 3.12 both pass. The Python 3.11 job ran **965 tests** plus
 the repository navigation check.
@@ -47,6 +47,9 @@ The production repair changes the ownership boundary, not the scientific rule:
 - PROBE_UNFUNDED clears any probe-created authority;
 - FALLBACK restores reversible state, clears authority again, then lets the one
   real addend-free final decision create fresh current-decision authority;
+- that real FALLBACK perception also recreates the current-step opportunity-
+  presence receipt, matched to the lived `map/visible` perception rather than
+  the detached Stage-A probe;
 - RELEVANT creates current-decision authority directly;
 - post-contact remains Candidate-H #1163 semantics.
 
