@@ -71,6 +71,7 @@ class SeparableProjectionCacheTests(unittest.TestCase):
                     report["projection_grid"][
                         "max_final_body_channel_error"],
                 "work": report["projection_grid"]["work"],
+                "worst": report["projection_grid"]["worst"],
             },
             "nonlinear_option_set": {
                 "max_abs_option_value_error":
@@ -83,6 +84,7 @@ class SeparableProjectionCacheTests(unittest.TestCase):
                     report["nonlinear_option_set"][
                         "max_final_body_channel_error"],
                 "work": report["nonlinear_option_set"]["work"],
+                "worst": report["nonlinear_option_set"]["worst"],
             },
         }, sort_keys=True))
 
