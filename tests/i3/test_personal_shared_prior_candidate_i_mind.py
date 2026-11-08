@@ -116,6 +116,50 @@ class PersonalSharedPriorCandidateIRuntimeTests(unittest.TestCase):
         self.assertFalse(
             l[3]["candidate_i_first_contact_omega_used"])
 
+    def test_supported_water_does_not_bypass_unknown_food_first_contact(self):
+        mind = PersonalSharedPriorCandidateIMind(
+            midpoint(), 43,
+            observer_decision_diagnostics=True)
+        prime(mind)
+        prime_drink(mind)
+        body = (80., 30., 40., 80., 80.)
+        mixed = {
+            "body": body,
+            "here": (True, ()),
+            "neighbors": (None, None, None, None),
+            "inventory": (("new-food", 1),),
+        }
+        result = mind.decide(
+            mixed, CognitiveBudget(body, BodyLaws()))
+        self.assertNotEqual(
+            result[3]["candidate_i_route"],
+            "POST_CONTACT_CANDIDATE_H")
+        self.assertGreaterEqual(
+            result[3]["candidate_i_direct_trial_count"], 1)
+
+    def test_supported_food_does_not_bypass_unknown_water_first_contact(self):
+        mind = PersonalSharedPriorCandidateIMind(
+            midpoint(), 47,
+            observer_decision_diagnostics=True)
+        prime(mind)
+        mind.effects.observe(
+            ("manger", "tok0"), (0., 30., 0., 0., 0.))
+        body = (80., 30., 40., 80., 80.)
+        mixed = {
+            "body": body,
+            "here": (True, ()),
+            "neighbors": (None, None, None, None),
+            "inventory": (("known-food", 1),),
+        }
+        result = mind.decide(
+            mixed, CognitiveBudget(body, BodyLaws()))
+        self.assertNotEqual(
+            result[3]["candidate_i_route"],
+            "POST_CONTACT_CANDIDATE_H")
+        self.assertGreaterEqual(
+            result[3]["candidate_i_direct_trial_count"], 1)
+
+
     def test_existing_p2_development_zero_runtime_smoke_reduces(self):
         protocol = "STAGE1_CANDIDATE_I_RUNTIME_SOFTWARE_SMOKE"
         world = world_for("stable", "development", 0)
