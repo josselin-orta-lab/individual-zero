@@ -144,11 +144,13 @@ correctly rejected learning.
 The prospectively frozen software-only
 [Candidate-I probe-restore authority repair](studies/stage1-candidate-i-probe-authority-repair/RESULTS.md)
 now returns **`CANDIDATE_I_PROBE_AUTHORITY_REPAIR_PASS`** on repair-code
-authority `486ec9fede132e817eae11ab6576e6e79e0bfac8`, Actions
-`42508586491`, Python 3.11/3.12. U0-U9 all pass. Rollback snapshots no
+authority `5ca8f2dcb7f87c18880ea3c45b773eec0daab2d4`, Actions
+`42517714784`, Python 3.11/3.12. U0-U9 all pass. Rollback snapshots no
 longer own `last`, branch settlement or pending learning authority; unfunded
 exits restore only reversible first-person state, while FALLBACK/RELEVANT create
-fresh current-decision authority.
+fresh current-decision authority. The funded FALLBACK also recaptures the
+current opportunity-presence receipt from its one real final perception, so
+recurrence storage no longer loses that lived observation after rollback.
 
 60/61 and 62/63 remain permanently exposed and closed with no J1-J7 verdict.
 
