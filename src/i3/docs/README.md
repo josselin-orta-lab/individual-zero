@@ -53,6 +53,25 @@ scientifically defensible; otherwise return to Stage-1 architecture design.
 
 No fresh scientific panel is authorized by this handoff.
 
+## Latest: full exact-trace cache is funded but physically too expensive
+
+Frozen accounting sensitivity on the #1146 80-state grid
+([results](studies/stage1-separable-cache-accounting/RESULTS.md)) completes all
+80 states under both an optimistic and conservative compute-price bound. The
+funding classification is `CACHE_ACCOUNTING_ROBUSTLY_FUNDED`.
+
+That does **not** make the candidate affordable enough to advance. Mean physical
+bill is 7.759 energy / 3.532 vigilance even under the optimistic arm, versus
+1.340 / 1.840 for Candidate-F. The conservative arm costs 17.184 / 12.957.
+The frozen runtime-advance rule therefore fails.
+
+The dominant cost is now identified: each fresh exact trace stores 1,035 paid
+memory items, while only 7.6% of trace accesses are hits. Before adding another
+cache, test the simpler exact optimization already latent in the model:
+**per-step projection truncated at first predicted death**, with the absorbing
+tail summed analytically. Only if that remains too costly should sparse exact
+checkpoints be opened.
+
 ## Latest: exact separable projection cache passes its structural gate
 
 Frozen-before-code characterization

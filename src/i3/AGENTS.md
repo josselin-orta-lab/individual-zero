@@ -62,14 +62,21 @@ new architecture hypothesis.
 Do not reopen selection/validation 72..167 or the P4 reserve. Do not launch
 Stage 2 to rescue the rejected candidate.
 
-**Update after #1151:** an exact decision-local separable projection cache
-passes the frozen structural gate at numerical-noise accuracy
-([results](docs/studies/stage1-separable-projection-cache/RESULTS.md)): max
-decision bias 2.22e-15, final-body error 0, with real trace reuse. This proves
-representation/reuse only, **not affordability**. Do not add a runtime cache or
-call the channel-sample lower bound CognitiveWork. Next freeze a physical
-accounting/capacity contract for trace construction, reads, storage and rebuild,
-then test the #1146 Candidate-G kernel under real CognitiveBudget.
+**Update after #1152:** the full stored-trace exact cache funds all 80 #1146
+states under both frozen compute-price bounds, but fails the separate
+runtime-advance rule because its paid memory is far more expensive than
+Candidate-F ([results](docs/studies/stage1-separable-cache-accounting/RESULTS.md)).
+Even the lower arm averages 7.759 energy / 3.532 vigilance; only 7.6% of trace
+accesses hit. Do not integrate this representation or pick the lower tariff
+post hoc. Before another cache target, test exact **death-truncated per-step projection**:
+stop at first predicted vital zero and sum the absorbing tail analytically.
+The current per-step diagnostic pays all 255 chunks despite no new distress
+evaluation after predicted death. This candidate may change work only, never
+values. Open sparse exact checkpoints only if death truncation remains too costly.
+
+**History after #1151:** exact separability/reuse is real at numerical-noise
+accuracy ([structural result](docs/studies/stage1-separable-projection-cache/RESULTS.md)).
+The failure is physical representation cost, not projection accuracy.
 
 **History after #1149/#1150:** local-sensitivity reuse (drink error 1.91) and
 decision-time anchored chunks (bias 0.215) fail feasibility; do not retry them

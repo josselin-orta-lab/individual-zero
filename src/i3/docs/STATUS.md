@@ -67,6 +67,35 @@ and use fresh development conditions only if later executed.
 P1.3 remains reference. I3 remains unregistered. Stage 2 remains blocked and
 the P4 reserve remains sealed.
 
+## Latest accounting result: exact cache funds 80/80 but memory dominates
+
+8 November 2026: the frozen exact-cache accounting sensitivity
+([result](studies/stage1-separable-cache-accounting/RESULTS.md)) completed under
+source `fddf08637651f7e1b5f0cf5577e3415ca4edf2e5`, Actions
+`42472340815`, Python 3.11/3.12 PASS.
+
+Both predeclared accounting bounds fund all 80 #1146 states, so the primary
+classification is **`CACHE_ACCOUNTING_ROBUSTLY_FUNDED`**. The exact cache also
+retains decision relevance: 32 selected epistemic states under the optimistic
+bound and 39 under the conservative bound.
+
+The separately frozen runtime-advance rule nevertheless **fails**. Mean actual
+bill is 7.7591 energy / 3.5322 vigilance for the lower bound and 17.1839 /
+12.9570 for the upper bound, versus Candidate-F's frozen #1149 bill of 1.3402 /
+1.840. No runtime candidate is authorized.
+
+The bottleneck is no longer projection accuracy or yes/no funding ambiguity.
+It is the stored representation: 1,848 fresh traces write 1,912,680 memory items
+while only 152 later accesses hit a trace (7.6%). Paying four 255-element exact
+arrays per trace is a bad exchange for that reuse rate.
+
+Next Stage-1 architecture falsifier: **exact death-truncated per-step
+projection**. Stop computation at the first predicted vital zero and sum the
+absorbing maximal-distress tail analytically. The current per-step diagnostic
+prepays all 255 unit chunks even though no new bodily distress is evaluated
+after death. This candidate changes work only, never projected value. Open
+sparse exact checkpoints only if this simpler optimization remains too costly.
+
 ## Latest structural result: exact separable projection cache passes
 
 8 November 2026: the exact decision-local separable-cache falsifier, frozen at

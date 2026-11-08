@@ -1,0 +1,127 @@
+{
+ "schema": "i3-stage1-separable-cache-accounting-summary/v1",
+ "protocol_commit": "7ae02075d710c622854de696c7dff2ce3d8b8add",
+ "source_commit": "fddf08637651f7e1b5f0cf5577e3415ca4edf2e5",
+ "workflow_run": 42472340815,
+ "world_access": false,
+ "lives": 0,
+ "classification": "CACHE_ACCOUNTING_ROBUSTLY_FUNDED",
+ "conservative_runtime_candidate_authorized": false,
+ "direct_exactness": {
+  "bundle5_lower": {
+   "max_value_error": 1.1368683772161603e-13,
+   "max_body_error": 0.0
+  },
+  "scalar1_upper": {
+   "max_value_error": 1.1368683772161603e-13,
+   "max_body_error": 0.0
+  }
+ },
+ "arms": {
+  "bundle5_lower": {
+   "evaluated": 80,
+   "complete": 80,
+   "unfunded": 0,
+   "selected_epistemic": 32,
+   "selected_water_deficit": 8,
+   "selected_other_deficit": 24,
+   "declined": 40,
+   "max_information_value": 0.001490535916073621,
+   "best_trial_advantage": 0.0366603565199588,
+   "worst_trial_advantage": -0.08760068766402684,
+   "mean_work": {
+    "cycles": 23.0,
+    "simulated_steps": 1191.1,
+    "memory_items": 24584.5,
+    "replays": 0.0
+   },
+   "max_work": {
+    "cycles": 23,
+    "simulated_steps": 1237,
+    "memory_items": 25516,
+    "replays": 0
+   },
+   "mean_common_ceiling": {
+    "cycles": 23.0,
+    "simulated_steps": 1288.0,
+    "memory_items": 26551.0,
+    "replays": 0.0
+   },
+   "mean_bill": {
+    "energy": 7.759100000000004,
+    "vigilance": 3.532199999999996
+   },
+   "max_bill": {
+    "energy": 8.0372,
+    "vigilance": 3.6240000000000006
+   },
+   "cache": {
+    "project_calls": 400,
+    "trace_builds": 1848,
+    "trace_hits": 152,
+    "channel_samples": 471240,
+    "memory_writes": 1912680,
+    "memory_reads": 38000,
+    "max_live_entries": 24,
+    "hit_fraction": 0.076
+   },
+   "decision_relevance_retained": true,
+   "cheaper_than_candidate_f_mean_bill": false
+  },
+  "scalar1_upper": {
+   "evaluated": 80,
+   "complete": 80,
+   "unfunded": 0,
+   "selected_epistemic": 39,
+   "selected_water_deficit": 16,
+   "selected_other_deficit": 23,
+   "declined": 41,
+   "max_information_value": 0.005456736213761637,
+   "best_trial_advantage": 0.03598937409704184,
+   "worst_trial_advantage": -0.08810001211280827,
+   "mean_work": {
+    "cycles": 23.0,
+    "simulated_steps": 5903.5,
+    "memory_items": 24584.5,
+    "replays": 0.0
+   },
+   "max_work": {
+    "cycles": 23,
+    "simulated_steps": 6133,
+    "memory_items": 25516,
+    "replays": 0
+   },
+   "mean_common_ceiling": {
+    "cycles": 23.0,
+    "simulated_steps": 6388.0,
+    "memory_items": 26551.0,
+    "replays": 0.0
+   },
+   "mean_bill": {
+    "energy": 17.183900000000023,
+    "vigilance": 12.956999999999976
+   },
+   "max_bill": {
+    "energy": 17.8292,
+    "vigilance": 13.416
+   },
+   "cache": {
+    "project_calls": 400,
+    "trace_builds": 1848,
+    "trace_hits": 152,
+    "channel_samples": 471240,
+    "memory_writes": 1912680,
+    "memory_reads": 38000,
+    "max_live_entries": 24,
+    "hit_fraction": 0.076
+   },
+   "decision_relevance_retained": true,
+   "cheaper_than_candidate_f_mean_bill": false
+  }
+ },
+ "frozen_baselines": {
+  "reference": {"selected_epistemic": 1, "mean_bill": {"energy": 0.5062, "vigilance": 1.006}},
+  "candidate_f": {"selected_epistemic": 24, "mean_bill": {"energy": 1.3402, "vigilance": 1.84}},
+  "per_step": {"selected_epistemic": 32, "mean_bill": {"energy": 2.9762, "vigilance": 3.476}}
+ }
+}
