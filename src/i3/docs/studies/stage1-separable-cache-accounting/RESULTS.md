@@ -98,14 +98,21 @@ of hits by materializing a large exact prefix table for every miss.
 Do **not** integrate this full stored-trace cache into Candidate-G or runtime.
 Do not choose `bundle5_lower` after exposure merely because it is cheaper.
 
-The next architecture question is now narrower and better defined:
+Before adding another cache representation, test a simpler exact optimization
+already implied by irreversible mortality:
 
-**Can exact trace reuse keep only sparse checkpoints and recompute the short
-residual segment on demand, so memory falls by an order of magnitude without
-reintroducing projection bias?**
+**stop the per-step projection at the first predicted vital zero and sum the
+remaining absorbing -d_max tail analytically.**
 
-This is not the rejected #1150 anchored-chunk approximation. Checkpoints would
-store exact per-step prefix values; any gap used by a query would be recomputed
-per-step exactly. Checkpoint spacing changes cost only, never projected value.
+Current diagnostic per-step accounting prepays all 255 unit chunks even though
+`Mind.project` stops evaluating bodily distress after predicted death. On the
+#1146 bodies, water alone reaches zero within 50..200 passive steps before any
+hypothetical drinking effect. A death-truncated exact projection could therefore
+remove work without storing a trace, approximating a value, or changing any
+body law.
 
-Freeze that representation before code. No World/life panel is authorized.
+Freeze that candidate before code and require exact value/final-body parity.
+Only if death truncation remains too costly should sparse exact checkpoints be
+opened as the next representation hypothesis.
+
+No World/life panel is authorized.
