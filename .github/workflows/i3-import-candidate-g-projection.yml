@@ -2,10 +2,10 @@ name: I3 import Candidate-G projection bundle
 
 on:
   pull_request:
-    types: [opened]
+    types: [opened, synchronize]
     paths:
       - '.github/workflows/i3-import-candidate-g-projection.yml'
-      - '.github/import/i3-candidate-g-projection.bundle'
+      - '.github/import/i3-candidate-g-projection.b64.*'
 
 permissions:
   contents: write
@@ -23,12 +23,20 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
-      - name: Verify and publish exact bundle branch
+      - name: Reconstruct, verify and publish exact bundle branch
         shell: bash
         run: |
           set -euo pipefail
-          test "$(sha256sum .github/import/i3-candidate-g-projection.bundle | cut -d' ' -f1)" = "43601feff4d203a7221ed8e90d71c45aae8159adb58256dc37cdd5ae7a4c942f"
-          git fetch .github/import/i3-candidate-g-projection.bundle \
+          test "$(git hash-object .github/import/i3-candidate-g-projection.b64.0)" = "6c5d963d8d4df81d2b3d4916f04d21bae09d6372"
+          test "$(git hash-object .github/import/i3-candidate-g-projection.b64.1)" = "c38a396b57083470ec99ba0476589ca0ac906ad6"
+          test "$(git hash-object .github/import/i3-candidate-g-projection.b64.2)" = "01c6f033ad78632a36a4a06faf70481ab2fc260a"
+          test "$(git hash-object .github/import/i3-candidate-g-projection.b64.3)" = "9e07678667b0c988042aabca653f83eab6fe3340"
+          test "$(git hash-object .github/import/i3-candidate-g-projection.b64.4)" = "a3d15862990adcc06360351454bbcdb1d7518734"
+          test "$(git hash-object .github/import/i3-candidate-g-projection.b64.5)" = "13b99330edb5caa743c593dc3ce64138dc0eca4e"
+          cat .github/import/i3-candidate-g-projection.b64.* | base64 -d > "$RUNNER_TEMP/i3-candidate-g-projection.bundle"
+          test "$(sha256sum "$RUNNER_TEMP/i3-candidate-g-projection.bundle" | cut -d' ' -f1)" = "43601feff4d203a7221ed8e90d71c45aae8159adb58256dc37cdd5ae7a4c942f"
+          test "$(git hash-object "$RUNNER_TEMP/i3-candidate-g-projection.bundle")" = "46f706ce6a8e25997406e91204626917553d1788"
+          git fetch "$RUNNER_TEMP/i3-candidate-g-projection.bundle" \
             refs/heads/i3/stage1-candidate-g-projection:refs/remotes/bundle/i3/stage1-candidate-g-projection
           test "$(git rev-parse refs/remotes/bundle/i3/stage1-candidate-g-projection)" = "90399f72a6a2687004bf33590b5f9ad42f565f14"
           test "$(git merge-base refs/remotes/bundle/i3/stage1-candidate-g-projection 05a9b33d100dd88a93a8cd404e6aed62acbfeb3e)" = "05a9b33d100dd88a93a8cd404e6aed62acbfeb3e"
