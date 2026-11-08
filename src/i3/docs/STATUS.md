@@ -12,6 +12,32 @@ That integration changed documentation and priorities only. The subsequent
 Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
+## Current engineering handoff: Candidate-G integration passes; 56/57 remains unopened
+
+8 November 2026: the bounded no-omega Candidate-G integration gate (#1156)
+passed on Python 3.11/3.12 with verdict
+`PERSONAL_RECURRENCE_CANDIDATE_G_INTEGRATION_PASS`.
+
+The integrated candidate keeps P1.3 `reference/chunk_end` as its persistent
+mode. A decision switches all option scores to the canonical Candidate-F
+projector only when a paid personal information path exists. First contact uses
+personal recurrence with `omega=0`; post-contact uses personal actionable
+belief. The #1146 kernel reproduces the canonical **24 selected / 0 water / 24
+other / 40 declines** at mean **470.05 simulated steps/state**, with zero common
+ceiling violations and no genomic-omega attribute.
+
+This is software capacity evidence, not a live result. The next bounded step is
+the prospectively frozen
+[56/57 DEVELOPMENT pilot](studies/stage1-candidate-g-development-56-57/PROTOCOL.md).
+It compares P1.3, no-omega Candidate-G and the already rejected Candidate-F
+architecture on matched fresh DEVELOPMENT opportunities. Its continuation rule
+tests **activation plus physical affordability**, not a survivor target.
+
+**56/57 HAVE NOT BEEN OPENED.** No one-shot execution workflow is included in
+this integration PR. Do not expose those worlds until the protocol/runtime SHA
+is merged, exact-head software checks pass, and a separately reviewed one-shot
+transport is added. Selection, validation, reserve and Stage 2 remain blocked.
+
 ## Latest scientific gate: genomic omega Candidate-F rejected
 
 7 November 2026: the full frozen
