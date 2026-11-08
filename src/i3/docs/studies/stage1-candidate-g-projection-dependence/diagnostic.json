@@ -1,0 +1,4179 @@
+{
+ "lives": 0,
+ "omega_read": false,
+ "protocol": "STAGE1_CANDIDATE_G_PROJECTION_DEPENDENCE.md",
+ "reference_reproduces_1146": true,
+ "rows": {
+  "candidate_f_projection": [
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.07446939975208827,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 562
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.07446939975208816,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 562
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.07446939975208816,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 562
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.07446939975208816,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 562
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.051410302118305384,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 559
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.051410302118305384,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 559
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.051410302118305384,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 559
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.051410302118305384,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 559
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.03067834759151372,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 566
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.03067834759151372,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 566
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.03067834759151372,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 566
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.03067834759151372,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 566
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 50.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.013187870877709729,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 552
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 50.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.013187870877709729,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 552
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 50.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.013187870877709729,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 552
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 50.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.013187870877709729,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 552
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 4,
+    "information_value": 0.00015833394118969224,
+    "level": 20.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.014507052740454718,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 285
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 6,
+    "information_value": 0.0003166678823789404,
+    "level": 20.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.017514277515266796,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 285
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 8,
+    "information_value": 0.0003166678823789404,
+    "level": 20.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.017514277515266796,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 285
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 12,
+    "information_value": 0.0004750018235684106,
+    "level": 20.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.020521502290078875,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 285
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 4,
+    "information_value": 0.0001394256532685212,
+    "level": 30.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.00959896826339035,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 418
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 6,
+    "information_value": 0.0002788513065370424,
+    "level": 30.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.011716248295156717,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 418
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 8,
+    "information_value": 0.0002788513065370424,
+    "level": 30.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.011716248295156717,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 418
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 12,
+    "information_value": 0.00041827695980556356,
+    "level": 30.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.013833528326923084,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 418
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 4,
+    "information_value": 0.00011069163280791328,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.005972650627906306,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 541
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 6,
+    "information_value": 0.00022138326561588206,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.00751688514374016,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 541
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 8,
+    "information_value": 0.00022138326561588206,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.00751688514374016,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 541
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 12,
+    "information_value": 0.00033207489842373983,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.009061119659573957,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 541
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 4,
+    "information_value": 7.123498449501664e-05,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.0050358394880539725,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 541
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 6,
+    "information_value": 0.0001424699689900888,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.006320247010862756,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 541
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 8,
+    "information_value": 0.0001424699689900888,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.006320247010862756,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 541
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 12,
+    "information_value": 0.00021370495348504992,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.007604654533671429,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 541
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.03198805430167373,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 151
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.03806514052991283,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 151
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.03806514052991283,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 151
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.04414222675815194,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 151
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.018734222027755987,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 214
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.024309012436912303,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 214
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.024309012436912303,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 214
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.029883802846068175,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 214
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.014038081314282636,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 276
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.01816886881579749,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 276
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.01816886881579749,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 276
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.022299656317312233,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 276
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.010450865253703867,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 346
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.013519733531360933,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 346
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.013519733531360933,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 346
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.01658860180901811,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 346
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 4,
+    "information_value": 0.00021077989281037546,
+    "level": 20.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.003884517546016264,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 540
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 6,
+    "information_value": 0.00042155978562097296,
+    "level": 20.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.0036737376532056665,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 540
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 8,
+    "information_value": 0.00042155978562097296,
+    "level": 20.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.0036737376532056665,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 540
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 12,
+    "information_value": 0.0006323396784315705,
+    "level": 20.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.003462957760395069,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 540
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 4,
+    "information_value": 0.00040673408810193434,
+    "level": 30.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.0017265864755042215,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 545
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 6,
+    "information_value": 0.0008134681762039242,
+    "level": 30.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.0013198523874022317,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 545
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 8,
+    "information_value": 0.0008134681762039242,
+    "level": 30.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.0013198523874022317,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 545
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 12,
+    "information_value": 0.001220202264305914,
+    "level": 30.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.0009131182993002418,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 545
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 4,
+    "information_value": 0.0004968453053578736,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.0003343279244413244,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 545
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 6,
+    "information_value": 0.0009936906107156918,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.0009268371037322587,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 545
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 8,
+    "information_value": 0.0009936906107156918,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.0009268371037322587,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 545
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 12,
+    "information_value": 0.0014905359160735099,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.001519346283023193,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 545
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 4,
+    "information_value": 0.00020168697630096322,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.002216379205440766,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 542
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 6,
+    "information_value": 0.00040337395260209297,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.002975956785844891,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 542
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 8,
+    "information_value": 0.00040337395260209297,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.002975956785844891,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 542
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 12,
+    "information_value": 0.0006050609289031117,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.003735534366248905,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 542
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.05171682456410315,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 557
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.05171682456410304,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 557
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.05171682456410304,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 557
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.05171682456410309,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 557
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.03338119375335674,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 556
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.033381193753356686,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 556
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.033381193753356686,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 556
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.033381193753356686,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 556
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.01751934581935638,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 553
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.01751934581935638,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 553
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.01751934581935638,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 553
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.01751934581935638,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 553
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 4,
+    "information_value": 0.00046221636183829684,
+    "level": 50.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.004685326666777956,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 552
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 6,
+    "information_value": 0.0009244327236765937,
+    "level": 50.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.004223110304939659,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 552
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 8,
+    "information_value": 0.0009244327236765937,
+    "level": 50.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.004223110304939659,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 552
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 12,
+    "information_value": 0.0013866490855148905,
+    "level": 50.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.003760893943101362,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 552
+    }
+   }
+  ],
+  "per_step": [
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.07444535353193477,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.07444535353193465,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.07444535353193465,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.07444535353193465,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.05138831213550332,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.05138831213550327,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.05138831213550327,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.05138831213550327,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.030659034836426236,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.03065903483642618,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.03065903483642618,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.03065903483642618,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 50.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.013172462753134606,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 50.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.013172462753134606,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 50.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.013172462753134606,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 50.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.013172462753134606,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 4,
+    "information_value": 0.0001583339411894702,
+    "level": 20.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.009072886740762787,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 6,
+    "information_value": 0.0003166678823789404,
+    "level": 20.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.012080111515574865,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 8,
+    "information_value": 0.0003166678823789404,
+    "level": 20.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.012080111515574865,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 12,
+    "information_value": 0.00047500182356863263,
+    "level": 20.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.015087336290387166,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 4,
+    "information_value": 0.0001394256532686322,
+    "level": 30.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.006831789078122319,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 6,
+    "information_value": 0.0002788513065371534,
+    "level": 30.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.008949069109888574,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 8,
+    "information_value": 0.0002788513065371534,
+    "level": 30.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.008949069109888574,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 12,
+    "information_value": 0.0004182769598056746,
+    "level": 30.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.01106634914165483,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 4,
+    "information_value": 0.00011069163280796879,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.005972650627906528,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 6,
+    "information_value": 0.00022138326561588206,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.007516885143740437,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 8,
+    "information_value": 0.00022138326561588206,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.007516885143740437,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 12,
+    "information_value": 0.00033207489842373983,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.00906111965957429,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 4,
+    "information_value": 7.123498449501664e-05,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.005035839488054139,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 6,
+    "information_value": 0.00014246996899003328,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.006320247010862867,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 8,
+    "information_value": 0.00014246996899003328,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.006320247010862867,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 12,
+    "information_value": 0.00021370495348504992,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.007604654533671595,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.024718630513005158,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.030689493516482313,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.030689493516482313,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.036660356519959025,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.01722629230334527,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.02142358657830945,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.02142358657830945,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.02562088085327363,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 4,
+    "information_value": 6.942053598635312e-10,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.013013725745830151,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 6,
+    "information_value": 1.3884107197270623e-09,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.01619039548118495,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 8,
+    "information_value": 1.3884107197270623e-09,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.01619039548118495,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 12,
+    "information_value": 2.0826160795905935e-09,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.019367065216539747,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 4,
+    "information_value": 4.2537220013016963e-07,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.00970115611463851,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 6,
+    "information_value": 8.507444002603393e-07,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.012067397788485978,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 8,
+    "information_value": 8.507444002603393e-07,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.012067397788485978,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 12,
+    "information_value": 1.2761166003905089e-06,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.014433639462333336,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 4,
+    "information_value": 0.00021077989281048648,
+    "level": 20.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.003884517546016153,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 6,
+    "information_value": 0.000421559785621084,
+    "level": 20.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.0036737376532055555,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 8,
+    "information_value": 0.000421559785621084,
+    "level": 20.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.0036737376532055555,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 12,
+    "information_value": 0.0006323396784315705,
+    "level": 20.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.003462957760395069,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 4,
+    "information_value": 0.00040673408810187883,
+    "level": 30.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.0017265864755045546,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 6,
+    "information_value": 0.0008134681762039242,
+    "level": 30.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.0013198523874025092,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 8,
+    "information_value": 0.0008134681762039242,
+    "level": 30.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.0013198523874025092,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 12,
+    "information_value": 0.0012202022643058585,
+    "level": 30.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.0009131182993005749,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 4,
+    "information_value": 0.0004968453053578181,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.0003343279244412134,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 6,
+    "information_value": 0.0009936906107157473,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.0009268371037322032,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 8,
+    "information_value": 0.0009936906107157473,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.0009268371037322032,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 12,
+    "information_value": 0.0014905359160735654,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.001519346283023082,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 4,
+    "information_value": 0.00020168697630101873,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.002216379205440766,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 6,
+    "information_value": 0.00040337395260209297,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.0029759567858448355,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 8,
+    "information_value": 0.00040337395260209297,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.0029759567858448355,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 12,
+    "information_value": 0.0006050609289031117,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.0037355343662488494,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.051697436700333554,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.051697436700333554,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.051697436700333554,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.051697436700333554,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.0333640054223488,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.03336400542234874,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.03336400542234874,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.0333640054223488,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.01750497718205507,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.01750497718205507,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.01750497718205507,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.01750497718205507,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 4,
+    "information_value": 0.0004629204012763233,
+    "level": 50.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.004674550091466001,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 6,
+    "information_value": 0.0009258408025525355,
+    "level": 50.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.004211629690189733,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 8,
+    "information_value": 0.0009258408025525355,
+    "level": 50.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.004211629690189733,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 12,
+    "information_value": 0.0013887612038288033,
+    "level": 50.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.0037487092889134654,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 1288
+    }
+   }
+  ],
+  "reference": [
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.0648995759237303,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.0648995759237303,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.0648995759237303,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.0648995759237303,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.04072139892489435,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.04072139892489435,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.04072139892489435,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.04072139892489435,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.019332116745440664,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.019332116745440553,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.019332116745440553,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.019332116745440553,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 4,
+    "information_value": 0.0007947119032475358,
+    "level": 50.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.0014570798414906272,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 6,
+    "information_value": 0.0015894238064951827,
+    "level": 50.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.0005605571057213932,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 8,
+    "information_value": 0.0015894238064951827,
+    "level": 50.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.0005605571057213932,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "energy",
+    "channel_index": 0,
+    "horizon": 12,
+    "information_value": 0.002384135709742774,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.00033596563004778535,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.03299982292721926,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.040902270979589206,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.040902270979589206,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.04880471903195871,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.01721105507886167,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.02133337724895934,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.02133337724895934,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.025455699419056788,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.016138029581761693,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.020025340009770076,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.020025340009770076,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.02391265043777846,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.014920436076024335,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.018537209557021428,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.018537209557021428,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "food",
+    "channel_index": 1,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.0221539830380183,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.07385277105884436,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.09116807097251711,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.09116807097251711,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.10848337088618987,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.03725330112863867,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.04611694606373473,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.04611694606373473,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.05498059099883057,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.03602919243564062,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.04464332955679429,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.04464332955679429,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.05325746667794795,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.03445540181542306,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.042735126996261696,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.042735126996261696,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "water",
+    "channel_index": 2,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.051014852177100334,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.0017827859140657765,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.0025971597396248214,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.0025971597396248214,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.0034115335651837553,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.0051220676954060185,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.006655907261256089,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.006655907261256089,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.008189746827106048,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.00828757158119331,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.010498493513015128,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.010498493513015128,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 40.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.012709415444837169,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.01110864811511253,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.01391317936520231,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.01391317936520231,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "integrity",
+    "channel_index": 3,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.016717710615292036,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.04470886346893399,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.04470886346893388,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.04470886346893388,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 20.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.04470886346893388,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.024578230116996225,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.024578230116996225,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.024578230116996225,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 30.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.024578230116996225,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 4,
+    "information_value": 0.0005777150960893929,
+    "level": 40.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.007020157558284834,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 6,
+    "information_value": 0.0011554301921787857,
+    "level": 40.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.006442442462195441,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 8,
+    "information_value": 0.0011554301921787857,
+    "level": 40.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.006442442462195441,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 12,
+    "information_value": 0.0017331452882681786,
+    "level": 40.0,
+    "target_choices": [
+     "DECLINE_TRIAL"
+    ],
+    "trial_advantage": -0.005864727366106048,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 4,
+    "information_value": 0.0,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.00612426219246931,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 6,
+    "information_value": 0.0,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.007925477312279827,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 8,
+    "information_value": 0.0,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.007925477312279827,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   },
+   {
+    "channel": "vigilance",
+    "channel_index": 4,
+    "horizon": 12,
+    "information_value": 0.0,
+    "level": 50.0,
+    "target_choices": [
+     "TRIAL"
+    ],
+    "trial_advantage": 0.009726692432090345,
+    "work": {
+     "cycles": 18,
+     "memory_items": 201,
+     "replays": 0,
+     "simulated_steps": 53
+    }
+   }
+  ]
+ },
+ "schema": "i3-stage1-candidate-g-projection-dependence/v1",
+ "summary": {
+  "candidate_f_projection": {
+   "best_trial_advantage": 0.04414222675815194,
+   "declined": 40,
+   "evaluated": 80,
+   "max_information_value": 0.0014905359160735099,
+   "max_work": {
+    "cycles": 18,
+    "memory_items": 201,
+    "replays": 0,
+    "simulated_steps": 566
+   },
+   "mean_work": {
+    "cycles": 18.0,
+    "memory_items": 201.0,
+    "replays": 0.0,
+    "simulated_steps": 470.05
+   },
+   "mean_work_ratio_to_reference": {
+    "cycles": 1.0,
+    "memory_items": 1.0,
+    "replays": null,
+    "simulated_steps": 8.868867924528303
+   },
+   "selected_epistemic": 24,
+   "selected_other_deficit": 24,
+   "selected_water_deficit": 0
+  },
+  "per_step": {
+   "best_trial_advantage": 0.036660356519959025,
+   "declined": 40,
+   "evaluated": 80,
+   "max_information_value": 0.0014905359160735654,
+   "max_work": {
+    "cycles": 18,
+    "memory_items": 201,
+    "replays": 0,
+    "simulated_steps": 1288
+   },
+   "mean_work": {
+    "cycles": 18.0,
+    "memory_items": 201.0,
+    "replays": 0.0,
+    "simulated_steps": 1288.0
+   },
+   "mean_work_ratio_to_reference": {
+    "cycles": 1.0,
+    "memory_items": 1.0,
+    "replays": null,
+    "simulated_steps": 24.30188679245283
+   },
+   "selected_epistemic": 32,
+   "selected_other_deficit": 24,
+   "selected_water_deficit": 8
+  },
+  "reference": {
+   "best_trial_advantage": 0.10848337088618987,
+   "declined": 27,
+   "evaluated": 80,
+   "max_information_value": 0.002384135709742774,
+   "max_work": {
+    "cycles": 18,
+    "memory_items": 201,
+    "replays": 0,
+    "simulated_steps": 53
+   },
+   "mean_work": {
+    "cycles": 18.0,
+    "memory_items": 201.0,
+    "replays": 0.0,
+    "simulated_steps": 53.0
+   },
+   "mean_work_ratio_to_reference": {
+    "cycles": 1.0,
+    "memory_items": 1.0,
+    "replays": null,
+    "simulated_steps": 1.0
+   },
+   "selected_epistemic": 1,
+   "selected_other_deficit": 1,
+   "selected_water_deficit": 0
+  }
+ },
+ "world_access": false
+}
