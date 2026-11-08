@@ -1,0 +1,37 @@
+name: I3 import Candidate-G projection bundle
+
+on:
+  pull_request:
+    types: [opened]
+    paths:
+      - '.github/workflows/i3-import-candidate-g-projection.yml'
+      - '.github/import/i3-candidate-g-projection.bundle'
+
+permissions:
+  contents: write
+
+jobs:
+  import-bundle:
+    if: >-
+      github.event.pull_request.head.repo.full_name == 'josselin-orta-lab/individual-zero' &&
+      github.head_ref == 'i3/import-candidate-g-projection-20261108' &&
+      github.event.pull_request.base.sha == '05a9b33d100dd88a93a8cd404e6aed62acbfeb3e'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - name: Verify and publish exact bundle branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(sha256sum .github/import/i3-candidate-g-projection.bundle | cut -d' ' -f1)" = "43601feff4d203a7221ed8e90d71c45aae8159adb58256dc37cdd5ae7a4c942f"
+          git fetch .github/import/i3-candidate-g-projection.bundle \
+            refs/heads/i3/stage1-candidate-g-projection:refs/remotes/bundle/i3/stage1-candidate-g-projection
+          test "$(git rev-parse refs/remotes/bundle/i3/stage1-candidate-g-projection)" = "90399f72a6a2687004bf33590b5f9ad42f565f14"
+          test "$(git merge-base refs/remotes/bundle/i3/stage1-candidate-g-projection 05a9b33d100dd88a93a8cd404e6aed62acbfeb3e)" = "05a9b33d100dd88a93a8cd404e6aed62acbfeb3e"
+          git push origin \
+            refs/remotes/bundle/i3/stage1-candidate-g-projection:refs/heads/i3/stage1-candidate-g-projection
+          echo "PUBLISHED_HEAD=$(git rev-parse refs/remotes/bundle/i3/stage1-candidate-g-projection)"
