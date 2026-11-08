@@ -8,16 +8,15 @@ second roadmap. Decision: [ADR-0016](../../../docs/decisions/ADR-0016-i3-general
 Integration tracking: [#1059](https://github.com/josselin-orta-lab/individual-zero/issues/1059).
 
 **Current operational intervention: ADR-0017 world-opening
-moratorium is active. Candidate-I runtime v2 S0-S11, branch settlement B0-B9,
-probe-authority U0-U9, lifecycle stress L0-L11, multi-phase reducer M0-M9,
-lifecycle stress v2 V0-V8 and post-contact probe reducer Q0-Q9 all PASS.
-DEVELOPMENT 60/61, 62/63, 64/65 and 66/67 remain permanently exposed/closed
-engineering stops with no J1-J7 verdict. Lifecycle custody stress v3 W0-W9
-remains the next software-only gate, but even a PASS cannot authorize a fresh
-World. Before any new living panel, implement two-phase generation/reduction,
-declare a disjoint non-evidentiary engineering cohort, and pass a full-scale
-sealed rehearsal on the exact intended transport SHA. Selection, validation,
-reserve and Stage 2 remain blocked.**
+moratorium is active and ADR-0018 has frozen Candidate-J as the last Stage-1
+candidate. Candidate-I runtime/custody authorities through Q0-Q9 PASS; 60/61,
+62/63, 64/65 and 66/67 remain permanently exposed/closed engineering stops with
+no J1-J7 verdict. Two software-only tracks are admissible under the moratorium:
+(1) implement and execute the frozen Candidate-J falsifier once; (2) complete
+lifecycle-custody stress v3 W0-W9 and the ADR-0017 two-phase/engineering-cohort/
+sealed-rehearsal infrastructure. No fresh World may open. Stage 1 closes on the
+ADR-0018 stop rule and Stage 2 is unblocked only after that closure, on J if
+positive or P1.3 otherwise. Selection, validation and reserve remain blocked.**
 
 ## Source, scope and current reference
 
@@ -72,8 +71,8 @@ software defect. Keep adverse and null outcomes; do not tune them away.
 | Stage | Deliverable | Status / tracking |
 | --- | --- | --- |
 | 0 | Independent-population design, energetic mediation, complete paid Competition observation, individuality challenge, P5d uncertainty | Open in parallel; [#1060](https://github.com/josselin-orta-lab/individual-zero/issues/1060), existing #1026/#1054 |
-| 1 | Information value in predicted distress, replacing additive curiosity/relevance/prudence | **ADR-0017 moratorium active: no new World index in any cohort. Candidate-I software authorities through Q0-Q9 PASS; 60/61, 62/63, 64/65 and 66/67 remain exposed/closed with no J1-J7 verdict.** Execute the software-only lifecycle custody stress v3 W0-W9, then prioritize the two-phase G/R pipeline, non-evidentiary engineering cohort and exact-SHA sealed rehearsal. A W0-W9 PASS alone does not authorize fresh allocation. P80 remains energy/vigilance-driven and K80 non-monotone; [#1061](https://github.com/josselin-orta-lab/individual-zero/issues/1061) |
-| 2 | Decide how much to think by value of computation | **Blocked** until Stage-1 decision boundary is resolved; [#1062](https://github.com/josselin-orta-lab/individual-zero/issues/1062) |
+| 1 | Information value in predicted distress, replacing additive curiosity/relevance/prudence | **ADR-0017 moratorium active; ADR-0018 makes Candidate-J the last Stage-1 candidate.** Next scientific work: one frozen software falsifier for addend-free, one-phase, capacity-scaled J. In parallel, W0-W9 and the two-phase G/R + engineering-cohort + exact-SHA sealed-rehearsal infrastructure remain engineering work. No World opens before the ADR-0017 lift. Any non-capacity J software verdict closes Stage 1 negatively; otherwise J proceeds to the declared post-moratorium path. No later Stage-1 candidate; [#1061](https://github.com/josselin-orta-lab/individual-zero/issues/1061) |
+| 2 | Decide how much to think by value of computation | **Blocked until ADR-0018 closes Stage 1; then unblocked regardless of positive/negative closure on the retained reference.** First question: when precise projection is worth its paid cost; [#1062](https://github.com/josselin-orta-lab/individual-zero/issues/1062) |
 | 3 | Change detection, latent causes, then perceived-attribute factorization | Full stage deferred. One minimal generic future-opportunity representation may be tested early only as a Stage-1 prerequisite; do not start the Stage-3 bundle. |
 | 4 | Successor features and delayed credit evaluated by current bodily distress | Deferred after the required model/budget decisions |
 | 5 | Learned topology for obstacles and larger F1 worlds | Deferred; unchanged perception radius |
