@@ -544,9 +544,9 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
         info["candidate_h_probe_funding"] = stage_a[
             "probe_funding"]
         info["candidate_i_stage_a_work"] = asdict(
-            stage_a["work"])
+            stage_a_total_work)
         info["candidate_i_stage_a_body_after"] = tuple(
-            stage_a["body_after_computation"])
+            stage_a_total_body)
         info["candidate_i_stage_b_work"] = asdict(
             stage_b_work)
         info["candidate_i_total_work"] = asdict(total_work)
@@ -663,8 +663,11 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
                     offered_families=stage_a[
                         "offered_families"],
                     nested=stage_a["probe_funding"],
-                    stage_work=stage_a["work"],
+                    stage_work=budget.work,
                     reason="COMMON_MATRIX_UNFUNDED")
+
+            stage_a_total_work = budget.work
+            stage_a_total_body = tuple(budget.remaining)
 
             if stage_a["relevant"]:
                 self.candidate_i_relevant_final += 1
@@ -707,12 +710,14 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
             info["candidate_i_relevance"] = "RELEVANT"
             info["candidate_i_probe_funding"] = "FUNDED"
             info["candidate_h_probe_funding"] = "FUNDED"
+            stage_b_work = _delta(
+                budget.work, stage_a_total_work)
             info["candidate_i_stage_a_work"] = asdict(
-                stage_a["work"])
+                stage_a_total_work)
             info["candidate_i_stage_a_body_after"] = tuple(
-                stage_a["body_after_computation"])
+                stage_a_total_body)
             info["candidate_i_stage_b_work"] = asdict(
-                CognitiveWork())
+                stage_b_work)
             info["candidate_i_total_work"] = asdict(
                 budget.work)
             info["candidate_i_body_after_cognition"] = tuple(
@@ -752,9 +757,10 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
         budget.spend(final_budget.work)
         total = budget.work
         expected = _add(
-            stage_a["work"], final_budget.work)
-        # stage_a.work excludes the fixed base + recurrence read already paid
-        # before _first_contact_score, so compare by direct settlement instead.
+            stage_a_total_work, final_budget.work)
+        if total != expected:
+            raise RuntimeError(
+                "Candidate-I cumulative work does not equal Stage A + Stage B")
         if any(
                 not isfinite(value)
                 for value in (
