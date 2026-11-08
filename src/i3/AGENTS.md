@@ -64,15 +64,19 @@ The
 is now prospectively frozen. Its machine-readable plan digest is
 `a8e8dc955a3324e3f78986b4e4de8d8894f8196e1ba7321b89f295016dc1c876`.
 
-**Next work is software-only.** Implement exactly the declared
-`personal_shared_prior_candidate_i_omega0_ablation_v1` arm as the same
-Candidate-I class/genome with only `first_contact_omega_override=0.0`, then
-add an import-safe source-locked runner/reducer. Preflight may use only already
-exposed fixtures.
+The frozen 60/61 pilot has now been opened once and stopped after five completed
+lives on a Candidate-H branch-memory settlement error. It is classified
+`ENGINEERING_FAILURE_NOT_A_DEATH`; 60/61 are permanently exposed and closed.
+Do not rerun, resume, replace seeds/horizon, infer J1-J7, or use the partial
+panel to tune cognition.
 
-Do not open 60/61 in that implementation PR. After protocol and runtime
-implementation are both merged and exact-head checks pass, execution requires a
-separate one-shot transport with stop-and-archive/no-retry custody.
+**Next work is software-only and prospectively frozen in
+[STAGE1_BRANCH_DECISION_SETTLEMENT_REPAIR.md](docs/STAGE1_BRANCH_DECISION_SETTLEMENT_REPAIR.md).**
+Reproduce the mismatch on the declared synthetic body/work fixture, then repair
+the branch-memory settlement receipt so `decision_start_body` and
+`decision_work` always describe the same paid interval. Preserve full
+Candidate-H/I Stage-A + Stage-B work. Do not make the error disappear by
+charging Stage B only, clipping cost or reimbursing cognition.
 
 Do not widen omega, rescale RMS, add resource-specific inherited coefficients,
 alter K80/P80/F108 or reuse 56/57/58/59. Selection, validation, reserve and

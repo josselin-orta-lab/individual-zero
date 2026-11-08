@@ -90,10 +90,24 @@ stable, depletion and pulse, with four arms: P1.3, Candidate-H, Candidate-I
 native omega and same-genome Candidate-I omega=0. Canonical plan digest:
 `a8e8dc955a3324e3f78986b4e4de8d8894f8196e1ba7321b89f295016dc1c876`.
 
-**60/61 remain unopened.** The next admissible change is software-only:
-implement the explicit omega=0 Candidate-I runtime ablation and a source-locked
-runner/preflight on already-exposed fixtures. A separate reviewed one-shot
-transport is required after that implementation merges.
+The frozen 60/61 panel was subsequently opened exactly once by #1182 after
+the omega=0 arm and source-locked runner had merged. The software matrix passed,
+then the panel stopped after **5 completed lives** while generating
+`stable-60-g902:personal_relevance_candidate_h_v1` with
+`CognitiveFundingError: cognitive work exceeds available energy/vigilance`
+inside `learn_from_outcome -> branch_memory.observe`.
+
+This is
+[ENGINEERING_FAILURE_NOT_A_DEATH](studies/stage1-candidate-i-development-60-61/RESULTS.md),
+not a J1-J7 result. Originals are archived on
+`evidence/i3-stage1-candidate-i-60-61-46c52b2a5a81`, evidence commit
+`ebb8d1f9`. **60/61 are exposed and permanently closed. Do not rerun.**
+
+The next admissible work is now the prospectively frozen software-only
+[branch-decision settlement repair](STAGE1_BRANCH_DECISION_SETTLEMENT_REPAIR.md).
+It must reproduce the phase/body mismatch on synthetic fixtures, preserve the
+full paid decision work, and repair settlement custody without using 60/61 as
+an acceptance set.
 
 ## Current handoff: 58/59 exposed, no Candidate-H continuation verdict
 
