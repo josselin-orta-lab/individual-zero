@@ -99,6 +99,12 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
             "last": deepcopy(self.last),
             "visible": tuple(self.visible),
             "pos": tuple(self.pos),
+            "unknown": (
+                deepcopy(self._unknown)
+                if hasattr(self, "_unknown") else None),
+            "presence": (
+                deepcopy(self._presence)
+                if hasattr(self, "_presence") else None),
             "drift": deepcopy(self._drift),
             "rng": self.rng.getstate(),
             "budget_rng": self._budget_rng.getstate(),
@@ -123,6 +129,16 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
         self.last = deepcopy(snap["last"])
         self.visible = tuple(snap["visible"])
         self.pos = tuple(snap["pos"])
+        if snap["unknown"] is None:
+            if hasattr(self, "_unknown"):
+                del self._unknown
+        else:
+            self._unknown = deepcopy(snap["unknown"])
+        if snap["presence"] is None:
+            if hasattr(self, "_presence"):
+                del self._presence
+        else:
+            self._presence = deepcopy(snap["presence"])
         self._drift = deepcopy(snap["drift"])
         self.rng.setstate(snap["rng"])
         self._budget_rng.setstate(snap["budget_rng"])
