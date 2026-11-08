@@ -85,6 +85,53 @@ class SharedFirstContactTrialIdentityTests(unittest.TestCase):
                     self._assert_identity(
                         body, horizon, action, omega)
 
+    def test_two_trial_matrix_is_enumeration_permutation_invariant(self):
+        body = (60., 20., 40., 50., 70.)
+        action_a = ("manger", "alpha")
+        action_b = ("manger", "beta")
+        base = [
+            (name, tuple(plan), None)
+            for name, plan in H.ORDINARY_PLANS.items()]
+        opts = tuple(base + [
+            ("food-a", (action_a,), None),
+            ("food-b", (action_b,), None)])
+        left = paid_shared_perceived_first_contact(
+            D.make_mind("candidate_f_projection"),
+            G.effect_memory(), opts,
+            (("food-a", action_a), ("food-b", action_b)),
+            8, CognitiveBudget(body, BodyLaws()),
+            omega=0.5, competition_cycles=0)
+        right = paid_shared_perceived_first_contact(
+            D.make_mind("candidate_f_projection"),
+            G.effect_memory(), tuple(reversed(opts)),
+            (("food-b", action_b), ("food-a", action_a)),
+            8, CognitiveBudget(body, BodyLaws()),
+            omega=0.5, competition_cycles=0)
+        for key in (
+                "status", "relevant", "classification",
+                "ordinary_scores", "with_information_scores",
+                "without_information_scores", "with_information_top",
+                "without_information_top", "work",
+                "forecast_work_ceiling", "forecast_start_body",
+                "body_after_computation"):
+            self.assertEqual(left[key], right[key])
+        left_trials = {
+            row["option"]: {
+                key: row[key] for key in (
+                    "status", "no_trial_value", "trial_frozen_value",
+                    "trial_informed_value", "information_value",
+                    "trial_advantage", "prior_record")}
+            for row in left["trials"]}
+        right_trials = {
+            row["option"]: {
+                key: row[key] for key in (
+                    "status", "no_trial_value", "trial_frozen_value",
+                    "trial_informed_value", "information_value",
+                    "trial_advantage", "prior_record")}
+            for row in right["trials"]}
+        self.assertEqual(left_trials, right_trials)
+
+
 
 if __name__ == "__main__":
     unittest.main()
