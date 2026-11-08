@@ -69,14 +69,14 @@ jobs:
       contents: write
     env:
       PYTHONPATH: src
-      HEAD_SHA: \${{ github.event.pull_request.head.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       PROTOCOL_SHA256: ba8e934c33fd060318721883e4f6e92034dd68ed743cf044ac97f9f4dc3a21e7
       OUT: /tmp/i3-candidate-i-62-63-originals
     steps:
       - name: Checkout exact prospective source with push authority
         uses: actions/checkout@v4
         with:
-          ref: \${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -84,7 +84,7 @@ jobs:
           python-version: '3.12'
       - name: Refuse duplicate evidence identity
         run: |
-          EVIDENCE_BRANCH="evidence/i3-stage1-candidate-i-62-63-\${HEAD_SHA:0:12}"
+          EVIDENCE_BRANCH="evidence/i3-stage1-candidate-i-62-63-${HEAD_SHA:0:12}"
           if git ls-remote --exit-code --heads origin "$EVIDENCE_BRANCH" >/dev/null 2>&1; then
             echo "Evidence branch already exists: $EVIDENCE_BRANCH" >&2
             exit 1
@@ -101,11 +101,11 @@ jobs:
         id: evidence
         if: always()
         env:
-          PILOT_OUTCOME: \${{ steps.pilot.outcome }}
-          RUN_ID: \${{ github.run_id }}
-          RUN_ATTEMPT: \${{ github.run_attempt }}
+          PILOT_OUTCOME: ${{ steps.pilot.outcome }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
         run: |
-          EVIDENCE_BRANCH="evidence/i3-stage1-candidate-i-62-63-\${HEAD_SHA:0:12}"
+          EVIDENCE_BRANCH="evidence/i3-stage1-candidate-i-62-63-${HEAD_SHA:0:12}"
           TARGET="src/i3/docs/studies/stage1-candidate-i-development-62-63/evidence"
           mkdir -p "$TARGET"
           if [ -d "$OUT" ]; then
@@ -142,7 +142,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: i3-candidate-i-62-63-\${{ github.event.pull_request.head.sha }}
+          name: i3-candidate-i-62-63-${{ github.event.pull_request.head.sha }}
           path: /tmp/i3-candidate-i-62-63-originals
           if-no-files-found: warn
           retention-days: 90
