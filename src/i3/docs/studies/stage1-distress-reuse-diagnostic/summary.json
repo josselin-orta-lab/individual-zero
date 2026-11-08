@@ -1,0 +1,29 @@
+{
+ "schema": "i3-stage1-distress-reuse-diagnostic-summary/v1",
+ "declaration_commit": "d525a8a17faa7c13df3a616fea33dbb05fe68db8",
+ "source_commit": "96455f010a8ad150536db1bded0f01843b761860",
+ "workflow_run": 42473511648,
+ "world_access": false,
+ "lives": 0,
+ "classification": "FEATURE_REUSE_INSUFFICIENT",
+ "candidate_f_mean_simulated_steps": 470.0,
+ "summary": {
+  "evaluated": 80,
+  "selected_epistemic": 32,
+  "selected_water_deficit": 8,
+  "actual_mean_simulated_steps": 853.3,
+  "actual_mean_projection_endpoints": 840.3,
+  "actual_mean_nonprojection_steps": 13.0,
+  "mean_feature_evaluations": 835.3,
+  "mean_consecutive_feature_runs": 760.5,
+  "mean_unique_feature_tuples": 639.9,
+  "mean_consecutive_duplicates_removed": 74.8,
+  "mean_ideal_memo_duplicates_removed": 195.4,
+  "last_feature_reuse_mean_total": 778.5,
+  "decision_memo_lower_mean_total": 657.9,
+  "max_unique_feature_tuples": 984,
+  "max_features_in_one_project": 198
+ },
+ "work_accounting_changed": false,
+ "lower_estimates_are_cognitive_work_receipts": false
+}
