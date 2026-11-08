@@ -7,16 +7,14 @@ request to integrate the supplied scenario. This is the continuation of
 second roadmap. Decision: [ADR-0016](../../../docs/decisions/ADR-0016-i3-generalization-without-imposed-rules.md).
 Integration tracking: [#1059](https://github.com/josselin-orta-lab/individual-zero/issues/1059).
 
-**Current operational intervention: Candidate-I runtime v2 passes S0-S11 and
-branch settlement B0-B9 passes, but both fresh lived successors are now
-engineering-stopped: 60/61 after 5 lives and 62/63 after 18 lives, with no
-J1-J7 verdict from either exposed panel. 62/63 revealed a distinct Candidate-I
-rollback-authority defect: an unfunded detached probe can restore a stale
-previous `last` without a matching settlement receipt. The next intervention
-is the prospectively frozen
-[probe-restore authority repair](STAGE1_CANDIDATE_I_PROBE_AUTHORITY_REPAIR.md),
-software-only and independent of the 62/63 original trajectories. Stage 0
-remains open; Stage 2 stays blocked.**
+**Current operational intervention: Candidate-I runtime v2 S0-S11, branch
+settlement B0-B9 and probe-authority U0-U9 now PASS. 60/61 and 62/63 remain
+exposed/closed engineering stops with no J1-J7 verdict. Before any third fresh
+lived successor, prospectively freeze a software/already-exposed lifecycle
+custody stress gate spanning consecutive decision, learning, storage and
+revision cycles for Candidate-I native/omega0 and Candidate-H post-contact.
+Do not use 60/61 or 62/63 originals as acceptance data. Stage 0 remains open;
+Stage 2 stays blocked.**
 
 ## Source, scope and current reference
 
@@ -71,7 +69,7 @@ software defect. Keep adverse and null outcomes; do not tune them away.
 | Stage | Deliverable | Status / tracking |
 | --- | --- | --- |
 | 0 | Independent-population design, energetic mediation, complete paid Competition observation, individuality challenge, P5d uncertainty | Open in parallel; [#1060](https://github.com/josselin-orta-lab/individual-zero/issues/1060), existing #1026/#1054 |
-| 1 | Information value in predicted distress, replacing additive curiosity/relevance/prudence | **Current: Candidate-I runtime v2 S0-S11 PASS and branch settlement B0-B9 PASS; 60/61 and 62/63 are both exposed/closed on engineering failures with no J1-J7 verdict.** Next execute the frozen software-only Candidate-I probe-restore authority repair; no live retry. P80 remains energy/vigilance-driven and K80 non-monotone; [#1061](https://github.com/josselin-orta-lab/individual-zero/issues/1061) |
+| 1 | Information value in predicted distress, replacing additive curiosity/relevance/prudence | **Current: Candidate-I runtime v2 S0-S11, branch settlement B0-B9 and probe-authority U0-U9 PASS; 60/61 and 62/63 are exposed/closed with no J1-J7 verdict.** Next freeze a consecutive lifecycle-custody stress gate on already-exposed fixtures before any new live allocation; no live retry. P80 remains energy/vigilance-driven and K80 non-monotone; [#1061](https://github.com/josselin-orta-lab/individual-zero/issues/1061) |
 | 2 | Decide how much to think by value of computation | **Blocked** until Stage-1 decision boundary is resolved; [#1062](https://github.com/josselin-orta-lab/individual-zero/issues/1062) |
 | 3 | Change detection, latent causes, then perceived-attribute factorization | Full stage deferred. One minimal generic future-opportunity representation may be tested early only as a Stage-1 prerequisite; do not start the Stage-3 bundle. |
 | 4 | Successor features and delayed credit evaluated by current bodily distress | Deferred after the required model/budget decisions |
