@@ -643,6 +643,16 @@ def characterize():
         and zero_k["states"] == 80
         and zero_k["relevant"] == 24
         and zero_k["fallback"] == 56
+        and sum(
+            row["stage_a"].get("target_choices") == ("DECLINE_TRIAL",)
+            for row in imagined[0.0]) == 40
+        and all(
+            all(
+                row["stage_a"]["work"][key]
+                <= row["stage_a"]["forecast_work_ceiling"][key]
+                for key in WORK_KEYS)
+            for row in imagined[0.0]
+            if row["stage_a"]["status"] == "FUNDED")
         and abs(
             sum(
                 row["stage_a"]["work"]["simulated_steps"]
