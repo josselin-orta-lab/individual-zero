@@ -62,6 +62,12 @@ new architecture hypothesis.
 Do not reopen selection/validation 72..167 or the P4 reserve. Do not launch
 Stage 2 to rescue the rejected candidate.
 
+**Update after #1149:** local-sensitivity reuse (drink error 1.91) and
+decision-time anchored chunks (bias 0.215) fail feasibility; do not retry them
+([probes](docs/studies/stage1-affordable-projection-probes/RESULTS.md)). Next
+design to freeze: a separable cached projection, with storage and rebuild cost
+paid and reported.
+
 **Update after #1146:** a declared diagnostic shows Candidate-G's 1/80
 epistemic pass is a projection effect. The Candidate-F projection gives 24/80
 at ×8.9 paid simulation, per-step 32/80 at ×24. The next architecture question

@@ -53,6 +53,22 @@ scientifically defensible; otherwise return to Stage-1 architecture design.
 
 No fresh scientific panel is authorized by this handoff.
 
+## Latest: two cheap consistent-projection ideas fail feasibility
+
+Declared exploratory probes, software only
+([results](studies/stage1-affordable-projection-probes/RESULTS.md)):
+
+- **Local sensitivity** (one accurate projection plus a gradient, reused across
+  options) errs by up to 1.91 for a drink option: consumption shifts the
+  predicted death time nonlinearly.
+- **Anchoring chunk boundaries at decision time** leaves the decision bias at
+  0.215, against 0.216 for the reference.
+
+Consistency needs per-step-equivalent accuracy on the whole horizon. The next
+design to freeze is a **separable cached projection**: per-channel exact
+tables, paid memory, rebuilt when learned drift changes, with death coupling
+through the minimum time-to-death. Not implemented.
+
 ## Latest: Candidate-G's thin pass comes from the projection; cost is the obstacle
 
 Declared diagnostic on the frozen #1146 grid

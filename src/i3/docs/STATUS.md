@@ -67,6 +67,22 @@ and use fresh development conditions only if later executed.
 P1.3 remains reference. I3 remains unregistered. Stage 2 remains blocked and
 the P4 reserve remains sealed.
 
+## Latest exploration: cheap consistent-projection shortcuts fail
+
+Two declared exploratory probes on the #1146 fixtures, measured against the
+per-step projection ([results](studies/stage1-affordable-projection-probes/RESULTS.md)):
+
+- **Local sensitivity.** Linear expansion errors: wait 0.0034, sleep 0.0055,
+  eat 0.30, drink 1.91.
+- **Decision-time anchored grid.** Decision bias 0.2153, against 0.2164 for the
+  reference.
+
+Neither approaches 1e-3. The next design, not implemented, is a separable
+cached projection: exact per-channel discounted tables held as paid,
+capacity-bounded memory, rebuilt on drift change, with death coupled through
+the minimum time-to-death. The honest alternative outcome is a scientific
+result: consistent foresight unaffordable at current physical prices.
+
 ## Latest diagnostic: Candidate-G depends on projection consistency, not recurrence
 
 #1146 passed Candidate-G's software gate with 1/80 strictly advantageous

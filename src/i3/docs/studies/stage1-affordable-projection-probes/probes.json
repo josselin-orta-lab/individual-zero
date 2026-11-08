@@ -1,0 +1,17 @@
+{
+ "decision_bias_limit_used_elsewhere": 0.001,
+ "lives": 0,
+ "local_sensitivity_max_error_by_option": {
+  "drink": 1.9099881563816057,
+  "eat": 0.29740359359213686,
+  "sleep": 0.005535539510564957,
+  "wait": 0.0034072712215982293
+ },
+ "max_decision_bias_vs_per_step": {
+  "anchored": 0.21527509401870826,
+  "reference": 0.21644215661305677
+ },
+ "schema": "i3-stage1-affordable-projection-probes/v1",
+ "status": "EXPLORATORY_NOT_A_PROTOCOL",
+ "world_access": false
+}
