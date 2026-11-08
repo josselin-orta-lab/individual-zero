@@ -21,8 +21,10 @@ anchor. The pilot asks whether conditional activation actually occurs and lowers
 realized energy, vigilance and processing-budget collapse. **Survival is
 descriptive, not a pass criterion.**
 
-The 56/57 worlds are still unopened. No selection, validation, reserve,
-reference adoption or Stage 2 is authorized.
+The 56/57 worlds are still unopened. The machine-readable plan and reduction
+live in `i3.lab.stage1_candidate_g_development_pilot`; importing it does not
+load Mind, World or create a life. No selection, validation, reserve, reference
+adoption or Stage 2 is authorized.
 
 ## Current top-level result: frozen omega gate rejected
 
