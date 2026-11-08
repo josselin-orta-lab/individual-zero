@@ -124,7 +124,7 @@ class ReferenceFrontierInformationMind(ReferenceBranchMemoryMind):
             if competition is not None:
                 diag["competition_witness"] = competition
             info["observer"] = diag
-        self._branch_decision_work = budget.work
+        self._set_branch_decision_settlement(budget.body, budget.work)
         return action, param, budget.work, info
 
     def decide(self, cap, budget: CognitiveBudget):
@@ -133,6 +133,7 @@ class ReferenceFrontierInformationMind(ReferenceBranchMemoryMind):
         if any(budget.body[k] <= 0 for k in VITAL):
             raise ValueError("no decision after physical death")
         self._pending_branch = None
+        self._clear_branch_decision_settlement()
         self.last = None
 
         body = cap["body"]

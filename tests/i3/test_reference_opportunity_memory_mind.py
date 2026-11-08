@@ -60,7 +60,8 @@ class ReferenceOpportunityMemoryMindTests(unittest.TestCase):
         for mind in (a, b):
             mind.last = last
             mind.buffer = deque([sample, sample, sample, sample])
-            mind._branch_decision_work = CognitiveWork(cycles=3)
+            mind._set_branch_decision_settlement(
+                BODY, CognitiveWork(cycles=3))
         b._pending_opportunity_presence = (True, False)
 
         ba = CognitiveBudget(BODY, BodyLaws())
