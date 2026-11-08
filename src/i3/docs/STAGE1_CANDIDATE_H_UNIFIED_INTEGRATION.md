@@ -65,6 +65,14 @@ The copy itself is implementation transport, not a free cognitive result:
 all model computations that establish relevance must appear in Stage-A work.
 No result may be imported from 56/57 or another individual.
 
+### Incomplete Stage A
+
+If Stage A cannot fund enough cognition to establish its declared relevance
+classification, the result is `PROBE_UNFUNDED`.
+
+No Stage-B decision is executed. In particular, lack of compute is never
+relabelled as FALLBACK or evidence of non-relevance.
+
 ### Stage B: complete final decision
 
 Stage B starts from the actual body remaining after Stage-A cognition.
