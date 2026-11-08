@@ -133,6 +133,7 @@ class ReferenceFrontierInformationMind(ReferenceBranchMemoryMind):
         if any(budget.body[k] <= 0 for k in VITAL):
             raise ValueError("no decision after physical death")
         self._pending_branch = None
+        self._clear_branch_decision_settlement()
         self.last = None
 
         body = cap["body"]
