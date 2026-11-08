@@ -2,7 +2,7 @@ name: I3 import Candidate-G projection bundle
 
 on:
   pull_request:
-    types: [opened, synchronize]
+    types: [opened, synchronize, reopened]
     paths:
       - '.github/workflows/i3-import-candidate-g-projection.yml'
       - '.github/import/i3-candidate-g-projection.b64.*'
