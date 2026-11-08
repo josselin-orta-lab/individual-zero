@@ -5,6 +5,25 @@ The [engine contract](../engine.json) has no active entrypoints; the
 [registry](../../../config/engine-registry.json) keeps I1 active.
 A green software test is not a scientific GO.
 
+## Current: first-contact asymmetry becomes the next Stage-1 software question
+
+The frozen 58/59 Candidate-H DEVELOPMENT transport opened once and then stopped
+on an engineering reduction error after World exposure. Originals were
+preserved, but no H1-H6 verdict exists. 58/59 are exposed and closed; there is
+no retry.
+
+A read-only reduction of 56/57 now identifies a sharper first-contact defect:
+an unsupported action gets a paid inherited prior when imagined at a frontier,
+but the same unknown action is valued as an ordinary generic step when the
+resource is already perceived. See the
+[first-contact audit](studies/stage1-candidate-g-development-56-57/POSTHOC_FIRST_CONTACT_AUDIT.md).
+
+The next bounded intervention is the owner-approved
+[shared first-contact prior](STAGE1_SHARED_FIRST_CONTACT_PRIOR.md): one inherited
+prior for imagined and perceived first trials, tested only in software under
+D0-D7 and R1. No Candidate-H runtime edit or new life is authorized by this
+handoff.
+
 ## Latest: unified Candidate-H integration passes in software
 
 The frozen
