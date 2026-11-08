@@ -304,6 +304,10 @@ class PersonalSharedPriorCandidateIRuntimeTests(unittest.TestCase):
             "hist": deepcopy(mind.hist),
             "tokens": deepcopy(mind.tokens),
             "external": deepcopy(mind.external),
+            "unknown_present": hasattr(mind, "_unknown"),
+            "unknown": deepcopy(getattr(mind, "_unknown", None)),
+            "presence_present": hasattr(mind, "_presence"),
+            "presence": deepcopy(getattr(mind, "_presence", None)),
             "rng": mind.rng.getstate(),
             "budget_rng": mind._budget_rng.getstate(),
         }
@@ -338,6 +342,14 @@ class PersonalSharedPriorCandidateIRuntimeTests(unittest.TestCase):
         self.assertEqual(mind.hist, before["hist"])
         self.assertEqual(mind.tokens, before["tokens"])
         self.assertEqual(mind.external, before["external"])
+        self.assertEqual(
+            hasattr(mind, "_unknown"), before["unknown_present"])
+        self.assertEqual(
+            getattr(mind, "_unknown", None), before["unknown"])
+        self.assertEqual(
+            hasattr(mind, "_presence"), before["presence_present"])
+        self.assertEqual(
+            getattr(mind, "_presence", None), before["presence"])
         self.assertEqual(mind.rng.getstate(), before["rng"])
         self.assertEqual(
             mind._budget_rng.getstate(), before["budget_rng"])
