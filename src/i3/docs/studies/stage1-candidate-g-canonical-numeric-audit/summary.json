@@ -1,0 +1,77 @@
+{
+ "schema": "i3-stage1-candidate-g-canonical-numeric-audit-summary/v1",
+ "declaration_commit": "5863dacfdd21467777aeaf038ee8858842c7adb4",
+ "source_commit": "ce6c16bbae6bdf9d3f46cdb38bebbdcd0dc776ee",
+ "workflow_run": 42474206334,
+ "world_access": false,
+ "lives": 0,
+ "classification": "HISTORICAL_WATER_SELECTIONS_NUMERIC_ARTIFACT",
+ "arms": {
+  "historical_float_per_step": {
+   "selected_epistemic": 32,
+   "selected_water_deficit": 8,
+   "selected_other_deficit": 24,
+   "declined": 40,
+   "mean_work": {
+    "cycles": 18.0,
+    "simulated_steps": 1288.0,
+    "memory_items": 201.0,
+    "replays": 0.0
+   }
+  },
+  "canonical_high_precision_per_step": {
+   "selected_epistemic": 24,
+   "selected_water_deficit": 0,
+   "selected_other_deficit": 24,
+   "declined": 40,
+   "mean_work": {
+    "cycles": 18.0,
+    "simulated_steps": 1288.0,
+    "memory_items": 201.0,
+    "replays": 0.0
+   },
+   "actual_work_ceiling_violations": 0
+  },
+  "candidate_f_projection": {
+   "selected_epistemic": 24,
+   "selected_water_deficit": 0,
+   "selected_other_deficit": 24,
+   "declined": 40,
+   "mean_work": {
+    "cycles": 18.0,
+    "simulated_steps": 470.05,
+    "memory_items": 201.0,
+    "replays": 0.0
+   }
+  }
+ },
+ "canonical_vs_candidate_f": {
+  "selected_overlap": 24,
+  "selected_only_canonical": [],
+  "selected_only_candidate_f": [],
+  "water_overlap": 0,
+  "water_only_canonical": [],
+  "water_only_candidate_f": []
+ },
+ "historical_only_water_states": [
+  {"channel":"water","level":40.0,"horizon":4},
+  {"channel":"water","level":40.0,"horizon":6},
+  {"channel":"water","level":40.0,"horizon":8},
+  {"channel":"water","level":40.0,"horizon":12},
+  {"channel":"water","level":50.0,"horizon":4},
+  {"channel":"water","level":50.0,"horizon":6},
+  {"channel":"water","level":50.0,"horizon":8},
+  {"channel":"water","level":50.0,"horizon":12}
+ ],
+ "max_information_value_difference": 1.2761166003905089e-06,
+ "max_information_difference_state": {
+  "channel":"water","level":50.0,"horizon":12
+ },
+ "max_trial_advantage_difference": 0.0074818702381935775,
+ "max_trial_advantage_difference_state": {
+  "channel":"water","level":20.0,"horizon":12
+ },
+ "historical_gates_changed": false,
+ "candidate_promoted": false,
+ "runtime_integration_authorized": false
+}
