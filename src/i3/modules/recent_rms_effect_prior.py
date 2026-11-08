@@ -25,6 +25,7 @@ from .body import CognitiveBudget, CognitiveWork
 from .information_value import WORK_KEYS
 from .plan_information import PlanSubjectiveOutcome
 from .reference_branches import ReferenceBranchMemory
+from .personal_outcomes import WINDOW
 
 SCHEMA = "i3-recent-rms-zero-mean-effect-prior/v1"
 SIGNAL = "DIRECT_BODY_AFTER_UNSUPPORTED_EFFECT"
@@ -42,6 +43,25 @@ def _validate_omega(omega):
             not isfinite(omega) or not -1.0 <= omega <= 1.0):
         raise ValueError("omega must be a finite number in [-1, 1]")
     return float(omega)
+
+
+def recent_rms_effect_prior_work_ceiling(
+        memory: ReferenceBranchMemory) -> CognitiveWork:
+    """Exact structural work quote for one paid RMS-prior construction."""
+    if not isinstance(memory, ReferenceBranchMemory):
+        raise ValueError("ReferenceBranchMemory required")
+    retained = len(memory._samples)
+    support = min(retained, WINDOW)
+    read = CognitiveWork(cycles=1, memory_items=7 * retained + 2)
+    scale = (
+        CognitiveWork(cycles=1, memory_items=2)
+        if support < 2 else
+        CognitiveWork(cycles=2, memory_items=5 * support + 12))
+    return CognitiveWork(
+        cycles=read.cycles + scale.cycles,
+        simulated_steps=0,
+        memory_items=read.memory_items + scale.memory_items,
+        replays=0)
 
 
 def paid_recent_rms_zero_mean_effect_prior(
@@ -153,4 +173,5 @@ def paid_recent_rms_zero_mean_effect_prior(
 
 __all__ = [
     "SCHEMA", "SIGNAL", "paid_recent_rms_zero_mean_effect_prior",
+    "recent_rms_effect_prior_work_ceiling",
 ]

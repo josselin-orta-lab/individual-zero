@@ -67,16 +67,26 @@ versus its own no-trial comparator and every other offered option. #1163
 post-contact asks whether extra information changes the decision top. Those
 questions remain distinct.
 
-The prospectively frozen successor is now
-[Candidate-I runnable multi-option integration v2](STAGE1_CANDIDATE_I_RUNTIME_INTEGRATION_V2.md).
-For every direct unsupported trial, v2 requires its informed value to beat its
-own no-trial value and strictly beat every other actually offered option. This
-is symmetric across water/food/tokens and reduces algebraically to #1170 in the
-one-trial case. The failed top-set-change map remains diagnostic only.
+The prospectively frozen successor
+[Candidate-I runnable multi-option integration v2](STAGE1_CANDIDATE_I_RUNTIME_INTEGRATION_V2.md)
+now passes S0-S11:
+[CANDIDATE_I_RUNTIME_INTEGRATION_V2_PASS](studies/stage1-candidate-i-runtime-integration-v2/RESULTS.md).
 
-Development indices 60/61 appear unused but remain **unallocated and unopened**.
-No omega widening, RMS rescaling, resource-specific prior or Stage-2 work is
-authorized.
+Final tested source `9c5ef3e2657c1d2be1e0e8f0b592b6a957dcff6b`,
+Actions `42500166929`, Python 3.11/3.12, 918 tests. The exhaustive one-trial
+reduction is **0/1,128 mismatches**. Multi-trial permutation/renaming,
+addend-free fallback custody, omega ablation, composite funding, post-contact
+parity and already-exposed runtime smoke all pass.
+
+Two review defects were corrected before the final verdict: the fallback
+Stage-A receipt omitted already-paid base/recurrence work, and forced-failure
+restoration omitted transient `_unknown`/`_presence` caches. Neither repair
+changed scores, relevance, actions, omega, fixtures or V2-R1/R2.
+
+Development indices 60/61 still remain **unallocated and unopened**. The next
+admissible action is to freeze a fresh DEVELOPMENT protocol containing at least
+P1.3, Candidate-H, Candidate-I native omega and same-genome Candidate-I
+omega=0. No World may open from this PASS directly.
 
 ## Current handoff: 58/59 exposed, no Candidate-H continuation verdict
 
