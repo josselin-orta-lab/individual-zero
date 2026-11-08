@@ -25,6 +25,7 @@ from .personal_relevance_candidate_h_mind import (
 from .recent_rms_effect_prior import (
     paid_recent_rms_zero_mean_effect_prior,
     recent_rms_effect_prior_work_ceiling)
+from .shared_first_contact_trials import direct_trial_strict_winners
 from .reference_frontier_information_mind import (
     _simulation_upper)
 from .unknown_action_trial import (
@@ -367,12 +368,18 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
                     row.get("trial_advantage")):
                 imagined_relevant = True
 
-        direct_relevant = (
-            direct_complete
-            and bool(direct_rows)
-            and post_contact_relevant_scores(
-                scored_map, without_direct,
-                positive_direct))
+        direct_strict_winners = (
+            direct_trial_strict_winners(
+                tuple({
+                    "option": oid,
+                    "trial_informed_value":
+                        row["trial_informed_value"],
+                    "no_trial_value":
+                        row["no_trial_value"],
+                } for oid, row in direct_rows.items()),
+                scored_map)
+            if direct_complete and direct_rows else ())
+        direct_relevant = bool(direct_strict_winners)
         relevant = direct_relevant or imagined_relevant
 
         # If direct empirical support is absent and there is no independently
@@ -482,7 +489,14 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
                 "RELEVANT" if relevant else "FALLBACK",
             "relevant": relevant,
             "direct_relevant": direct_relevant,
+            "direct_strict_winners": direct_strict_winners,
             "imagined_relevant": imagined_relevant,
+            "v1_top_set_change_diagnostic": (
+                direct_complete
+                and bool(direct_rows)
+                and post_contact_relevant_scores(
+                    scored_map, without_direct,
+                    positive_direct)),
             "direct_trial_count": len(direct),
             "imagined_trial_count": len(imagined_rows),
             "direct_trials": tuple(direct),
