@@ -14,7 +14,7 @@ import json
 from pathlib import Path
 import subprocess
 
-IMPLEMENTATION_BASELINE = "b9acb61a26be6d9ddcbe4dee2d0f5218cca5ccaf"
+IMPLEMENTATION_BASELINE = "e3ff37a1cf5306fc1f8cd0d3fadcef8d0adb2242"
 PROTOCOL = "i3-stage1-candidate-g-development-56-57-v1"
 FAMILIES = ("stable", "depletion", "pulse")
 INDICES = (56, 57)
