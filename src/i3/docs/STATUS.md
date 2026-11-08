@@ -207,14 +207,22 @@ original found zero processing/work contradictions across all 141 trace rows;
 the former t=134 failure reduces as Stage-B `processing_paid=false`. This does
 not admit the life to J1-J7.
 
-**Do not propose another fresh Candidate-I panel yet.** The next intervention is
-now prospectively frozen in
-[STAGE1_CANDIDATE_I_LIFECYCLE_CUSTODY_STRESS_V2.md](STAGE1_CANDIDATE_I_LIFECYCLE_CUSTODY_STRESS_V2.md).
-It preserves the entire historical L0-L11 gate and adds V0-V8 around actual
-production Candidate-H / Candidate-I decisions forced into the sequential
-boundary: generic paid Stage A -> zero-work Stage B -> public
-`NO_PROCESSING_BUDGET`, followed by the production Stage-0 revision join.
-No exposed-panel original is an acceptance fixture.
+The prospectively frozen
+[Candidate-I lifecycle-custody stress v2](studies/stage1-candidate-i-lifecycle-custody-stress-v2/RESULTS.md)
+now returns **`CANDIDATE_I_LIFECYCLE_CUSTODY_STRESS_V2_PASS`** on tested
+source `f9544cf2e22f69a953fdd4141adc6991547c7e16`, Actions
+`42524858889`. Python 3.11/3.12 pass **1008 tests**; V0-V8 are all green.
+
+V2 preserves all historical L0-L11 coverage and now forces the 64/65 reducer
+boundary with actual production H / I-native / I-omega0 decisions using a
+generic 0.15-energy / 5-cycle Stage-A fixture. All three emit zero-work Stage B
+`NO_PROCESSING_BUDGET`, reduce as `processing_paid=false`, preserve the
+nonzero Stage-A physical bill and start the following decision with current
+authority only.
+
+This PASS authorizes only the **proposal and prospective freeze** of another
+fresh disjoint Candidate-I DEVELOPMENT successor. It does not authorize opening
+a World.
 
 ## Current handoff: 58/59 exposed, no Candidate-H continuation verdict
 
