@@ -70,13 +70,22 @@ lives on a Candidate-H branch-memory settlement error. It is classified
 Do not rerun, resume, replace seeds/horizon, infer J1-J7, or use the partial
 panel to tune cognition.
 
-**Next work is software-only and prospectively frozen in
-[STAGE1_BRANCH_DECISION_SETTLEMENT_REPAIR.md](docs/STAGE1_BRANCH_DECISION_SETTLEMENT_REPAIR.md).**
-Reproduce the mismatch on the declared synthetic body/work fixture, then repair
-the branch-memory settlement receipt so `decision_start_body` and
-`decision_work` always describe the same paid interval. Preserve full
-Candidate-H/I Stage-A + Stage-B work. Do not make the error disappear by
-charging Stage B only, clipping cost or reimbursing cognition.
+The frozen branch-decision settlement gate now passes B0-B9
+([result](docs/studies/stage1-branch-decision-settlement-repair/RESULTS.md));
+merged repair `5ee25b3b0f39050321b0b5c6147bdae0e3e68ec5`). The repair preserves
+full paid Candidate-H/I Stage-A + Stage-B work and only aligns that work with
+its actual decision-start body.
+
+60/61 remain permanently exposed and closed with no J1-J7 verdict.
+
+**Next work is software-only around the newly frozen
+[Candidate-I 62/63 protocol](docs/studies/stage1-candidate-i-development-62-63/PROTOCOL.md).**
+Its machine plan uses fresh indices 62/63, world seeds 2062/2063, G0 903/904
+and life seeds rooted at 7,490,000. Its J1-J7 identifiers are exactly the
+60/61 pre-exposure rules. Implement only the source-locked runner/reducer and
+already-exposed-fixture preflight. Do not open 62/63 in that implementation PR
+and do not read 60/61 partial originals as fixtures, calibration or acceptance
+data.
 
 Do not widen omega, rescale RMS, add resource-specific inherited coefficients,
 alter K80/P80/F108 or reuse 56/57/58/59. Selection, validation, reserve and
