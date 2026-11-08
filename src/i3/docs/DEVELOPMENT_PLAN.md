@@ -7,16 +7,17 @@ request to integrate the supplied scenario. This is the continuation of
 second roadmap. Decision: [ADR-0016](../../../docs/decisions/ADR-0016-i3-generalization-without-imposed-rules.md).
 Integration tracking: [#1059](https://github.com/josselin-orta-lab/individual-zero/issues/1059).
 
-**Current operational intervention: Candidate-I runtime v2 S0-S11, branch
-settlement B0-B9, probe-authority U0-U9, lifecycle stress L0-L11, multi-phase
-processing reducer M0-M9, lifecycle stress v2 V0-V8 and post-contact probe
-reducer Q0-Q9 all PASS. Fresh DEVELOPMENT 60/61, 62/63, 64/65 and 66/67 remain
-permanently exposed/closed engineering stops with no J1-J7 verdict. The next
-prospectively frozen gate is lifecycle custody stress v3 W0-W9, which must force
-actual production I post-contact -> H PROBE_UNFUNDED under both incomplete
-funding classes across a fixed energy ladder and pass them through the repaired
-reducer. No fresh World, selection, validation, reserve or Stage 2 is
-authorized.**
+**Current operational intervention: ADR-0017 world-opening
+moratorium is active. Candidate-I runtime v2 S0-S11, branch settlement B0-B9,
+probe-authority U0-U9, lifecycle stress L0-L11, multi-phase reducer M0-M9,
+lifecycle stress v2 V0-V8 and post-contact probe reducer Q0-Q9 all PASS.
+DEVELOPMENT 60/61, 62/63, 64/65 and 66/67 remain permanently exposed/closed
+engineering stops with no J1-J7 verdict. Lifecycle custody stress v3 W0-W9
+remains the next software-only gate, but even a PASS cannot authorize a fresh
+World. Before any new living panel, implement two-phase generation/reduction,
+declare a disjoint non-evidentiary engineering cohort, and pass a full-scale
+sealed rehearsal on the exact intended transport SHA. Selection, validation,
+reserve and Stage 2 remain blocked.**
 
 ## Source, scope and current reference
 
@@ -71,7 +72,7 @@ software defect. Keep adverse and null outcomes; do not tune them away.
 | Stage | Deliverable | Status / tracking |
 | --- | --- | --- |
 | 0 | Independent-population design, energetic mediation, complete paid Competition observation, individuality challenge, P5d uncertainty | Open in parallel; [#1060](https://github.com/josselin-orta-lab/individual-zero/issues/1060), existing #1026/#1054 |
-| 1 | Information value in predicted distress, replacing additive curiosity/relevance/prudence | **Current: Candidate-I runtime v2 S0-S11, branch settlement B0-B9, probe-authority U0-U9, lifecycle stress L0-L11, multi-phase reducer M0-M9, lifecycle stress v2 V0-V8 and post-contact probe reducer Q0-Q9 PASS; 60/61, 62/63, 64/65 and 66/67 are exposed/closed with no J1-J7 verdict.** Next execute the frozen software-only lifecycle custody stress v3 W0-W9; no fresh allocation. P80 remains energy/vigilance-driven and K80 non-monotone; [#1061](https://github.com/josselin-orta-lab/individual-zero/issues/1061) |
+| 1 | Information value in predicted distress, replacing additive curiosity/relevance/prudence | **ADR-0017 moratorium active: no new World index in any cohort. Candidate-I software authorities through Q0-Q9 PASS; 60/61, 62/63, 64/65 and 66/67 remain exposed/closed with no J1-J7 verdict.** Execute the software-only lifecycle custody stress v3 W0-W9, then prioritize the two-phase G/R pipeline, non-evidentiary engineering cohort and exact-SHA sealed rehearsal. A W0-W9 PASS alone does not authorize fresh allocation. P80 remains energy/vigilance-driven and K80 non-monotone; [#1061](https://github.com/josselin-orta-lab/individual-zero/issues/1061) |
 | 2 | Decide how much to think by value of computation | **Blocked** until Stage-1 decision boundary is resolved; [#1062](https://github.com/josselin-orta-lab/individual-zero/issues/1062) |
 | 3 | Change detection, latent causes, then perceived-attribute factorization | Full stage deferred. One minimal generic future-opportunity representation may be tested early only as a Stage-1 prerequisite; do not start the Stage-3 bundle. |
 | 4 | Successor features and delayed credit evaluated by current bodily distress | Deferred after the required model/budget decisions |
