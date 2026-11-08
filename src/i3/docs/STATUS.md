@@ -43,14 +43,30 @@ respond differently to the same inherited expectation.
 This is capacity evidence only. It does not authorize runtime adoption or a
 new live panel.
 
-**Next bounded Stage-1 work is software-only and split in two, now prospectively frozen:**
+Both prospectively frozen software prerequisites now PASS:
 
-1. execute [Candidate-I shared-prior integration](STAGE1_CANDIDATE_I_SHARED_PRIOR_INTEGRATION.md), which removes designer curiosity/prudence from first-contact FALLBACK while preserving #1163 post-contact semantics;
-2. execute the [composite-funding reducer repair](STAGE1_COMPOSITE_FUNDING_REDUCER_REPAIR.md) on synthetic fixtures only, without rerunning exposed 58/59.
+- [Candidate-I shared-prior integration](studies/stage1-candidate-i-shared-prior-integration/RESULTS.md):
+  `CANDIDATE_I_SHARED_PRIOR_INTEGRATION_PASS`, I0-I9 all PASS, every
+  first-contact fallback funded and exactly addend-free;
+- [composite-funding reducer repair](studies/stage1-composite-funding-reducer-repair/RESULTS.md):
+  `COMPOSITE_FUNDING_REDUCER_REPAIR_PASS`, R0-R6 all PASS.
 
-Only after both software boundaries pass may a fresh DEVELOPMENT comparison be
-frozen. Do not widen omega, rescale the RMS prior, target water explicitly or
-open Stage 2 to make the result look more biological.
+A final runtime composition gap was identified before allocating a fresh World:
+I0-I9 did not yet define how **multiple simultaneously offered unsupported
+resource trials** share one score geometry and then enter ordinary Competition
+and ActionControl.
+
+The next prospectively frozen software gate is therefore
+[Candidate-I runnable multi-option integration](STAGE1_CANDIDATE_I_RUNTIME_INTEGRATION.md).
+It requires exact one-trial reduction to #1170, symmetric multi-resource
+evaluation, one common Candidate-F forecast body/ceiling, shared P1.3
+Competition/ActionControl finalization, addend-free fallback, unchanged
+post-contact Candidate-H and a repaired-reducer runtime smoke on already exposed
+fixtures only.
+
+Development indices 60/61 appear unused, but are **not allocated or opened** by
+this software gate. Do not widen omega, rescale the RMS prior, target water
+explicitly or open Stage 2.
 
 ## Current handoff: 58/59 exposed, no Candidate-H continuation verdict
 
