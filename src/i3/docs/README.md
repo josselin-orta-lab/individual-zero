@@ -5,6 +5,24 @@ The [engine contract](../engine.json) has no active entrypoints; the
 [registry](../../../config/engine-registry.json) keeps I1 active.
 A green software test is not a scientific GO.
 
+## Latest: Candidate-H fixes the first-contact support/relevance split in software
+
+The frozen
+[Candidate-H result](studies/stage1-candidate-h-relevance-fallback/RESULTS.md)
+passes H0-H5.
+
+The mechanism pays the Candidate-F relevance probe first, then falls back to a
+fully paid P1.3 ordinary decision only when the epistemic trial is not strictly
+advantageous. All **56/56** fallback states are funded, and all **20/20** states
+previously contaminated by Candidate-G's support-triggered projector return to
+their P1.3 top set. No fallback state changes top set versus pre-probe P1.3.
+
+Verdict:
+`CANDIDATE_H_FIRST_CONTACT_SOFTWARE_GATE_PASS`.
+
+This does not authorize runtime or a live panel. The next missing slice is
+post-contact relevance gating, still software-only.
+
 ## Latest: Candidate-G switches projection too early
 
 The declared
