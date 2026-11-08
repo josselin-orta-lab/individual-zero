@@ -67,6 +67,10 @@ Total if later executed:
 - **36 lives**;
 - at most **14,400 physical steps**.
 
+Canonical machine-readable plan SHA-256:
+
+`c307db1ec5b01b860bce40b1aa1f359a502da32fe3f7e46625b1c80811fd5951`.
+
 The two G0 genotypes and repeated F0 blocks are engineering fixtures, not
 independent evolutionary populations. No population-inference claim is allowed.
 
