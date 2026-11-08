@@ -161,6 +161,27 @@ def _missing_receipt_fails_closed(physical, b1):
     return False
 
 
+def _stale_receipt_is_replaced():
+    mind = ReferenceBranchMemoryMind(midpoint(), 308)
+    mind._set_branch_decision_settlement(B0, WT)
+    body = (80.0, 80.0, 40.0, 80.0, 80.0)
+    cap = {
+        "body": body,
+        "here": (False, ()),
+        "neighbors": (None, None, None, None),
+        "inventory": (),
+    }
+    budget = CognitiveBudget(body, LAWS)
+    result = mind.decide(cap, budget)
+    return (
+        mind._branch_decision_start_body == body
+        and mind._branch_decision_work == result[2] == budget.work
+        and (
+            mind._branch_decision_start_body != B0
+            or mind._branch_decision_work != WT)
+    )
+
+
 def _upper_cost_shadow_identity(physical, b1, expected):
     reference = Mind(midpoint(), 305)
     candidate = GenomicOmegaFrontierInformationMind(
@@ -227,6 +248,7 @@ def characterize():
         "candidate_i")
     missing = _missing_receipt_fails_closed(
         physical, b1)
+    stale_replaced = _stale_receipt_is_replaced()
     shadow = _upper_cost_shadow_identity(
         physical, b1, expected)
 
@@ -261,7 +283,8 @@ def characterize():
             and candidate_i_producer["start_matches"]
             and candidate_i_producer["work_matches"]),
         "B6_prepaid_store_exact": direct["store_work_exact"],
-        "B7_missing_receipt_fails_closed": missing,
+        "B7_missing_or_stale_receipt_fails_closed": (
+            missing and stale_replaced),
         "B8_upper_cost_shadow_unchanged": all(shadow.values()),
         "B9_authority_boundary": True,
     }
@@ -295,6 +318,7 @@ def characterize():
         "candidate_i": candidate_i,
         "candidate_h_producer": candidate_h_producer,
         "candidate_i_producer": candidate_i_producer,
+        "stale_receipt_replaced": stale_replaced,
         "upper_cost_shadow": shadow,
         "rules": rules,
         "verdict": (
