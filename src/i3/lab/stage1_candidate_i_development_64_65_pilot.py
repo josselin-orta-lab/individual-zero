@@ -69,6 +69,14 @@ def validate_launch(expected_sha, expected_protocol):
     if (expected_protocol != design.EXPECTED_PLAN_SHA256 or
             design.digest(plan()) != design.EXPECTED_PLAN_SHA256):
         raise ValueError("prospective protocol digest mismatch")
+    try:
+        _git(
+            "merge-base", "--is-ancestor",
+            design.REQUIRED_LIFECYCLE_STRESS_COMMIT, "HEAD")
+    except subprocess.CalledProcessError as exc:
+        raise ValueError(
+            "execution source must descend from lifecycle-stress authority"
+        ) from exc
     if _git(
             "status", "--porcelain", "--untracked-files=all", "--",
             "src/i3", "tests/i3"):
