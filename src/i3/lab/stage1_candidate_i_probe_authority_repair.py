@@ -274,12 +274,15 @@ def _fallback_fresh_authority():
         or (
             mind._branch_decision_start_body == BODY
             and mind._branch_decision_work == result[2] == budget.work))
+    current_presence = mind._pending_opportunity_presence
     return {
         "route": info["candidate_i_route"],
         "single_current_cell_observation":
             mind.hist.get((0, 0), [0])[0] == 1,
         "last_is_fresh": last_is_fresh,
         "settlement_aligned": settlement_aligned,
+        "current_opportunity_presence":
+            current_presence == (True, False),
         "phase_work_exact":
             stage_sum == info["candidate_i_total_work"],
         "addends_zero": bool(witness) and all(
@@ -403,6 +406,7 @@ def characterize():
             and fallback["single_current_cell_observation"]
             and fallback["last_is_fresh"]
             and fallback["settlement_aligned"]
+            and fallback["current_opportunity_presence"]
             and fallback["phase_work_exact"]
             and fallback["addends_zero"]),
         "U6_relevant_creates_fresh_authority": (
