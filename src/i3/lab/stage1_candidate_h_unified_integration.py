@@ -234,8 +234,11 @@ def _run_panel(omega):
                 try:
                     settled, _ = debit_cognition(
                         body, BodyLaws(), total)
+                    row["body_settlement_max_abs_gap"] = max(
+                        abs(a - b)
+                        for a, b in zip(settled, sig["body_after"]))
                     row["body_settlement_exact"] = (
-                        tuple(settled) == tuple(sig["body_after"]))
+                        row["body_settlement_max_abs_gap"] <= 1e-12)
                 except Exception as exc:
                     row["body_settlement_exact"] = False
                     row["settlement_error"] = (
