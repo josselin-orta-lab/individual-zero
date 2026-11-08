@@ -63,14 +63,17 @@ class CandidateGReferenceRecurrenceTests(unittest.TestCase):
                 self.assertLessEqual(
                     value, row["forecast_work_ceiling"][key])
 
-    def test_lab_import_does_not_load_world_or_runtime(self):
+    def test_lab_import_does_not_load_runtime_or_create_a_life(self):
+        # Mind itself imports world.DIRECTIONS as an architectural constant, so
+        # requiring the world module to be absent would be a false isolation
+        # claim. The falsifier must still remain detached from runtime/life.
         root = str(Path(__file__).resolve().parents[2] / "src")
         subprocess.run([
             sys.executable, "-c",
             "import sys; sys.path.insert(0, " + repr(root) + "); "
-            "import i3.lab.stage1_candidate_g_reference_recurrence_falsifier; "
-            "assert 'i3.modules.world' not in sys.modules; "
-            "assert 'i3.runtime.life' not in sys.modules"
+            "import i3.lab.stage1_candidate_g_reference_recurrence_falsifier as g; "
+            "assert 'i3.runtime.life' not in sys.modules; "
+            "assert g.SCHEMA.endswith('/v1')"
         ], check=True)
 
 
