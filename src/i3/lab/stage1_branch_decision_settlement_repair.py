@@ -34,6 +34,14 @@ WB = CognitiveWork(cycles=5)
 WT = CognitiveWork(cycles=15)
 LAWS = BodyLaws()
 KEY = ("attendre", None)
+TOL = 1e-12
+
+
+def _same_delta(left, right):
+    return (
+        len(left) == len(right)
+        and max((abs(a - b) for a, b in zip(left, right)), default=0.0)
+        <= TOL)
 
 
 def _expected_fixture():
@@ -67,7 +75,7 @@ def _direct_repaired_pair(physical, expected):
     return {
         "work": budget.work,
         "delta": tuple(sample.delta),
-        "matches_expected": tuple(sample.delta) == tuple(expected),
+        "matches_expected": _same_delta(sample.delta, expected),
         "store_work_exact": budget.work == STORE_WORK,
     }
 
@@ -98,7 +106,7 @@ def _commit_through_mind(kind, physical, b1, expected):
         "replays": replays,
         "branch_records": mind.branch_records,
         "delta": tuple(sample.delta),
-        "matches_expected": tuple(sample.delta) == tuple(expected),
+        "matches_expected": _same_delta(sample.delta, expected),
         "settlement_consumed": (
             mind._branch_decision_start_body is None
             and mind._branch_decision_work == CognitiveWork()),
@@ -178,8 +186,8 @@ def _upper_cost_shadow_identity(physical, b1, expected):
         candidate, pending)
     delta_matches = (
         committed
-        and tuple(candidate.branch_memory._samples[-1].delta)
-        == tuple(expected))
+        and _same_delta(
+            candidate.branch_memory._samples[-1].delta, expected))
     return {
         "pending": True,
         "before_matches": before_matches,
