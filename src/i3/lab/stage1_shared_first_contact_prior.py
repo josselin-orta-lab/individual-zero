@@ -223,6 +223,12 @@ def _imagined_row(body, horizon, omega):
         "target_choices": tuple(result["target_node_best_choices"]),
         "information_value": result["trial_information_value"],
         "trial_advantage": result["trial_advantage"],
+        "trial_frozen_value": result.get("trial_frozen_value"),
+        "trial_informed_value": result.get("trial_informed_value"),
+        "no_trial_value": result.get("decline_value"),
+        "expectation_part": (
+            None if result.get("trial_frozen_value") is None
+            else result["trial_frozen_value"] - result["decline_value"]),
         "work": dict(result["work"]),
         "forecast_work_ceiling": dict(result["forecast_work_ceiling"]),
         "body_after_computation": tuple(result["body_after_computation"]),
@@ -315,10 +321,31 @@ def _perceived_full(body, horizon, action_key, omega):
     }
 
 
-def _supported_negative_control(body, horizon, action_key):
-    """Personal support skips the perceived unsupported-action probe entirely."""
+def _has_personal_action_support(mind, action_key):
+    """Action-class support only; token spelling never enters this predicate."""
+    action = tuple(action_key)[0]
+    return any(
+        key[0] == action and state[2] > 0
+        for key, state in mind.effects.stats.items())
+
+
+def _supported_negative_control(mind, body, horizon, action_key):
+    """Supported first actions must bypass the unsupported-action probe."""
+    if not _has_personal_action_support(mind, action_key):
+        raise RuntimeError("negative control lacks frozen personal action support")
     final = _reference_perceived_phase(body, horizon, action_key)
     control = _reference_perceived_phase(body, horizon, action_key)
+    if final["status"] != control["status"]:
+        raise RuntimeError("negative-control reference status mismatch")
+    if final["status"] != "FUNDED":
+        return {
+            "probe_executed": False,
+            "final": final,
+            "control": control,
+            "score_identity": True,
+            "score_max_error": 0.0,
+            "work_identity": final["work"] == control["work"],
+        }
     same, error = _same_scores(final["scores"], control["scores"])
     return {
         "probe_executed": False,
@@ -328,6 +355,25 @@ def _supported_negative_control(body, horizon, action_key):
         "score_max_error": error,
         "work_identity": final["work"] == control["work"],
     }
+
+
+def _negative_mind(kind):
+    mind = G.make_mind()
+    if kind == "P80-SUPPORTED":
+        mind.effects.observe(("boire",), (-0.5, -0.2, 35.0, 0.0, 0.0))
+    elif kind == "F108-MIXED":
+        mind.effects.observe(
+            ("manger", "known-safe"), (0.0, 30.0, 0.0, 0.0, 0.0))
+        mind.effects.observe(
+            ("manger", "known-toxic"), (0.0, 30.0, 0.0, -35.0, 0.0))
+    elif kind == "F108-HARMFUL":
+        mind.effects.observe(
+            ("manger", "known-a"), (0.0, 5.0, 0.0, -20.0, 0.0))
+        mind.effects.observe(
+            ("manger", "known-b"), (0.0, 10.0, 0.0, -30.0, 0.0))
+    else:
+        raise ValueError("unknown negative-control history")
+    return mind
 
 
 def _state_key(channel, level, horizon):
@@ -482,15 +528,19 @@ def characterize():
     for _channel, _name, _level, body, horizon in _grid80():
         negative.append(
             ("P80-SUPPORTED",
-             _supported_negative_control(body, horizon, ("boire",))))
+             _supported_negative_control(
+                 _negative_mind("P80-SUPPORTED"),
+                 body, horizon, ("boire",))))
     for _energy, _food, _integrity, body, horizon in _grid108():
         negative.append(
             ("F108-MIXED",
              _supported_negative_control(
+                 _negative_mind("F108-MIXED"),
                  body, horizon, ("manger", "carried-first-contact"))))
         negative.append(
             ("F108-HARMFUL",
              _supported_negative_control(
+                 _negative_mind("F108-HARMFUL"),
                  body, horizon, ("manger", "carried-first-contact"))))
     d4 = all(
         not row["probe_executed"]
@@ -604,7 +654,16 @@ def characterize():
         "D2_fallback_identity": not fallback_identity_failures,
         "D3_physical_accounting": not accounting_failures,
         "D4_negative_controls": d4,
-        "D5_authority_and_genericity_boundaries": True,
+        "D5_authority_and_genericity_boundaries": all(
+            record.get("action_identity_used") is False
+            and record.get("token_identity_used") is False
+            and record.get("body_need_used") is False
+            and record.get("world_access") is False
+            for arms in (imagined, perceived_water, perceived_food)
+            for rows in arms.values()
+            for row in rows
+            if row["stage_a"].get("status") == "FUNDED"
+            for record in (row["stage_a"]["shared_effect_prior"],)),
         "D6_renaming": not rename_mismatches,
         "D7_shared_prior_identity": not shared_prior_mismatches,
     }
@@ -666,6 +725,11 @@ def characterize():
         "newly_relevant_p80_vs_omega0": newly_relevant,
         "need_agnostic_relevance": need_agnostic,
         "work": work,
+        "rows": {
+            "K80": {str(o): rows for o, rows in imagined.items()},
+            "P80": {str(o): rows for o, rows in perceived_water.items()},
+            "F108": {str(o): rows for o, rows in perceived_food.items()},
+        },
         "fallback_identity_failures": fallback_identity_failures,
         "physical_accounting_failures": accounting_failures,
         "fallback_top_changes_vs_preprobe": preprobe_changes,
