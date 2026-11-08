@@ -103,12 +103,13 @@ opportunity commits. A funded FALLBACK must then recreate opportunity-
 presence authority from its one real final perception before learning.
 
 **Do not allocate another fresh DEVELOPMENT panel yet.** Two consecutive fresh
-panels exposed different lifecycle-custody defects. Next freeze and execute a
-software/already-exposed lifecycle stress gate over consecutive decision ->
-physics -> prepare-learning -> learning/reduction cycles. It must cover
-Candidate-I native/omega0, first-contact relevant/fallback/unfunded,
-post-contact Candidate-H, branch/opportunity storage and revision reduction.
-Do not use 60/61 or 62/63 originals as acceptance fixtures.
+panels exposed different lifecycle-custody defects. The next gate is now
+prospectively specified in
+[STAGE1_CANDIDATE_I_LIFECYCLE_CUSTODY_STRESS.md](docs/STAGE1_CANDIDATE_I_LIFECYCLE_CUSTODY_STRESS.md).
+Implement it exactly: 9 engineering smokes on already-exposed P2 DEVELOPMENT
+index 0 plus the frozen no-World F/R/N/P/Z micro-cycles. L0-L11 are custody
+rules only. Do not add survival, uptake, route-count or omega-direction
+acceptance criteria, and do not use 60/61 or 62/63 originals as fixtures.
 
 Do not widen omega, rescale RMS, add resource-specific inherited coefficients,
 alter K80/P80/F108 or reuse 56/57/58/59. Selection, validation, reserve and
