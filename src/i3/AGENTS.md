@@ -68,8 +68,11 @@ runtime-advance rule because its paid memory is far more expensive than
 Candidate-F ([results](docs/studies/stage1-separable-cache-accounting/RESULTS.md)).
 Even the lower arm averages 7.759 energy / 3.532 vigilance; only 7.6% of trace
 accesses hit. Do not integrate this representation or pick the lower tariff
-post hoc. The next architecture target is a sparse exact-checkpoint cache with
-per-step residual recomputation. Checkpoints may change work only, never values.
+post hoc. Before another cache target, test exact **death-truncated per-step projection**:
+stop at first predicted vital zero and sum the absorbing tail analytically.
+The current per-step diagnostic pays all 255 chunks despite no new distress
+evaluation after predicted death. This candidate may change work only, never
+values. Open sparse exact checkpoints only if death truncation remains too costly.
 
 **History after #1151:** exact separability/reuse is real at numerical-noise
 accuracy ([structural result](docs/studies/stage1-separable-projection-cache/RESULTS.md)).
