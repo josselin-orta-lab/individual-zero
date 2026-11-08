@@ -67,6 +67,30 @@ and use fresh development conditions only if later executed.
 P1.3 remains reference. I3 remains unregistered. Stage 2 remains blocked and
 the P4 reserve remains sealed.
 
+## Latest exact-cost reduction: predicted-death truncation passes
+
+8 November 2026: the death-truncated per-step falsifier, frozen at
+`5fe2edb52f73e133178fbd77c579b2f9b6149c04`, completed at source
+`0c3dc70d1de64a3c62c5e60e7ac6e1392b0fd549`, Actions
+`42472935275`, Python 3.11/3.12 PASS. See the
+[durable result](studies/stage1-death-truncated-per-step/RESULTS.md).
+
+The structural verdict is **`DEATH_TRUNCATED_PER_STEP_EXACT_PASS`**.
+Projection/value/body errors are at numerical-noise scale. The frozen #1146
+Candidate-G counts exactly match per-step truth: 32 selected, including 8
+water-deficit states, and 40 declines.
+
+All 400 projection calls reach predicted death before step 255. Paying only
+endpoints actually reached reduces mean work from 1288 to **853.3 simulated
+steps/state** and mean bill from 2.9762/3.476 to **2.1068 energy / 2.6066
+vigilance**, with the common forecast still fixed at 1288.
+
+Candidate-F cost parity is not reached, so **no runtime candidate is
+authorized**. The remaining compute gap is now about 383 simulated steps/state.
+Before another cache, measure exact common prefixes among the five projection
+calls within each frozen Candidate-G state. Only a demonstrated reuse opportunity
+may justify a new decision-local representation.
+
 ## Latest accounting result: exact cache funds 80/80 but memory dominates
 
 8 November 2026: the frozen exact-cache accounting sensitivity
