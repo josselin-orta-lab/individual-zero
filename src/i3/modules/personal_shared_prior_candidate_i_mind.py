@@ -96,7 +96,6 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
             "external": deepcopy(self.external),
             "acc": deepcopy(self.acc),
             "intention": self.intention,
-            "last": deepcopy(self.last),
             "visible": tuple(self.visible),
             "pos": tuple(self.pos),
             "unknown": (
@@ -108,11 +107,6 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
             "drift": deepcopy(self._drift),
             "rng": self.rng.getstate(),
             "budget_rng": self._budget_rng.getstate(),
-            "pending_branch": deepcopy(self._pending_branch),
-            "pending_opportunity_presence":
-                deepcopy(self._pending_opportunity_presence),
-            "pending_opportunity_commit":
-                deepcopy(self._pending_opportunity_commit),
             "observer_competition":
                 deepcopy(getattr(self, "_observer_competition", None)),
             "observer_first_forecast":
@@ -126,7 +120,6 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
         self.external = deepcopy(snap["external"])
         self.acc = deepcopy(snap["acc"])
         self.intention = snap["intention"]
-        self.last = deepcopy(snap["last"])
         self.visible = tuple(snap["visible"])
         self.pos = tuple(snap["pos"])
         if snap["unknown"] is None:
@@ -142,11 +135,6 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
         self._drift = deepcopy(snap["drift"])
         self.rng.setstate(snap["rng"])
         self._budget_rng.setstate(snap["budget_rng"])
-        self._pending_branch = deepcopy(snap["pending_branch"])
-        self._pending_opportunity_presence = deepcopy(
-            snap["pending_opportunity_presence"])
-        self._pending_opportunity_commit = deepcopy(
-            snap["pending_opportunity_commit"])
         self._observer_competition = deepcopy(
             snap["observer_competition"])
         self._observer_first_forecast = deepcopy(
@@ -595,12 +583,16 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
             return action, param, work, info
 
         self.candidate_i_first_contact_decisions += 1
-        probe_state = self._probe_state_snapshot()
+
+        # Rollback may restore first-person perception/RNG state only. Any
+        # learning authority belongs to the new real decision and must be
+        # empty before the reversible probe baseline is captured.
         self._pending_branch = None
         self._clear_branch_decision_settlement()
         self._pending_opportunity_presence = None
         self._pending_opportunity_commit = None
         self.last = None
+        probe_state = self._probe_state_snapshot()
 
         body = cap["body"]
         slots = (
