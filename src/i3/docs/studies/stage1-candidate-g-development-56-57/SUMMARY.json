@@ -1,0 +1,95 @@
+{
+  "schema": "i3-stage1-candidate-g-development-56-57-summary/v1",
+  "status": "COMPLETE_DESCRIPTIVE_CANDIDATE_G_DEVELOPMENT_PILOT_NOT_GATE",
+  "frozen_verdict": "CANDIDATE_G_56_57_ENGINEERING_CONTINUATION_FAIL",
+  "execution": {
+    "source_sha": "6ce6fbc2025f9f6e6b34b779142f90c10c28a1e0",
+    "source_snapshot_sha256": "0e0ae765cef50342db4f1932cd5141d9de0e577bb2b3f499686e85761b2a0a11",
+    "protocol_sha256": "5837c98a9f94b10255e87526a0d4fa4718db09f3a9638cba3f9ff591246ba798",
+    "github_run_id": 42477021573,
+    "evidence_branch": "evidence/i3-stage1-candidate-g-56-57-6ce6fbc2025f",
+    "artifact_id": 13616066753,
+    "artifact_digest": "sha256:e6299062f0daffbfa0fbeff355802aaa5348ed02704e7b5532ab5927e729d0b3",
+    "original_lives": 36
+  },
+  "rules": {
+    "R1_candidate_information_active_observed": true,
+    "R2_candidate_reference_only_observed": true,
+    "R3_candidate_energy_rate_below_cost_anchor": true,
+    "R4_candidate_vigilance_rate_below_cost_anchor": true,
+    "R5_candidate_no_processing_fraction_below_cost_anchor": false
+  },
+  "arms": {
+    "reference": {
+      "lives": 12,
+      "censored": 3,
+      "dead": 9,
+      "lived_steps": 2806,
+      "paid_energy_per_lived_step": 0.5311067712045617,
+      "paid_vigilance_per_lived_step": 0.6595951532430507,
+      "funding": {
+        "FUNDED": 2195,
+        "NO_PROCESSING_BUDGET": 611
+      },
+      "no_processing_budget_fraction": 0.21774768353528154,
+      "inactive_fraction": 0.21774768353528154,
+      "positive_water_uptakes": 196,
+      "positive_food_uptakes": 43
+    },
+    "personal_recurrence_candidate_g_v1": {
+      "lives": 12,
+      "censored": 0,
+      "dead": 12,
+      "lived_steps": 1581,
+      "paid_energy_per_lived_step": 0.9161325743200505,
+      "paid_vigilance_per_lived_step": 1.2722998102466792,
+      "funding": {
+        "FUNDED": 1437,
+        "NO_FUNDED_SCORE": 99,
+        "NO_PROCESSING_BUDGET": 45
+      },
+      "no_processing_budget_fraction": 0.028462998102466792,
+      "inactive_fraction": 0.09108159392789374,
+      "information_active_decisions": 368,
+      "reference_only_decisions": 1213,
+      "recurrence_supported_decisions": 227,
+      "positive_information_options": 28,
+      "positive_water_uptakes": 16,
+      "positive_food_uptakes": 34
+    },
+    "genomic_omega_frontier_information_v1": {
+      "lives": 12,
+      "censored": 0,
+      "dead": 12,
+      "lived_steps": 1468,
+      "paid_energy_per_lived_step": 2.1983062670299724,
+      "paid_vigilance_per_lived_step": 3.111772479564035,
+      "funding": {
+        "FUNDED": 1153,
+        "NO_FUNDED_SCORE": 285,
+        "NO_PROCESSING_BUDGET": 30
+      },
+      "no_processing_budget_fraction": 0.020435967302452316,
+      "inactive_fraction": 0.21457765667574932,
+      "positive_water_uptakes": 0,
+      "positive_food_uptakes": 0
+    }
+  },
+  "posthoc_not_a_gate": {
+    "candidate_total_nonfunded_fraction": 0.09108159392789374,
+    "candidate_f_total_nonfunded_fraction": 0.21457765667574932,
+    "candidate_energy_rate_reduction_vs_candidate_f": 0.5832552597151106,
+    "candidate_vigilance_rate_reduction_vs_candidate_f": 0.5911334075346888,
+    "interpretation": "FUNDING_MODE_COMPOSITION_ONLY_DOES_NOT_REVISE_R5"
+  },
+  "authorizations": {
+    "new_live_panel": false,
+    "selection": false,
+    "validation": false,
+    "reserve": false,
+    "reference_adoption": false,
+    "stage2": false,
+    "read_only_evidence_analysis": true,
+    "software_only_new_architecture_falsifier": true
+  }
+}
