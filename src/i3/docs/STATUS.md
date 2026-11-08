@@ -67,6 +67,29 @@ and use fresh development conditions only if later executed.
 P1.3 remains reference. I3 remains unregistered. Stage 2 remains blocked and
 the P4 reserve remains sealed.
 
+## Latest negative diagnostic: exact distress reuse remains too expensive
+
+8 November 2026: the declared exact distress-reuse diagnostic
+([result](studies/stage1-distress-reuse-diagnostic/RESULTS.md)) completed at
+source `96455f010a8ad150536db1bded0f01843b761860`, Actions
+`42473511648`, Python 3.11/3.12 PASS.
+
+The frozen classification is **`FEATURE_REUSE_INSUFFICIENT`**. Starting from
+#1153's 853.3 simulated steps/state, consecutive identical feature reuse gives
+an optimistic 778.5. An ideal decision-local exact feature memo, with **no
+memory/read/write charge at all**, still gives 657.9. Candidate-F's prospective
+threshold was 470.
+
+Therefore further exact memo/cache work cannot plausibly close this gap under
+the exposed fixture. The 32/8/24/40 decision surface remains unchanged.
+
+**DRIFT DETECTED:** close this engineering route. The next bounded Stage-1
+question is architectural: audit why Candidate-F's cheap event-local projection
+misses the 8 water-deficit decisions that exact per-step recovers. Test whether
+the residual is localized around generic predicted-death, distress-threshold,
+restoration or option-shifted event times. No water/action-specific patch is
+authorized.
+
 ## Latest exact-cost reduction: predicted-death truncation passes
 
 8 November 2026: the death-truncated per-step falsifier, frozen at

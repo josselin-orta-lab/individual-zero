@@ -62,16 +62,20 @@ new architecture hypothesis.
 Do not reopen selection/validation 72..167 or the P4 reserve. Do not launch
 Stage 2 to rescue the rejected candidate.
 
-**Update after #1153:** exact death-truncated per-step projection passes
-the frozen structural gate
-([results](docs/studies/stage1-death-truncated-per-step/RESULTS.md)). All 400
-#1146 projection calls terminate predictively before 255, mean step 168.06.
-Mean kernel work falls from 1288 to 853.3 simulated steps/state while decisions
-remain exactly 32 selected / 8 water / 24 other / 40 declined. Mean bill is
-2.107 energy / 2.607 vigilance, still above Candidate-F, so no runtime candidate
-is authorized. Next run a descriptive exact common-prefix reuse probe over the
-five projections per state. Do not build another cache unless measured reuse can
-plausibly close the remaining ~383 simulated-step/state gap.
+**Update after #1154:** exact distress-evaluation reuse is insufficient
+([results](docs/studies/stage1-distress-reuse-diagnostic/RESULTS.md)). Consecutive
+reuse bottoms out at 778.5 simulated steps/state; even an ideal decision-wide
+feature memo with free memory bottoms out at 657.9, above Candidate-F's frozen
+470. **DRIFT DETECTED:** do not build another exact cache/refactoring campaign.
+Return to projection architecture. Audit the Candidate-F versus exact residual,
+especially the 8 exact water-deficit selections Candidate-F misses, for generic
+death/threshold/restoration event localization. No water- or action-specific
+repair is allowed.
+
+**History after #1153:** exact death truncation is valid and useful
+([results](docs/studies/stage1-death-truncated-per-step/RESULTS.md)): 853.3
+simulated steps/state at exact 32/8/24/40 decisions, but no Candidate-F cost
+parity.
 
 **History after #1152:** the full stored-trace cache is fundable but physically
 wasteful ([results](docs/studies/stage1-separable-cache-accounting/RESULTS.md)):

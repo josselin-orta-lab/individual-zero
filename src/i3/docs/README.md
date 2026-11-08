@@ -53,6 +53,21 @@ scientifically defensible; otherwise return to Stage-1 architecture design.
 
 No fresh scientific panel is authorized by this handoff.
 
+## Latest: exact distress reuse cannot close the remaining cost gap
+
+Declared diagnostic
+([results](studies/stage1-distress-reuse-diagnostic/RESULTS.md)) classifies the
+reuse route as **`FEATURE_REUSE_INSUFFICIENT`**. Consecutive exact reward reuse
+would lower the #1153 mean only to 778.5 simulated steps/state. Even an ideal
+decision-wide feature memo with free storage/read/write work bottoms out at
+**657.9**, still above Candidate-F's frozen 470.
+
+**DRIFT DETECTED:** do not add another exact cache merely to polish this path.
+The remaining cost comes from genuinely distinct projected distress states.
+Next audit the 8 water-deficit decisions recovered by exact per-step but missed
+by Candidate-F, looking for generic death/threshold/restoration event-localized
+error before proposing a hybrid refinement.
+
 ## Latest: exact death truncation removes one third of per-step work
 
 Frozen-before-code result
