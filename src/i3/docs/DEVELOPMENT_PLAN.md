@@ -7,15 +7,14 @@ request to integrate the supplied scenario. This is the continuation of
 second roadmap. Decision: [ADR-0016](../../../docs/decisions/ADR-0016-i3-generalization-without-imposed-rules.md).
 Integration tracking: [#1059](https://github.com/josselin-orta-lab/individual-zero/issues/1059).
 
-**Current operational intervention: Candidate-I shared-prior integration
-and the composite-funding reducer repair both PASS in software. Before a fresh
-DEVELOPMENT allocation, close the remaining runnable composition gap under the
-prospectively frozen
-[Candidate-I runtime integration](STAGE1_CANDIDATE_I_RUNTIME_INTEGRATION.md):
-multiple unsupported resource trials must share one Candidate-F score geometry,
-reduce exactly to #1170 on one-trial fixtures, and enter the same Competition /
-ActionControl path as P1.3. Development 60/61 is still unopened. Stage 0 remains
-open; Stage 2 stays blocked.**
+**Current operational intervention: the first frozen Candidate-I runtime
+generalization failed S1 because top-set-change relevance disagreed with #1170
+on 700/1,128 one-trial states. The failed protocol is closed and unmerged.
+Execute the prospectively frozen
+[Candidate-I runtime integration v2](STAGE1_CANDIDATE_I_RUNTIME_INTEGRATION_V2.md),
+which preserves #1170's strict action-trial advantage against the trial's own
+no-trial comparator and every actually offered alternative. Development 60/61
+is still unopened. Stage 0 remains open; Stage 2 stays blocked.**
 
 ## Source, scope and current reference
 
@@ -70,7 +69,7 @@ software defect. Keep adverse and null outcomes; do not tune them away.
 | Stage | Deliverable | Status / tracking |
 | --- | --- | --- |
 | 0 | Independent-population design, energetic mediation, complete paid Competition observation, individuality challenge, P5d uncertainty | Open in parallel; [#1060](https://github.com/josselin-orta-lab/individual-zero/issues/1060), existing #1026/#1054 |
-| 1 | Information value in predicted distress, replacing additive curiosity/relevance/prudence | **Current: Candidate-I I0-I9 PASS and reducer R0-R6 PASS; runnable multi-option integration remains.** Execute the frozen runtime gate before allocating 60/61. P80 remains energy/vigilance-driven and K80 non-monotone; no live allocation yet; [#1061](https://github.com/josselin-orta-lab/individual-zero/issues/1061) |
+| 1 | Information value in predicted distress, replacing additive curiosity/relevance/prudence | **Current: Candidate-I I0-I9 and reducer R0-R6 PASS, but runtime v1 S1 DEFECT.** Execute frozen runtime v2 with exact #1170 action-trial-advantage reduction before allocating 60/61. P80 remains energy/vigilance-driven and K80 non-monotone; no live allocation yet; [#1061](https://github.com/josselin-orta-lab/individual-zero/issues/1061) |
 | 2 | Decide how much to think by value of computation | **Blocked** until Stage-1 decision boundary is resolved; [#1062](https://github.com/josselin-orta-lab/individual-zero/issues/1062) |
 | 3 | Change detection, latent causes, then perceived-attribute factorization | Full stage deferred. One minimal generic future-opportunity representation may be tested early only as a Stage-1 prerequisite; do not start the Stage-3 bundle. |
 | 4 | Successor features and delayed credit evaluated by current bodily distress | Deferred after the required model/budget decisions |

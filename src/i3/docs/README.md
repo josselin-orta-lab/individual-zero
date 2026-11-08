@@ -5,20 +5,24 @@ The [engine contract](../engine.json) has no active entrypoints; the
 [registry](../../../config/engine-registry.json) keeps I1 active.
 A green software test is not a scientific GO.
 
-## Latest: Candidate-I passes, but runnable multi-option composition is still gated
+## Latest: first Candidate-I runtime generalization fails S1; v2 is frozen
 
 [Candidate-I integration](studies/stage1-candidate-i-shared-prior-integration/RESULTS.md)
-passes I0-I9: every frozen first-contact fallback is funded, applies zero
-curiosity/prudence addends and matches an independent same-body base-score
-control. The independent
-[reducer repair](studies/stage1-composite-funding-reducer-repair/RESULTS.md)
-also passes R0-R6.
+still passes I0-I9, and the independent reducer repair still passes R0-R6.
 
-Before opening a fresh DEVELOPMENT world, one runtime-only gap remains:
-simultaneously offered unknown water/food actions must compete in one
-commensurable score matrix and then use the same Competition and ActionControl
-as P1.3. That boundary is now frozen in
-[STAGE1_CANDIDATE_I_RUNTIME_INTEGRATION.md](STAGE1_CANDIDATE_I_RUNTIME_INTEGRATION.md).
+The first runnable multi-option protocol then failed its prospectively frozen
+single-trial identity condition:
+[700/1,128 P80/F108 states disagree with #1170](studies/stage1-candidate-i-runtime-integration/RESULTS.md).
+
+The failed rule asked whether information changes the top set. #1170 instead
+asks whether the unknown trial's informed value strictly beats its own
+no-trial comparator and every other offered option. These are not equivalent.
+
+A successor is now frozen in
+[STAGE1_CANDIDATE_I_RUNTIME_INTEGRATION_V2.md](STAGE1_CANDIDATE_I_RUNTIME_INTEGRATION_V2.md).
+Its direct multi-trial rule preserves the #1170 action-trial-advantage
+semantics exactly, compares simultaneous unknown trials symmetrically and still
+returns final authority to ordinary Competition/ActionControl.
 
 No 60/61 World has been allocated or opened.
 

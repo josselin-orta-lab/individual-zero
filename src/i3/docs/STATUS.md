@@ -51,22 +51,32 @@ Both prospectively frozen software prerequisites now PASS:
 - [composite-funding reducer repair](studies/stage1-composite-funding-reducer-repair/RESULTS.md):
   `COMPOSITE_FUNDING_REDUCER_REPAIR_PASS`, R0-R6 all PASS.
 
-A final runtime composition gap was identified before allocating a fresh World:
-I0-I9 did not yet define how **multiple simultaneously offered unsupported
-resource trials** share one score geometry and then enter ordinary Competition
-and ActionControl.
+The first prospectively frozen runnable multi-option protocol has now failed
+its mandatory S1 identity rule:
+[CANDIDATE_I_RUNTIME_INTEGRATION_DEFECT](studies/stage1-candidate-i-runtime-integration/RESULTS.md).
 
-The next prospectively frozen software gate is therefore
-[Candidate-I runnable multi-option integration](STAGE1_CANDIDATE_I_RUNTIME_INTEGRATION.md).
-It requires exact one-trial reduction to #1170, symmetric multi-resource
-evaluation, one common Candidate-F forecast body/ceiling, shared P1.3
-Competition/ActionControl finalization, addend-free fallback, unchanged
-post-contact Candidate-H and a repaired-reducer runtime smoke on already exposed
-fixtures only.
+Its proposed "with-information top set differs from without-information top
+set" rule disagrees with frozen #1170 on **700/1,128** one-trial P80/F108
+states: 696 false negatives and 4 false positives. Both Python 3.11 and 3.12
+reproduce the same fracture. The implementation was not merged and 60/61
+remain unopened.
 
-Development indices 60/61 appear unused, but are **not allocated or opened** by
-this software gate. Do not widen omega, rescale the RMS prior, target water
-explicitly or open Stage 2.
+The failure clarifies that two semantics had been conflated. #1170 direct
+first contact asks whether the unknown **trial itself is strictly worth taking**
+versus its own no-trial comparator and every other offered option. #1163
+post-contact asks whether extra information changes the decision top. Those
+questions remain distinct.
+
+The prospectively frozen successor is now
+[Candidate-I runnable multi-option integration v2](STAGE1_CANDIDATE_I_RUNTIME_INTEGRATION_V2.md).
+For every direct unsupported trial, v2 requires its informed value to beat its
+own no-trial value and strictly beat every other actually offered option. This
+is symmetric across water/food/tokens and reduces algebraically to #1170 in the
+one-trial case. The failed top-set-change map remains diagnostic only.
+
+Development indices 60/61 appear unused but remain **unallocated and unopened**.
+No omega widening, RMS rescaling, resource-specific prior or Stage-2 work is
+authorized.
 
 ## Current handoff: 58/59 exposed, no Candidate-H continuation verdict
 
