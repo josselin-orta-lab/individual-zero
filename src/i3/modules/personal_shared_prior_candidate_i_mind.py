@@ -136,6 +136,27 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
         self._observer_first_forecast = deepcopy(
             snap["observer_first_forecast"])
 
+    def _cap_has_potential_unsupported_direct_trial(self, cap):
+        """Conservative pre-perception gate for offered direct resource trials."""
+        here = cap.get("here")
+        if (isinstance(here, tuple) and len(here) == 2
+                and here[0]
+                and not self._exact_personal_support(("boire",))):
+            return True
+        inventory = cap.get("inventory", ())
+        for item in inventory:
+            if (not isinstance(item, tuple) or len(item) != 2
+                    or type(item[1]) is not int or item[1] <= 0):
+                continue
+            external = item[0]
+            internal = self.tokens.get(external)
+            if internal is None:
+                return True
+            if not self._exact_personal_support(
+                    ("manger", internal)):
+                return True
+        return False
+
     def _exact_personal_support(self, action_key):
         state = self.effects.stats.get(tuple(action_key))
         return state is not None and state[2] > 0
@@ -577,8 +598,11 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
                 "Candidate-I persistent mode must remain reference/chunk_end")
 
         # Exact #1163/H post-contact authority once drinking has personal
-        # support. This path must never read omega.
-        if self._has_personal_drink_effect():
+        # support, but never at the expense of a simultaneously offered
+        # unsupported direct resource trial. That trial still requires the
+        # shared first-contact matrix.
+        if (self._has_personal_drink_effect()
+                and not self._cap_has_potential_unsupported_direct_trial(cap)):
             result = super().decide(cap, budget)
             action, param, work, old_info = result
             info = dict(old_info)
