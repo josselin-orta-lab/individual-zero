@@ -280,7 +280,7 @@ def characterize():
         row["fallback"] is None
         and row["combined_work"] == row["probe"]["work"]
         for row in relevant_rows)
-    h4 = True
+    h4_failures = []
     for row in rows:
         probe_work = _work_from_dict(row["probe"]["work"])
         fallback_work = (
@@ -289,26 +289,49 @@ def characterize():
             or row["fallback"]["status"] != "FUNDED"
             else _work_from_dict(row["fallback"]["work"]))
         expected = _work_add(probe_work, fallback_work)
+        identity = {
+            "channel": row["channel"],
+            "channel_index": row["channel_index"],
+            "level": row["level"],
+            "horizon": row["horizon"],
+            "relevant": row["relevant"],
+        }
         if row["combined_work"] != asdict(expected):
-            h4 = False
-            break
+            h4_failures.append({
+                **identity,
+                "reason": "COMBINED_WORK_MISMATCH",
+                "reported": row["combined_work"],
+                "expected": asdict(expected),
+            })
+            continue
+        original_body = tuple(
+            row["level"] if index == row["channel_index"] else 80.0
+            for index in range(5))
         try:
             remaining, _ = debit_cognition(
-                tuple(
-                    level if index == row["channel_index"] else 80.0
-                    for index in range(5)),
-                BodyLaws(), expected)
-        except CognitiveFundingError:
-            h4 = False
-            break
-        if any(
-                abs(a - b) > 1e-12
-                for a, b in zip(
-                    remaining,
-                    row["combined_body_after_computation"])):
-            h4 = False
-            break
+                original_body, BodyLaws(), expected)
+        except CognitiveFundingError as exc:
+            h4_failures.append({
+                **identity,
+                "reason": "COMBINED_WORK_UNFUNDED",
+                "error": str(exc),
+            })
+            continue
+        deltas = tuple(
+            abs(a - b) for a, b in zip(
+                remaining,
+                row["combined_body_after_computation"]))
+        if max(deltas) > 1e-12:
+            h4_failures.append({
+                **identity,
+                "reason": "COMBINED_BODY_MISMATCH",
+                "recomputed": remaining,
+                "reported": row["combined_body_after_computation"],
+                "abs_channel_errors": deltas,
+                "max_abs_error": max(deltas),
+            })
 
+    h4 = not h4_failures
     h5 = True
     rules = {
         "H0_canonical_identity": h0,
@@ -375,6 +398,10 @@ def characterize():
             "relevant": work_stats(relevant_rows),
             "fallback": work_stats(fallback_rows),
         },
+        "physical_accounting_diagnostic": {
+            "failure_count": len(h4_failures),
+            "failures": h4_failures,
+        },
         "rules": rules,
         "verdict": (
             "CANDIDATE_H_FIRST_CONTACT_SOFTWARE_GATE_PASS"
@@ -401,5 +428,7 @@ if __name__ == "__main__":
         "canonical_probe": report["canonical_probe"],
         "fallback": report["fallback"],
         "work": report["work"],
+        "physical_accounting_diagnostic":
+            report["physical_accounting_diagnostic"],
         "rules": report["rules"],
     }, sort_keys=True))
