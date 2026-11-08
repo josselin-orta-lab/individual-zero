@@ -155,6 +155,8 @@ class CandidateILifecycleCustodyStressTests(unittest.TestCase):
             report["verdict"],
             "CANDIDATE_I_LIFECYCLE_CUSTODY_STRESS_PASS")
         self.assertFalse(report["J1_J7_verdict_authorized"])
+        self.assertTrue(report["new_live_protocol_proposal_authorized"])
+        self.assertFalse(report["new_live_panel_execution_authorized"])
         self.assertFalse(report["stage2_authorized"])
         print("CANDIDATE_I_LIFECYCLE_CUSTODY_STRESS_TEST " + json.dumps({
             "verdict": report["verdict"],
