@@ -72,9 +72,20 @@ projection refinements to recover them. Candidate-F's event-local projector is
 the current canonical Stage-1 projection target on #1146 at mean 470.05
 simulated steps/state.
 
-Next separate projector from policy: freeze Candidate-G personal recurrence +
-Candidate-F projection **without genomic omega** under a bounded funding/
-integration gate before any new World/life panel.
+#1156 now completes that separation: the bounded software gate for Candidate-G
+personal recurrence + Candidate-F projection **without genomic omega** passes
+(`PERSONAL_RECURRENCE_CANDIDATE_G_INTEGRATION_PASS`). Persistent mode remains
+P1.3 `reference/chunk_end`; the canonical projector is decision-local and only
+enters when a paid personal information path exists.
+
+**Next work is already frozen, not yet executed:** follow
+[the 56/57 DEVELOPMENT protocol](docs/studies/stage1-candidate-g-development-56-57/PROTOCOL.md).
+Do not alter its arms, seeds, horizon or continuation rules after exposure. Do
+not open 56/57 from an ordinary development PR: they require a separately
+reviewed one-shot transport after exact-head Python 3.11/3.12 checks. The pilot
+tests activation plus physical affordability against P1.3 and rejected
+Candidate-F; survival is descriptive only. No selection, validation, reserve,
+reference adoption or Stage 2.
 
 **History after #1154:** exact cache/reward reuse cannot reach Candidate-F cost
 parity even under an impossible free-memo lower bound
