@@ -35,7 +35,9 @@ def capture_competition(*, info, action, param, work, allowed, capture):
     if len(set(names)) != len(names):
         raise RuntimeError("P5e: duplicate paid option")
     for entry in witness:
-        if entry.get("score_kind") == "frontier_water_expected_distress":
+        if entry.get("score_kind") in (
+                "frontier_water_expected_distress",
+                "first_contact_information_expected_distress"):
             expected = _frontier_score(entry)
         else:
             # Historical P1.3 and local-information witnesses keep their
