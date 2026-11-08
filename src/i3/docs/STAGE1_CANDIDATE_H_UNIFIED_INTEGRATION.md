@@ -131,6 +131,33 @@ With frontier explorers:
 This is the #1163 top-effect rule generalized from its one-explorer fixture to
 the actually offered option set, without changing its semantics.
 
+## Frozen integrated routing panel
+
+Representative routing is not selected after implementation.
+
+Use exactly the synthetic capture topology already used by
+`stage1_candidate_g_no_omega_integration.cap`, with no World:
+
+- seed: **211**;
+- base body: `(80,80,80,80,80)`;
+- independently set each of the five channels to `20,30,40,50`;
+- **20 bodies** total;
+- no explicit horizon override: each decision uses its real
+  `capacities(body, n_base, h_max)` horizon;
+- three history modes for every body:
+  1. `NO_SUPPORT`: generic personal action effects only, empty recurrence;
+  2. `FIRST_CONTACT_SUPPORT`: the frozen personal recurrence 2/6/10 fixture,
+     no learned drink effect;
+  3. `POST_CONTACT`: personally learned +35-water drink effect plus its paid
+     empirical branch record; recurrence memory is present as a tripwire but
+     must not be read.
+
+Total: **60 software decisions**, zero lives.
+
+The routing gate reports every body/history identity. U8 is evaluated over this
+entire panel. No replacement body, seed or history may be introduced after
+exposure to create a missing route.
+
 ## Frozen software gate
 
 Pass only if all rules below are true.
