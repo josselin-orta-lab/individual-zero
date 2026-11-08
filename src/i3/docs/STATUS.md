@@ -89,10 +89,12 @@ It is the stored representation: 1,848 fresh traces write 1,912,680 memory items
 while only 152 later accesses hit a trace (7.6%). Paying four 255-element exact
 arrays per trace is a bad exchange for that reuse rate.
 
-Next Stage-1 architecture falsifier: sparse exact checkpoints with exact
-per-step recomputation only from the preceding checkpoint to the requested
-death/end step. This must change cost only, never projected value. Do not revive
-the rejected #1150 anchored-chunk approximation: no gap may be approximated.
+Next Stage-1 architecture falsifier: **exact death-truncated per-step
+projection**. Stop computation at the first predicted vital zero and sum the
+absorbing maximal-distress tail analytically. The current per-step diagnostic
+prepays all 255 unit chunks even though no new bodily distress is evaluated
+after death. This candidate changes work only, never projected value. Open
+sparse exact checkpoints only if this simpler optimization remains too costly.
 
 ## Latest structural result: exact separable projection cache passes
 
