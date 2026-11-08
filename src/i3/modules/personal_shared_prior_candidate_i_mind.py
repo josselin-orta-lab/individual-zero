@@ -96,7 +96,6 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
             "external": deepcopy(self.external),
             "acc": deepcopy(self.acc),
             "intention": self.intention,
-            "last": deepcopy(self.last),
             "visible": tuple(self.visible),
             "pos": tuple(self.pos),
             "unknown": (
@@ -108,11 +107,6 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
             "drift": deepcopy(self._drift),
             "rng": self.rng.getstate(),
             "budget_rng": self._budget_rng.getstate(),
-            "pending_branch": deepcopy(self._pending_branch),
-            "pending_opportunity_presence":
-                deepcopy(self._pending_opportunity_presence),
-            "pending_opportunity_commit":
-                deepcopy(self._pending_opportunity_commit),
             "observer_competition":
                 deepcopy(getattr(self, "_observer_competition", None)),
             "observer_first_forecast":
@@ -126,7 +120,6 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
         self.external = deepcopy(snap["external"])
         self.acc = deepcopy(snap["acc"])
         self.intention = snap["intention"]
-        self.last = deepcopy(snap["last"])
         self.visible = tuple(snap["visible"])
         self.pos = tuple(snap["pos"])
         if snap["unknown"] is None:
@@ -142,15 +135,18 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
         self._drift = deepcopy(snap["drift"])
         self.rng.setstate(snap["rng"])
         self._budget_rng.setstate(snap["budget_rng"])
-        self._pending_branch = deepcopy(snap["pending_branch"])
-        self._pending_opportunity_presence = deepcopy(
-            snap["pending_opportunity_presence"])
-        self._pending_opportunity_commit = deepcopy(
-            snap["pending_opportunity_commit"])
         self._observer_competition = deepcopy(
             snap["observer_competition"])
         self._observer_first_forecast = deepcopy(
             snap["observer_first_forecast"])
+
+    def _clear_first_contact_learning_authority(self):
+        """Clear state that a detached first-contact rollback must never own."""
+        self._pending_branch = None
+        self._clear_branch_decision_settlement()
+        self._pending_opportunity_presence = None
+        self._pending_opportunity_commit = None
+        self.last = None
 
     def _cap_has_potential_unsupported_direct_trial(self, cap):
         """Conservative pre-perception gate for offered direct resource trials."""
@@ -196,6 +192,7 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
             self, budget, *, body, offered_options,
             offered_families, nested, stage_work,
             reason):
+        self._clear_first_contact_learning_authority()
         self.candidate_i_probe_unfunded += 1
         info = {
             "option": None,
@@ -595,12 +592,12 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
             return action, param, work, info
 
         self.candidate_i_first_contact_decisions += 1
+
+        # Rollback may restore first-person perception/RNG state only. Any
+        # learning authority belongs to the new real decision and must be
+        # empty before the reversible probe baseline is captured.
+        self._clear_first_contact_learning_authority()
         probe_state = self._probe_state_snapshot()
-        self._pending_branch = None
-        self._clear_branch_decision_settlement()
-        self._pending_opportunity_presence = None
-        self._pending_opportunity_commit = None
-        self.last = None
 
         body = cap["body"]
         slots = (
@@ -747,6 +744,7 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
         # decision from the post-probe body. This prevents double perception.
         self.candidate_i_base_fallback_final += 1
         self._restore_probe_state(probe_state)
+        self._clear_first_contact_learning_authority()
         post_probe_body = tuple(budget.remaining)
         final_cap = self._cap_with_body(
             cap, post_probe_body)
@@ -760,6 +758,13 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
                 self, final_cap, final_budget)
         finally:
             self.score_addend_mode = old_mode
+
+        # The detached Stage-A perception was intentionally stripped of
+        # learning authority before fallback. The one real final perception
+        # now owns the ordinary current-step opportunity-presence receipt,
+        # exactly as Candidate-H does on its P1.3 fallback.
+        if final[3].get("funding") != "NO_PROCESSING_BUDGET":
+            self._capture_opportunity_presence()
 
         budget.spend(final_budget.work)
         total = budget.work

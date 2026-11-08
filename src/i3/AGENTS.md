@@ -93,11 +93,22 @@ capture the previous `last`, while the matching branch settlement receipt is
 cleared. On an unfunded Stage-A exit, restoring that snapshot can revive
 `last` without its receipt.
 
-**Next work is software-only and prospectively frozen in
-[STAGE1_CANDIDATE_I_PROBE_AUTHORITY_REPAIR.md](docs/STAGE1_CANDIDATE_I_PROBE_AUTHORITY_REPAIR.md).**
-Rollback may restore perception/map/token/RNG state but never `last`, pending
-branch storage, branch-settlement authority or pending opportunity commits.
-Do not use the 62/63 original lives as repair fixtures.
+The frozen
+[Candidate-I probe-restore authority repair](docs/studies/stage1-candidate-i-probe-authority-repair/RESULTS.md)
+now **PASSes U0-U9** on repair-code authority
+`5ca8f2dcb7f87c18880ea3c45b773eec0daab2d4`, Actions
+`42517714784`. Rollback may restore perception/map/token/RNG state but never
+`last`, pending branch storage, branch-settlement authority or pending
+opportunity commits. A funded FALLBACK must then recreate opportunity-
+presence authority from its one real final perception before learning.
+
+**Do not allocate another fresh DEVELOPMENT panel yet.** Two consecutive fresh
+panels exposed different lifecycle-custody defects. Next freeze and execute a
+software/already-exposed lifecycle stress gate over consecutive decision ->
+physics -> prepare-learning -> learning/reduction cycles. It must cover
+Candidate-I native/omega0, first-contact relevant/fallback/unfunded,
+post-contact Candidate-H, branch/opportunity storage and revision reduction.
+Do not use 60/61 or 62/63 originals as acceptance fixtures.
 
 Do not widen omega, rescale RMS, add resource-specific inherited coefficients,
 alter K80/P80/F108 or reuse 56/57/58/59. Selection, validation, reserve and
