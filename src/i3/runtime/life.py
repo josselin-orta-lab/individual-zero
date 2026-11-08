@@ -37,6 +37,7 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
             "genomic_omega_frontier_information_v1",
             "personal_recurrence_candidate_g_v1",
             "personal_relevance_candidate_h_v1",
+            "personal_shared_prior_candidate_i_v1",
             "candidate_f_shadow_upper_cost_reference_controller_v1"):
         raise ValueError("unknown decision policy")
     if decision_policy != "reference" and (
@@ -158,6 +159,32 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
             "frontier_scope": "one_generic_new_cell_water_only",
             "food_information": "NOT_IMPLEMENTED",
             "multi_cell_joint_outcomes": "NOT_IMPLEMENTED"}
+    elif decision_policy == "personal_shared_prior_candidate_i_v1":
+        manifest["experimental_policy"] = {
+            "name": decision_policy,
+            "scope": "DEVELOPMENT_SOFTWARE_GATE_NOT_STAGE1_LIVE_GATE",
+            "architecture":
+                "shared_prior_relevance_then_shared_competition_control_v1",
+            "first_contact_prior":
+                "genome_v4_omega_recent_personal_rms_v1",
+            "perceived_first_contact":
+                "all_unsupported_direct_resource_trials_common_candidate_f_matrix_v1",
+            "imagined_first_contact":
+                "personal_recurrence_water_future_opportunity_shared_omega_v1",
+            "relevant_final":
+                "shared_P1.3_competition_action_control_over_candidate_f_scores",
+            "fallback_final":
+                "complete_P1.3_base_scores_discard_both_bonus_terms",
+            "post_contact":
+                "candidate_h_1163_semantics_unchanged",
+            "persistent_simulation_mode": "reference",
+            "persistent_projection_accounting": "chunk_end",
+            "branch_memory": "global18_recent_personal_effects_v1",
+            "opportunity_memory": "generic_onset_recurrence_latest3_v1",
+            "omega_use": "UNSUPPORTED_FIRST_CONTACT_ONLY",
+            "td_memory": "P1.3_unchanged",
+            "motor_authority": "P1.3_COMPETITION_AND_ACTION_CONTROL",
+        }
     elif decision_policy == "candidate_f_shadow_upper_cost_reference_controller_v1":
         manifest["experimental_policy"] = {
             "name": decision_policy,
@@ -208,6 +235,10 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
         from i3.modules.personal_relevance_candidate_h_mind import (
             PersonalRelevanceCandidateHMind)
         mind_type = PersonalRelevanceCandidateHMind
+    elif decision_policy == "personal_shared_prior_candidate_i_v1":
+        from i3.modules.personal_shared_prior_candidate_i_mind import (
+            PersonalSharedPriorCandidateIMind)
+        mind_type = PersonalSharedPriorCandidateIMind
     elif decision_policy == "candidate_f_shadow_upper_cost_reference_controller_v1":
         from i3.modules.candidate_f_upper_cost_reference_controller import (
             CandidateFUpperCostReferenceController)
@@ -387,6 +418,7 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
             "genomic_omega_frontier_information_v1",
             "personal_recurrence_candidate_g_v1",
             "personal_relevance_candidate_h_v1",
+            "personal_shared_prior_candidate_i_v1",
             "candidate_f_shadow_upper_cost_reference_controller_v1"):
         out["experimental_policy"] = dict(manifest["experimental_policy"])
         out["branch_effect_memory"] = {
@@ -465,6 +497,39 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
                 "omega_source": "NONE_PERSONAL_ONLY",
                 "score_sharing":
                     "NONE_DOUBLE_COMPUTATION_INTENTIONAL"}
+        if decision_policy == "personal_shared_prior_candidate_i_v1":
+            if (mind.simulation_mode, mind.projection_accounting) != (
+                    "reference", "chunk_end"):
+                raise RuntimeError(
+                    "Candidate-I persistent projector leaked")
+            out["opportunity_recurrence_memory"] = {
+                "schema": "i3-opportunity-recurrence-runtime-summary/v1",
+                "recorded": mind.opportunity_records,
+                "snapshot": mind.opportunity_memory.snapshot(),
+                "decision_use":
+                    "IMAGINED_FIRST_CONTACT_SUPPORT_AND_POSTCONTACT_STORAGE"}
+            out["candidate_i"] = {
+                "schema": "i3-candidate-i-runtime-summary/v1",
+                "first_contact_decisions":
+                    mind.candidate_i_first_contact_decisions,
+                "relevant_final":
+                    mind.candidate_i_relevant_final,
+                "base_fallback_final":
+                    mind.candidate_i_base_fallback_final,
+                "probe_unfunded":
+                    mind.candidate_i_probe_unfunded,
+                "first_contact_omega":
+                    mind.first_contact_omega,
+                "omega_source":
+                    mind.first_contact_omega_source,
+                "persistent_simulation_mode":
+                    mind.simulation_mode,
+                "persistent_projection_accounting":
+                    mind.projection_accounting,
+                "post_contact":
+                    "CANDIDATE_H_1163_UNCHANGED",
+                "motor_authority":
+                    "P1.3_COMPETITION_AND_ACTION_CONTROL"}
         if decision_policy == "reference_frontier_information_v1":
             out["frontier_information"] = {
                 "scope": "one_generic_new_cell_water_only",
@@ -518,7 +583,8 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
             if decision_policy in (
                     "reference_opportunity_memory_v1",
                     "personal_recurrence_candidate_g_v1",
-                    "personal_relevance_candidate_h_v1"):
+                    "personal_relevance_candidate_h_v1",
+                    "personal_shared_prior_candidate_i_v1"):
                 out["opportunity_recurrence_sha256"] = digest(
                     mind.opportunity_memory.snapshot())
     if effect_readout != "full" or observer_decision_diagnostics:
