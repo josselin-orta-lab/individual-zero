@@ -50,6 +50,7 @@ class ReferenceBranchMemoryMind(Mind):
         settlement_body = self._branch_decision_start_body
         settlement_work = self._branch_decision_work
         self._branch_decision_start_body = None
+        self._branch_decision_work = CognitiveWork()
         if not isinstance(budget, CognitiveBudget) or budget.work != CognitiveWork():
             raise ValueError("fresh learning CognitiveBudget required")
         if tuple(result["body"]) != budget.body:
