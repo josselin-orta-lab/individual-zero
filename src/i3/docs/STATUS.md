@@ -220,17 +220,38 @@ V0-V8 all pass on the generic paid-Stage-A / zero-Stage-B
 This is engineering readiness only. 60/61, 62/63 and 64/65 remain permanently
 exposed/closed with no J1-J7 verdict.
 
-The next disjoint Candidate-I DEVELOPMENT successor is now prospectively frozen
-in
-[Candidate-I 66/67](studies/stage1-candidate-i-development-66-67/PROTOCOL.md).
-It uses DEVELOPMENT indices **66/67**, world seeds **2066/2067**, G0 seeds
-**907/908**, life-seed namespace **7,510,000**, horizon 400 and the same four
-arms. J1-J7 are byte-identical to 60/61, 62/63 and 64/65. Canonical plan digest:
-`bf1d87a7944b334ca0b4bccff43677c06071d5638ed352a3c1cd045096d77d26`.
+The fresh
+[Candidate-I 66/67](studies/stage1-candidate-i-development-66-67/RESULTS.md)
+panel was subsequently opened once by one-shot transport #1205 after the exact
+Python 3.11/3.12 software matrix passed. Execution source:
+`9db49f8c3b522e73fd42ab5ca63fcc5d74662b99`; Actions
+`42532125173`.
 
-**This freeze does not open a World.** The next admissible work is only a
-source-locked runner/reducer plus already-exposed/software preflight requiring
-the V2 PASS. Actual exposure must remain a separate reviewed one-shot transport.
+**Ten lives were admitted.** The eleventh original,
+`stable-67-g907:personal_shared_prior_candidate_i_v1`, completed runtime and
+was archived, then Stage-0 revision reduction stopped with
+`ValueError: invalid Candidate-I post-contact processing receipt`.
+
+Evidence is preserved on
+`evidence/i3-stage1-candidate-i-66-67-9db49f8c3b52` at
+`18a7e27bd79de81280e171fdf682f8a5f4195830`. #1205 is closed/unmerged.
+
+**66/67 are permanently exposed and closed. There is no J1-J7 verdict.**
+Do not rerun, resume, complete remaining cases, retroactively admit the
+eleventh life after repair, or use partial lived metrics to tune Candidate-I.
+
+Read-only localization shows a reducer-ownership gap: Candidate-I post-contact
+correctly delegates to Candidate-H #1163, but the reducer accepts only nested
+complete Candidate-H finals. A legitimate nested Candidate-H
+`PROBE_UNFUNDED` therefore fails before Candidate-H's already-valid processing
+semantics are applied.
+
+The next intervention is prospectively frozen in
+[STAGE1_POST_CONTACT_PROBE_REDUCER_REPAIR.md](STAGE1_POST_CONTACT_PROBE_REDUCER_REPAIR.md).
+Q0-Q9 are software-only. The repair must support nested Candidate-H
+`PROBE_UNFUNDED` under both incomplete funding classes, preserve complete
+post-contact/direct-H semantics, fail closed on malformed phase receipts, and
+must not use a 66/67 original as an acceptance fixture.
 
 ## Current handoff: 58/59 exposed, no Candidate-H continuation verdict
 
