@@ -12,6 +12,37 @@ That integration changed documentation and priorities only. The subsequent
 Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
+## Latest software integration: unified Candidate-H passes
+
+8 November 2026: the prospectively frozen
+[unified Candidate-H integration](studies/stage1-candidate-h-unified-integration/RESULTS.md)
+passes U0-U9 on final tested source
+`bf527c92dd445b4f4ffcab4c8a24cbe8ed0c959f`, Actions
+`42482799511`, Python 3.11/3.12.
+
+The integrated software preserves the two previously frozen relevance semantics
+exactly: first contact remains 24 RELEVANT / 56 FALLBACK with zero mismatches;
+post contact remains 68 / 12 with zero mismatches.
+
+On the fixed 60-decision routing panel, Candidate-H produces 37 complete P1.3
+final routes and 23 Candidate-F final routes. All five required route classes
+are observed, all 37 P1.3 fallbacks match their independent same-body P1.3
+controls, phase accounting passes, omega -1/+1 changes nothing, and projector
+state always returns to `reference/chunk_end`.
+
+Verdict:
+**`CANDIDATE_H_UNIFIED_SOFTWARE_INTEGRATION_PASS`**.
+
+Three engineering verifier defects were corrected before the final verdict:
+an over-strict import assertion, exact floating settlement equality despite the
+prospectively frozen 1e-12 tolerance, and an extra bit-exact body condition
+incorrectly folded into U3. None changed the candidate, relevance predicates,
+60-decision panel or U0-U9 rules.
+
+This PASS authorizes only a **separately frozen fresh DEVELOPMENT protocol**.
+Candidate-H is still absent from `runtime/life.py`; no fresh World/life,
+selection, validation, reserve, adoption or Stage 2 is authorized yet.
+
 ## Latest software gate: Candidate-H post-contact relevance fallback passes
 
 8 November 2026: the frozen
