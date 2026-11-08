@@ -111,10 +111,17 @@ now **PASSes L0-L11** on tested source
 DEVELOPMENT-0 smokes plus the F/R/N/P/Z lifecycle micro-cycles complete with
 zero custody failure.
 
-**Next work may prospectively freeze a fresh disjoint Candidate-I DEVELOPMENT
-successor, but must not open it in the protocol PR.** Preserve the exact four
-arms and J1-J7 from 60/61 and 62/63. Do not tune from partial exposed evidence.
-The runner/preflight and the one-shot transport remain separate later steps.
+The fresh successor is now prospectively specified in
+[Candidate-I 64/65](docs/studies/stage1-candidate-i-development-64-65/PROTOCOL.md).
+The machine plan uses DEVELOPMENT 64/65, world 2064/2065, G0 905/906 and
+life-seed base 7,500,000, with the exact four arms and J1-J7 from 60/61 and
+62/63. Its canonical digest is
+`4c921d59a3eaeb8a85b994a6fade72a791669a24ddb33847e3269def128e7093`.
+
+**Do not open 64/65 in the protocol PR.** After protocol/plan merge, add only
+the source-locked runner/reducer and preflight in a separate PR. That preflight
+must rerun lifecycle stress on already-exposed fixtures. Actual exposure still
+requires a separate reviewed one-shot transport.
 
 Do not widen omega, rescale RMS, add resource-specific inherited coefficients,
 alter K80/P80/F108 or reuse 56/57/58/59. Selection, validation, reserve and
