@@ -49,6 +49,7 @@ class CandidateIProbeAuthorityRepairTests(unittest.TestCase):
         self.assertTrue(row["single_current_cell_observation"])
         self.assertTrue(row["last_is_fresh"])
         self.assertTrue(row["settlement_aligned"])
+        self.assertTrue(row["current_opportunity_presence"])
         self.assertTrue(row["phase_work_exact"])
         self.assertTrue(row["addends_zero"])
 
