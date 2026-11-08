@@ -166,18 +166,37 @@ already-exposed DEVELOPMENT-0 smokes reduce with `smoke_failures=[]`.
 This is engineering readiness only. It does not evaluate survival, uptake,
 route frequency, omega direction or J1-J7.
 
-The next fresh successor is now prospectively specified on
-[Candidate-I 64/65](studies/stage1-candidate-i-development-64-65/PROTOCOL.md).
-It preserves the exact four arms and byte-identical J1-J7 while allocating only
-new DEVELOPMENT indices **64/65**, world seeds **2064/2065**, G0 seeds
-**905/906** and life-seed base **7,500,000**. Machine plan digest:
-`4c921d59a3eaeb8a85b994a6fade72a791669a24ddb33847e3269def128e7093`.
+The frozen
+[Candidate-I 64/65](studies/stage1-candidate-i-development-64-65/RESULTS.md)
+panel was subsequently opened exactly once from execution source
+`427eedd374575e84d725ef3a6e287a69f1991518`, Actions
+`42522541342`. The Python 3.11/3.12 software matrix passed before exposure.
 
-This protocol/plan PR cannot open 64/65. After merge, the next admissible work
-is a separate source-locked runner/reducer and preflight which must rerun the
-lifecycle stress on already-exposed fixtures. Actual 64/65 exposure remains a
-later separately reviewed one-shot transport. 60/61 and 62/63 stay closed and
-are not calibration data.
+The runner admitted **35 complete reductions**. The 36th original,
+`pulse-64-g905:personal_shared_prior_candidate_i_omega0_ablation_v1`,
+also completed as a 141-step natural `zero_food` death, but reduction stopped
+afterward in `stage0_revision._resource_events` with
+`ValueError: processing status contradicts paid base block`.
+
+The original and all prior evidence are archived on
+`evidence/i3-stage1-candidate-i-64-65-427eedd37457`, evidence commit
+`f09806130d0ea0d9d9a66a12d6baa3afe5b66d15`.
+This is **ENGINEERING_FAILURE_NOT_A_DEATH**, not J1-J7 evidence.
+**64/65 are exposed and permanently closed. Do not retry.** #1195 is closed
+and unmerged.
+
+Read-only inspection of the archived 36th original localizes the reducer defect
+at decision 134: Candidate-H Stage A was fully paid
+(4 cycles / 18 simulated steps / 248 memory items), Stage B was exactly zero,
+and the final public status was `NO_PROCESSING_BUDGET`. The Stage-0 reducer
+incorrectly applied that Stage-B status to total Stage-A+Stage-B work.
+
+The next admissible intervention is the prospectively frozen software-only
+[multi-phase processing reducer repair](STAGE1_MULTIPHASE_PROCESSING_REDUCER_REPAIR.md).
+It must authenticate Candidate-H/I Stage-A+Stage-B receipts and apply the
+R-depletion processing predicate only to the actual public processing owner,
+while keeping all earlier work physically charged. No 64/65 original may be an
+acceptance fixture.
 
 ## Current handoff: 58/59 exposed, no Candidate-H continuation verdict
 
