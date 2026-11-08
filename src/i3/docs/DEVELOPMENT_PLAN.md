@@ -8,14 +8,15 @@ second roadmap. Decision: [ADR-0016](../../../docs/decisions/ADR-0016-i3-general
 Integration tracking: [#1059](https://github.com/josselin-orta-lab/individual-zero/issues/1059).
 
 **Current operational intervention: Candidate-I runtime v2 passes S0-S11 and
-the branch-decision settlement repair now passes B0-B9 at merged authority
-`5ee25b3b0f39050321b0b5c6147bdae0e3e68ec5`. 60/61 remain exposed/closed
-with no J1-J7 verdict. A fresh
-[62/63 DEVELOPMENT successor](studies/stage1-candidate-i-development-62-63/PROTOCOL.md)
-is prospectively frozen with disjoint worlds/genomes/life seeds and exactly the
-same four arms and J1-J7. 62/63 remain unopened. Next implement only its
-source-locked runner/reducer and preflight; execution requires a later separate
-one-shot transport. Stage 0 remains open; Stage 2 stays blocked.**
+branch settlement B0-B9 passes, but both fresh lived successors are now
+engineering-stopped: 60/61 after 5 lives and 62/63 after 18 lives, with no
+J1-J7 verdict from either exposed panel. 62/63 revealed a distinct Candidate-I
+rollback-authority defect: an unfunded detached probe can restore a stale
+previous `last` without a matching settlement receipt. The next intervention
+is the prospectively frozen
+[probe-restore authority repair](STAGE1_CANDIDATE_I_PROBE_AUTHORITY_REPAIR.md),
+software-only and independent of the 62/63 original trajectories. Stage 0
+remains open; Stage 2 stays blocked.**
 
 ## Source, scope and current reference
 
@@ -70,7 +71,7 @@ software defect. Keep adverse and null outcomes; do not tune them away.
 | Stage | Deliverable | Status / tracking |
 | --- | --- | --- |
 | 0 | Independent-population design, energetic mediation, complete paid Competition observation, individuality challenge, P5d uncertainty | Open in parallel; [#1060](https://github.com/josselin-orta-lab/individual-zero/issues/1060), existing #1026/#1054 |
-| 1 | Information value in predicted distress, replacing additive curiosity/relevance/prudence | **Current: Candidate-I runtime v2 S0-S11 PASS and branch settlement B0-B9 PASS; 60/61 closed without J1-J7; fresh 62/63 protocol frozen but unopened.** Next implement its source-locked runner/preflight, then use a separate one-shot transport only after exact-head checks. P80 remains energy/vigilance-driven and K80 non-monotone; [#1061](https://github.com/josselin-orta-lab/individual-zero/issues/1061) |
+| 1 | Information value in predicted distress, replacing additive curiosity/relevance/prudence | **Current: Candidate-I runtime v2 S0-S11 PASS and branch settlement B0-B9 PASS; 60/61 and 62/63 are both exposed/closed on engineering failures with no J1-J7 verdict.** Next execute the frozen software-only Candidate-I probe-restore authority repair; no live retry. P80 remains energy/vigilance-driven and K80 non-monotone; [#1061](https://github.com/josselin-orta-lab/individual-zero/issues/1061) |
 | 2 | Decide how much to think by value of computation | **Blocked** until Stage-1 decision boundary is resolved; [#1062](https://github.com/josselin-orta-lab/individual-zero/issues/1062) |
 | 3 | Change detection, latent causes, then perceived-attribute factorization | Full stage deferred. One minimal generic future-opportunity representation may be tested early only as a Stage-1 prerequisite; do not start the Stage-3 bundle. |
 | 4 | Successor features and delayed credit evaluated by current bodily distress | Deferred after the required model/budget decisions |
