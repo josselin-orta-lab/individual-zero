@@ -1,0 +1,112 @@
+{
+  "schema": "i3-stage1-candidate-h-post-contact-relevance-summary/v1",
+  "verdict": "CANDIDATE_H_POST_CONTACT_SOFTWARE_GATE_PASS",
+  "confirmation": {
+    "run": 42479258792,
+    "head": "e221713ce9509117ab4cf7f3c7f4ba6a1958154a",
+    "python": [
+      "3.11",
+      "3.12"
+    ]
+  },
+  "fixture": {
+    "states": 80,
+    "beneficial_drink_delta": [
+      -0.5,
+      -0.2,
+      35,
+      0,
+      0
+    ],
+    "recurrence_read": false,
+    "omega_read": false
+  },
+  "stage_a": {
+    "funded": 80,
+    "unfunded": 0,
+    "relevant": 68,
+    "fallback": 12,
+    "positive_information_but_fallback": 12,
+    "fallback_pattern": {
+      "energy": {
+        "levels": [
+          20,
+          30
+        ],
+        "horizons": [
+          4,
+          6,
+          8,
+          12
+        ],
+        "count": 8
+      },
+      "vigilance": {
+        "levels": [
+          20
+        ],
+        "horizons": [
+          4,
+          6,
+          8,
+          12
+        ],
+        "count": 4
+      }
+    }
+  },
+  "fallback": {
+    "funded": 12,
+    "unfunded": 0,
+    "score_identity_max_error": 0,
+    "top_identity_all": true,
+    "top_changes_vs_preprobe_reference": 0
+  },
+  "work": {
+    "relevant": {
+      "states": 68,
+      "mean_stage_a_simulated_steps": 654.8235294117648,
+      "max_stage_a_simulated_steps": 810,
+      "mean_combined_simulated_steps": 654.8235294117648,
+      "max_combined_simulated_steps": 810,
+      "mean_combined_energy": 1.46344705882353,
+      "max_combined_energy": 1.7738000000000003,
+      "mean_combined_vigilance": 1.6596470588235297,
+      "max_combined_vigilance": 1.9700000000000002
+    },
+    "fallback": {
+      "states": 12,
+      "mean_stage_a_simulated_steps": 801.6666666666666,
+      "max_stage_a_simulated_steps": 805,
+      "mean_combined_simulated_steps": 838.6666666666666,
+      "max_combined_simulated_steps": 842,
+      "mean_combined_energy": 1.831133333333333,
+      "max_combined_energy": 1.8377999999999999,
+      "mean_combined_vigilance": 2.0273333333333334,
+      "max_combined_vigilance": 2.034
+    }
+  },
+  "rules": {
+    "P0_personal_history_actionability_identity": true,
+    "P1_both_relevance_classes_exist": true,
+    "P2_all_fallback_states_funded": true,
+    "P3_fallback_reference_identity": true,
+    "P4_relevant_path_integrity": true,
+    "P5_exact_physical_accounting": true,
+    "P6_authority_boundaries": true
+  },
+  "interpretation": {
+    "positive_information_alone_is_not_relevance": true,
+    "unified_runtime_software_protocol_may_be_proposed": true
+  },
+  "authorizations": {
+    "runtime_candidate": false,
+    "fresh_live_panel": false,
+    "reuse_56_57": false,
+    "selection": false,
+    "validation": false,
+    "reserve": false,
+    "reference_adoption": false,
+    "stage2": false
+  }
+}
