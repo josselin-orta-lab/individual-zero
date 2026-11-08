@@ -268,6 +268,102 @@ class PersonalSharedPriorCandidateIRuntimeTests(unittest.TestCase):
         self.assertFalse(
             supported["candidate_i_first_contact_omega_used"])
 
+    def test_inventory_permutation_preserves_runtime_semantics(self):
+        body = (70., 25., 45., 65., 70.)
+
+        def make(seed):
+            mind = PersonalSharedPriorCandidateIMind(
+                midpoint(), seed,
+                observer_decision_diagnostics=True,
+                observer_full_competition=True)
+            prime(mind)
+            mind.tokens.update({"food-a": "tok0", "food-b": "tok1"})
+            mind.external.update({"tok0": "food-a", "tok1": "food-b"})
+            return mind
+
+        left = make(63)
+        right = make(63)
+        left_result = left.decide(
+            cap(
+                body,
+                inventory=(("food-a", 1), ("food-b", 1))),
+            CognitiveBudget(body, BodyLaws()))
+        right_result = right.decide(
+            cap(
+                body,
+                inventory=(("food-b", 1), ("food-a", 1))),
+            CognitiveBudget(body, BodyLaws()))
+
+        self.assertEqual(left_result[:3], right_result[:3])
+        for key in (
+                "option", "funding", "candidate_i_route",
+                "candidate_i_relevance",
+                "candidate_i_stage_a_work",
+                "candidate_i_stage_b_work",
+                "candidate_i_total_work",
+                "candidate_i_body_after_cognition",
+                "decision_projection_mode"):
+            self.assertEqual(left_result[3].get(key), right_result[3].get(key))
+        l_scores = {
+            row["option"]: row["total_score"]
+            for row in left_result[3]["observer"]["score_witness"]}
+        r_scores = {
+            row["option"]: row["total_score"]
+            for row in right_result[3]["observer"]["score_witness"]}
+        self.assertEqual(l_scores, r_scores)
+
+    def test_external_token_renaming_preserves_runtime_semantics(self):
+        body = (70., 25., 45., 65., 70.)
+
+        def make(seed, ext_a, ext_b):
+            mind = PersonalSharedPriorCandidateIMind(
+                midpoint(), seed,
+                observer_decision_diagnostics=True,
+                observer_full_competition=True)
+            prime(mind)
+            mind.tokens.update({ext_a: "tok0", ext_b: "tok1"})
+            mind.external.update({"tok0": ext_a, "tok1": ext_b})
+            return mind
+
+        left = make(65, "food-a", "food-b")
+        right = make(65, "renamed-a", "renamed-b")
+        left_result = left.decide(
+            cap(
+                body,
+                inventory=(("food-a", 1), ("food-b", 1))),
+            CognitiveBudget(body, BodyLaws()))
+        right_result = right.decide(
+            cap(
+                body,
+                inventory=(("renamed-a", 1), ("renamed-b", 1))),
+            CognitiveBudget(body, BodyLaws()))
+
+        self.assertEqual(left_result[0], right_result[0])
+        self.assertEqual(left_result[2], right_result[2])
+        self.assertEqual(left.last[1], right.last[1])
+        for key in (
+                "option", "funding", "candidate_i_route",
+                "candidate_i_relevance",
+                "candidate_i_stage_a_work",
+                "candidate_i_stage_b_work",
+                "candidate_i_total_work",
+                "candidate_i_body_after_cognition",
+                "decision_projection_mode"):
+            self.assertEqual(left_result[3].get(key), right_result[3].get(key))
+        self.assertEqual(
+            left_result[3]["observer"]["score_witness"],
+            right_result[3]["observer"]["score_witness"])
+        # Physical token names may differ, but the admitted internal action is
+        # the same semantic action after the declared renaming.
+        if left_result[0] == "manger":
+            mapping = {
+                "renamed-a": "food-a",
+                "renamed-b": "food-b"}
+            self.assertEqual(
+                left_result[1], mapping[right_result[1]])
+        else:
+            self.assertEqual(left_result[1], right_result[1])
+
     def test_same_genome_omega_ablation_is_inert_post_contact(self):
         genome = generation_zero(901)
         self.assertNotEqual(genome["genes"]["omega"], 0.0)
