@@ -30,9 +30,14 @@ class ReferenceBranchMemoryMind(Mind):
         self._branch_decision_start_body = validate_body(start_body)
         self._branch_decision_work = work
 
+    def _clear_branch_decision_settlement(self):
+        """Discard any unconsumed per-decision settlement receipt."""
+        self._branch_decision_start_body = None
+        self._branch_decision_work = CognitiveWork()
+
     def decide(self, cap, budget):
         self._pending_branch = None
-        self._branch_decision_start_body = None
+        self._clear_branch_decision_settlement()
         start_body = tuple(budget.body)
         result = super().decide(cap, budget)
         self._set_branch_decision_settlement(start_body, result[2])
@@ -49,8 +54,7 @@ class ReferenceBranchMemoryMind(Mind):
         self._pending_branch = None
         settlement_body = self._branch_decision_start_body
         settlement_work = self._branch_decision_work
-        self._branch_decision_start_body = None
-        self._branch_decision_work = CognitiveWork()
+        self._clear_branch_decision_settlement()
         if not isinstance(budget, CognitiveBudget) or budget.work != CognitiveWork():
             raise ValueError("fresh learning CognitiveBudget required")
         if tuple(result["body"]) != budget.body:
