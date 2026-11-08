@@ -597,7 +597,7 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
         self.candidate_i_first_contact_decisions += 1
         probe_state = self._probe_state_snapshot()
         self._pending_branch = None
-        self._branch_decision_start_body = None
+        self._clear_branch_decision_settlement()
         self._pending_opportunity_presence = None
         self._pending_opportunity_commit = None
         self.last = None
