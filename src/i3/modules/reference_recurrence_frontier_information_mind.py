@@ -21,7 +21,6 @@ from dataclasses import asdict
 from .body import (
     CognitiveBudget, CognitiveFundingError, CognitiveWork, VITAL, capacities,
     debit_cognition)
-from .genomic_omega_frontier_information_mind import STOP_AFTER_PREFIX
 from .plan_information import (
     _revealed_minimum_ceiling, _validate_revealed,
     paid_revealed_plan_information_value)
@@ -35,6 +34,7 @@ from .water_future_opportunity import (
     water_one_future_opportunity_work_ceiling)
 
 POLICY = "reference_recurrence_frontier_information_v1"
+STOP_AFTER_PREFIX = (("stop-after-prefix", ()),)
 
 
 class ReferenceRecurrenceFrontierInformationMind(
