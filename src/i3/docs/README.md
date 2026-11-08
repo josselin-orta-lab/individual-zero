@@ -5,6 +5,23 @@ The [engine contract](../engine.json) has no active entrypoints; the
 [registry](../../../config/engine-registry.json) keeps I1 active.
 A green software test is not a scientific GO.
 
+## Latest: Candidate-H post-contact relevance also passes in software
+
+The frozen
+[post-contact result](studies/stage1-candidate-h-post-contact-relevance/RESULTS.md)
+passes P0-P6.
+
+Of 80 personally learned-water states, 68 are truly decision-relevant. The
+other 12 have positive information but no top-set effect. All 12 can pay a
+complete P1.3 fallback and return exactly to P1.3 ordinary geometry.
+
+Verdict:
+`CANDIDATE_H_POST_CONTACT_SOFTWARE_GATE_PASS`.
+
+First-contact and post-contact relevance gating are now both supported in
+bounded software. The next step is **unified runtime software integration**,
+not a live panel.
+
 ## Latest: Candidate-H fixes the first-contact support/relevance split in software
 
 The frozen
