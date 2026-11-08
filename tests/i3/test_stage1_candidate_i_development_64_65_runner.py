@@ -11,17 +11,20 @@ from i3.lab import stage1_candidate_i_development_64_65_pilot as d
 
 
 class CandidateIDevelopment6465RunnerTests(unittest.TestCase):
-    def test_runner_contains_no_60_61_evidence_dependency(self):
+    def test_runner_contains_no_exposed_predecessor_evidence_dependency(self):
         source = Path(d.__file__).read_text(encoding="utf-8")
-        self.assertNotIn(
-            "evidence/i3-stage1-candidate-i-60-61", source)
-        self.assertNotIn(
-            "stage1-candidate-i-development-60-61", source)
+        for token in (
+                "evidence/i3-stage1-candidate-i-60-61",
+                "stage1-candidate-i-development-60-61",
+                "evidence/i3-stage1-candidate-i-62-63",
+                "stage1-candidate-i-development-62-63"):
+            with self.subTest(token=token):
+                self.assertNotIn(token, source)
         self.assertEqual(
-            {row["index"] for row in d.plan()["cases"]}, {62, 63})
+            {row["index"] for row in d.plan()["cases"]}, {64, 65})
         self.assertEqual(
             {row["world_seed"] for row in d.plan()["cases"]},
-            {2062, 2063})
+            {2064, 2065})
 
     def test_runner_uses_exact_frozen_plan_and_runtime_baseline(self):
         self.assertEqual(
