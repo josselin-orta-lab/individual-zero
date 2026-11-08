@@ -551,41 +551,6 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
         out["body"] = tuple(body)
         return out
 
-    def _decorate_first_contact(
-            self, final, *, stage_a, stage_b_work,
-            route, total_work):
-        action, param, _old_work, old_info = final
-        info = dict(old_info)
-        info["experimental_policy"] = POLICY
-        info["candidate_i_route"] = route
-        info["candidate_i_relevance"] = stage_a[
-            "classification"]
-        info["candidate_i_probe_funding"] = stage_a[
-            "probe_funding"]
-        info["candidate_h_probe_funding"] = stage_a[
-            "probe_funding"]
-        info["candidate_i_stage_a_work"] = asdict(
-            stage_a_total_work)
-        info["candidate_i_stage_a_body_after"] = tuple(
-            stage_a_total_body)
-        info["candidate_i_stage_b_work"] = asdict(
-            stage_b_work)
-        info["candidate_i_total_work"] = asdict(total_work)
-        info["candidate_i_body_after_cognition"] = tuple(
-            total_work and self._last_candidate_i_body)
-        info["candidate_i_direct_trial_count"] = stage_a.get(
-            "direct_trial_count", 0)
-        info["candidate_i_imagined_trial_count"] = stage_a.get(
-            "imagined_trial_count", 0)
-        info["persistent_simulation_mode"] = "reference"
-        info["persistent_projection_accounting"] = "chunk_end"
-        info["first_contact_omega"] = self.first_contact_omega
-        info["omega_source"] = self.first_contact_omega_source
-        info["decision_projection_mode"] = (
-            "candidate_f" if route == "INFORMATION_FINAL"
-            else "reference")
-        return action, param, total_work, info
-
     def decide(self, cap, budget: CognitiveBudget):
         if tuple(cap["body"]) != budget.body or budget.work != CognitiveWork():
             raise ValueError(
@@ -815,9 +780,9 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
         info["candidate_i_probe_funding"] = "FUNDED"
         info["candidate_h_probe_funding"] = "FUNDED"
         info["candidate_i_stage_a_work"] = asdict(
-            stage_a["work"])
+            stage_a_total_work)
         info["candidate_i_stage_a_body_after"] = tuple(
-            stage_a["body_after_computation"])
+            stage_a_total_body)
         info["candidate_i_stage_b_work"] = asdict(
             final_budget.work)
         info["candidate_i_total_work"] = asdict(total)
