@@ -19,6 +19,15 @@ FUNDING = {
 }
 UPPER_COST_POLICY = "candidate_f_shadow_upper_cost_reference_controller_v1"
 UPPER_COST_SCHEMA = "i3-candidate-f-shadow-cost-reference-choice/v1"
+CANDIDATE_H_POLICY = "personal_relevance_candidate_h_v1"
+CANDIDATE_I_POLICIES = frozenset((
+    "personal_shared_prior_candidate_i_v1",
+    "personal_shared_prior_candidate_i_omega0_ablation_v1",
+))
+_H_COMPLETE_ROUTES = frozenset(("P1.3_FINAL", "CANDIDATE_F_FINAL"))
+_I_COMPLETE_ROUTES = frozenset((
+    "P1.3_BASE_FINAL", "INFORMATION_FINAL", "POST_CONTACT_CANDIDATE_H"))
+_COMPLETE_H_PROBE_FUNDING = frozenset(("FUNDED", "NO_FUNDED_MOTOR"))
 _WORK_KEYS = ("cycles", "simulated_steps", "memory_items", "replays")
 
 
@@ -135,45 +144,125 @@ def _work_vector(value, label):
     return value
 
 
-def _processing_work(life, row, total_work):
-    """Work governed by the public P1.3 funding status.
+def _work_sum(left, right):
+    return {
+        key: left[key] + right[key]
+        for key in _WORK_KEYS
+    }
 
-    Ordinary policies have one cognitive owner, so this is the full decision
-    work exactly as before. The explicit upper-cost falsifier has a paid
-    Candidate-F shadow followed by the P1.3 motor controller; its public
-    funding status describes only the latter.
+
+def _body_receipt_matches(row, info, key, label):
+    claimed = info.get(key)
+    actual = row.get("funding_phases", {}).get(
+        "decision", {}).get("body_after_debit")
+    if (type(claimed) not in (tuple, list)
+            or type(actual) not in (tuple, list)
+            or len(claimed) != 5 or len(actual) != 5
+            or any(type(x) not in (int, float) or not isfinite(x)
+                   for x in (*claimed, *actual))
+            or max(abs(a - b) for a, b in zip(claimed, actual)) > 1e-12):
+        raise ValueError(label + " body settlement mismatch")
+
+
+def _multiphase_work(row, total_work, prefix, *, owner):
+    """Authenticate one Stage-A + Stage-B receipt and return processing work."""
+    info = row.get("info", {})
+    if type(info) is not dict:
+        raise ValueError("missing multi-phase processing receipt")
+    stage_a = _work_vector(
+        info.get(prefix + "_stage_a_work"), prefix + " Stage A")
+    stage_b = _work_vector(
+        info.get(prefix + "_stage_b_work"), prefix + " Stage B")
+    claimed = _work_vector(
+        info.get(prefix + "_total_work"), prefix + " total")
+    if _work_sum(stage_a, stage_b) != claimed or claimed != total_work:
+        raise ValueError("multi-phase processing work mismatch")
+    _body_receipt_matches(
+        row, info, prefix + "_body_after_cognition", prefix)
+    if owner == "stage_a":
+        return stage_a
+    if owner == "stage_b":
+        return stage_b
+    raise ValueError("unknown multi-phase processing owner")
+
+
+def _processing_work(life, row, total_work):
+    """Return the work block governed by the public processing status.
+
+    Total decision work always remains the physical bill. Some declared
+    multi-phase policies have earlier paid cognition that does not own the
+    public P1.3 processing status, so the reducer authenticates the phase
+    receipt and applies the historical base-block predicate to its actual
+    processing owner only.
     """
     total_work = _work_vector(total_work, "decision")
     manifest_policy = (
         life.get("manifest", {}).get("experimental_policy", {}) or {}
     ).get("name")
-    if manifest_policy != UPPER_COST_POLICY:
-        return total_work
-
     info = row.get("info", {})
-    if info.get("experimental_policy") != UPPER_COST_POLICY:
-        raise ValueError("upper-cost trace policy mismatch")
-    cc = info.get("cost_control")
-    if type(cc) is not dict or cc.get("schema") != UPPER_COST_SCHEMA:
-        raise ValueError("missing upper-cost processing receipt")
-    if (cc.get("motor_authority") != "P1.3_REFERENCE_ONLY" or
-            cc.get("candidate_motor_authority") is not False or
-            cc.get("settlement_authority") !=
-            "CUMULATIVE_V2_PHASE_START_BODY"):
-        raise ValueError("upper-cost processing authority mismatch")
-    gap = cc.get("sequential_settlement_max_abs_gap")
-    if type(gap) not in (int, float) or gap < 0 or gap > 1e-12:
-        raise ValueError("upper-cost processing settlement mismatch")
 
-    shadow = _work_vector(
-        cc.get("candidate_shadow_work"), "candidate shadow")
-    reference = _work_vector(
-        cc.get("reference_choice_work"), "reference choice")
-    claimed = _work_vector(cc.get("total_work"), "upper-cost total")
-    summed = {k: shadow[k] + reference[k] for k in _WORK_KEYS}
-    if summed != claimed or claimed != total_work:
-        raise ValueError("upper-cost processing work mismatch")
-    return reference
+    if manifest_policy == UPPER_COST_POLICY:
+        if info.get("experimental_policy") != UPPER_COST_POLICY:
+            raise ValueError("upper-cost trace policy mismatch")
+        cc = info.get("cost_control")
+        if type(cc) is not dict or cc.get("schema") != UPPER_COST_SCHEMA:
+            raise ValueError("missing upper-cost processing receipt")
+        if (cc.get("motor_authority") != "P1.3_REFERENCE_ONLY" or
+                cc.get("candidate_motor_authority") is not False or
+                cc.get("settlement_authority") !=
+                "CUMULATIVE_V2_PHASE_START_BODY"):
+            raise ValueError("upper-cost processing authority mismatch")
+        gap = cc.get("sequential_settlement_max_abs_gap")
+        if type(gap) not in (int, float) or gap < 0 or gap > 1e-12:
+            raise ValueError("upper-cost processing settlement mismatch")
+
+        shadow = _work_vector(
+            cc.get("candidate_shadow_work"), "candidate shadow")
+        reference = _work_vector(
+            cc.get("reference_choice_work"), "reference choice")
+        claimed = _work_vector(cc.get("total_work"), "upper-cost total")
+        summed = {k: shadow[k] + reference[k] for k in _WORK_KEYS}
+        if summed != claimed or claimed != total_work:
+            raise ValueError("upper-cost processing work mismatch")
+        return reference
+
+    if manifest_policy == CANDIDATE_H_POLICY:
+        route = info.get("candidate_h_route")
+        if route == "PROBE_UNFUNDED":
+            return total_work
+        if route not in _H_COMPLETE_ROUTES:
+            raise ValueError("unknown Candidate-H processing route")
+        if info.get("candidate_h_probe_funding") not in _COMPLETE_H_PROBE_FUNDING:
+            raise ValueError("incomplete Candidate-H final processing receipt")
+        return _multiphase_work(
+            row, total_work, "candidate_h", owner="stage_b")
+
+    if manifest_policy in CANDIDATE_I_POLICIES:
+        route = info.get("candidate_i_route")
+        if route == "PROBE_UNFUNDED":
+            return total_work
+        if route not in _I_COMPLETE_ROUTES:
+            raise ValueError("unknown Candidate-I processing route")
+        if route == "POST_CONTACT_CANDIDATE_H":
+            if (info.get("candidate_i_first_contact_omega_used") is not False
+                    or info.get("candidate_i_post_contact_source")
+                    != "CANDIDATE_H_1163_UNCHANGED"
+                    or info.get("candidate_h_route") not in _H_COMPLETE_ROUTES
+                    or info.get("candidate_h_probe_funding")
+                    not in _COMPLETE_H_PROBE_FUNDING):
+                raise ValueError("invalid Candidate-I post-contact processing receipt")
+            return _multiphase_work(
+                row, total_work, "candidate_h", owner="stage_b")
+
+        if info.get("candidate_i_probe_funding") != "FUNDED":
+            raise ValueError("incomplete Candidate-I final processing receipt")
+        owner = (
+            "stage_a" if route == "INFORMATION_FINAL"
+            else "stage_b")
+        return _multiphase_work(
+            row, total_work, "candidate_i", owner=owner)
+
+    return total_work
 
 
 def _resource_events(life):
