@@ -1,0 +1,99 @@
+{
+ "schema": "i3-stage1-separable-projection-cache/v1",
+ "protocol": "STAGE1_SEPARABLE_PROJECTION_CACHE.md",
+ "protocol_commit": "2887239575771c9ec3afe17d898a8d38135f68b6",
+ "source_commit": "74725372f82ad490467f20cf0a69e815650bae7b",
+ "workflow_run": 42471715382,
+ "world_access": false,
+ "lives": 0,
+ "candidate": "separable_exact_cache_v1",
+ "truth": "reference_float_per_step_chunk_end",
+ "projection_grid": {
+  "cases": 486,
+  "max_abs_option_value_error": 2.220446049250313e-15,
+  "max_pairwise_decision_bias": 1.3322676295501878e-15,
+  "projection_equivalent_invariant_max_gap": 1.3322676295501878e-15,
+  "max_final_body_channel_error": 0.0,
+  "worst": {
+   "option_value": {
+    "fixture": "sleep_learned",
+    "genome": "g0-6000",
+    "body": [80.0, 80.0, 10.0, 80.0, 80.0],
+    "option": "prefix",
+    "candidate": -2.7032413540432465,
+    "truth": -2.7032413540432487,
+    "abs_error": 2.220446049250313e-15
+   },
+   "decision_bias": {
+    "fixture": "sleep_learned",
+    "genome": "g0-6004",
+    "body": [80.0, 10.0, 80.0, 80.0, 80.0],
+    "pair": ["prefix", "plus_3_waits"],
+    "abs_bias": 1.3322676295501878e-15
+   },
+   "final_body": null
+  },
+  "work": {
+   "project_calls": 1458,
+   "channel_trace_builds": 6318,
+   "channel_trace_hits": 972,
+   "channel_samples": 1611090,
+   "scalar_cache_writes": 8055450,
+   "scalar_cache_reads": 36450,
+   "max_live_cache_entries": 15,
+   "uncached_per_step_full_endpoints": 371790,
+   "lower_bound_equivalent_full_endpoints_not_a_bill": 322218
+  }
+ },
+ "nonlinear_option_set": {
+  "bodies": 10,
+  "plans_per_body": 6,
+  "max_abs_option_value_error": 1.7763568394002505e-15,
+  "max_pairwise_decision_bias": 2.220446049250313e-15,
+  "max_final_body_channel_error": 0.0,
+  "worst": {
+   "option_value": {
+    "body": [80.0, 80.0, 10.0, 80.0, 80.0],
+    "option": "plus_3_waits",
+    "candidate": -2.3944903089687717,
+    "truth": -2.39449030896877,
+    "abs_error": 1.7763568394002505e-15
+   },
+   "decision_bias": {
+    "body": [80.0, 80.0, 10.0, 80.0, 80.0],
+    "pair": ["plus_3_waits", "drink"],
+    "abs_bias": 2.220446049250313e-15
+   },
+   "final_body": null
+  },
+  "work": {
+   "project_calls": 60,
+   "channel_trace_builds": 250,
+   "channel_trace_hits": 50,
+   "channel_samples": 63750,
+   "scalar_cache_writes": 318750,
+   "scalar_cache_reads": 1500,
+   "max_live_cache_entries": 25,
+   "uncached_per_step_full_endpoints": 15300,
+   "lower_bound_equivalent_full_endpoints_not_a_bill": 12750
+  }
+ },
+ "limits": {
+  "decision_bias": 0.001,
+  "projection_equivalent_invariant": 0.001,
+  "final_body": 1e-10
+ },
+ "rules": {
+  "R0_decision_bias_le_1e_3": true,
+  "R1_projection_equivalent_gap_le_1e_3": true,
+  "R2_final_body_error_le_1e_10": true,
+  "R3_cache_hit_in_projection_grid": true,
+  "R4_cache_hit_in_nonlinear_set": true,
+  "R5_actual_trace_reuse_projection_grid": true,
+  "R6_actual_trace_reuse_nonlinear_set": true
+ },
+ "verdict": "SEPARABLE_EXACT_CACHE_STRUCTURAL_GATE_PASS",
+ "physical_affordability_claim_authorized": false,
+ "runtime_integration_authorized": false,
+ "next_paid_accounting_slice_authorized": true
+}

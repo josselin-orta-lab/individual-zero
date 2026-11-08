@@ -62,11 +62,18 @@ new architecture hypothesis.
 Do not reopen selection/validation 72..167 or the P4 reserve. Do not launch
 Stage 2 to rescue the rejected candidate.
 
-**Update after #1149:** local-sensitivity reuse (drink error 1.91) and
+**Update after #1151:** an exact decision-local separable projection cache
+passes the frozen structural gate at numerical-noise accuracy
+([results](docs/studies/stage1-separable-projection-cache/RESULTS.md)): max
+decision bias 2.22e-15, final-body error 0, with real trace reuse. This proves
+representation/reuse only, **not affordability**. Do not add a runtime cache or
+call the channel-sample lower bound CognitiveWork. Next freeze a physical
+accounting/capacity contract for trace construction, reads, storage and rebuild,
+then test the #1146 Candidate-G kernel under real CognitiveBudget.
+
+**History after #1149/#1150:** local-sensitivity reuse (drink error 1.91) and
 decision-time anchored chunks (bias 0.215) fail feasibility; do not retry them
-([probes](docs/studies/stage1-affordable-projection-probes/RESULTS.md)). Next
-design to freeze: a separable cached projection, with storage and rebuild cost
-paid and reported.
+([probes](docs/studies/stage1-affordable-projection-probes/RESULTS.md)).
 
 **Update after #1146:** a declared diagnostic shows Candidate-G's 1/80
 epistemic pass is a projection effect. The Candidate-F projection gives 24/80

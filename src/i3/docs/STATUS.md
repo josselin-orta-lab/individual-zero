@@ -67,6 +67,31 @@ and use fresh development conditions only if later executed.
 P1.3 remains reference. I3 remains unregistered. Stage 2 remains blocked and
 the P4 reserve remains sealed.
 
+## Latest structural result: exact separable projection cache passes
+
+8 November 2026: the exact decision-local separable-cache falsifier, frozen at
+`2887239575771c9ec3afe17d898a8d38135f68b6`, completed at source
+`74725372f82ad490467f20cf0a69e815650bae7b`, Actions run
+`42471715382` (Python 3.11/3.12 PASS). See the
+[durable result](studies/stage1-separable-projection-cache/RESULTS.md).
+
+The candidate reproduces the 255-step per-step truth at numerical-noise scale:
+max pairwise decision bias **2.22e-15**, projection-equivalent invariant
+**1.33e-15**, max final-body channel error **0**. All frozen structural rules
+pass. Exact reuse is observed in both fixture families: 972 trace hits on the
+486-case grid and 50 on the nonlinear #1150 option set.
+
+This establishes **representational feasibility only**. The current I3
+accounting prices full model-level simulated steps, not an isolated
+channel-distress sample. The descriptive channel-sample lower bound is therefore
+not a CognitiveWork bill and cannot support an energy/vigilance claim.
+
+Next bounded question: freeze a physical accounting/capacity contract for cache
+construction, reads, storage and rebuilds, then run the frozen #1146 Candidate-G
+80-state kernel under real CognitiveBudget. If a defensible paid construction
+is not fundable, report consistent foresight as unaffordable at current physical
+prices. P1.3 remains reference; no World/life or runtime adoption is authorized.
+
 ## Latest exploration: cheap consistent-projection shortcuts fail
 
 Two declared exploratory probes on the #1146 fixtures, measured against the
