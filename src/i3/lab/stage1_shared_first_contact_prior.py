@@ -134,7 +134,7 @@ def _perceived_probe(body, horizon, action_key, omega, memory=None):
     common_dict = {name: plan for name, plan in PERCEIVED_COMMON}
     post_dict = {name: plan for name, plan in post}
     _prep, ceiling = _unknown_minimum_ceiling(
-        model, prior_quote, 2, action_key,
+        model, prior_quote, (None, None), action_key,
         common_dict, post_dict, horizon, CognitiveWork())
     for plan in ORDINARY_PLANS.values():
         ceiling = _add(ceiling, _simulation_upper(model, plan, horizon))
