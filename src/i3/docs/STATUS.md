@@ -67,6 +67,28 @@ and use fresh development conditions only if later executed.
 P1.3 remains reference. I3 remains unregistered. Stage 2 remains blocked and
 the P4 reserve remains sealed.
 
+## Latest diagnostic: Candidate-G depends on projection consistency, not recurrence
+
+#1146 passed Candidate-G's software gate with 1/80 strictly advantageous
+epistemic trials under the P1.3 `chunk_end` projection. A declared, descriptive
+rerun of the same grid ([results](studies/stage1-candidate-g-projection-dependence/RESULTS.md))
+changed only the projection:
+
+| Arm | Epistemic trials | Paid simulated steps per state |
+| --- | --- | --- |
+| reference | 1 | ×1 |
+| Candidate-F projection | 24 | ×8.9 |
+| per-step | 32 | ×24.3 |
+
+The accurate projections make information decision-relevant. Their cost is
+the architectural obstacle, consistent with the processing-budget failures of
+the funded Candidate-F gate. Candidate-F's projection selects 0 water-deficit
+states where per-step selects 8, which is worth an audit.
+
+Next proposal, frozen before any code: an affordable consistent projection,
+namely one accurate projection plus paid local sensitivity per decision, reused
+across options. No world or panel is authorized.
+
 ## Latest complete causal diagnostic: 54/55 cost-versus-policy remains unresolved
 
 8 November 2026: the fresh 54/55 panel completed all 36 preregistered lives once

@@ -62,6 +62,14 @@ new architecture hypothesis.
 Do not reopen selection/validation 72..167 or the P4 reserve. Do not launch
 Stage 2 to rescue the rejected candidate.
 
+**Update after #1146:** a declared diagnostic shows Candidate-G's 1/80
+epistemic pass is a projection effect. The Candidate-F projection gives 24/80
+at ×8.9 paid simulation, per-step 32/80 at ×24. The next architecture question
+is an affordable consistent projection
+([results](docs/studies/stage1-candidate-g-projection-dependence/RESULTS.md)).
+Do not build a live Candidate-G on the reference projection expecting a
+behavioral effect.
+
 Stage 0 #1060, individuality #1026 and historical P5d uncertainty #1054 remain
 open in parallel. Stage 2 stays blocked.
 

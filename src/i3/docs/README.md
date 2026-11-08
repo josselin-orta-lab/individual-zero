@@ -53,6 +53,17 @@ scientifically defensible; otherwise return to Stage-1 architecture design.
 
 No fresh scientific panel is authorized by this handoff.
 
+## Latest: Candidate-G's thin pass comes from the projection; cost is the obstacle
+
+Declared diagnostic on the frozen #1146 grid
+([results](studies/stage1-candidate-g-projection-dependence/RESULTS.md)). The
+reference projection gives **1** strictly advantageous epistemic trial, Candidate
+F's lab-gated projection **24** at ×8.9 paid simulation, and per-step **32**
+at ×24. Personal recurrence is not the bottleneck; an affordable consistent
+projection is. Proposed next falsifier: one accurate projection plus paid local
+sensitivity per decision, reused across options. Not implemented; reference
+unchanged.
+
 ## Current handoff after the 7 November Stage-1 diagnostics
 
 The original local-information prototype is now a **failed engineering
