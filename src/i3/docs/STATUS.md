@@ -83,10 +83,17 @@ Stage-A receipt omitted already-paid base/recurrence work, and forced-failure
 restoration omitted transient `_unknown`/`_presence` caches. Neither repair
 changed scores, relevance, actions, omega, fixtures or V2-R1/R2.
 
-Development indices 60/61 still remain **unallocated and unopened**. The next
-admissible action is to freeze a fresh DEVELOPMENT protocol containing at least
-P1.3, Candidate-H, Candidate-I native omega and same-genome Candidate-I
-omega=0. No World may open from this PASS directly.
+The fresh
+[Candidate-I 60/61 DEVELOPMENT protocol](studies/stage1-candidate-i-development-60-61/PROTOCOL.md)
+is now prospectively frozen. It allocates 12 matched blocks / 48 lives across
+stable, depletion and pulse, with four arms: P1.3, Candidate-H, Candidate-I
+native omega and same-genome Candidate-I omega=0. Canonical plan digest:
+`a8e8dc955a3324e3f78986b4e4de8d8894f8196e1ba7321b89f295016dc1c876`.
+
+**60/61 remain unopened.** The next admissible change is software-only:
+implement the explicit omega=0 Candidate-I runtime ablation and a source-locked
+runner/preflight on already-exposed fixtures. A separate reviewed one-shot
+transport is required after that implementation merges.
 
 ## Current handoff: 58/59 exposed, no Candidate-H continuation verdict
 
