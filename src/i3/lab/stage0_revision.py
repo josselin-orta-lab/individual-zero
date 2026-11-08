@@ -22,6 +22,50 @@ UPPER_COST_SCHEMA = "i3-candidate-f-shadow-cost-reference-choice/v1"
 _WORK_KEYS = ("cycles", "simulated_steps", "memory_items", "replays")
 
 
+COMPOSITE_RELEVANCE_PROBE_FUNDING = "NO_FUNDED_RELEVANCE_PROBE"
+_COMPOSITE_INCOMPLETE_PROBE_FUNDING = frozenset(
+    ("NO_PROCESSING_BUDGET", "NO_FUNDED_SCORE"))
+
+
+def _normalize_processing_status(row, event):
+    """Validate public funding/outcome and return the base processing class.
+
+    Historical rows normalize to themselves. Candidate-H's one declared
+    composite probe-failure status normalizes only through its nested
+    incomplete Stage-A funding receipt. Unknown composite statuses fail closed.
+    """
+    if type(row) is not dict or type(event) is not dict:
+        raise ValueError("invalid resource processing receipt")
+    info = row.get("info")
+    if type(info) is not dict:
+        raise ValueError("missing decision info")
+    public = event.get("decision_funding")
+    if info.get("funding") != public:
+        raise ValueError("resource processing status disagreement")
+
+    if public in FUNDING:
+        normalized = public
+    elif public == COMPOSITE_RELEVANCE_PROBE_FUNDING:
+        normalized = info.get("candidate_h_probe_funding")
+        if normalized not in _COMPOSITE_INCOMPLETE_PROBE_FUNDING:
+            raise ValueError("invalid composite relevance-probe funding")
+    else:
+        raise ValueError("resource processing status disagreement")
+
+    expected = FUNDING[normalized]
+    observer = info.get("observer")
+    if (type(observer) is not dict or
+            event.get("decision_outcome") != expected or
+            observer.get("decision_outcome") != expected):
+        raise ValueError("resource processing status disagreement")
+    return {
+        "public": public,
+        "normalized": normalized,
+        "processing_paid": normalized != "NO_PROCESSING_BUDGET",
+        "expected_outcome": expected,
+    }
+
+
 def _position(value):
     if (type(value) not in (tuple, list) or len(value) != 2 or
             any(type(x) is not int for x in value)):
@@ -168,12 +212,9 @@ def _resource_events(life):
                     event["phase_payment"][phase] != {
                         "work": phases[phase]["work"], "accounting": phases[phase]["accounting"]}):
                 raise ValueError("resource funding/trace disagreement")
-        funding = event["decision_funding"]
-        if (funding not in FUNDING or row["info"]["funding"] != funding or
-                event["decision_outcome"] != FUNDING[funding] or
-                row["info"]["observer"]["decision_outcome"] != FUNDING[funding]):
-            raise ValueError("resource processing status disagreement")
-        paid = funding != "NO_PROCESSING_BUDGET"
+        processing = _normalize_processing_status(row, event)
+        funding = processing["normalized"]
+        paid = processing["processing_paid"]
         work = _processing_work(
             life, row, phases["decision"]["work"])
         if (paid and work["cycles"] < 3) or (not paid and any(work.values())):
