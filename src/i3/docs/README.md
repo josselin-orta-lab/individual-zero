@@ -5,26 +5,25 @@ The [engine contract](../engine.json) has no active entrypoints; the
 [registry](../../../config/engine-registry.json) keeps I1 active.
 A green software test is not a scientific GO.
 
-## Latest: first Candidate-I runtime generalization fails S1; v2 is frozen
+## Latest: Candidate-I runnable multi-option v2 passes in software
 
-[Candidate-I integration](studies/stage1-candidate-i-shared-prior-integration/RESULTS.md)
-still passes I0-I9, and the independent reducer repair still passes R0-R6.
+The failed v1 runtime generalization remains immutable evidence:
+[700/1,128 one-trial states disagreed with #1170](studies/stage1-candidate-i-runtime-integration/RESULTS.md).
 
-The first runnable multi-option protocol then failed its prospectively frozen
-single-trial identity condition:
-[700/1,128 P80/F108 states disagree with #1170](studies/stage1-candidate-i-runtime-integration/RESULTS.md).
+Its prospectively frozen successor now passes:
+[Candidate-I runtime integration v2](studies/stage1-candidate-i-runtime-integration-v2/RESULTS.md)
+returns `CANDIDATE_I_RUNTIME_INTEGRATION_V2_PASS`.
 
-The failed rule asked whether information changes the top set. #1170 instead
-asks whether the unknown trial's informed value strictly beats its own
-no-trial comparator and every other offered option. These are not equivalent.
+The v2 direct rule preserves the #1170 action-trial-advantage semantics exactly:
+an unsupported trial must beat its own no-trial comparator and every other
+offered option. P80/F108 reduction is 0/1,128 mismatches, multi-trial
+permutation/renaming passes, final authority remains ordinary P1.3
+Competition/ActionControl, FALLBACK is fully paid/addend-free, and post-contact
+remains Candidate-H #1163.
 
-A successor is now frozen in
-[STAGE1_CANDIDATE_I_RUNTIME_INTEGRATION_V2.md](STAGE1_CANDIDATE_I_RUNTIME_INTEGRATION_V2.md).
-Its direct multi-trial rule preserves the #1170 action-trial-advantage
-semantics exactly, compares simultaneous unknown trials symmetrically and still
-returns final authority to ordinary Competition/ActionControl.
-
-No 60/61 World has been allocated or opened.
+This is software capacity/integration evidence only. No 60/61 World has been
+allocated or opened. The next step is to freeze a fresh DEVELOPMENT 60/61
+protocol before any execution.
 
 ## Latest: shared first-contact prior has capacity, but it is generic
 
