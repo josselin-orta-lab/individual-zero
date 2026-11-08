@@ -140,10 +140,14 @@ authenticated route-specific processing owner is tested against public funding.
 64/65 remain permanently closed. The read-only archived-life confirmation is
 forensic only and creates no J1-J7 evidence.
 
-**Do not allocate another fresh panel yet.** Next freeze a successor lifecycle
-preflight preserving L0-L11 plus an explicit paid-Stage-A / zero-Stage-B /
-`NO_PROCESSING_BUDGET` reducer case. No H/I policy, omega/RMS, costs, physics
-or J1-J7 changes are authorized.
+**Do not allocate another fresh panel yet.** The successor lifecycle preflight
+is now prospectively frozen in
+[STAGE1_CANDIDATE_I_LIFECYCLE_CUSTODY_STRESS_V2.md](docs/STAGE1_CANDIDATE_I_LIFECYCLE_CUSTODY_STRESS_V2.md).
+Implement V0-V8 exactly. Preserve the complete historical L0-L11 gate and use
+the frozen generic 0.15-energy / 5-cycle Stage-A fixture to force actual H,
+I-native and I-omega0 production decisions through Stage-B
+`NO_PROCESSING_BUDGET` and the repaired reducer. Do not use 64/65 originals.
+No H/I policy, omega/RMS, costs, physics or J1-J7 changes are authorized.
 
 Do not widen omega, rescale RMS, add resource-specific inherited coefficients,
 alter K80/P80/F108 or reuse 56/57/58/59. Selection, validation, reserve and
