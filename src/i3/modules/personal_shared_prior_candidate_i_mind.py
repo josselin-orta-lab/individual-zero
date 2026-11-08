@@ -140,6 +140,14 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
         self._observer_first_forecast = deepcopy(
             snap["observer_first_forecast"])
 
+    def _clear_first_contact_learning_authority(self):
+        """Clear state that a detached first-contact rollback must never own."""
+        self._pending_branch = None
+        self._clear_branch_decision_settlement()
+        self._pending_opportunity_presence = None
+        self._pending_opportunity_commit = None
+        self.last = None
+
     def _cap_has_potential_unsupported_direct_trial(self, cap):
         """Conservative pre-perception gate for offered direct resource trials."""
         here = cap.get("here")
@@ -184,6 +192,7 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
             self, budget, *, body, offered_options,
             offered_families, nested, stage_work,
             reason):
+        self._clear_first_contact_learning_authority()
         self.candidate_i_probe_unfunded += 1
         info = {
             "option": None,
@@ -587,11 +596,7 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
         # Rollback may restore first-person perception/RNG state only. Any
         # learning authority belongs to the new real decision and must be
         # empty before the reversible probe baseline is captured.
-        self._pending_branch = None
-        self._clear_branch_decision_settlement()
-        self._pending_opportunity_presence = None
-        self._pending_opportunity_commit = None
-        self.last = None
+        self._clear_first_contact_learning_authority()
         probe_state = self._probe_state_snapshot()
 
         body = cap["body"]
@@ -739,6 +744,7 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
         # decision from the post-probe body. This prevents double perception.
         self.candidate_i_base_fallback_final += 1
         self._restore_probe_state(probe_state)
+        self._clear_first_contact_learning_authority()
         post_probe_body = tuple(budget.remaining)
         final_cap = self._cap_with_body(
             cap, post_probe_body)
