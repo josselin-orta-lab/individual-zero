@@ -42,18 +42,33 @@ The two previously frozen prerequisites now PASS:
 - composite-funding reducer repair: R0-R6 PASS, with 58/59 still permanently
   exposed/closed and no retroactive verdict.
 
-**Next work is still software-only:** implement exactly
-[STAGE1_CANDIDATE_I_RUNTIME_INTEGRATION.md](docs/STAGE1_CANDIDATE_I_RUNTIME_INTEGRATION.md).
+The first frozen runtime generalization
+[STAGE1_CANDIDATE_I_RUNTIME_INTEGRATION.md](docs/STAGE1_CANDIDATE_I_RUNTIME_INTEGRATION.md)
+is now **closed as DEFECT**. Its top-set-change relevance rule disagreed with
+#1170 on 700/1,128 one-trial states. Do not repair or merge that branch and do
+not reinterpret the failure as an organism result.
 
-Do not collapse this into a forced trial action. Every simultaneously offered
-unsupported water/food trial must enter one commensurable Candidate-F matrix,
-and a RELEVANT decision must still pass through the shared P1.3 Competition and
-ActionControl semantics. The one-trial path must reduce state-for-state to
-#1170/#1174. First-contact FALLBACK remains addend-free; post-contact remains
-#1163 unchanged.
+**Next work is still software-only:** implement exactly the prospectively
+frozen successor
+[STAGE1_CANDIDATE_I_RUNTIME_INTEGRATION_V2.md](docs/STAGE1_CANDIDATE_I_RUNTIME_INTEGRATION_V2.md).
 
-Do not allocate/open 60/61 yet. Do not widen omega, rescale RMS, add
-action/resource-specific inherited coefficients, alter K80 non-monotonicity,
+For direct unsupported first contact, relevance is now the frozen #1170
+action-trial-advantage semantics generalized symmetrically:
+
+- an unsupported trial's informed value must strictly beat its own no-trial
+  comparator;
+- the same informed value must strictly beat every other actually offered
+  option, including other unsupported trials;
+- ties fall back;
+- the without-information top-set map is diagnostic only.
+
+Do not add a positive-information condition: #1170 did not have one and doing
+so would break the required one-trial identity. Imagined K80 and post-contact
+#1163 keep their own already-frozen semantics.
+
+RELEVANT still must pass through shared P1.3 Competition/ActionControl, never a
+forced trial. FALLBACK remains addend-free. Do not allocate/open 60/61, widen
+omega, rescale RMS, add resource-specific inherited coefficients, alter K80,
 reuse 56/57 or 58/59, or start selection/validation/reserve/Stage 2.
 
 The full frozen Stage-1 genomic-omega Candidate-F gate has now completed.
