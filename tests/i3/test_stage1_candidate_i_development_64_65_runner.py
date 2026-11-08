@@ -59,13 +59,22 @@ class CandidateIDevelopment6465RunnerTests(unittest.TestCase):
 
         with patch.object(
                 d, "_git",
-                side_effect=("a" * 40, "", "src/i3/runtime/life.py")):
+                side_effect=("a" * 40, "", "", "src/i3/runtime/life.py")):
             with self.assertRaisesRegex(ValueError, "preserve"):
                 d.validate_launch(
                     "a" * 40, d.design.EXPECTED_PLAN_SHA256)
 
         with patch.object(
-                d, "_git", side_effect=("a" * 40, "", "")):
+                d, "_git",
+                side_effect=(
+                    "a" * 40,
+                    subprocess.CalledProcessError(1, ["git", "merge-base"]))):
+            with self.assertRaisesRegex(ValueError, "descend"):
+                d.validate_launch(
+                    "a" * 40, d.design.EXPECTED_PLAN_SHA256)
+
+        with patch.object(
+                d, "_git", side_effect=("a" * 40, "", "", "")):
             d.validate_launch(
                 "a" * 40, d.design.EXPECTED_PLAN_SHA256)
 
