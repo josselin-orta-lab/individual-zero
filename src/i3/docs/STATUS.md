@@ -141,10 +141,23 @@ An unfunded Stage-A restore could revive that stale `last` after the matching
 settlement receipt had been cleared. The branch-memory fail-closed guard then
 correctly rejected learning.
 
-The next admissible intervention is the prospectively frozen software-only
-[Candidate-I probe-restore authority repair](STAGE1_CANDIDATE_I_PROBE_AUTHORITY_REPAIR.md).
-It must separate reversible perceptual/RNG rollback state from decision/learning
-authority. No 62/63 original life may be used as an acceptance fixture.
+The prospectively frozen software-only
+[Candidate-I probe-restore authority repair](studies/stage1-candidate-i-probe-authority-repair/RESULTS.md)
+now returns **`CANDIDATE_I_PROBE_AUTHORITY_REPAIR_PASS`** on repair-code
+authority `486ec9fede132e817eae11ab6576e6e79e0bfac8`, Actions
+`42508586491`, Python 3.11/3.12. U0-U9 all pass. Rollback snapshots no
+longer own `last`, branch settlement or pending learning authority; unfunded
+exits restore only reversible first-person state, while FALLBACK/RELEVANT create
+fresh current-decision authority.
+
+60/61 and 62/63 remain permanently exposed and closed with no J1-J7 verdict.
+
+After two distinct live engineering stops, **do not freeze 64/65 yet**. The next
+admissible intervention is a prospectively frozen software/already-exposed
+lifecycle-custody stress gate spanning consecutive decisions, learning,
+branch/opportunity storage, Candidate-I native/omega0, Candidate-H post-contact
+and revision reduction. It may use already-exposed DEVELOPMENT fixtures only,
+never 60/61 or 62/63 originals as acceptance data, and may open no fresh World.
 
 ## Current handoff: 58/59 exposed, no Candidate-H continuation verdict
 
