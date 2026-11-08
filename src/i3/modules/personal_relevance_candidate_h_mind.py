@@ -204,6 +204,8 @@ class PersonalRelevanceCandidateHMind(PersonalRecurrenceCandidateGMind):
         info["candidate_h_probe_phase"] = stage_a["phase"]
         info["candidate_h_probe_funding"] = stage_a["funding"]
         info["candidate_h_stage_a_work"] = asdict(stage_a["work"])
+        info["candidate_h_stage_a_body_after"] = tuple(
+            stage_a["body_after_computation"])
         info["candidate_h_stage_b_work"] = asdict(stage_b_work)
         info["candidate_h_total_work"] = asdict(total_work)
         info["candidate_h_body_after_cognition"] = tuple(body_after)
@@ -240,6 +242,8 @@ class PersonalRelevanceCandidateHMind(PersonalRecurrenceCandidateGMind):
                 "candidate_h_probe_phase": stage_a["phase"],
                 "candidate_h_probe_funding": stage_a["funding"],
                 "candidate_h_stage_a_work": asdict(stage_a["work"]),
+                "candidate_h_stage_a_body_after": tuple(
+                    stage_a["body_after_computation"]),
                 "candidate_h_stage_b_work": asdict(CognitiveWork()),
                 "candidate_h_total_work": asdict(budget.work),
                 "candidate_h_body_after_cognition": tuple(budget.remaining),
