@@ -142,10 +142,28 @@ Neither classification authorizes:
 - a Candidate-H implementation in the same slice;
 - selection, validation, reserve, reference adoption or Stage 2.
 
+## Technical boundary correction after first implementation CI
+
+The first implementation run exposed the descriptive diagnostic metrics before
+failing an import-only assertion. The assertion had frozen the phrase "no World
+import", but existing `Mind` itself imports `DIRECTIONS` from
+`i3.modules.world`. Any Mind-based software simulation therefore loads that
+module even when it never constructs or reads a World.
+
+This boundary is corrected, before merge, to the intended authority boundary:
+**no World instance, generation, capture or hidden-world read**. The diagnostic
+module itself is lazy-imported so a plain import remains detached from World and
+runtime. Characterization may transitively load Mind's existing direction
+constants.
+
+No state, plan, recurrence history, projector, tolerance, observable,
+classification rule or result is changed after the first metrics were visible.
+
 ## Boundaries
 
-- no World import;
-- no runtime/life import;
+- no World instance, generation, capture or hidden-world read;
+- plain diagnostic-module import loads no World/runtime;
+- no runtime/life import or execution;
 - no evidence-branch read;
 - no hidden-world facts;
 - no action-specific survival rule;
