@@ -12,6 +12,49 @@ That integration changed documentation and priorities only. The subsequent
 Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
+## Latest software result: shared first-contact prior shows generic capacity
+
+8 November 2026: the prospectively frozen
+[shared first-contact prior gate](studies/stage1-shared-first-contact-prior/RESULTS.md)
+passes D0-D7 and returns:
+
+`SHARED_FIRST_CONTACT_PRIOR_CAPACITY_SHOWN`.
+
+At omega=0 the imagined K80 path remains exactly Candidate-H:
+**24 RELEVANT / 56 FALLBACK**, 40 declines, mean probe work 470.05 simulated
+steps/state. P80, the directly perceived first-drink path, rises from
+**48/80 RELEVANT at omega=0** to **56/80 at omega=0.25/0.5** and **72/80 at
+omega=1**. All Stage-A states and fallbacks are funded; renaming and shared-prior
+identity controls pass.
+
+The positive result needs a strong boundary. The newly relevant P80 states are
+**not water-deficit states**. At omega=0.25/0.5 they are energy=50 and
+vigilance=50; at omega=1 they are energy=20/30/40/50 and vigilance=40/50.
+The generic RMS prior is therefore demonstrating an inherited
+action-opportunity expectation dominated by its energy/vigilance scale, not a
+water-specific instinct.
+
+F108 carried-food relevance also rises and saturates at 108/108 by omega=0.5,
+while K80 imagined relevance is non-monotone (24 at omega=0, then 12/14/12 for
+positive omega 0.25/0.5/1). D7 confirms that this divergence occurs **after**
+the exact shared RMS prior; the imagined and perceived decision structures
+respond differently to the same inherited expectation.
+
+This is capacity evidence only. It does not authorize runtime adoption or a
+new live panel.
+
+**Next bounded Stage-1 work is software-only and split in two:**
+
+1. prospectively freeze a Candidate-H integration gate that uses the shared
+   prior for first contact and removes designer curiosity/prudence from the
+   first-contact FALLBACK route, while leaving post-contact #1163 unchanged;
+2. reproduce and repair the 58/59 `resource processing status disagreement`
+   on synthetic/software fixtures only, without rerunning exposed 58/59.
+
+Only after both software boundaries pass may a fresh DEVELOPMENT comparison be
+frozen. Do not widen omega, rescale the RMS prior, target water explicitly or
+open Stage 2 to make the result look more biological.
+
 ## Current handoff: 58/59 exposed, no Candidate-H continuation verdict
 
 8 November 2026: the frozen Candidate-H DEVELOPMENT 58/59 transport opened
