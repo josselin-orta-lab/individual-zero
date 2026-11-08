@@ -145,11 +145,14 @@ def _summary(rows):
         ],
         "mean_work": _mean_work(rows),
         "max_work": _max_work(rows),
-        "actual_work_ceiling_violations": sum(
-            any(
-                row["work"][key] > row["forecast_work_ceiling"][key]
-                for key in row["work"])
-            for row in rows),
+        "actual_work_ceiling_violations": (
+            sum(
+                any(
+                    row["work"][key] > row["forecast_work_ceiling"][key]
+                    for key in row["work"])
+                for row in rows)
+            if all("forecast_work_ceiling" in row for row in rows)
+            else None),
     }
 
 
