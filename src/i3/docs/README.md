@@ -53,6 +53,23 @@ scientifically defensible; otherwise return to Stage-1 architecture design.
 
 No fresh scientific panel is authorized by this handoff.
 
+## Latest: exact separable projection cache passes its structural gate
+
+Frozen-before-code characterization
+([results](studies/stage1-separable-projection-cache/RESULTS.md)) finds that the
+255-step per-step projection can be decomposed into exact channel-local traces
+and reused inside one decision batch. Maximum pairwise decision bias is
+**2.22e-15**, projection-equivalent gap **1.33e-15**, and final-body error
+**0**. The frozen structural verdict is
+`SEPARABLE_EXACT_CACHE_STRUCTURAL_GATE_PASS`.
+
+Reuse is real: the 486-case grid records 6318 trace builds / 972 hits; the
+nonlinear #1150 set 250 builds / 50 hits. This is **not yet an affordability
+claim**. I3 has no frozen physical price for a channel-local distress sample,
+so the next slice must freeze storage/build/read accounting and run the #1146
+kernel under a real `CognitiveBudget`. No runtime mode, World or life is
+authorized.
+
 ## Latest: two cheap consistent-projection ideas fail feasibility
 
 Declared exploratory probes, software only
