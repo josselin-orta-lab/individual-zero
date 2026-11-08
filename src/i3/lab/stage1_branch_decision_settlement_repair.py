@@ -105,6 +105,39 @@ def _commit_through_mind(kind, physical, b1, expected):
     }
 
 
+def _candidate_producer_receipt(kind):
+    body = (80.0, 80.0, 40.0, 80.0, 80.0)
+    cap = {
+        "body": body,
+        "here": (kind == "candidate_i", ()),
+        "neighbors": (None, None, None, None),
+        "inventory": (),
+    }
+    if kind == "candidate_h":
+        mind = PersonalRelevanceCandidateHMind(midpoint(), 306)
+    elif kind == "candidate_i":
+        mind = PersonalSharedPriorCandidateIMind(midpoint(), 307)
+    else:
+        raise ValueError("unknown candidate producer")
+    budget = CognitiveBudget(body, LAWS)
+    result = mind.decide(cap, budget)
+    start = mind._branch_decision_start_body
+    work = mind._branch_decision_work
+    return {
+        "funding": result[3].get("funding"),
+        "route": (
+            result[3].get("candidate_h_route")
+            if kind == "candidate_h"
+            else result[3].get("candidate_i_route")),
+        "start_matches": tuple(start) == body if start is not None else False,
+        "work_matches": work == result[2] == budget.work,
+        "stage_a_paid": (
+            result[3].get(
+                "candidate_h_stage_a_work",
+                result[3].get("candidate_i_stage_a_work"))),
+    }
+
+
 def _missing_receipt_fails_closed(physical, b1):
     mind = ReferenceBranchMemoryMind(midpoint(), 304)
     mind.last = (tuple(b1), ("attendre",), "attendre", None)
@@ -179,6 +212,10 @@ def characterize():
         "candidate_h", physical, b1, expected)
     candidate_i = _commit_through_mind(
         "candidate_i", physical, b1, expected)
+    candidate_h_producer = _candidate_producer_receipt(
+        "candidate_h")
+    candidate_i_producer = _candidate_producer_receipt(
+        "candidate_i")
     missing = _missing_receipt_fails_closed(
         physical, b1)
     shadow = _upper_cost_shadow_identity(
@@ -209,7 +246,11 @@ def characterize():
             candidate_h["branch_records"] == 1
             and candidate_i["branch_records"] == 1
             and candidate_h["settlement_consumed"]
-            and candidate_i["settlement_consumed"]),
+            and candidate_i["settlement_consumed"]
+            and candidate_h_producer["start_matches"]
+            and candidate_h_producer["work_matches"]
+            and candidate_i_producer["start_matches"]
+            and candidate_i_producer["work_matches"]),
         "B6_prepaid_store_exact": direct["store_work_exact"],
         "B7_missing_receipt_fails_closed": missing,
         "B8_upper_cost_shadow_unchanged": all(shadow.values()),
@@ -243,6 +284,8 @@ def characterize():
         "reference": reference,
         "candidate_h": candidate_h,
         "candidate_i": candidate_i,
+        "candidate_h_producer": candidate_h_producer,
+        "candidate_i_producer": candidate_i_producer,
         "upper_cost_shadow": shadow,
         "rules": rules,
         "verdict": (
