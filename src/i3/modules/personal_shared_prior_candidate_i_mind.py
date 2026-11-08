@@ -597,6 +597,7 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
         self.candidate_i_first_contact_decisions += 1
         probe_state = self._probe_state_snapshot()
         self._pending_branch = None
+        self._branch_decision_start_body = None
         self._pending_opportunity_presence = None
         self._pending_opportunity_commit = None
         self.last = None
@@ -688,7 +689,8 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
                         "offered_families"])
                 self._last_candidate_i_body = tuple(
                     budget.remaining)
-                self._branch_decision_work = budget.work
+                self._set_branch_decision_settlement(
+                    budget.body, budget.work)
                 if (self.simulation_mode,
                         self.projection_accounting) != (
                         "candidate_f",
@@ -781,7 +783,7 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
             raise RuntimeError(
                 "Candidate-I fallback cumulative body mismatch")
 
-        self._branch_decision_work = total
+        self._set_branch_decision_settlement(budget.body, total)
         if (self.simulation_mode,
                 self.projection_accounting) != (
                 "reference", "chunk_end"):
