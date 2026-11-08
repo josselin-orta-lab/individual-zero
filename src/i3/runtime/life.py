@@ -38,6 +38,7 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
             "personal_recurrence_candidate_g_v1",
             "personal_relevance_candidate_h_v1",
             "personal_shared_prior_candidate_i_v1",
+            "personal_shared_prior_candidate_i_omega0_ablation_v1",
             "candidate_f_shadow_upper_cost_reference_controller_v1"):
         raise ValueError("unknown decision policy")
     if decision_policy != "reference" and (
@@ -185,6 +186,24 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
             "td_memory": "P1.3_unchanged",
             "motor_authority": "P1.3_COMPETITION_AND_ACTION_CONTROL",
         }
+    elif decision_policy == "personal_shared_prior_candidate_i_omega0_ablation_v1":
+        manifest["experimental_policy"] = {
+            "name": decision_policy,
+            "scope": "DEVELOPMENT_60_61_SAME_GENOME_OMEGA0_CONTROL",
+            "architecture":
+                "shared_prior_relevance_then_shared_competition_control_v1",
+            "candidate_class": "PersonalSharedPriorCandidateIMind",
+            "native_genome_omega": genome["genes"]["omega"],
+            "applied_first_contact_omega": 0.0,
+            "omega_source": "SAME_GENOME_SOFTWARE_ABLATION",
+            "omega_use": "UNSUPPORTED_FIRST_CONTACT_ONLY",
+            "only_allowed_difference": "first_contact_omega_override_0.0",
+            "fallback_final":
+                "complete_P1.3_base_scores_discard_both_bonus_terms",
+            "post_contact": "candidate_h_1163_semantics_unchanged",
+            "persistent_simulation_mode": "reference",
+            "persistent_projection_accounting": "chunk_end",
+            "motor_authority": "P1.3_COMPETITION_AND_ACTION_CONTROL"}
     elif decision_policy == "candidate_f_shadow_upper_cost_reference_controller_v1":
         manifest["experimental_policy"] = {
             "name": decision_policy,
@@ -209,6 +228,7 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
         from i3.runtime.resource_observer import ResourceObserver
         resource_observer = ResourceObserver()
     mind_type = Mind
+    mind_kwargs = {}
     if decision_policy == "local_information_v1":
         from i3.modules.information_mind import InformationMind
         mind_type = InformationMind
@@ -235,10 +255,15 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
         from i3.modules.personal_relevance_candidate_h_mind import (
             PersonalRelevanceCandidateHMind)
         mind_type = PersonalRelevanceCandidateHMind
-    elif decision_policy == "personal_shared_prior_candidate_i_v1":
+    elif decision_policy in (
+            "personal_shared_prior_candidate_i_v1",
+            "personal_shared_prior_candidate_i_omega0_ablation_v1"):
         from i3.modules.personal_shared_prior_candidate_i_mind import (
             PersonalSharedPriorCandidateIMind)
         mind_type = PersonalSharedPriorCandidateIMind
+        if decision_policy == (
+                "personal_shared_prior_candidate_i_omega0_ablation_v1"):
+            mind_kwargs["first_contact_omega_override"] = 0.0
     elif decision_policy == "candidate_f_shadow_upper_cost_reference_controller_v1":
         from i3.modules.candidate_f_upper_cost_reference_controller import (
             CandidateFUpperCostReferenceController)
@@ -248,7 +273,8 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
                                                observer_resource_acquisition or
                                                observer_full_competition),
                 observer_full_competition=observer_full_competition,
-                score_addend_mode=score_addend_mode)
+                score_addend_mode=score_addend_mode,
+                **mind_kwargs)
     head = sha256(json.dumps([genome_digest(genome), spec.name, life_seed, horizon],
                              separators=(",", ":")).encode()).hexdigest()
     trace = []
@@ -419,6 +445,7 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
             "personal_recurrence_candidate_g_v1",
             "personal_relevance_candidate_h_v1",
             "personal_shared_prior_candidate_i_v1",
+            "personal_shared_prior_candidate_i_omega0_ablation_v1",
             "candidate_f_shadow_upper_cost_reference_controller_v1"):
         out["experimental_policy"] = dict(manifest["experimental_policy"])
         out["branch_effect_memory"] = {
@@ -497,7 +524,9 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
                 "omega_source": "NONE_PERSONAL_ONLY",
                 "score_sharing":
                     "NONE_DOUBLE_COMPUTATION_INTENTIONAL"}
-        if decision_policy == "personal_shared_prior_candidate_i_v1":
+        if decision_policy in (
+                "personal_shared_prior_candidate_i_v1",
+                "personal_shared_prior_candidate_i_omega0_ablation_v1"):
             if (mind.simulation_mode, mind.projection_accounting) != (
                     "reference", "chunk_end"):
                 raise RuntimeError(
@@ -530,6 +559,16 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
                     "CANDIDATE_H_1163_UNCHANGED",
                 "motor_authority":
                     "P1.3_COMPETITION_AND_ACTION_CONTROL"}
+            if decision_policy == (
+                    "personal_shared_prior_candidate_i_omega0_ablation_v1"):
+                if mind.first_contact_omega != 0.0:
+                    raise RuntimeError(
+                        "Candidate-I omega0 runtime control leaked native omega")
+                out["candidate_i"].update({
+                    "native_genome_omega": genome["genes"]["omega"],
+                    "applied_first_contact_omega": 0.0,
+                    "omega_source": "SAME_GENOME_SOFTWARE_ABLATION",
+                    "omega_ablation": "FIRST_CONTACT_ONLY_SAME_GENOME"})
         if decision_policy == "reference_frontier_information_v1":
             out["frontier_information"] = {
                 "scope": "one_generic_new_cell_water_only",
