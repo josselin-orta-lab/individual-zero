@@ -220,9 +220,17 @@ V0-V8 all pass on the generic paid-Stage-A / zero-Stage-B
 This is engineering readiness only. 60/61, 62/63 and 64/65 remain permanently
 exposed/closed with no J1-J7 verdict.
 
-The next admissible intervention is now only to **prospectively freeze a new
-disjoint Candidate-I DEVELOPMENT successor**. No fresh World is authorized by
-the V2 PASS itself.
+The next disjoint Candidate-I DEVELOPMENT successor is now prospectively frozen
+in
+[Candidate-I 66/67](studies/stage1-candidate-i-development-66-67/PROTOCOL.md).
+It uses DEVELOPMENT indices **66/67**, world seeds **2066/2067**, G0 seeds
+**907/908**, life-seed namespace **7,510,000**, horizon 400 and the same four
+arms. J1-J7 are byte-identical to 60/61, 62/63 and 64/65. Canonical plan digest:
+`bf1d87a7944b334ca0b4bccff43677c06071d5638ed352a3c1cd045096d77d26`.
+
+**This freeze does not open a World.** The next admissible work is only a
+source-locked runner/reducer plus already-exposed/software preflight requiring
+the V2 PASS. Actual exposure must remain a separate reviewed one-shot transport.
 
 ## Current handoff: 58/59 exposed, no Candidate-H continuation verdict
 
