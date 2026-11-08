@@ -12,6 +12,39 @@ That integration changed documentation and priorities only. The subsequent
 Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
+
+## World-opening moratorium: ADR-0017
+
+9 November 2026: the owner accepted
+[ADR-0017](../../../docs/decisions/ADR-0017-i3-moratoire-deux-phases-repetition-scellee.md)
+after five consecutive DEVELOPMENT pilots, 58/59 through 66/67, opened and
+closed on engineering defects without an H1-H6 or J1-J7 verdict. Three stops
+occurred during reduction after a complete original had already been archived.
+This is recorded as **DRIFT DETECTED** in the execution method, not as a
+scientific result about Candidate-H or Candidate-I.
+
+**Effective at ADR-0017 merge: no new I3 World index may open in development,
+selection, validation or reserve.** Software-only work, read-only analysis of
+already-archived originals under existing boundaries, and sealed engineering
+rehearsals remain allowed. The already-frozen lifecycle-custody stress v3 W0-W9
+is therefore still admissible because it opens no World.
+
+The moratorium can be lifted only after all four conditions hold:
+
+1. living-panel execution is split into generation (G) and reduction (R);
+2. a disjoint, permanently non-evidentiary `engineering` cohort exists;
+3. the exact SHA of the next intended transport passes a full-scale sealed
+   rehearsal through the same G/R pipeline;
+4. the owner records the lift in this file.
+
+Reduction defects after a complete sealed generation no longer authorize new
+lives. They enter `REDUCTION_DEFECT_PENDING_REPAIR`, allow at most two blind
+reducer-repair cycles against immutable originals, and never permit changes to
+scientific rules, thresholds, arms, seeds or original bytes.
+
+58/59, 60/61, 62/63, 64/65 and 66/67 remain permanently closed and are not
+retroactively completed.
+
 ## Latest software result: shared first-contact prior shows generic capacity
 
 8 November 2026: the prospectively frozen
