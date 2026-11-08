@@ -124,7 +124,7 @@ class ReferenceFrontierInformationMind(ReferenceBranchMemoryMind):
             if competition is not None:
                 diag["competition_witness"] = competition
             info["observer"] = diag
-        self._branch_decision_work = budget.work
+        self._set_branch_decision_settlement(budget.body, budget.work)
         return action, param, budget.work, info
 
     def decide(self, cap, budget: CognitiveBudget):
