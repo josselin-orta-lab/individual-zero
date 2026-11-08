@@ -61,7 +61,8 @@ class BranchDecisionSettlementRepairTests(unittest.TestCase):
                 self.report[name]["settlement_consumed"])
         self.assertTrue(
             self.report["rules"][
-                "B7_missing_receipt_fails_closed"])
+                "B7_missing_or_stale_receipt_fails_closed"])
+        self.assertTrue(self.report["stale_receipt_replaced"])
 
     def test_upper_cost_shadow_keeps_its_local_reference_interval(self):
         shadow = self.report["upper_cost_shadow"]
