@@ -13,6 +13,33 @@ P3 as not executed are historical, not the present source/evidence state.
 remains the governing direction. P1.3 on funded v2 remains the reference and I3
 remains unregistered.
 
+
+[ADR-0017](../../docs/decisions/ADR-0017-i3-moratoire-deux-phases-repetition-scellee.md)
+now governs execution custody. **Do not open any new I3 World index in any
+cohort.** This moratorium supersedes every older handoff below that would
+otherwise authorize proposing, freezing or executing a fresh lived panel.
+
+Allowed work during the moratorium:
+
+- execute/finalize software-only gates such as lifecycle-custody stress v3;
+- inspect already-archived originals only within their existing read-only
+  forensic boundaries;
+- implement the two-phase G/R living-panel pipeline;
+- add a disjoint non-evidentiary `engineering` cohort;
+- implement and run full-scale sealed rehearsals on that engineering cohort.
+
+For any future living panel after the moratorium, generation must finish and
+seal all originals before reduction starts. A generation exception still stops
+and closes the panel. A reduction exception after sealed generation becomes
+`REDUCTION_DEFECT_PENDING_REPAIR`: no partial result may be read or published,
+no new life may be generated, and at most two blind reducer-repair cycles may
+rerun reduction against byte-identical originals.
+
+Do not lift the moratorium merely because software tests or W0-W9 pass. Lifting
+requires the two-phase pipeline, declared engineering cohort, a full-scale
+sealed rehearsal PASS on the exact next transport SHA, and an explicit owner
+entry in `docs/STATUS.md`.
+
 **Current handoff after 58/59 exposure:** run `42484179997` opened the frozen
 Candidate-H DEVELOPMENT panel and then stopped on a post-life reduction
 engineering error. The evidence branch is
