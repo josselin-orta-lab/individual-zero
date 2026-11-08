@@ -759,6 +759,13 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
         finally:
             self.score_addend_mode = old_mode
 
+        # The detached Stage-A perception was intentionally stripped of
+        # learning authority before fallback. The one real final perception
+        # now owns the ordinary current-step opportunity-presence receipt,
+        # exactly as Candidate-H does on its P1.3 fallback.
+        if final[3].get("funding") != "NO_PROCESSING_BUDGET":
+            self._capture_opportunity_presence()
+
         budget.spend(final_budget.work)
         total = budget.work
         expected = _add(
