@@ -112,21 +112,33 @@ used the completed outer-loop `level=50` instead of each row's stored level.
 The corrected immutable-row check passes on Python 3.11/3.12 without changing
 Candidate-H or H0-H5.
 
-**Next software-only work:** do not integrate a runtime mind yet. Freeze and
-falsify the same support-versus-relevance distinction **after personal drink
-effect knowledge exists**, using the existing paid actionable-belief frontier
-mechanism. Required constraints:
+The post-contact relevance gate now also passes
+([result](docs/studies/stage1-candidate-h-post-contact-relevance/RESULTS.md)):
+68/80 states are decision-relevant; the remaining 12 have positive information
+but no top-set effect, and all 12/12 fund an exact P1.3 fallback with zero
+pre-probe top changes.
 
-1. no omega and no recurrence proxy once personal effect knowledge exists;
-2. pay post-contact information relevance before changing ordinary projection;
-3. non-relevant post-contact states must fall back to a complete P1.3 decision,
-   with both computations charged;
-4. relevant states must keep one commensurate Candidate-F geometry;
-5. no World/life, no 56/57 read, no action-specific rescue;
-6. a software PASS still authorizes no runtime or fresh panel.
+**Next software-only work:** freeze a unified Candidate-H runtime integration
+gate before code. Do not invent a third relevance definition. The integration
+must reuse the already-passed first-contact and post-contact rules verbatim.
 
-Only after first-contact and post-contact relevance semantics both pass bounded
-software gates may a unified runtime integration question be proposed.
+Required constraints:
+
+1. persistent/default mode remains P1.3 `reference/chunk_end`;
+2. first contact uses personal recurrence, omega=0, and the #1162 strict
+   relevance rule;
+3. post contact uses only personally learned actionable belief, no recurrence
+   proxy, and the post-contact top-effect relevance rule;
+4. every fallback pays the probe plus a complete P1.3 final decision;
+5. every relevant final decision uses one commensurate Candidate-F geometry;
+6. no Candidate-F projector leakage after decision exit;
+7. exact forecast ceilings, work/body receipts and no hidden reimbursement;
+8. no World/life, no 56/57 read, no engine registration;
+9. software PASS may authorize only a future fresh DEVELOPMENT protocol, never
+   selection/validation/reserve directly.
+
+Do not reopen the semantics that already passed unless a concrete integration
+contradiction is observed.
 
 **History after #1154:** exact cache/reward reuse cannot reach Candidate-F cost
 parity even under an impossible free-memo lower bound
