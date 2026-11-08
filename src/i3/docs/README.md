@@ -5,6 +5,24 @@ The [engine contract](../engine.json) has no active entrypoints; the
 [registry](../../../config/engine-registry.json) keeps I1 active.
 A green software test is not a scientific GO.
 
+## Latest: unified Candidate-H integration passes in software
+
+The frozen
+[unified integration result](studies/stage1-candidate-h-unified-integration/RESULTS.md)
+passes U0-U9 under Python 3.11 and 3.12.
+
+The final fixed 60-decision panel exercises every required route:
+**37 P1.3 fallbacks and 23 Candidate-F finals**, with zero integration errors,
+zero omega-dependent outputs and exact P1.3 fallback identity. The first-contact
+24/56 and post-contact 68/12 relevance classifications are preserved
+state-for-state.
+
+Verdict:
+`CANDIDATE_H_UNIFIED_SOFTWARE_INTEGRATION_PASS`.
+
+Candidate-H is still software-only and unregistered. The PASS authorizes only
+the next step: freeze a **fresh DEVELOPMENT protocol before any new World/life**.
+
 ## Latest: Candidate-H post-contact relevance also passes in software
 
 The frozen
