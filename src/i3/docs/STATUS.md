@@ -246,12 +246,29 @@ complete Candidate-H finals. A legitimate nested Candidate-H
 `PROBE_UNFUNDED` therefore fails before Candidate-H's already-valid processing
 semantics are applied.
 
-The next intervention is prospectively frozen in
-[STAGE1_POST_CONTACT_PROBE_REDUCER_REPAIR.md](STAGE1_POST_CONTACT_PROBE_REDUCER_REPAIR.md).
-Q0-Q9 are software-only. The repair must support nested Candidate-H
-`PROBE_UNFUNDED` under both incomplete funding classes, preserve complete
-post-contact/direct-H semantics, fail closed on malformed phase receipts, and
-must not use a 66/67 original as an acceptance fixture.
+The prospectively frozen
+[post-contact probe reducer repair](studies/stage1-post-contact-probe-reducer-repair/RESULTS.md)
+now returns **`POST_CONTACT_PROBE_REDUCER_REPAIR_PASS`** on tested source
+`78d09c98127fb55aebb5eca729fa4ce4795d007a`, Actions
+`42533323063`, merged authority
+`4bcb2f28488f289625558960cd93c7c65c69b107`. Python 3.11/3.12 pass;
+the 3.11 suite runs **1031 tests**. Q0-Q9 all pass.
+
+Direct Candidate-H and Candidate-I post-contact now share one authenticated
+processing-owner definition: complete H finals use Stage B; H
+`PROBE_UNFUNDED` accepts only the two incomplete nested funding classes,
+requires zero Stage B and uses authenticated Stage A. Total physical work is
+unchanged.
+
+66/67 remain permanently exposed/closed with no J1-J7 verdict.
+
+The next intervention is now prospectively frozen in
+[STAGE1_CANDIDATE_I_LIFECYCLE_CUSTODY_STRESS_V3.md](STAGE1_CANDIDATE_I_LIFECYCLE_CUSTODY_STRESS_V3.md).
+It uses actual production H/I classes on a fixed ten-value energy ladder and
+must naturally expose both post-contact nested-H `NO_PROCESSING_BUDGET` and
+`NO_FUNDED_SCORE` routes, then pass those production receipts through the
+repaired reducer. It opens no World and may not retune the ladder after its
+first software exposure.
 
 ## Current handoff: 58/59 exposed, no Candidate-H continuation verdict
 
