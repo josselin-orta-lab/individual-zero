@@ -19,7 +19,7 @@ class CandidateHUnifiedIntegrationTests(unittest.TestCase):
     def setUpClass(cls):
         cls.report = U.characterize()
 
-    def test_import_has_no_world_or_runtime_life_authority(self):
+    def test_import_has_no_world_generation_or_runtime_life_authority(self):
         root = str(Path(__file__).resolve().parents[2] / "src")
         subprocess.run([
             sys.executable, "-c",
@@ -27,7 +27,8 @@ class CandidateHUnifiedIntegrationTests(unittest.TestCase):
             "import i3.modules.personal_relevance_candidate_h_mind; "
             "import i3.lab.stage1_candidate_h_unified_integration; "
             "assert 'i3.runtime.life' not in sys.modules; "
-            "assert 'i3.modules.world' not in sys.modules"
+            "assert 'i3.lab.worldgen' not in sys.modules; "
+            "assert 'i3.lab.p2_ecologies' not in sys.modules"
         ], check=True)
 
     def test_frozen_relevance_predicates_are_exact(self):
