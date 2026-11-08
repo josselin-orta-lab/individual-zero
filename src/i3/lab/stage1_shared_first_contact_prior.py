@@ -435,6 +435,71 @@ def _fallback_checks(rows):
     return failures, accounting, preprobe_changes
 
 
+def _phase_accounting_failures(rows):
+    failures = []
+    for row in rows:
+        stage = row["stage_a"]
+        stage_work = _work_from_dict(stage["work"])
+        try:
+            stage_body, _ = debit_cognition(
+                row["body"], BodyLaws(), stage_work)
+        except CognitiveFundingError:
+            failures.append({
+                "identity": row["identity"],
+                "reason": "STAGE_A_RECORDED_WORK_UNFUNDED"})
+            continue
+        if any(
+                abs(a - b) > TOL
+                for a, b in zip(
+                    stage_body, stage["body_after_computation"])):
+            failures.append({
+                "identity": row["identity"],
+                "reason": "STAGE_A_BODY_MISMATCH"})
+            continue
+
+        if row["status"] == "FALLBACK":
+            fallback_work = _work_from_dict(row["fallback"]["work"])
+            expected = _work_add(stage_work, fallback_work)
+            if _work_from_dict(row["combined_work"]) != expected:
+                failures.append({
+                    "identity": row["identity"],
+                    "reason": "COMBINED_WORK_SUM_MISMATCH"})
+                continue
+            try:
+                final, _ = debit_cognition(
+                    row["body"], BodyLaws(), expected)
+            except CognitiveFundingError:
+                failures.append({
+                    "identity": row["identity"],
+                    "reason": "COMBINED_RECORDED_WORK_UNFUNDED"})
+                continue
+            if any(
+                    abs(a - b) > TOL
+                    for a, b in zip(
+                        final, row["combined_body_after_computation"])):
+                failures.append({
+                    "identity": row["identity"],
+                    "reason": "COMBINED_BODY_MISMATCH"})
+        elif row["status"] == "RELEVANT":
+            if _work_from_dict(row["combined_work"]) != stage_work:
+                failures.append({
+                    "identity": row["identity"],
+                    "reason": "RELEVANT_WORK_NOT_STAGE_A"})
+            elif any(
+                    abs(a - b) > TOL
+                    for a, b in zip(
+                        stage_body, row["combined_body_after_computation"])):
+                failures.append({
+                    "identity": row["identity"],
+                    "reason": "RELEVANT_BODY_MISMATCH"})
+        elif row["status"] == "FALLBACK_UNFUNDED":
+            if row["fallback"]["work"] != _work_dict(CognitiveWork()):
+                failures.append({
+                    "identity": row["identity"],
+                    "reason": "UNFUNDED_FALLBACK_SPENT_WORK"})
+    return failures
+
+
 def _summary(rows):
     return {
         "states": len(rows),
@@ -515,11 +580,15 @@ def characterize():
             ("F108", perceived_food)):
         for omega, rows in arms.items():
             ident, accounting, changed = _fallback_checks(rows)
+            phase_accounting = _phase_accounting_failures(rows)
             fallback_identity_failures.extend(
                 [{"path": path, "omega": omega, **row} for row in ident])
             accounting_failures.extend(
                 [{"path": path, "omega": omega, **row}
                  for row in accounting])
+            accounting_failures.extend(
+                [{"path": path, "omega": omega, **row}
+                 for row in phase_accounting])
             preprobe_changes.extend(
                 [{"path": path, "omega": omega, "identity": row}
                  for row in changed])
