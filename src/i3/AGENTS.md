@@ -102,14 +102,19 @@ now **PASSes U0-U9** on repair-code authority
 opportunity commits. A funded FALLBACK must then recreate opportunity-
 presence authority from its one real final perception before learning.
 
-**Do not allocate another fresh DEVELOPMENT panel yet.** Two consecutive fresh
-panels exposed different lifecycle-custody defects. The next gate is now
-prospectively specified in
-[STAGE1_CANDIDATE_I_LIFECYCLE_CUSTODY_STRESS.md](docs/STAGE1_CANDIDATE_I_LIFECYCLE_CUSTODY_STRESS.md).
-Implement it exactly: 9 engineering smokes on already-exposed P2 DEVELOPMENT
-index 0 plus the frozen no-World F/R/N/P/Z micro-cycles. L0-L11 are custody
-rules only. Do not add survival, uptake, route-count or omega-direction
-acceptance criteria, and do not use 60/61 or 62/63 originals as fixtures.
+The frozen
+[Candidate-I lifecycle-custody stress](docs/studies/stage1-candidate-i-lifecycle-custody-stress/RESULTS.md)
+now **PASSes L0-L11** on tested source
+`1bdca27ae95509e9b54817bd25b2c0a21872c069`, Actions
+`42518978398`, merged authority
+`5e85106157afa6c600dd1983efde94fb80032977`. Nine already-exposed
+DEVELOPMENT-0 smokes plus the F/R/N/P/Z lifecycle micro-cycles complete with
+zero custody failure.
+
+**Next work may prospectively freeze a fresh disjoint Candidate-I DEVELOPMENT
+successor, but must not open it in the protocol PR.** Preserve the exact four
+arms and J1-J7 from 60/61 and 62/63. Do not tune from partial exposed evidence.
+The runner/preflight and the one-shot transport remain separate later steps.
 
 Do not widen omega, rescale RMS, add resource-specific inherited coefficients,
 alter K80/P80/F108 or reuse 56/57/58/59. Selection, validation, reserve and
