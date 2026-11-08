@@ -197,6 +197,10 @@ def paid_unknown_action_trial_value(
                 "omega": prior.get("innate_mean_shift_omega"),
                 "branch_deltas": tuple(
                     tuple(branch.probe_delta) for branch in branches),
+                "action_identity_used": prior.get("action_identity_used"),
+                "token_identity_used": prior.get("token_identity_used"),
+                "body_need_used": prior.get("body_need_used"),
+                "world_access": prior.get("world_access"),
             },
             "no_trial_value": None,
             "trial_frozen_value": None,
@@ -340,6 +344,10 @@ def paid_unknown_action_trial_value(
             "omega": prior.get("innate_mean_shift_omega"),
             "branch_deltas": tuple(
                 tuple(branch.probe_delta) for branch in branches),
+            "action_identity_used": prior.get("action_identity_used"),
+            "token_identity_used": prior.get("token_identity_used"),
+            "body_need_used": prior.get("body_need_used"),
+            "world_access": prior.get("world_access"),
         },
         "no_trial_value": no_trial_value,
         "no_trial_best_continuations": no_trial_best,
