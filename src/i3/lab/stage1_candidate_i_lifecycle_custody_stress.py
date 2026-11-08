@@ -762,7 +762,8 @@ def characterize():
             if passed else
             "CANDIDATE_I_LIFECYCLE_CUSTODY_STRESS_DEFECT"),
         "J1_J7_verdict_authorized": False,
-        "new_live_panel_authorized": passed,
+        "new_live_protocol_proposal_authorized": passed,
+        "new_live_panel_execution_authorized": False,
         "stage2_authorized": False,
     }
 
