@@ -101,6 +101,28 @@ analysis or a new software-only architecture falsifier. Preserve no-omega,
 personal-observation-only cognition, paid work and P1.3 reference. Selection,
 validation, reserve, adoption and Stage 2 remain blocked.
 
+The next software-only falsifier is now justified by
+[the support-vs-relevance diagnostic](docs/studies/stage1-candidate-g-support-vs-relevance/RESULTS.md):
+Candidate-G's support-triggered projector switch changes the ordinary top set in
+**20/56 support-only nonselected states** and produces 4 unique-winner changes.
+Classification:
+`SUPPORT_TRIGGER_ORDINARY_POLICY_DRIFT_PRESENT`.
+
+Do **not** respond by tuning recurrence support or by selectively keeping
+favorable Candidate-F scores. Freeze a relevance-gated fallback before code:
+
+1. no support: ordinary P1.3 decision unchanged;
+2. support present: pay the canonical Candidate-F information probe first;
+3. if the epistemic trial is not strictly advantageous, discard its policy
+   effect and pay a complete P1.3 final decision from the same body/state;
+4. if it is strictly advantageous, the final actual decision must use one
+   commensurate Candidate-F score geometry for all options;
+5. both passes are physically charged when fallback occurs;
+6. no omega, no World/life, no action-specific rule, no hidden rescue.
+
+First falsify this only on established software fixtures. No live authorization
+follows from a software pass.
+
 **History after #1154:** exact cache/reward reuse cannot reach Candidate-F cost
 parity even under an impossible free-memo lower bound
 ([results](docs/studies/stage1-distress-reuse-diagnostic/RESULTS.md)). That route

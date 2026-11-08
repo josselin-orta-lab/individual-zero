@@ -1,0 +1,94 @@
+{
+  "schema": "i3-stage1-candidate-g-support-vs-relevance-summary/v1",
+  "classification": "SUPPORT_TRIGGER_ORDINARY_POLICY_DRIFT_PRESENT",
+  "source": {
+    "protocol": "STAGE1_CANDIDATE_G_SUPPORT_VS_RELEVANCE.md",
+    "first_metrics_run": 42477702730,
+    "confirming_run": 42477882554,
+    "confirming_sha": "920869c3fbd68124f7d7468c7bd21698d5dc1f0d",
+    "python": [
+      "3.11",
+      "3.12"
+    ]
+  },
+  "kernel": {
+    "evaluated": 80,
+    "strict_epistemic_selected": 24,
+    "support_only_nonselected": 56,
+    "declined": 40,
+    "mean_simulated_steps": 470.05,
+    "actual_work_ceiling_violations": 0
+  },
+  "ordinary": {
+    "all": {
+      "states": 80,
+      "top_set_changes": 44,
+      "unique_winner_changes": 12,
+      "reference_mean_simulated_steps": 37,
+      "candidate_f_mean_simulated_steps": 371.55,
+      "max_pairwise_gap_shift": 0.026429932777191745
+    },
+    "strict_selected": {
+      "states": 24,
+      "top_set_changes": 24,
+      "unique_winner_changes": 8,
+      "reference_mean_simulated_steps": 37,
+      "candidate_f_mean_simulated_steps": 378,
+      "max_pairwise_gap_shift": 0.011180788660982044
+    },
+    "support_only_nonselected": {
+      "states": 56,
+      "top_set_changes": 20,
+      "unique_winner_changes": 4,
+      "reference_mean_simulated_steps": 37,
+      "candidate_f_mean_simulated_steps": 368.7857142857143,
+      "candidate_f_max_simulated_steps": 448,
+      "max_pairwise_gap_shift": 0.026429932777191745,
+      "changed_state_pattern": {
+        "water": {
+          "levels": [
+            20,
+            30,
+            40,
+            50
+          ],
+          "horizons": [
+            4,
+            6,
+            8,
+            12
+          ],
+          "count": 16
+        },
+        "integrity": {
+          "levels": [
+            30
+          ],
+          "horizons": [
+            4,
+            6,
+            8,
+            12
+          ],
+          "count": 4
+        }
+      }
+    }
+  },
+  "interpretation": {
+    "support_is_not_equivalent_to_relevance": true,
+    "support_trigger_changes_ordinary_policy_without_strict_information_value": true,
+    "candidate_g_live_rescued": false
+  },
+  "authorizations": {
+    "candidate_h_same_pr": false,
+    "fresh_live_panel": false,
+    "reuse_56_57": false,
+    "selection": false,
+    "validation": false,
+    "reserve": false,
+    "reference_adoption": false,
+    "stage2": false,
+    "software_only_next_falsifier": true
+  }
+}

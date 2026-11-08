@@ -12,6 +12,34 @@ That integration changed documentation and priorities only. The subsequent
 Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
+## Latest software diagnostic: support is not decision relevance
+
+8 November 2026: the declared
+[support-vs-relevance diagnostic](studies/stage1-candidate-g-support-vs-relevance/RESULTS.md)
+classifies **`SUPPORT_TRIGGER_ORDINARY_POLICY_DRIFT_PRESENT`**.
+
+On the frozen #1146 grid, personal recurrence support exists in all 80 states,
+but only 24 states strictly select the epistemic trial. Among the remaining 56
+support-only states, switching the whole decision to the canonical Candidate-F
+projector changes the ordinary top option set in **20/56**, including **4 unique
+winner changes**. Across all states the top set changes in 44/80.
+
+The effect is not a small accounting detail: the four fixed ordinary plans cost
+37 simulated steps under P1.3 versus 368.79 on average under Candidate-F in the
+support-only states, with maximum pairwise ordinary score-gap shift 0.02643.
+
+This identifies a structural defect in Candidate-G's activation rule:
+**personal support is treated as if it already implied current decision
+relevance**. The accurate projector can therefore alter ordinary policy even
+when the information trial is not strictly advantageous.
+
+Candidate-G live remains closed and 56/57 remain exposed. The next admissible
+work is a prospectively frozen **software-only relevance-gated fallback**
+falsifier: pay to establish relevance, use P1.3 for the final ordinary decision
+when the epistemic trial is not strictly advantageous, and use one commensurate
+Candidate-F decision only when it is. Any fallback must pay both computations;
+no reimbursement, omega, action-specific rescue or fresh World/life panel.
+
 ## Current engineering handoff: Candidate-G 56/57 continuation FAIL
 
 8 November 2026: the prospectively frozen no-omega Candidate-G DEVELOPMENT

@@ -5,6 +5,26 @@ The [engine contract](../engine.json) has no active entrypoints; the
 [registry](../../../config/engine-registry.json) keeps I1 active.
 A green software test is not a scientific GO.
 
+## Latest: Candidate-G switches projection too early
+
+The declared
+[support-vs-relevance result](studies/stage1-candidate-g-support-vs-relevance/RESULTS.md)
+shows that **having personal recurrence support is not the same as having
+decision-relevant information**.
+
+On the frozen 80-state grid, 24 states strictly select the epistemic trial. Of
+the other 56 support-only states, the Candidate-F projector still changes the
+ordinary top option set in **20**, with 4 unique-winner changes. Across the full
+grid, ordinary top sets differ in 44/80 states.
+
+Classification:
+`SUPPORT_TRIGGER_ORDINARY_POLICY_DRIFT_PRESENT`.
+
+Candidate-G currently changes the geometry of every ordinary score as soon as
+an information path is merely supported. The next software-only architecture
+question is therefore a **paid relevance-gated fallback**, not another live
+panel or another projector optimization.
+
 ## Current handoff: Candidate-G live path closes on 56/57
 
 The frozen
