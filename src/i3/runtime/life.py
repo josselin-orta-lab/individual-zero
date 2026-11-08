@@ -36,6 +36,7 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
             "reference_frontier_information_v1",
             "genomic_omega_frontier_information_v1",
             "personal_recurrence_candidate_g_v1",
+            "personal_relevance_candidate_h_v1",
             "candidate_f_shadow_upper_cost_reference_controller_v1"):
         raise ValueError("unknown decision policy")
     if decision_policy != "reference" and (
@@ -131,6 +132,32 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
             "frontier_scope": "one_generic_new_cell_water_only",
             "food_information": "NOT_IMPLEMENTED",
             "multi_cell_joint_outcomes": "NOT_IMPLEMENTED"}
+    elif decision_policy == "personal_relevance_candidate_h_v1":
+        manifest["experimental_policy"] = {
+            "name": decision_policy,
+            "scope": "DEVELOPMENT_PILOT_NOT_STAGE1_GATE",
+            "architecture":
+                "paid_relevance_probe_then_complete_final_decision_v1",
+            "stage_a":
+                "detached_personal_relevance_probe_fully_paid",
+            "relevant_final":
+                "complete_candidate_f_geometry_from_post_probe_body",
+            "fallback_final":
+                "complete_P1.3_from_post_probe_body",
+            "score_sharing": "NONE_DOUBLE_COMPUTATION_INTENTIONAL",
+            "persistent_simulation_mode": "reference",
+            "persistent_projection_accounting": "chunk_end",
+            "first_contact":
+                "personal_recurrence_strict_relevance_omega0",
+            "post_contact":
+                "personal_actionable_belief_top_effect_relevance",
+            "omega_use": "NONE",
+            "branch_memory": "global18_recent_personal_effects_v1",
+            "opportunity_memory": "generic_onset_recurrence_latest3_v1",
+            "td_memory": "P1.3_unchanged",
+            "frontier_scope": "one_generic_new_cell_water_only",
+            "food_information": "NOT_IMPLEMENTED",
+            "multi_cell_joint_outcomes": "NOT_IMPLEMENTED"}
     elif decision_policy == "candidate_f_shadow_upper_cost_reference_controller_v1":
         manifest["experimental_policy"] = {
             "name": decision_policy,
@@ -177,6 +204,10 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
         from i3.modules.personal_recurrence_candidate_g_mind import (
             PersonalRecurrenceCandidateGMind)
         mind_type = PersonalRecurrenceCandidateGMind
+    elif decision_policy == "personal_relevance_candidate_h_v1":
+        from i3.modules.personal_relevance_candidate_h_mind import (
+            PersonalRelevanceCandidateHMind)
+        mind_type = PersonalRelevanceCandidateHMind
     elif decision_policy == "candidate_f_shadow_upper_cost_reference_controller_v1":
         from i3.modules.candidate_f_upper_cost_reference_controller import (
             CandidateFUpperCostReferenceController)
@@ -355,6 +386,7 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
             "reference_frontier_information_v1",
             "genomic_omega_frontier_information_v1",
             "personal_recurrence_candidate_g_v1",
+            "personal_relevance_candidate_h_v1",
             "candidate_f_shadow_upper_cost_reference_controller_v1"):
         out["experimental_policy"] = dict(manifest["experimental_policy"])
         out["branch_effect_memory"] = {
@@ -407,6 +439,32 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
                 "omega_source": "NONE_PERSONAL_RECURRENCE_ONLY",
                 "food_information": "NOT_IMPLEMENTED",
                 "multi_cell_joint_outcomes": "NOT_IMPLEMENTED"}
+        if decision_policy == "personal_relevance_candidate_h_v1":
+            if hasattr(mind, "first_contact_omega"):
+                raise RuntimeError(
+                    "Candidate-H runtime pilot acquired genomic omega")
+            if (mind.simulation_mode, mind.projection_accounting) != (
+                    "reference", "chunk_end"):
+                raise RuntimeError(
+                    "Candidate-H persistent projector leaked")
+            out["opportunity_recurrence_memory"] = {
+                "schema": "i3-opportunity-recurrence-runtime-summary/v1",
+                "recorded": mind.opportunity_records,
+                "snapshot": mind.opportunity_memory.snapshot(),
+                "decision_use":
+                    "FIRST_CONTACT_RELEVANCE_SUPPORT_ONLY"}
+            out["candidate_h_relevance"] = {
+                "schema": "i3-candidate-h-runtime-summary/v1",
+                "probes": mind.relevance_probes,
+                "probe_unfunded": mind.relevance_probe_unfunded,
+                "candidate_f_final": mind.relevance_candidate_final,
+                "p13_final": mind.relevance_reference_final,
+                "persistent_simulation_mode": mind.simulation_mode,
+                "persistent_projection_accounting":
+                    mind.projection_accounting,
+                "omega_source": "NONE_PERSONAL_ONLY",
+                "score_sharing":
+                    "NONE_DOUBLE_COMPUTATION_INTENTIONAL"}
         if decision_policy == "reference_frontier_information_v1":
             out["frontier_information"] = {
                 "scope": "one_generic_new_cell_water_only",
@@ -459,7 +517,8 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
                 [asdict(s) for s in mind.branch_memory._samples])
             if decision_policy in (
                     "reference_opportunity_memory_v1",
-                    "personal_recurrence_candidate_g_v1"):
+                    "personal_recurrence_candidate_g_v1",
+                    "personal_relevance_candidate_h_v1"):
                 out["opportunity_recurrence_sha256"] = digest(
                     mind.opportunity_memory.snapshot())
     if effect_readout != "full" or observer_decision_diagnostics:
