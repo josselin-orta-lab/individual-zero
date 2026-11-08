@@ -232,7 +232,7 @@ class PersonalRelevanceCandidateHMind(PersonalRecurrenceCandidateGMind):
         # 58/59 protocol. A probe-only failure must never retain learning
         # authority from the preceding physical action.
         self._pending_branch = None
-        self._branch_decision_start_body = None
+        self._clear_branch_decision_settlement()
         self._pending_opportunity_presence = None
         self._pending_opportunity_commit = None
         self.last = None
