@@ -154,12 +154,15 @@ recurrence storage no longer loses that lived observation after rollback.
 
 60/61 and 62/63 remain permanently exposed and closed with no J1-J7 verdict.
 
-After two distinct live engineering stops, **do not freeze 64/65 yet**. The next
-admissible intervention is a prospectively frozen software/already-exposed
-lifecycle-custody stress gate spanning consecutive decisions, learning,
-branch/opportunity storage, Candidate-I native/omega0, Candidate-H post-contact
-and revision reduction. It may use already-exposed DEVELOPMENT fixtures only,
-never 60/61 or 62/63 originals as acceptance data, and may open no fresh World.
+After two distinct live engineering stops, **do not freeze 64/65 yet**. The
+next intervention is now prospectively specified in
+[STAGE1_CANDIDATE_I_LIFECYCLE_CUSTODY_STRESS.md](STAGE1_CANDIDATE_I_LIFECYCLE_CUSTODY_STRESS.md).
+It freezes 9 non-scientific smokes on already-exposed P2 DEVELOPMENT index 0
+plus deterministic no-World micro-cycles for FALLBACK, RELEVANT,
+PROBE_UNFUNDED, post-contact and omega0 custody. L0-L11 judge only lifecycle,
+funding, memory, reducer and authority consistency. Survival, uptake, route
+frequency, revision latency and omega direction are explicitly non-criteria.
+No fresh DEVELOPMENT condition may open before this gate passes.
 
 ## Current handoff: 58/59 exposed, no Candidate-H continuation verdict
 
