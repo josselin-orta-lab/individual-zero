@@ -99,8 +99,9 @@ def _commit_through_mind(kind, physical, b1, expected):
         "branch_records": mind.branch_records,
         "delta": tuple(sample.delta),
         "matches_expected": tuple(sample.delta) == tuple(expected),
-        "settlement_consumed":
-            mind._branch_decision_start_body is None,
+        "settlement_consumed": (
+            mind._branch_decision_start_body is None
+            and mind._branch_decision_work == CognitiveWork()),
         "learning_work": learning.work,
     }
 
