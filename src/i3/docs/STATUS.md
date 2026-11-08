@@ -43,13 +43,10 @@ respond differently to the same inherited expectation.
 This is capacity evidence only. It does not authorize runtime adoption or a
 new live panel.
 
-**Next bounded Stage-1 work is software-only and split in two:**
+**Next bounded Stage-1 work is software-only and split in two, now prospectively frozen:**
 
-1. prospectively freeze a Candidate-H integration gate that uses the shared
-   prior for first contact and removes designer curiosity/prudence from the
-   first-contact FALLBACK route, while leaving post-contact #1163 unchanged;
-2. reproduce and repair the 58/59 `resource processing status disagreement`
-   on synthetic/software fixtures only, without rerunning exposed 58/59.
+1. execute [Candidate-I shared-prior integration](STAGE1_CANDIDATE_I_SHARED_PRIOR_INTEGRATION.md), which removes designer curiosity/prudence from first-contact FALLBACK while preserving #1163 post-contact semantics;
+2. execute the [composite-funding reducer repair](STAGE1_COMPOSITE_FUNDING_REDUCER_REPAIR.md) on synthetic fixtures only, without rerunning exposed 58/59.
 
 Only after both software boundaries pass may a fresh DEVELOPMENT comparison be
 frozen. Do not widen omega, rescale the RMS prior, target water explicitly or

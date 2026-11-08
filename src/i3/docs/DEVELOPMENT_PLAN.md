@@ -11,11 +11,7 @@ Integration tracking: [#1059](https://github.com/josselin-orta-lab/individual-ze
 [shared-first-contact-prior](STAGE1_SHARED_FIRST_CONTACT_PRIOR.md) gate now
 returns `SHARED_FIRST_CONTACT_PRIOR_CAPACITY_SHOWN` with D0-D7 PASS. The
 capacity is generic and energy/vigilance-dominated on P80, not water-specific.
-Next prospectively freeze a software-only Candidate-H integration that removes
-designer curiosity/prudence from first-contact FALLBACK while preserving the
-shared prior and #1163 post-contact semantics. In parallel, reproduce and repair
-the exposed 58/59 revision-reduction disagreement using synthetic fixtures
-only. No new World/life may open until both software boundaries pass. Stage 0
+The next two software gates are now prospectively frozen: [Candidate-I shared-prior integration](STAGE1_CANDIDATE_I_SHARED_PRIOR_INTEGRATION.md), which removes designer curiosity/prudence from first-contact FALLBACK while preserving #1163, and [composite-funding reducer repair](STAGE1_COMPOSITE_FUNDING_REDUCER_REPAIR.md), which reproduces/repairs the 58/59 disagreement on synthetic fixtures only. No new World/life may open until both gates pass. Stage 0
 remains open; Stage 2 stays blocked.**
 
 ## Source, scope and current reference

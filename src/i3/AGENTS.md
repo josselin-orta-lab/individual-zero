@@ -35,14 +35,10 @@ energy/vigilance state, not a water-deficit state; F108 saturates, and K80 is
 non-monotone. Treat this as **generic inherited first-contact capacity**, not a
 water-specific adaptation.
 
-**Next work remains software-only and must be prospectively frozen before
-implementation.** Two bounded tasks are admissible:
+**Next work remains software-only. The two admissible tasks are now prospectively frozen before implementation:**
 
-1. a shared-prior Candidate-H integration gate where first-contact FALLBACK no
-   longer receives P1.3 curiosity/prudence addends, while post-contact #1163
-   stays byte/semantics equivalent and all cognition remains paid;
-2. a synthetic reproducer for the 58/59 `resource processing status
-   disagreement`, followed by an engineering repair test. Never rerun 58/59.
+1. [Candidate-I shared-prior integration](docs/STAGE1_CANDIDATE_I_SHARED_PRIOR_INTEGRATION.md): first-contact FALLBACK uses P1.3 base scores with both legacy addends removed; post-contact #1163 stays equivalent and all cognition remains paid;
+2. [composite-funding reducer repair](docs/STAGE1_COMPOSITE_FUNDING_REDUCER_REPAIR.md): synthetic reproduction plus fail-closed engineering repair. Never rerun 58/59.
 
 Do not widen omega, rescale the RMS prior, add action/water-specific inherited
 weights, reinterpret K80 non-monotonicity as a defect, or open another live
