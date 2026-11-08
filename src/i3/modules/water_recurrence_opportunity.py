@@ -21,7 +21,7 @@ def paid_water_personal_recurrence_value(
         model, memory: ReferenceBranchMemory,
         recurrence: OpportunityRecurrenceMemory,
         explore_plan, ordinary_continuations, horizon,
-        budget: CognitiveBudget) -> dict:
+        budget: CognitiveBudget, *, omega: float = 0.0) -> dict:
     """Use paid personal recurrence as future water-opportunity availability."""
     if not isinstance(memory, ReferenceBranchMemory):
         raise ValueError("ReferenceBranchMemory required")
@@ -69,7 +69,7 @@ def paid_water_personal_recurrence_value(
 
     inner = paid_water_one_future_opportunity_value(
         model, memory, explore_plan, ordinary_continuations, horizon, budget,
-        future_opportunity_probability=p_future)
+        future_opportunity_probability=p_future, omega=omega)
 
     total = CognitiveWork(*(
         getattr(budget.work, key) - getattr(original_work, key)
