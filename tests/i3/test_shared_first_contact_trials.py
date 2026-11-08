@@ -85,6 +85,79 @@ class SharedFirstContactTrialIdentityTests(unittest.TestCase):
                     self._assert_identity(
                         body, horizon, action, omega)
 
+    def test_two_trial_internal_token_renaming_preserves_semantics(self):
+        body = (60., 20., 40., 50., 70.)
+
+        def run(token_a, token_b):
+            action_a = ("manger", token_a)
+            action_b = ("manger", token_b)
+            base = [
+                (name, tuple(plan), None)
+                for name, plan in H.ORDINARY_PLANS.items()]
+            opts = tuple(base + [
+                ("food-a", (action_a,), None),
+                ("food-b", (action_b,), None)])
+            return paid_shared_perceived_first_contact(
+                D.make_mind("candidate_f_projection"),
+                G.effect_memory(), opts,
+                (("food-a", action_a), ("food-b", action_b)),
+                8, CognitiveBudget(body, BodyLaws()),
+                omega=0.5, competition_cycles=0)
+
+        left = run("alpha", "beta")
+        right = run("renamed-a", "renamed-b")
+        for key in (
+                "status", "relevant", "classification",
+                "ordinary_scores", "with_information_scores",
+                "without_information_scores", "with_information_top",
+                "without_information_top", "strict_trial_winners",
+                "work", "forecast_work_ceiling", "forecast_start_body",
+                "body_after_computation", "common_projector",
+                "all_trials_evaluated"):
+            self.assertEqual(left[key], right[key])
+        for lrow, rrow in zip(left["trials"], right["trials"]):
+            for key in (
+                    "status", "no_trial_value", "trial_frozen_value",
+                    "trial_informed_value", "information_value",
+                    "trial_advantage", "prior_record"):
+                self.assertEqual(lrow[key], rrow[key])
+
+    def test_multi_trial_matrix_has_one_common_geometry_and_shared_prior(self):
+        body = (60., 20., 40., 50., 70.)
+        action_a = ("manger", "alpha")
+        action_b = ("manger", "beta")
+        base = [
+            (name, tuple(plan), None)
+            for name, plan in H.ORDINARY_PLANS.items()]
+        opts = tuple(base + [
+            ("food-a", (action_a,), None),
+            ("food-b", (action_b,), None)])
+        result = paid_shared_perceived_first_contact(
+            D.make_mind("candidate_f_projection"),
+            G.effect_memory(), opts,
+            (("food-a", action_a), ("food-b", action_b)),
+            8, CognitiveBudget(body, BodyLaws()),
+            omega=0.5, competition_cycles=0)
+
+        self.assertEqual(result["common_projector"], "candidate_f")
+        self.assertTrue(result["all_trials_evaluated"])
+        self.assertEqual(result["trial_option_order"], ("food-a", "food-b"))
+        self.assertEqual(len(result["trials"]), 2)
+        self.assertEqual(
+            result["trials"][0]["prior_record"],
+            result["trials"][1]["prior_record"])
+        ceiling = result["forecast_work_ceiling"]
+        work = result["work"]
+        for key in ("cycles", "simulated_steps", "memory_items", "replays"):
+            self.assertLessEqual(work[key], ceiling[key])
+        if result["relevant"]:
+            self.assertEqual(
+                set(result["with_information_scores"]),
+                {name for name, _plan, _first in opts})
+            for row in result["score_witnesses"]:
+                self.assertEqual(
+                    row["common_forecast_work_ceiling"], ceiling)
+
     def test_two_trial_matrix_is_enumeration_permutation_invariant(self):
         body = (60., 20., 40., 50., 70.)
         action_a = ("manger", "alpha")
