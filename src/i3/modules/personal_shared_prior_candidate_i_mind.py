@@ -7,6 +7,7 @@ always remains the ordinary Mind Competition and ActionControl.
 """
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import asdict
 from math import isfinite
 
@@ -85,6 +86,54 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
         self.candidate_i_relevant_final = 0
         self.candidate_i_base_fallback_final = 0
         self.candidate_i_probe_unfunded = 0
+
+    def _probe_state_snapshot(self):
+        return {
+            "map": deepcopy(self.map),
+            "hist": deepcopy(self.hist),
+            "tokens": deepcopy(self.tokens),
+            "external": deepcopy(self.external),
+            "acc": deepcopy(self.acc),
+            "intention": self.intention,
+            "last": deepcopy(self.last),
+            "visible": tuple(self.visible),
+            "pos": tuple(self.pos),
+            "drift": deepcopy(self._drift),
+            "rng": self.rng.getstate(),
+            "budget_rng": self._budget_rng.getstate(),
+            "pending_branch": deepcopy(self._pending_branch),
+            "pending_opportunity_presence":
+                deepcopy(self._pending_opportunity_presence),
+            "pending_opportunity_commit":
+                deepcopy(self._pending_opportunity_commit),
+            "observer_competition":
+                deepcopy(getattr(self, "_observer_competition", None)),
+            "observer_first_forecast":
+                deepcopy(getattr(self, "_observer_first_forecast", None)),
+        }
+
+    def _restore_probe_state(self, snap):
+        self.map = deepcopy(snap["map"])
+        self.hist = deepcopy(snap["hist"])
+        self.tokens = deepcopy(snap["tokens"])
+        self.external = deepcopy(snap["external"])
+        self.acc = deepcopy(snap["acc"])
+        self.intention = snap["intention"]
+        self.last = deepcopy(snap["last"])
+        self.visible = tuple(snap["visible"])
+        self.pos = tuple(snap["pos"])
+        self._drift = deepcopy(snap["drift"])
+        self.rng.setstate(snap["rng"])
+        self._budget_rng.setstate(snap["budget_rng"])
+        self._pending_branch = deepcopy(snap["pending_branch"])
+        self._pending_opportunity_presence = deepcopy(
+            snap["pending_opportunity_presence"])
+        self._pending_opportunity_commit = deepcopy(
+            snap["pending_opportunity_commit"])
+        self._observer_competition = deepcopy(
+            snap["observer_competition"])
+        self._observer_first_forecast = deepcopy(
+            snap["observer_first_forecast"])
 
     def _exact_personal_support(self, action_key):
         state = self.effects.stats.get(tuple(action_key))
@@ -527,6 +576,7 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
             return action, param, work, info
 
         self.candidate_i_first_contact_decisions += 1
+        probe_state = self._probe_state_snapshot()
         self._pending_branch = None
         self._pending_opportunity_presence = None
         self._pending_opportunity_commit = None
@@ -570,6 +620,7 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
                 recurrence = self.opportunity_memory.estimate(
                     "water", horizon, budget)
             except CognitiveFundingError:
+                self._restore_probe_state(probe_state)
                 return self._probe_unfunded(
                     budget, body=body,
                     offered_options=len(opts),
@@ -590,6 +641,7 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
                 recurrence_result=recurrence)
 
             if stage_a["status"] != "FUNDED":
+                self._restore_probe_state(probe_state)
                 return self._probe_unfunded(
                     budget, body=body,
                     offered_options=stage_a[
@@ -664,9 +716,11 @@ class PersonalSharedPriorCandidateIMind(PersonalRelevanceCandidateHMind):
             info["decision_projection_mode"] = "candidate_f"
             return final[0], final[1], budget.work, info
 
-        # FALLBACK: preserve all paid Stage-A work, then recompute an ordinary
-        # complete final decision with both historical designer addends removed.
+        # FALLBACK: discard all temporary first-contact perception/probe state,
+        # preserve its physical bill, then execute one real addend-free final
+        # decision from the post-probe body. This prevents double perception.
         self.candidate_i_base_fallback_final += 1
+        self._restore_probe_state(probe_state)
         post_probe_body = tuple(budget.remaining)
         final_cap = self._cap_with_body(
             cap, post_probe_body)
