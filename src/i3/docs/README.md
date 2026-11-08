@@ -5,26 +5,33 @@ The [engine contract](../engine.json) has no active entrypoints; the
 [registry](../../../config/engine-registry.json) keeps I1 active.
 A green software test is not a scientific GO.
 
-## Current handoff: no-omega Candidate-G is integrated, live pilot not yet opened
+## Current handoff: Candidate-G live path closes on 56/57
 
-The bounded #1156 software gate passed:
-`PERSONAL_RECURRENCE_CANDIDATE_G_INTEGRATION_PASS`. Candidate-G keeps the
-P1.3 projector persistently and activates the canonical Candidate-F projector
-only for a personally supported information decision. It reads no genomic
-omega. On the frozen #1146 kernel it reproduces the canonical 24/0/24/40
-decision set at mean 470.05 simulated steps/state.
+The frozen
+[56/57 DEVELOPMENT result](studies/stage1-candidate-g-development-56-57/RESULTS.md)
+is complete and fails its prospective continuation rule.
 
-The next step is the frozen
-[56/57 DEVELOPMENT pilot](studies/stage1-candidate-g-development-56-57/PROTOCOL.md):
-reference versus no-omega Candidate-G versus the rejected Candidate-F cost
-anchor. The pilot asks whether conditional activation actually occurs and lowers
-realized energy, vigilance and processing-budget collapse. **Survival is
-descriptive, not a pass criterion.**
+Candidate-G does achieve intermittent accurate projection: 368/1581 decisions
+are information-active and 1213/1581 remain reference-only. Relative to the
+rejected Candidate-F anchor, paid energy per lived step falls from 2.1983 to
+0.9161 and vigilance from 3.1118 to 1.2723.
 
-The 56/57 worlds are still unopened. The machine-readable plan and reduction
-live in `i3.lab.stage1_candidate_g_development_pilot`; importing it does not
-load Mind, World or create a life. No selection, validation, reserve, reference
-adoption or Stage 2 is authorized.
+But the frozen R5 criterion fails: Candidate-G
+`NO_PROCESSING_BUDGET` is **2.8463%**, above Candidate-F's **2.0436%**.
+The verdict remains
+`CANDIDATE_G_56_57_ENGINEERING_CONTINUATION_FAIL`.
+
+Survival is descriptive, not a gate, but it also warns against rescue tuning:
+Candidate-G is 0/12 censored versus P1.3 3/12, with 16 versus 196 positive
+water uptakes.
+
+A posthoc funding-mode observation explains, but does not revise, R5:
+Candidate-G has 9.1082% total non-funded decisions versus 21.4578% Candidate-F,
+because Candidate-F has many more `NO_FUNDED_SCORE` failures.
+
+**56/57 are now exposed evidence and cannot be reused.** No fresh live panel is
+authorized. Return Stage 1 to read-only evidence analysis or a new software-only
+architecture hypothesis while P1.3 remains reference.
 
 ## Current top-level result: frozen omega gate rejected
 

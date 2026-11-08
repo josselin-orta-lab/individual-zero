@@ -12,31 +12,37 @@ That integration changed documentation and priorities only. The subsequent
 Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
-## Current engineering handoff: Candidate-G integration passes; 56/57 remains unopened
+## Current engineering handoff: Candidate-G 56/57 continuation FAIL
 
-8 November 2026: the bounded no-omega Candidate-G integration gate (#1156)
-passed on Python 3.11/3.12 with verdict
-`PERSONAL_RECURRENCE_CANDIDATE_G_INTEGRATION_PASS`.
+8 November 2026: the prospectively frozen no-omega Candidate-G DEVELOPMENT
+pilot is complete
+([result](studies/stage1-candidate-g-development-56-57/RESULTS.md)).
 
-The integrated candidate keeps P1.3 `reference/chunk_end` as its persistent
-mode. A decision switches all option scores to the canonical Candidate-F
-projector only when a paid personal information path exists. First contact uses
-personal recurrence with `omega=0`; post-contact uses personal actionable
-belief. The #1146 kernel reproduces the canonical **24 selected / 0 water / 24
-other / 40 declines** at mean **470.05 simulated steps/state**, with zero common
-ceiling violations and no genomic-omega attribute.
+Execution source `6ce6fbc2025f9f6e6b34b779142f90c10c28a1e0`, Actions
+`42477021573`, 36/36 original lives preserved on
+`evidence/i3-stage1-candidate-g-56-57-6ce6fbc2025f`.
 
-This is software capacity evidence, not a live result. The next bounded step is
-the prospectively frozen
-[56/57 DEVELOPMENT pilot](studies/stage1-candidate-g-development-56-57/PROTOCOL.md).
-It compares P1.3, no-omega Candidate-G and the already rejected Candidate-F
-architecture on matched fresh DEVELOPMENT opportunities. Its continuation rule
-tests **activation plus physical affordability**, not a survivor target.
+The frozen continuation rule is **FAIL**. Candidate-G genuinely alternates
+between the canonical accurate projector and P1.3 reference (368
+information-active decisions, 1213 reference-only), and cuts lived projection
+cost sharply versus rejected Candidate-F: 0.9161 vs 2.1983 energy/step and
+1.2723 vs 3.1118 vigilance/step. But R5 fails unchanged:
+`NO_PROCESSING_BUDGET` is **2.8463% Candidate-G versus 2.0436% Candidate-F**.
 
-**56/57 HAVE NOT BEEN OPENED.** No one-shot execution workflow is included in
-this integration PR. Do not expose those worlds until the protocol/runtime SHA
-is merged, exact-head software checks pass, and a separately reviewed one-shot
-transport is added. Selection, validation, reserve and Stage 2 remain blocked.
+Survival was not a criterion, but is an adverse descriptive result:
+Candidate-G reaches the 400-step censoring horizon in **0/12** lives, P1.3 in
+**3/12**. Water uptake is 16 Candidate-G versus 196 reference.
+
+A posthoc funding-composition read shows Candidate-G nevertheless has fewer
+total unfunded decisions (9.1082%) than Candidate-F (21.4578%), because
+Candidate-F more often fails earlier at `NO_FUNDED_SCORE`. This does **not**
+replace R5 or rescue the candidate.
+
+**56/57 are exposed and closed. Do not retune on them.** Stop the Candidate-G
+live path. The next admissible work is read-only analysis of preserved evidence
+or a new software-only architecture falsifier on established fixtures. No fresh
+live panel, selection, validation, reserve, reference adoption or Stage 2 is
+authorized.
 
 ## Latest scientific gate: genomic omega Candidate-F rejected
 
