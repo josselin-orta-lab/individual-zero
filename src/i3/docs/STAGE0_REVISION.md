@@ -138,6 +138,43 @@ This distinction was frozen after the archived 52/53 failure. Those worlds are
 closed and are not rerun to validate the repair. Regression coverage reproduces
 the exact logical shape synthetically.
 
+## Multi-phase Candidate-H / Candidate-I processing semantics
+
+The 64/65 Candidate-I DEVELOPMENT stop exposed the same ownership issue inside
+the native multi-phase candidates rather than in an external shadow controller.
+
+A complete Candidate-H or Candidate-I decision can contain multiple physically
+paid blocks. The public `funding` status is therefore not automatically the
+status of **all** decision-phase cognition. The revision join now authenticates
+the candidate's declared Stage-A / Stage-B / total receipt and applies the
+processing predicate to the block that actually owns local processing for that
+route.
+
+The full physical bill is always preserved.
+
+Frozen ownership:
+
+- Candidate-H `P1.3_FINAL` / `CANDIDATE_F_FINAL`: Stage A is a detached
+  relevance probe; Stage B is the one real final perception/decision, so Stage B
+  owns R-depletion processing.
+- Candidate-I `P1.3_BASE_FINAL`: Stage A is detached/rolled back; Stage B is
+  the one real addend-free P1.3 decision, so Stage B owns processing.
+- Candidate-I `INFORMATION_FINAL`: the real Stage-A perception/common score
+  matrix is retained and Stage B only finalizes Competition/action control.
+  Stage A therefore owns processing. A short Stage-B finalizer is not evidence
+  of missing perception.
+- Candidate-I `POST_CONTACT_CANDIDATE_H`: Candidate-H semantics apply and
+  Stage B owns processing.
+
+A valid sequential row may consequently contain nonzero total paid work followed
+by a Stage-B `NO_PROCESSING_BUDGET`. In that case
+`processing_paid=false` while earlier Stage-A cognition remains fully charged
+in Stage-0 energy.
+
+The repair is frozen and verified in
+[the multi-phase reducer result](studies/stage1-multiphase-processing-reducer-repair/RESULTS.md).
+64/65 remain closed and were not rerun to validate it.
+
 ## Consistency and limitations
 
 First reuse `stage0_energy.energy_receipt` for the complete paid life and original
