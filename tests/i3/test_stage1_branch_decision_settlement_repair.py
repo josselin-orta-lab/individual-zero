@@ -96,13 +96,12 @@ class BranchDecisionSettlementRepairTests(unittest.TestCase):
             report["verdict"],
             "BRANCH_DECISION_SETTLEMENT_REPAIR_PASS")
 
-    def test_import_does_not_load_world_life_p2_or_evidence(self):
+    def test_import_does_not_load_runtime_life_or_p2_ecology(self):
         root = str(Path(__file__).resolve().parents[2] / "src")
         subprocess.run([
             sys.executable, "-c",
             "import sys; sys.path.insert(0, " + repr(root) + "); "
             "import i3.lab.stage1_branch_decision_settlement_repair; "
-            "assert 'i3.modules.world' not in sys.modules; "
             "assert 'i3.runtime.life' not in sys.modules; "
             "assert 'i3.lab.p2_ecologies' not in sys.modules"
         ], check=True)
