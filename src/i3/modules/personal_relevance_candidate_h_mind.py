@@ -232,6 +232,7 @@ class PersonalRelevanceCandidateHMind(PersonalRecurrenceCandidateGMind):
         # 58/59 protocol. A probe-only failure must never retain learning
         # authority from the preceding physical action.
         self._pending_branch = None
+        self._branch_decision_start_body = None
         self._pending_opportunity_presence = None
         self._pending_opportunity_commit = None
         self.last = None
@@ -316,8 +317,9 @@ class PersonalRelevanceCandidateHMind(PersonalRecurrenceCandidateGMind):
             raise RuntimeError(
                 "Candidate-H cumulative body settlement mismatch")
 
-        # Learning storage must own the complete decision cost, not Stage B only.
-        self._branch_decision_work = total
+        # Branch storage owns the complete decision cost from the same body
+        # that funded Stage A + Stage B; self.last may name the later Stage-B body.
+        self._set_branch_decision_settlement(budget.body, total)
         if (self.simulation_mode, self.projection_accounting) != (
                 "reference", "chunk_end"):
             raise RuntimeError("Candidate-H final decision leaked projector mode")
