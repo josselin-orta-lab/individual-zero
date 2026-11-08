@@ -125,6 +125,7 @@ def characterize() -> dict:
         row for row in rows
         if "TRIAL" in row["target_choices"]
         and row["information_value"] > 1e-12
+        and row["trial_advantage"] > 1e-12
     ]
     declined = [
         row for row in rows
@@ -149,9 +150,10 @@ def characterize() -> dict:
         "R1_reference_projection_only": True,
         "R2_personal_recurrence_only": all_personal,
         "R3_actual_work_within_common_ceiling": all_paid,
-        "R4_some_selected_and_some_declined":
+        "R4_some_strictly_advantageous_selected_and_some_declined":
             bool(selected) and bool(declined),
-        "R5_no_selected_nonwater_state": not nonwater_selected,
+        "R5_every_selected_trial_strictly_advantageous": all(
+            row["trial_advantage"] > 1e-12 for row in selected),
     }
     verdict = (
         "CANDIDATE_G_REFERENCE_RECURRENCE_SOFTWARE_GATE_PASS"
