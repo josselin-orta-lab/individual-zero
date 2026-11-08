@@ -1,0 +1,59 @@
+{
+ "schema": "i3-stage1-candidate-h-unified-integration-result/v1",
+ "tested_source": "bf527c92dd445b4f4ffcab4c8a24cbe8ed0c959f",
+ "github_actions_run": 42482799511,
+ "python": {
+  "3.11": "PASS",
+  "3.12": "PASS"
+ },
+ "lives": 0,
+ "world_access": false,
+ "runtime_registered": false,
+ "first_contact": {
+  "states": 80,
+  "relevant": 24,
+  "fallback": 56,
+  "mismatches": 0
+ },
+ "post_contact": {
+  "states": 80,
+  "relevant": 68,
+  "fallback": 12,
+  "mismatches": 0
+ },
+ "routing_panel": {
+  "decisions_per_omega": 60,
+  "p13_final": 37,
+  "candidate_f_final": 23,
+  "probe_unfunded": 0,
+  "errors": 0,
+  "omega_mismatches": 0,
+  "all_five_routes_observed": true,
+  "fallback_identity_failures": 0
+ },
+ "forced_failure": {
+  "funding": "NO_FUNDED_RELEVANCE_PROBE",
+  "route": "PROBE_UNFUNDED",
+  "mode_after": [
+   "reference",
+   "chunk_end"
+  ]
+ },
+ "rules": {
+  "U0_authority_boundary": true,
+  "U1_first_contact_classifier_parity": true,
+  "U2_post_contact_classifier_parity": true,
+  "U3_fallback_final_policy_identity": true,
+  "U4_relevant_final_policy_integrity": true,
+  "U5_phase_accounting": true,
+  "U6_persistent_mode_restoration": true,
+  "U7_information_source_and_omega_separation": true,
+  "U8_all_frozen_routes_observed": true,
+  "U9_output_authority": true
+ },
+ "verdict": "CANDIDATE_H_UNIFIED_SOFTWARE_INTEGRATION_PASS",
+ "future_development_protocol_authorized": true,
+ "runtime_registration_authorized": false,
+ "new_live_panel_authorized": false,
+ "selection_validation_reserve_authorized": false
+}
