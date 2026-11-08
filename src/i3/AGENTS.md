@@ -48,28 +48,32 @@ is now **closed as DEFECT**. Its top-set-change relevance rule disagreed with
 #1170 on 700/1,128 one-trial states. Do not repair or merge that branch and do
 not reinterpret the failure as an organism result.
 
-**Next work is still software-only:** implement exactly the prospectively
-frozen successor
-[STAGE1_CANDIDATE_I_RUNTIME_INTEGRATION_V2.md](docs/STAGE1_CANDIDATE_I_RUNTIME_INTEGRATION_V2.md).
+Candidate-I runnable multi-option v2 now passes S0-S11
+([result](docs/studies/stage1-candidate-i-runtime-integration-v2/RESULTS.md)).
+The final software authority is source
+`9c5ef3e2657c1d2be1e0e8f0b592b6a957dcff6b`, Actions `42500166929`.
 
-For direct unsupported first contact, relevance is now the frozen #1170
-action-trial-advantage semantics generalized symmetrically:
+The #1170 one-trial reduction is exact (0/1,128 mismatches); runtime inventory
+permutation/external-token renaming, common Candidate-F geometry, legacy P1.3
+finalizer identity, complete Stage-A fallback custody, post-contact parity,
+same-genome omega=0 ablation, composite reducer custody and forced-failure state
+restoration all pass.
 
-- an unsupported trial's informed value must strictly beat its own no-trial
-  comparator;
-- the same informed value must strictly beat every other actually offered
-  option, including other unsupported trials;
-- ties fall back;
-- the without-information top-set map is diagnostic only.
+**Next work is protocol-only first:** freeze a fresh DEVELOPMENT 60/61
+comparison before opening any World. It must contain at least:
 
-Do not add a positive-information condition: #1170 did not have one and doing
-so would break the required one-trial identity. Imagined K80 and post-contact
-#1163 keep their own already-frozen semantics.
+- P1.3 reference;
+- Candidate-H control;
+- Candidate-I native genome omega;
+- same-genome Candidate-I omega=0 ablation.
 
-RELEVANT still must pass through shared P1.3 Competition/ActionControl, never a
-forced trial. FALLBACK remains addend-free. Do not allocate/open 60/61, widen
-omega, rescale RMS, add resource-specific inherited coefficients, alter K80,
-reuse 56/57 or 58/59, or start selection/validation/reserve/Stage 2.
+Do not execute 60/61 in the protocol PR. After the protocol is merged and exact
+software checks are green, any execution must use a separate one-shot transport
+with stop-and-archive/no-retry custody.
+
+Do not widen omega, rescale RMS, add resource-specific inherited coefficients,
+alter K80/P80/F108 or reuse 56/57/58/59. Selection, validation, reserve and
+Stage 2 remain blocked.
 
 The full frozen Stage-1 genomic-omega Candidate-F gate has now completed.
 Read [the final result](docs/studies/stage1-omega-adr0015/RESULTS.md) before any
