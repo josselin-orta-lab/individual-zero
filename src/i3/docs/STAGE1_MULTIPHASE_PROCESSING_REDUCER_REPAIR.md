@@ -87,14 +87,25 @@ Stage A remains fully charged in Stage-0 energy.
 
 ### Candidate-I complete first-contact finals
 
-For routes `P1.3_BASE_FINAL` and `INFORMATION_FINAL` only:
+Authenticate `candidate_i_stage_a_work`,
+`candidate_i_stage_b_work`, `candidate_i_total_work`, their exact sum and
+the final body settlement for both complete routes.
 
-- authenticate `candidate_i_stage_a_work`;
-- authenticate `candidate_i_stage_b_work`;
-- authenticate `candidate_i_total_work`;
-- require Stage A + Stage B = total = physical decision-phase work;
-- require the Candidate-I body settlement to match the phase receipt;
-- processing-owner work = **Stage B**.
+Their processing ownership is intentionally **not identical**:
+
+- `P1.3_BASE_FINAL`: Stage A is detached/rolled back and Stage B performs the
+  one real P1.3 perception. Processing-owner work = **Stage B**.
+- `INFORMATION_FINAL`: the real Stage A perception and common score matrix are
+  retained and Stage B only finalizes Competition/action control from those
+  already-computed scores. The finalization cycles are reserved in Stage A's
+  common ceiling. Local processing is therefore already paid by the retained
+  **Stage A**. This route must never be reclassified as unprocessed merely
+  because its Stage-B finalizer is smaller than the historical three-cycle
+  P1.3 base.
+
+An `INFORMATION_FINAL` receipt claiming public
+`NO_PROCESSING_BUDGET` is inconsistent with the frozen architecture and must
+fail closed rather than inventing an ownership rule.
 
 ### Candidate-I post-contact
 
@@ -150,12 +161,18 @@ accept it and emit `processing_paid=False`.
 Same authenticated shape with Stage B containing the normal paid processing
 base and public later funding. Require `processing_paid=True`.
 
-### S4 Candidate-I first-contact sequential no-processing
+### S4 Candidate-I first-contact ownership split
 
-Build both `P1.3_BASE_FINAL` and `INFORMATION_FINAL` synthetic receipts with
-nonzero Stage A, zero Stage B and public `NO_PROCESSING_BUDGET`.
+Build two distinct synthetic shapes:
 
-Require acceptance with `processing_paid=False`.
+1. `P1.3_BASE_FINAL` with nonzero detached Stage A, zero Stage B and public
+   `NO_PROCESSING_BUDGET`: accept with `processing_paid=False`.
+2. `INFORMATION_FINAL` with retained paid Stage A and a valid small Stage-B
+   finalizer: accept with `processing_paid=True` even when Stage B has fewer
+   than three cycles.
+
+Also require an `INFORMATION_FINAL` row that claims
+`NO_PROCESSING_BUDGET` to fail closed.
 
 ### S5 Candidate-I post-contact sequential no-processing
 
@@ -195,21 +212,25 @@ Only the authenticated owner block is tested against the public funding status:
 - ordinary: total;
 - upper-cost: reference choice;
 - Candidate-H complete final: Stage B;
-- Candidate-I complete first-contact final: Stage B;
+- Candidate-I `P1.3_BASE_FINAL`: Stage B;
+- Candidate-I `INFORMATION_FINAL`: retained Stage A;
 - Candidate-I post-contact: Candidate-H Stage B.
 
 No route/status fallback guessing.
 
 ### M4 — R-depletion-v1 semantics unchanged
 
-For S2/S4/S5:
+For S2, the `P1.3_BASE_FINAL` S4 shape and S5:
 
 - `processing_paid=False`;
-- earlier paid Stage A must not advance the paid-processing clock.
+- detached earlier Stage A must not advance the paid-processing clock.
 
-For S3 and equivalent later-funded Stage B:
+For `INFORMATION_FINAL` S4 and S3/equivalent later-funded Stage B:
 
 - `processing_paid=True`.
+
+The distinction follows whether Stage-A perception is retained as the real
+decision's processed evidence, not the arbitrary size of Stage B.
 
 ### M5 — public motor authority unchanged
 
