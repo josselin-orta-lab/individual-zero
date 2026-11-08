@@ -59,17 +59,20 @@ finalizer identity, complete Stage-A fallback custody, post-contact parity,
 same-genome omega=0 ablation, composite reducer custody and forced-failure state
 restoration all pass.
 
-**Next work is protocol-only first:** freeze a fresh DEVELOPMENT 60/61
-comparison before opening any World. It must contain at least:
+The
+[fresh Candidate-I 60/61 protocol](docs/studies/stage1-candidate-i-development-60-61/PROTOCOL.md)
+is now prospectively frozen. Its machine-readable plan digest is
+`a8e8dc955a3324e3f78986b4e4de8d8894f8196e1ba7321b89f295016dc1c876`.
 
-- P1.3 reference;
-- Candidate-H control;
-- Candidate-I native genome omega;
-- same-genome Candidate-I omega=0 ablation.
+**Next work is software-only.** Implement exactly the declared
+`personal_shared_prior_candidate_i_omega0_ablation_v1` arm as the same
+Candidate-I class/genome with only `first_contact_omega_override=0.0`, then
+add an import-safe source-locked runner/reducer. Preflight may use only already
+exposed fixtures.
 
-Do not execute 60/61 in the protocol PR. After the protocol is merged and exact
-software checks are green, any execution must use a separate one-shot transport
-with stop-and-archive/no-retry custody.
+Do not open 60/61 in that implementation PR. After protocol and runtime
+implementation are both merged and exact-head checks pass, execution requires a
+separate one-shot transport with stop-and-archive/no-retry custody.
 
 Do not widen omega, rescale RMS, add resource-specific inherited coefficients,
 alter K80/P80/F108 or reuse 56/57/58/59. Selection, validation, reserve and

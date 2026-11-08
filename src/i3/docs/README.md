@@ -21,9 +21,14 @@ permutation/renaming passes, final authority remains ordinary P1.3
 Competition/ActionControl, FALLBACK is fully paid/addend-free, and post-contact
 remains Candidate-H #1163.
 
-This is software capacity/integration evidence only. No 60/61 World has been
-allocated or opened. The next step is to freeze a fresh DEVELOPMENT 60/61
-protocol before any execution.
+This is software capacity/integration evidence only. The
+[fresh 60/61 DEVELOPMENT protocol](studies/stage1-candidate-i-development-60-61/PROTOCOL.md)
+is now prospectively frozen: 12 matched blocks, 48 lives, P1.3 / Candidate-H /
+Candidate-I native omega / same-genome Candidate-I omega=0.
+
+No 60/61 World has been opened. Next comes only the explicit omega=0 runtime
+ablation plus import-safe runner/preflight. Execution requires a later separate
+one-shot transport.
 
 ## Latest: shared first-contact prior has capacity, but it is generic
 
