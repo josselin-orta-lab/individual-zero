@@ -9,11 +9,12 @@ Integration tracking: [#1059](https://github.com/josselin-orta-lab/individual-ze
 
 **Current operational intervention: Candidate-I runtime v2 S0-S11, branch
 settlement B0-B9, probe-authority U0-U9 and lifecycle stress L0-L11 all PASS.
-60/61 and 62/63 remain exposed/closed with no J1-J7 verdict. The next bounded
-step is to prospectively freeze a fresh disjoint Candidate-I DEVELOPMENT
-successor with the same four arms and byte-identical J1-J7, then separately
-implement a source-locked runner/preflight before any one-shot exposure. Stage 0
-remains open; Stage 2 stays blocked.**
+60/61 and 62/63 remain exposed/closed with no J1-J7 verdict. The fresh 64/65
+DEVELOPMENT successor is now prospectively specified with new index/world/genome/
+life allocations and unchanged four arms/J1-J7. This protocol PR cannot open
+64/65. After merge, implement a source-locked runner/preflight separately; a
+one-shot transport remains a later reviewed step. Stage 0 remains open; Stage 2
+stays blocked.**
 
 ## Source, scope and current reference
 
@@ -68,7 +69,7 @@ software defect. Keep adverse and null outcomes; do not tune them away.
 | Stage | Deliverable | Status / tracking |
 | --- | --- | --- |
 | 0 | Independent-population design, energetic mediation, complete paid Competition observation, individuality challenge, P5d uncertainty | Open in parallel; [#1060](https://github.com/josselin-orta-lab/individual-zero/issues/1060), existing #1026/#1054 |
-| 1 | Information value in predicted distress, replacing additive curiosity/relevance/prudence | **Current: Candidate-I runtime v2 S0-S11, branch settlement B0-B9, probe-authority U0-U9 and lifecycle stress L0-L11 PASS; 60/61 and 62/63 are exposed/closed with no J1-J7 verdict.** Next prospectively freeze a fresh disjoint Candidate-I DEVELOPMENT successor with unchanged four arms and J1-J7; no exposure in the protocol PR. P80 remains energy/vigilance-driven and K80 non-monotone; [#1061](https://github.com/josselin-orta-lab/individual-zero/issues/1061) |
+| 1 | Information value in predicted distress, replacing additive curiosity/relevance/prudence | **Current: Candidate-I runtime v2 S0-S11, branch settlement B0-B9, probe-authority U0-U9 and lifecycle stress L0-L11 PASS; 60/61 and 62/63 are exposed/closed with no J1-J7 verdict.** Candidate-I 64/65 is the prospectively specified fresh successor with unchanged four arms/J1-J7; next merge its protocol/plan, then add a separate source-locked runner/preflight before any one-shot exposure. P80 remains energy/vigilance-driven and K80 non-monotone; [#1061](https://github.com/josselin-orta-lab/individual-zero/issues/1061) |
 | 2 | Decide how much to think by value of computation | **Blocked** until Stage-1 decision boundary is resolved; [#1062](https://github.com/josselin-orta-lab/individual-zero/issues/1062) |
 | 3 | Change detection, latent causes, then perceived-attribute factorization | Full stage deferred. One minimal generic future-opportunity representation may be tested early only as a Stage-1 prerequisite; do not start the Stage-3 bundle. |
 | 4 | Successor features and delayed credit evaluated by current bodily distress | Deferred after the required model/budget decisions |
