@@ -96,10 +96,11 @@ cleared. On an unfunded Stage-A exit, restoring that snapshot can revive
 The frozen
 [Candidate-I probe-restore authority repair](docs/studies/stage1-candidate-i-probe-authority-repair/RESULTS.md)
 now **PASSes U0-U9** on repair-code authority
-`486ec9fede132e817eae11ab6576e6e79e0bfac8`, Actions
-`42508586491`. Rollback may restore perception/map/token/RNG state but never
+`5ca8f2dcb7f87c18880ea3c45b773eec0daab2d4`, Actions
+`42517714784`. Rollback may restore perception/map/token/RNG state but never
 `last`, pending branch storage, branch-settlement authority or pending
-opportunity commits.
+opportunity commits. A funded FALLBACK must then recreate opportunity-
+presence authority from its one real final perception before learning.
 
 **Do not allocate another fresh DEVELOPMENT panel yet.** Two consecutive fresh
 panels exposed different lifecycle-custody defects. Next freeze and execute a
