@@ -114,8 +114,9 @@ class SharedFirstContactPriorTests(unittest.TestCase):
             sys.executable, "-c",
             "import sys; sys.path.insert(0, " + repr(root) + "); "
             "import i3.lab.stage1_shared_first_contact_prior; "
-            "assert 'i3.modules.world' not in sys.modules; "
-            "assert 'i3.runtime.life' not in sys.modules"
+            "assert 'i3.runtime.life' not in sys.modules; "
+            "assert 'i3.lab.worldgen' not in sys.modules; "
+            "assert 'i3.lab.p2_ecologies' not in sys.modules"
         ], check=True)
 
 
