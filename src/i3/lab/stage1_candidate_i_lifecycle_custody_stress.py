@@ -112,6 +112,11 @@ def _complete_learning_cycle(mind, body, cap):
     action, param, work, info = mind.decide(cap, decision)
     if work != decision.work:
         raise RuntimeError("decision work differs from consumed allowance")
+    settlement_start_after_decision = deepcopy(
+        mind._branch_decision_start_body)
+    settlement_work_after_decision = mind._branch_decision_work
+    opportunity_presence_after_decision = deepcopy(
+        mind._pending_opportunity_presence)
 
     physical = _physical_result(body, action, work, laws)
     learning = CognitiveBudget(physical["body"], laws)
@@ -153,6 +158,12 @@ def _complete_learning_cycle(mind, body, cap):
         "info": info,
         "decision_work": work,
         "decision_body_after": tuple(decision.remaining),
+        "settlement_start_after_decision":
+            settlement_start_after_decision,
+        "settlement_work_after_decision":
+            settlement_work_after_decision,
+        "opportunity_presence_after_decision":
+            opportunity_presence_after_decision,
         "physical_body": tuple(physical["body"]),
         "dead": tuple(physical["dead"]),
         "learning_work": learning.work,
@@ -213,7 +224,10 @@ def _fallback_cycle():
             == CognitiveWork(**info["candidate_i_total_work"])
             == row["decision_work"],
         "settlement_start_is_pre_stage_a":
-            info["candidate_i_stage_a_body_after"] != FALLBACK_BODY
+            row["settlement_start_after_decision"] == FALLBACK_BODY
+            and row["settlement_work_after_decision"]
+            == row["decision_work"]
+            and info["candidate_i_stage_a_body_after"] != FALLBACK_BODY
             and tuple(info["candidate_i_body_after_cognition"])
             == row["decision_body_after"],
         "branch_commit_exact":
@@ -247,7 +261,9 @@ def _relevant_cycle():
             info.get("persistent_simulation_mode") == "reference"
             and info.get("persistent_projection_accounting") == "chunk_end",
         "settlement_start_is_pre_stage_a":
-            mind._branch_decision_start_body is None
+            row["settlement_start_after_decision"] == RELEVANT_BODY
+            and row["settlement_work_after_decision"]
+            == row["decision_work"]
             and tuple(info["candidate_i_stage_a_body_after"])
             != RELEVANT_BODY,
         "branch_commit_exact":
@@ -395,10 +411,19 @@ def _omega0_object_custody():
     zero = PersonalSharedPriorCandidateIMind(
         deepcopy(genome), 9016, first_contact_omega_override=0.0)
     native_digest = genome_digest(genome)
+    inherited_equal = (
+        native.theta == zero.theta
+        and native.p == zero.p
+        and native.w == zero.w
+        and native.gammas == zero.gammas
+        and native.alpha == zero.alpha
+        and native.n_base == zero.n_base
+        and native.h_max == zero.h_max
+        and native.m_max == zero.m_max
+        and native.belief_rate == zero.belief_rate)
     return {
-        "genome_digest_equal":
-            genome_digest(native.genome) == genome_digest(zero.genome)
-            == native_digest,
+        "input_genome_digest": native_digest,
+        "genome_digest_equal": inherited_equal,
         "native_omega_preserved":
             native.first_contact_omega == genome["genes"]["omega"],
         "zero_applied": zero.first_contact_omega == 0.0,
@@ -526,6 +551,7 @@ def _runtime_smokes():
                 "family": family,
                 "policy": policy,
                 "world_seed": WORLD_SEED,
+                "world_name": life["world"],
                 "development_index": DEVELOPMENT_INDEX,
                 "genome_seed": GENOME_SEED,
                 "genome_sha256": life["genome"],
@@ -630,7 +656,11 @@ def characterize():
                 (family, policy, DEVELOPMENT_INDEX, WORLD_SEED,
                  GENOME_SEED, LIFE_SEED, HORIZON)
                 for family in FAMILIES for policy in POLICIES
-            }),
+            }
+            and all(
+                row["world_name"]
+                == f"p2-{row['family']}-{WORLD_SEED}"
+                for row in smokes)),
         "L2_lifecycle_completion_no_engineering_exception":
             len(smokes) == 9,
         "L3_physical_funding_and_phase_accounting":
@@ -642,7 +672,9 @@ def characterize():
             row["policy_checks"]["failures"]
             for row in smoke_candidate_rows),
         "L6_branch_settlement_lifecycle": (
-            fallback["branch_commit_exact"]
+            fallback["settlement_start_is_pre_stage_a"]
+            and relevant["settlement_start_is_pre_stage_a"]
+            and fallback["branch_commit_exact"]
             and relevant["branch_commit_exact"]
             and post_contact["branch_commit_parity"]
             and fallback["authority_closed_after_learning"]
