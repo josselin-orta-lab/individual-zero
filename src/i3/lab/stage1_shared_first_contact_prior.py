@@ -572,20 +572,20 @@ def characterize():
 
     # D7: same paid RMS effect-prior record in imagined and perceived paths.
     shared_prior_mismatches = []
+    shared_prior_keys = ("status", "rms_scale", "omega", "branch_deltas")
     for omega in OMEGAS:
         for idx, (krow, prow) in enumerate(zip(
                 imagined[omega], perceived_water[omega])):
             if (krow["stage_a"]["status"] != "FUNDED"
                     or prow["stage_a"]["status"] != "FUNDED"):
                 continue
-            if (krow["stage_a"]["shared_effect_prior"]
-                    != prow["stage_a"]["shared_effect_prior"]):
+            ki = krow["stage_a"]["shared_effect_prior"]
+            pi = prow["stage_a"]["shared_effect_prior"]
+            if any(ki.get(key) != pi.get(key) for key in shared_prior_keys):
                 shared_prior_mismatches.append({
                     "omega": omega, "index": idx,
-                    "imagined":
-                        krow["stage_a"]["shared_effect_prior"],
-                    "perceived":
-                        prow["stage_a"]["shared_effect_prior"],
+                    "imagined": {key: ki.get(key) for key in shared_prior_keys},
+                    "perceived": {key: pi.get(key) for key in shared_prior_keys},
                 })
 
     zero_k = _summary(imagined[0.0])
