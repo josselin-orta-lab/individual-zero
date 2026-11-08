@@ -179,7 +179,7 @@ Primary accounting classification:
 
 1. If `scalar1_upper` funds all 80 states:
    `CACHE_ACCOUNTING_ROBUSTLY_FUNDED`.
-2. Else if `bundle5_lower` fails to fund any of the 80 states:
+2. Else if `bundle5_lower` fails to fund **at least one** of the 80 states:
    `CACHE_ACCOUNTING_UNFUNDED_EVEN_LOWER_BOUND`.
 3. Otherwise:
    `CACHE_ACCOUNTING_SENSITIVE`.
