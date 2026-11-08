@@ -101,6 +101,8 @@ class CandidateHUnifiedIntegrationTests(unittest.TestCase):
                     report["routing_panel"]["route_counts_omega_minus1"],
                 "probe_unfunded_omega_minus1":
                     report["routing_panel"]["probe_unfunded_omega_minus1"],
+                "fallback_identity_failures":
+                    report["routing_panel"]["fallback_identity_failures"],
                 "routes_observed":
                     report["routing_panel"]["routes_observed"],
                 "omega_mismatches":
