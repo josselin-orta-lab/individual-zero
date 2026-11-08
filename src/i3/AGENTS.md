@@ -149,11 +149,17 @@ now **PASSes V0-V8** on tested source
 unchanged. The paid-Stage-A / zero-Stage-B boundary is exercised through actual
 H/I production decisions and the repaired Stage-0 reducer.
 
-**No World is authorized directly by this PASS.** Next work may only
-prospectively freeze a new Candidate-I DEVELOPMENT successor disjoint from
-56/57, 58/59, 60/61, 62/63 and 64/65. Preserve the frozen J1-J7 question and
-four-arm reference/H/I-native/I-omega0 structure unless a separate prospective
-scientific decision changes them before exposure.
+The next successor is now prospectively frozen in
+[Candidate-I 66/67](docs/studies/stage1-candidate-i-development-66-67/PROTOCOL.md):
+DEVELOPMENT 66/67, worlds 2066/2067, genomes 907/908, life-seed namespace
+7,510,000, horizon 400, four matched arms and byte-identical J1-J7.
+
+**Do not open 66/67 from the protocol branch.** Next implement only the
+source-locked runner/reducer and preflight. It must require V2 PASS, preserve
+the canonical plan digest
+`bf1d87a7944b334ca0b4bccff43677c06071d5638ed352a3c1cd045096d77d26`,
+remain independent of predecessor evidence, and use only DEVELOPMENT-0/software
+fixtures before birth. Actual exposure remains a separate one-shot PR.
 
 Do not widen omega, rescale RMS, add resource-specific inherited coefficients,
 alter K80/P80/F108 or reuse 56/57/58/59. Selection, validation, reserve and
