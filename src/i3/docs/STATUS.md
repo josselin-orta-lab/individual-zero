@@ -12,6 +12,62 @@ That integration changed documentation and priorities only. The subsequent
 Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
+## Current handoff: 58/59 exposed, no Candidate-H continuation verdict
+
+8 November 2026: the frozen Candidate-H DEVELOPMENT 58/59 transport opened
+the panel once under execution source
+`c2f63445ce8a3033ce8a2adfb9a0b1417b21c021`, Actions
+`42484179997`. Software checks were green before exposure.
+
+The execution archived originals on
+`evidence/i3-stage1-candidate-h-58-59-c2f63445ce8a`, but stopped while
+reducing the third arm with
+`ValueError: resource processing status disagreement`. The failure receipt is
+`ENGINEERING_FAILURE_NOT_A_DEATH`: two cases were reduced before the stop
+(reference 400-step censored; Candidate-G 98-step zero-water death), while the
+Candidate-H original was archived but not admitted to the aggregate.
+
+Because worlds opened, the frozen `STOP_AND_ARCHIVE_NO_RETRY_NO_REPLACEMENT`
+rule applies. **58/59 are exposed and closed.** Do not rerun, replace seeds or
+infer H1-H6 from the partial panel. There is no Candidate-H engineering
+continuation PASS/FAIL from 58/59.
+
+## Read-only 56/57 audit: first contact is represented asymmetrically
+
+The preserved
+[first-contact audit](studies/stage1-candidate-g-development-56-57/POSTHOC_FIRST_CONTACT_AUDIT.md)
+reduces the immutable 56/57 originals without replay or counterfactual scoring.
+
+Its main new observation is structural: in all **28/28** Candidate-G
+pre-contact on-water decisions, unsupported `boire` is forecast as the generic
+average step (water -0.4, uncertainty 1, information value 0). The same unknown
+first drink receives a paid unsupported-effect prior when it is *imagined* at
+an unseen frontier. P1.3 can cross the flat first-contact decision through its
+designer curiosity addend; Candidate-G usually cannot.
+
+The audit also separates two descriptive failure modes: an unsupported mode
+with little exploration/first-contact value, and a supported mode where
+Candidate-F-like cognition cost and sleep/inactivity return. It does not alter
+the 56/57 frozen verdict or authorize tuning on exposed evidence.
+
+## Next Stage-1 software slice: shared first-contact prior
+
+The owner-approved
+[shared first-contact prior protocol](STAGE1_SHARED_FIRST_CONTACT_PRIOR.md)
+is the next bounded Stage-1 intervention. It asks whether the same inherited
+RMS/omega expectation can govern an unsupported action whether the trial is
+imagined or the resource is already perceived.
+
+This slice is **software laboratory only**. It must pass frozen defect stops
+D0-D7 before interpreting capacity. The primary R1 question is whether some
+declared `omega > 0` makes at least one perceived-water first drink relevant
+where `omega = 0` does not. `NO_CAPACITY` is a valid result and must not be
+rescued by widening omega, rescaling the prior or changing fixtures.
+
+Do not modify Candidate-H runtime, do not consume 58/59 as a tuning set, and do
+not open another World/life panel from this protocol. P1.3 remains reference;
+Stage 2 remains blocked.
+
 ## Latest software integration: unified Candidate-H passes
 
 8 November 2026: the prospectively frozen
