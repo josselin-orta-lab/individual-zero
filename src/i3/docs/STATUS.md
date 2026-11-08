@@ -103,11 +103,27 @@ not a J1-J7 result. Originals are archived on
 `evidence/i3-stage1-candidate-i-60-61-46c52b2a5a81`, evidence commit
 `ebb8d1f9`. **60/61 are exposed and permanently closed. Do not rerun.**
 
-The next admissible work is now the prospectively frozen software-only
-[branch-decision settlement repair](STAGE1_BRANCH_DECISION_SETTLEMENT_REPAIR.md).
-It must reproduce the phase/body mismatch on synthetic fixtures, preserve the
-full paid decision work, and repair settlement custody without using 60/61 as
-an acceptance set.
+The prospectively frozen
+[branch-decision settlement repair](studies/stage1-branch-decision-settlement-repair/RESULTS.md)
+now returns **`BRANCH_DECISION_SETTLEMENT_REPAIR_PASS`**. B0-B9 all pass on
+Actions `42505811626`, Python 3.11/3.12. The synthetic legacy mismatch is
+reproduced, full Stage-A + Stage-B cognition remains charged, Candidate-H/I now
+bind total decision work to the matching pre-Stage-A body, ordinary learning
+semantics remain unchanged, and stale/missing settlement receipts fail closed.
+Merged repair authority: `5ee25b3b0f39050321b0b5c6147bdae0e3e68ec5`.
+
+60/61 remain exposed and permanently closed with no J1-J7 verdict. The next
+fresh lived question is now prospectively frozen on
+[Candidate-I 62/63](studies/stage1-candidate-i-development-62-63/PROTOCOL.md).
+It uses new DEVELOPMENT indices 62/63, world seeds 2062/2063, G0 903/904 and
+new life seeds, while preserving the four arms and J1-J7 exactly. Machine plan
+digest:
+`ba8e934c33fd060318721883e4f6e92034dd68ed743cf044ac97f9f4dc3a21e7`.
+
+62/63 are **unopened**. Next work may implement only the source-locked
+runner/reducer and preflight for this frozen plan. Do not read the 60/61 partial
+evidence as calibration or acceptance data, and do not open 62/63 in the runner
+implementation PR.
 
 ## Current handoff: 58/59 exposed, no Candidate-H continuation verdict
 
