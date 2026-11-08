@@ -7,16 +7,16 @@ request to integrate the supplied scenario. This is the continuation of
 second roadmap. Decision: [ADR-0016](../../../docs/decisions/ADR-0016-i3-generalization-without-imposed-rules.md).
 Integration tracking: [#1059](https://github.com/josselin-orta-lab/individual-zero/issues/1059).
 
-**Current operational intervention: freeze and execute the software-only
-shared-first-contact-prior falsifier from
-[STAGE1_SHARED_FIRST_CONTACT_PRIOR.md](STAGE1_SHARED_FIRST_CONTACT_PRIOR.md).
-The 56/57 read-only audit identifies an imagined/perceived asymmetry for
-unsupported first actions and a separate exploration deficit. Candidate-H's
-58/59 DEVELOPMENT panel has now been exposed and closed by an engineering
-reduction failure after World exposure, so it cannot be rerun and supplies no
-H1-H6 verdict. Stage 0 remains open; Stage 2 stays blocked. Do not tune 56/57,
-consume 58/59 as a calibration set, widen omega, rescale the shared prior or
-open another live panel before the software D0-D7/R1 result.**
+**Current operational intervention: the frozen
+[shared-first-contact-prior](STAGE1_SHARED_FIRST_CONTACT_PRIOR.md) gate now
+returns `SHARED_FIRST_CONTACT_PRIOR_CAPACITY_SHOWN` with D0-D7 PASS. The
+capacity is generic and energy/vigilance-dominated on P80, not water-specific.
+Next prospectively freeze a software-only Candidate-H integration that removes
+designer curiosity/prudence from first-contact FALLBACK while preserving the
+shared prior and #1163 post-contact semantics. In parallel, reproduce and repair
+the exposed 58/59 revision-reduction disagreement using synthetic fixtures
+only. No new World/life may open until both software boundaries pass. Stage 0
+remains open; Stage 2 stays blocked.**
 
 ## Source, scope and current reference
 
@@ -71,7 +71,7 @@ software defect. Keep adverse and null outcomes; do not tune them away.
 | Stage | Deliverable | Status / tracking |
 | --- | --- | --- |
 | 0 | Independent-population design, energetic mediation, complete paid Competition observation, individuality challenge, P5d uncertainty | Open in parallel; [#1060](https://github.com/josselin-orta-lab/individual-zero/issues/1060), existing #1026/#1054 |
-| 1 | Information value in predicted distress, replacing additive curiosity/relevance/prudence | **Current: software-only shared imagined/perceived first-contact prior.** Candidate-F/omega is rejected; Candidate-G 56/57 is closed; Candidate-H 58/59 is exposed with no H1-H6 verdict after an engineering reduction failure. Run D0-D7/R1 before any new live allocation; [#1061](https://github.com/josselin-orta-lab/individual-zero/issues/1061) |
+| 1 | Information value in predicted distress, replacing additive curiosity/relevance/prudence | **Current: shared-prior capacity shown in software; integration unresolved.** D0-D7 PASS and R1 holds, but P80 novelty is energy/vigilance-driven and K80 is non-monotone. Next freeze shared-prior Candidate-H first-contact integration without designer fallback addends, plus a synthetic 58/59 reducer repair. No new live allocation yet; [#1061](https://github.com/josselin-orta-lab/individual-zero/issues/1061) |
 | 2 | Decide how much to think by value of computation | **Blocked** until Stage-1 decision boundary is resolved; [#1062](https://github.com/josselin-orta-lab/individual-zero/issues/1062) |
 | 3 | Change detection, latent causes, then perceived-attribute factorization | Full stage deferred. One minimal generic future-opportunity representation may be tested early only as a Stage-1 prerequisite; do not start the Stage-3 bundle. |
 | 4 | Successor features and delayed credit evaluated by current bodily distress | Deferred after the required model/budget decisions |

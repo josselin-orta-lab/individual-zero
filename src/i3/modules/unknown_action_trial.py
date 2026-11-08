@@ -13,7 +13,7 @@ from .information_value import WORK_KEYS, _add_work, _advance
 from .forecast_work import projection_simulated_steps_ceiling
 from .observed_effect_view import (
     VIEW_WORK, paid_simulate_after_observed_effect)
-from .plan_information import _continuation_dict, _validate_plan
+from .plan_information import _validate_plan
 from .unknown_effect_prior import paid_zero_mean_stake_prior
 
 SCHEMA = "i3-unknown-action-trial-value/v1"
@@ -40,6 +40,25 @@ def _simulation_upper(model, plan, horizon):
 
 def _contains_exact(plan, key):
     return any(tuple(item) == key for item in plan)
+
+
+def _trial_continuation_dict(items):
+    """Named trial continuations; empty individual plans are explicit STOP."""
+    if type(items) is not tuple or not items:
+        raise ValueError("nonempty immutable continuation set required")
+    out = {}
+    for item in items:
+        if type(item) is not tuple or len(item) != 2:
+            raise ValueError("continuation identifier/plan pair required")
+        name, plan = item
+        if type(name) is not str or not name or name in out:
+            raise ValueError("unique nonempty continuation identifier required")
+        if type(plan) is not tuple:
+            raise ValueError("immutable continuation plan required")
+        if plan:
+            _validate_plan(plan)
+        out[name] = plan
+    return out
 
 
 def _minimum_ceiling(model, prior_work, branches, action_key,
@@ -85,7 +104,8 @@ def _minimum_ceiling(model, prior_work, branches, action_key,
 def paid_unknown_action_trial_value(
         model, action_key, common_continuations, post_trial_continuations,
         horizon, budget: CognitiveBudget, *,
-        forecast_work: CognitiveWork | None = None) -> dict:
+        forecast_work: CognitiveWork | None = None,
+        prior_source=None) -> dict:
     """Compare no trial, frozen post-trial policy and informed post-trial policy.
 
     The zero-mean prior supplies the possible effect of the first unsupported
@@ -116,10 +136,8 @@ def paid_unknown_action_trial_value(
     _validate_plan((action_key,))
     action_key = tuple(action_key)
 
-    common = _continuation_dict(
-        common_continuations, allow_empty=False)
-    post = _continuation_dict(
-        post_trial_continuations, allow_empty=False)
+    common = _trial_continuation_dict(common_continuations)
+    post = _trial_continuation_dict(post_trial_continuations)
     if set(common) & set(post):
         raise ValueError("common and post-trial continuation names must differ")
     if any(_contains_exact(plan, action_key) for plan in common.values()):
@@ -137,6 +155,8 @@ def paid_unknown_action_trial_value(
     if forecast_work is not None and not isinstance(
             forecast_work, CognitiveWork):
         raise ValueError("forecast_work must be CognitiveWork")
+    if prior_source is not None and not callable(prior_source):
+        raise ValueError("prior_source must be callable or None")
 
     original_work = budget.work
 
@@ -144,18 +164,44 @@ def paid_unknown_action_trial_value(
     # on a detached allowance from the same phase-start body, then buy exactly
     # that declared work on the real cumulative budget.
     prior_allowance = CognitiveBudget(budget.body, budget.laws)
-    prior = paid_zero_mean_stake_prior(
-        budget.body, tuple(model.theta), tuple(model.p), tuple(model.w),
-        prior_allowance)
+    if prior_source is None:
+        prior = paid_zero_mean_stake_prior(
+            budget.body, tuple(model.theta), tuple(model.p), tuple(model.w),
+            prior_allowance)
+    else:
+        prior = prior_source(prior_allowance)
+    if type(prior) is not dict or "outcomes" not in prior or "status" not in prior:
+        raise ValueError("prior_source must return a prior record")
+    branches = tuple(prior["outcomes"])
+    if any(
+            not hasattr(branch, "probability")
+            or not hasattr(branch, "signal")
+            or not hasattr(branch, "probe_delta")
+            for branch in branches):
+        raise ValueError("prior outcomes must be PlanSubjectiveOutcome-compatible")
     budget.spend(prior_allowance.work)
     after_prior = budget.work
 
-    branches = tuple(prior["outcomes"])
     if not branches:
         return {
             "schema": SCHEMA,
             "status": "NO_STAKE_RELEVANT_UNCERTAINTY",
             "prior_status": prior["status"],
+            "prior_record": {
+                "status": prior["status"],
+                "expected_external_delta": tuple(
+                    prior.get("expected_external_delta", (0.0,) * 5)),
+                "rms_scale": (
+                    None if prior.get("rms_scale") is None
+                    else tuple(prior["rms_scale"])),
+                "omega": prior.get("innate_mean_shift_omega"),
+                "branch_deltas": tuple(
+                    tuple(branch.probe_delta) for branch in branches),
+                "action_identity_used": prior.get("action_identity_used"),
+                "token_identity_used": prior.get("token_identity_used"),
+                "body_need_used": prior.get("body_need_used"),
+                "world_access": prior.get("world_access"),
+            },
             "no_trial_value": None,
             "trial_frozen_value": None,
             "trial_informed_value": None,
@@ -288,6 +334,21 @@ def paid_unknown_action_trial_value(
         "prior_status": prior["status"],
         "prior_expected_external_delta": prior[
             "expected_external_delta"],
+        "prior_record": {
+            "status": prior["status"],
+            "expected_external_delta": tuple(
+                prior["expected_external_delta"]),
+            "rms_scale": (
+                None if prior.get("rms_scale") is None
+                else tuple(prior["rms_scale"])),
+            "omega": prior.get("innate_mean_shift_omega"),
+            "branch_deltas": tuple(
+                tuple(branch.probe_delta) for branch in branches),
+            "action_identity_used": prior.get("action_identity_used"),
+            "token_identity_used": prior.get("token_identity_used"),
+            "body_need_used": prior.get("body_need_used"),
+            "world_access": prior.get("world_access"),
+        },
         "no_trial_value": no_trial_value,
         "no_trial_best_continuations": no_trial_best,
         "trial_frozen_value": trial_frozen_value,

@@ -5,6 +5,29 @@ The [engine contract](../engine.json) has no active entrypoints; the
 [registry](../../../config/engine-registry.json) keeps I1 active.
 A green software test is not a scientific GO.
 
+## Latest: shared first-contact prior has capacity, but it is generic
+
+The frozen
+[shared-prior result](studies/stage1-shared-first-contact-prior/RESULTS.md)
+passes D0-D7 and returns
+`SHARED_FIRST_CONTACT_PRIOR_CAPACITY_SHOWN`.
+
+For perceived water, relevance rises from 48/80 at omega=0 to 56/80 at
+omega=0.25/0.5 and 72/80 at omega=1. The new states are entirely energy- and
+vigilance-deficit states on this grid, not water-deficit states. F108 carried
+food becomes 108/108 relevant by omega=0.5. The same prior is therefore capable
+of moving first-contact decisions, but currently behaves as a broad inherited
+action-opportunity expectation rather than a targeted water disposition.
+
+K80 imagined first contact is non-monotone under positive omega even though D7
+proves the RMS prior is shared exactly. That divergence belongs to the different
+frozen decision geometries, not to a different prior.
+
+Next work remains software-only: integrate this shared prior into a Candidate-H
+first-contact route without the designer curiosity/prudence fallback addends,
+and independently repair the generic 58/59 reduction disagreement on synthetic
+fixtures. No fresh life is authorized yet.
+
 ## Current: first-contact asymmetry becomes the next Stage-1 software question
 
 The frozen 58/59 Candidate-H DEVELOPMENT transport opened once and then stopped

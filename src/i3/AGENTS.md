@@ -27,12 +27,27 @@ imagined frontier path but not when the resource is directly perceived.
 Exploration without P1.3's designer addend is also sparse. These are descriptive
 findings on immutable originals, not permission to tune 56/57.
 
-**Next work is software-only:** implement exactly
-[STAGE1_SHARED_FIRST_CONTACT_PRIOR.md](docs/STAGE1_SHARED_FIRST_CONTACT_PRIOR.md)
-after its frozen document commit. Preserve its omega arms, K80/P80/F108 fixtures,
-negative controls, D0-D7 defect stops and R1 capacity criterion. Do not widen
-omega or rescale the RMS prior after exposure. Do not touch Candidate-H runtime,
-World/life, 58/59, selection, validation, reserve or Stage 2.
+The frozen shared-first-contact-prior gate is now implemented and passes
+([result](docs/studies/stage1-shared-first-contact-prior/RESULTS.md)):
+D0-D7 PASS and R1 holds. P80 relevance rises 48/80 -> 56/80 -> 72/80 as
+positive omega increases. However, every newly relevant P80 state is an
+energy/vigilance state, not a water-deficit state; F108 saturates, and K80 is
+non-monotone. Treat this as **generic inherited first-contact capacity**, not a
+water-specific adaptation.
+
+**Next work remains software-only and must be prospectively frozen before
+implementation.** Two bounded tasks are admissible:
+
+1. a shared-prior Candidate-H integration gate where first-contact FALLBACK no
+   longer receives P1.3 curiosity/prudence addends, while post-contact #1163
+   stays byte/semantics equivalent and all cognition remains paid;
+2. a synthetic reproducer for the 58/59 `resource processing status
+   disagreement`, followed by an engineering repair test. Never rerun 58/59.
+
+Do not widen omega, rescale the RMS prior, add action/water-specific inherited
+weights, reinterpret K80 non-monotonicity as a defect, or open another live
+panel. A fresh DEVELOPMENT protocol is admissible only after both software
+boundaries pass. Selection, validation, reserve and Stage 2 remain blocked.
 
 The full frozen Stage-1 genomic-omega Candidate-F gate has now completed.
 Read [the final result](docs/studies/stage1-omega-adr0015/RESULTS.md) before any

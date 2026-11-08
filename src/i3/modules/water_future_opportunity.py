@@ -389,6 +389,16 @@ def paid_water_one_future_opportunity_value(
             "frontier_expected_value": decline_value,
             "water_revelation_advantage": 0.0,
             "innate_mean_shift_omega": prior["innate_mean_shift_omega"],
+            "shared_effect_prior": {
+                "status": prior["effect_prior_status"],
+                "rms_scale": tuple(prior["rms_scale"]),
+                "omega": prior["innate_mean_shift_omega"],
+                "branch_deltas": (),
+                "action_identity_used": prior["action_identity_used"],
+                "token_identity_used": prior["token_identity_used"],
+                "body_need_used": prior["body_need_used"],
+                "world_access": prior["world_access"],
+            },
             "subjective_leaf_count": 0,
             "work": asdict(actual),
             "forecast_work_ceiling": asdict(ceiling),
@@ -511,6 +521,18 @@ def paid_water_one_future_opportunity_value(
         "effect_branch_choices": tuple(branch_choices),
         "prior_expected_external_delta": tuple(
             prior["expected_external_delta"]),
+        "shared_effect_prior": {
+            "status": prior["effect_prior_status"],
+            "rms_scale": tuple(prior["rms_scale"]),
+            "omega": prior["innate_mean_shift_omega"],
+            "branch_deltas": tuple(
+                tuple(leaf["effect_delta"])
+                for leaf in effect_leaves),
+            "action_identity_used": prior["action_identity_used"],
+            "token_identity_used": prior["token_identity_used"],
+            "body_need_used": prior["body_need_used"],
+            "world_access": prior["world_access"],
+        },
         "subjective_leaf_count": prior["leaf_count"],
         "future_availability_marginalized": True,
         "future_availability_simulated_as_extra_branch": False,
