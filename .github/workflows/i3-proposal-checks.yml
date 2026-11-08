@@ -51,3 +51,102 @@ jobs:
       - name: Check current navigation
         if: matrix.python-version == '3.11'
         run: python tools/check_repo_navigation.py --scope entrypoints
+
+  execute_candidate_h_58_59:
+    if: >-
+      github.event.action == 'opened' &&
+      github.run_attempt == 1 &&
+      github.repository == 'josselin-orta-lab/individual-zero' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'i3/stage1-candidate-h-development-58-59-execution-v2' &&
+      github.event.pull_request.base.ref == 'main'
+    needs: software
+    name: Open fresh DEVELOPMENT 58/59 exactly once
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    env:
+      PYTHONPATH: src
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      PROTOCOL_SHA256: c307db1ec5b01b860bce40b1aa1f359a502da32fe3f7e46625b1c80811fd5951
+      OUT: /tmp/i3-candidate-h-58-59-originals
+    steps:
+      - name: Checkout exact prospective source with push authority
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Refuse duplicate evidence identity
+        run: |
+          EVIDENCE_BRANCH="evidence/i3-stage1-candidate-h-58-59-${HEAD_SHA:0:12}"
+          if git ls-remote --exit-code --heads origin "$EVIDENCE_BRANCH" >/dev/null 2>&1; then
+            echo "Evidence branch already exists: $EVIDENCE_BRANCH" >&2
+            exit 1
+          fi
+      - name: Execute frozen 58/59 pilot once
+        id: pilot
+        continue-on-error: true
+        run: |
+          python -m i3.lab.stage1_candidate_h_development_pilot \
+            --output "$OUT" \
+            --expected-sha "$HEAD_SHA" \
+            --expected-protocol "$PROTOCOL_SHA256"
+      - name: Commit every available original to immutable evidence branch
+        id: evidence
+        if: always()
+        env:
+          PILOT_OUTCOME: ${{ steps.pilot.outcome }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          EVIDENCE_BRANCH="evidence/i3-stage1-candidate-h-58-59-${HEAD_SHA:0:12}"
+          TARGET="src/i3/docs/studies/stage1-candidate-h-development-58-59/evidence"
+          mkdir -p "$TARGET"
+          if [ -d "$OUT" ]; then
+            cp -a "$OUT"/. "$TARGET"/
+          fi
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          target = Path("src/i3/docs/studies/stage1-candidate-h-development-58-59/evidence")
+          receipt = {
+              "schema": "i3-candidate-h-58-59-transport/v1",
+              "execution_sha": os.environ["HEAD_SHA"],
+              "protocol_sha256": os.environ["PROTOCOL_SHA256"],
+              "github_run_id": int(os.environ["RUN_ID"]),
+              "github_run_attempt": int(os.environ["RUN_ATTEMPT"]),
+              "pilot_outcome": os.environ["PILOT_OUTCOME"],
+              "worlds_may_have_opened": (target / "cases.json").exists(),
+              "evidence_branch":
+                  "evidence/i3-stage1-candidate-h-58-59-" + os.environ["HEAD_SHA"][:12],
+          }
+          (target / "TRANSPORT.json").write_text(
+              json.dumps(receipt, sort_keys=True, separators=(",", ":")) + "\n",
+              encoding="utf-8")
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$EVIDENCE_BRANCH"
+          git add "$TARGET"
+          git commit -m "evidence(i3): preserve original Candidate-H 58/59 pilot"
+          git push origin "HEAD:refs/heads/$EVIDENCE_BRANCH"
+          echo "evidence_branch=$EVIDENCE_BRANCH" >> "$GITHUB_OUTPUT"
+      - name: Upload transport artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-candidate-h-58-59-${{ github.event.pull_request.head.sha }}
+          path: /tmp/i3-candidate-h-58-59-originals
+          if-no-files-found: warn
+          retention-days: 90
+      - name: Fail closed if the pilot did not complete
+        if: steps.pilot.outcome != 'success'
+        run: |
+          echo "Pilot failed or stopped. Originals were archived when available. No retry is authorized after World exposure." >&2
+          exit 1
