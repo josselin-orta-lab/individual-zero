@@ -1093,6 +1093,23 @@ class Mind:
                     "risk_penalty_applied": risk_penalty if use_risk else 0.0,
                     "curiosity_risk_bonus": bonus, "total_score": j + bonus,
                     "uncertainty": u, "first_forecast": first_forecast})
+        return self._finalize_scored_decision(
+            body=body, inv=inv, opts=opts, scored=scored,
+            score_witness=score_witness, cycles=cycles, budget=budget,
+            horizon=horizon, urgency=urgency,
+            observer_offered=observer_offered,
+            observer_families=observer_families)
+
+    def _finalize_scored_decision(
+            self, *, body, inv, opts, scored, score_witness,
+            cycles, budget, horizon, urgency,
+            observer_offered, observer_families):
+        """Run the original paid Competition and ActionControl over given scores.
+
+        Score production remains the caller's responsibility. This helper owns
+        no extra cognition and preserves the exact P1.3 competition, tie, motor
+        admission, observer and learning-authority semantics.
+        """
         if not scored:
             info = {"option": None, "funding": "NO_FUNDED_SCORE"}
             if self.observer_decision_diagnostics:
@@ -1162,6 +1179,7 @@ class Mind:
                 competition["intention_after"] = self.intention
                 info["observer"]["competition_witness"] = competition
         return action, param, work, info
+
 
     def _compete(self, scored, cycles, budget=None):
         vals = [s for _, s in scored]
