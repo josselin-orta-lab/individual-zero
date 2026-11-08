@@ -53,7 +53,8 @@ class ReferenceMemoryMindTests(unittest.TestCase):
         for mind in (a, b):
             mind.last = last
             mind.buffer = deque([sample, sample, sample, sample])
-        b._branch_decision_work = CognitiveWork(cycles=3)
+        b._set_branch_decision_settlement(
+            BODY, CognitiveWork(cycles=3))
 
         ba, bb = CognitiveBudget(BODY, BodyLaws()), CognitiveBudget(BODY, BodyLaws())
         ra = a.prepare_learning(result, ba)
@@ -80,7 +81,7 @@ class ReferenceMemoryMindTests(unittest.TestCase):
         result = {"dead": (), "body": body}
         a.last = last
         b.last = last
-        b._branch_decision_work = CognitiveWork()
+        b._set_branch_decision_settlement(body, CognitiveWork())
         ba, bb = CognitiveBudget(body, BodyLaws()), CognitiveBudget(body, BodyLaws())
         self.assertEqual(a.prepare_learning(result, ba), 0)
         self.assertEqual(b.prepare_learning(result, bb), 0)
