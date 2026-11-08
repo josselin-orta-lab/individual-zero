@@ -82,9 +82,15 @@ Hard invariants:
 
 Decision-boundary characterization:
 
-- R4: at least one epistemic trial is selected and at least one state declines;
-- R5: no selected trial occurs in a state whose only imposed deficit is outside
-  water.
+- R4: at least one epistemic trial is **strictly advantageous** and selected
+  (`information_value > 0` and `trial_advantage > 0`), while at least one
+  state declines;
+- R5: every state reported as selected has strictly positive trial advantage.
+
+The deficit-channel distribution is descriptive only. The unsupported-effect
+prior is deliberately action-agnostic, so requiring a first-contact `boire`
+trial to be selected only under water deficit would smuggle the unlearned fact
+that drinking is water-specific into the architecture.
 
 R4/R5 are not CI-success requirements. A negative behavioral result is a valid
 scientific falsification and must be reported without changing the fixture.
