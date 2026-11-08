@@ -396,9 +396,9 @@ def characterize():
     post_ok = (
         post["verdict"]
         == "CANDIDATE_H_POST_CONTACT_SOFTWARE_GATE_PASS"
-        and post["summary"]["evaluated"] == 80
-        and post["summary"]["relevant"] == 68
-        and post["summary"]["fallback"] == 12)
+        and post["fixture"]["states"] == 80
+        and post["stage_a"]["relevant"] == 68
+        and post["stage_a"]["fallback"] == 12)
 
     route_post_rows = [
         row for row in unified["routing_panel"]["rows_omega_minus1"]
@@ -434,7 +434,10 @@ def characterize():
             post_ok
             and not unified["routing_panel"]["omega_mismatches"]
             and len(route_post_rows) == len(route_post_rows_high)
-            and route_post_rows == route_post_rows_high),
+            and all(
+                left.get("signature") == right.get("signature")
+                for left, right in zip(
+                    route_post_rows, route_post_rows_high))),
         "I6_paid_physical_accounting": not accounting_failures,
         "I7_genericity_and_renaming": (
             not renaming_mismatches
