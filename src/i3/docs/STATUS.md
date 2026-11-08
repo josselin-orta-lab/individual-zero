@@ -120,10 +120,31 @@ new life seeds, while preserving the four arms and J1-J7 exactly. Machine plan
 digest:
 `ba8e934c33fd060318721883e4f6e92034dd68ed743cf044ac97f9f4dc3a21e7`.
 
-62/63 are **unopened**. Next work may implement only the source-locked
-runner/reducer and preflight for this frozen plan. Do not read the 60/61 partial
-evidence as calibration or acceptance data, and do not open 62/63 in the runner
-implementation PR.
+The source-locked 62/63 runner subsequently merged in #1186. The separate
+one-shot transport #1187 passed the full Python 3.11/3.12 software matrix and
+then opened 62/63 exactly once from execution source
+`81f05a7fb79c9e1f264cab63a363dc181ff663b2`, Actions `42507594360`.
+**18 lives completed** before
+`depletion-62-g903:personal_shared_prior_candidate_i_v1` stopped with
+`RuntimeError: missing branch decision settlement start body`.
+
+The originals and failure receipt are archived on
+`evidence/i3-stage1-candidate-i-62-63-81f05a7fb79c`, evidence commit
+`1e975da3`. This is
+[ENGINEERING_FAILURE_NOT_A_DEATH](studies/stage1-candidate-i-development-62-63/RESULTS.md),
+not J1-J7 evidence. **62/63 are exposed and permanently closed. Do not retry.**
+PR #1187 is closed and unmerged.
+
+Source inspection identifies a narrower rollback-authority defect: Candidate-I
+captured its probe snapshot before clearing the previous decision's `last`.
+An unfunded Stage-A restore could revive that stale `last` after the matching
+settlement receipt had been cleared. The branch-memory fail-closed guard then
+correctly rejected learning.
+
+The next admissible intervention is the prospectively frozen software-only
+[Candidate-I probe-restore authority repair](STAGE1_CANDIDATE_I_PROBE_AUTHORITY_REPAIR.md).
+It must separate reversible perceptual/RNG rollback state from decision/learning
+authority. No 62/63 original life may be used as an acceptance fixture.
 
 ## Current handoff: 58/59 exposed, no Candidate-H continuation verdict
 

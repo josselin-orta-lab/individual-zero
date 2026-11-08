@@ -78,14 +78,26 @@ its actual decision-start body.
 
 60/61 remain permanently exposed and closed with no J1-J7 verdict.
 
-**Next work is software-only around the newly frozen
-[Candidate-I 62/63 protocol](docs/studies/stage1-candidate-i-development-62-63/PROTOCOL.md).**
-Its machine plan uses fresh indices 62/63, world seeds 2062/2063, G0 903/904
-and life seeds rooted at 7,490,000. Its J1-J7 identifiers are exactly the
-60/61 pre-exposure rules. Implement only the source-locked runner/reducer and
-already-exposed-fixture preflight. Do not open 62/63 in that implementation PR
-and do not read 60/61 partial originals as fixtures, calibration or acceptance
-data.
+The fresh 62/63 panel was opened once by #1187 after the runner #1186
+passed its software checks. It stopped after 18 completed lives on
+`RuntimeError: missing branch decision settlement start body` in native
+Candidate-I. The originals are archived on
+`evidence/i3-stage1-candidate-i-62-63-81f05a7fb79c`; #1187 is closed and
+unmerged. **62/63 are permanently exposed and closed. There is no J1-J7
+verdict.** Do not rerun, resume, replace conditions or use partial lived metrics
+to tune Candidate-I.
+
+Source inspection identifies the current defect as stale learning authority
+restored by Candidate-I's detached probe rollback: the pre-probe snapshot can
+capture the previous `last`, while the matching branch settlement receipt is
+cleared. On an unfunded Stage-A exit, restoring that snapshot can revive
+`last` without its receipt.
+
+**Next work is software-only and prospectively frozen in
+[STAGE1_CANDIDATE_I_PROBE_AUTHORITY_REPAIR.md](docs/STAGE1_CANDIDATE_I_PROBE_AUTHORITY_REPAIR.md).**
+Rollback may restore perception/map/token/RNG state but never `last`, pending
+branch storage, branch-settlement authority or pending opportunity commits.
+Do not use the 62/63 original lives as repair fixtures.
 
 Do not widen omega, rescale RMS, add resource-specific inherited coefficients,
 alter K80/P80/F108 or reuse 56/57/58/59. Selection, validation, reserve and
