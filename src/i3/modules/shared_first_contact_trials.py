@@ -37,6 +37,31 @@ def _top(scores):
         if value >= best - TOL))
 
 
+def direct_trial_strict_winners(trial_rows, with_information_scores):
+    """Return trials satisfying frozen v2 own-no-trial + strict-winner rules."""
+    if type(with_information_scores) is not dict:
+        raise ValueError("with_information_scores must be a dict")
+    winners = []
+    for row in trial_rows:
+        oid = row["option"]
+        informed = row["trial_informed_value"]
+        no_trial = row["no_trial_value"]
+        if (type(informed) not in (int, float)
+                or type(no_trial) not in (int, float)
+                or not isfinite(informed) or not isfinite(no_trial)):
+            continue
+        own_advantage = informed > no_trial + TOL
+        strict_best = own_advantage and all(
+            informed > value + TOL
+            for other, value in with_information_scores.items()
+            if other != oid)
+        if strict_best:
+            winners.append(oid)
+    if len(winners) > 1:
+        raise RuntimeError("strict first-contact winner cannot be non-unique")
+    return tuple(winners)
+
+
 def _delta(after, before):
     return CognitiveWork(*(
         getattr(after, key) - getattr(before, key)
@@ -255,16 +280,18 @@ def paid_shared_perceived_first_contact(
 
     with_top = _top(with_information)
     without_top = _top(without_information)
-    positive_trial_top = (
+    strict_winners = (
+        direct_trial_strict_winners(
+            trial_rows, with_information)
+        if complete else ())
+    relevant = bool(complete and strict_winners)
+    v1_top_set_change = bool(
         complete
+        and with_top != without_top
         and any(
             row["option"] in with_top
             and row["information_value"] > TOL
             for row in trial_rows))
-    relevant = bool(
-        complete
-        and with_top != without_top
-        and positive_trial_top)
 
     witnesses = []
     scored = []
@@ -320,6 +347,8 @@ def paid_shared_perceived_first_contact(
         "without_information_scores": without_information,
         "with_information_top": with_top,
         "without_information_top": without_top,
+        "strict_trial_winners": strict_winners,
+        "v1_top_set_change_diagnostic": v1_top_set_change,
         "scored": tuple(scored),
         "score_witnesses": tuple(witnesses),
         "work": asdict(actual),
@@ -339,5 +368,6 @@ def paid_shared_perceived_first_contact(
 
 
 __all__ = [
-    "SCHEMA", "paid_shared_perceived_first_contact",
+    "SCHEMA", "direct_trial_strict_winners",
+    "paid_shared_perceived_first_contact",
 ]
