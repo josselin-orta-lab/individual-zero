@@ -149,17 +149,25 @@ now **PASSes V0-V8** on tested source
 unchanged. The paid-Stage-A / zero-Stage-B boundary is exercised through actual
 H/I production decisions and the repaired Stage-0 reducer.
 
-The next successor is now prospectively frozen in
-[Candidate-I 66/67](docs/studies/stage1-candidate-i-development-66-67/PROTOCOL.md):
-DEVELOPMENT 66/67, worlds 2066/2067, genomes 907/908, life-seed namespace
-7,510,000, horizon 400, four matched arms and byte-identical J1-J7.
+The fresh
+[Candidate-I 66/67](docs/studies/stage1-candidate-i-development-66-67/RESULTS.md)
+panel has now been opened once by #1205. Ten lives were admitted; the eleventh
+Candidate-I native original completed runtime but Stage-0 revision reduction
+stopped on `invalid Candidate-I post-contact processing receipt`. Evidence:
+`evidence/i3-stage1-candidate-i-66-67-9db49f8c3b52`,
+commit `18a7e27bd79de81280e171fdf682f8a5f4195830`.
 
-**Do not open 66/67 from the protocol branch.** Next implement only the
-source-locked runner/reducer and preflight. It must require V2 PASS, preserve
-the canonical plan digest
-`bf1d87a7944b334ca0b4bccff43677c06071d5638ed352a3c1cd045096d77d26`,
-remain independent of predecessor evidence, and use only DEVELOPMENT-0/software
-fixtures before birth. Actual exposure remains a separate one-shot PR.
+**66/67 are permanently exposed/closed with no J1-J7 verdict.** Do not rerun,
+resume, complete or retroactively admit archived lives after repair. Do not use
+partial lived metrics to tune Candidate-I.
+
+The next work is software-only and prospectively frozen in
+[STAGE1_POST_CONTACT_PROBE_REDUCER_REPAIR.md](docs/STAGE1_POST_CONTACT_PROBE_REDUCER_REPAIR.md).
+Implement Q0-Q9 exactly. Candidate-I post-contact must delegate reducer
+processing ownership to the nested Candidate-H route: complete H finals keep
+Stage-B ownership; nested H `PROBE_UNFUNDED` uses authenticated Stage A with
+zero Stage B and incomplete nested funding. Preserve direct-H, M0-M9 and V0-V8
+semantics. 66/67 originals are forbidden as acceptance fixtures.
 
 Do not widen omega, rescale RMS, add resource-specific inherited coefficients,
 alter K80/P80/F108 or reuse 56/57/58/59. Selection, validation, reserve and
