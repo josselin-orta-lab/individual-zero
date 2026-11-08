@@ -154,15 +154,22 @@ recurrence storage no longer loses that lived observation after rollback.
 
 60/61 and 62/63 remain permanently exposed and closed with no J1-J7 verdict.
 
-After two distinct live engineering stops, **do not freeze 64/65 yet**. The
-next intervention is now prospectively specified in
-[STAGE1_CANDIDATE_I_LIFECYCLE_CUSTODY_STRESS.md](STAGE1_CANDIDATE_I_LIFECYCLE_CUSTODY_STRESS.md).
-It freezes 9 non-scientific smokes on already-exposed P2 DEVELOPMENT index 0
-plus deterministic no-World micro-cycles for FALLBACK, RELEVANT,
-PROBE_UNFUNDED, post-contact and omega0 custody. L0-L11 judge only lifecycle,
-funding, memory, reducer and authority consistency. Survival, uptake, route
-frequency, revision latency and omega direction are explicitly non-criteria.
-No fresh DEVELOPMENT condition may open before this gate passes.
+The prospectively frozen
+[Candidate-I lifecycle-custody stress](studies/stage1-candidate-i-lifecycle-custody-stress/RESULTS.md)
+now returns **`CANDIDATE_I_LIFECYCLE_CUSTODY_STRESS_PASS`**. Tested source
+`1bdca27ae95509e9b54817bd25b2c0a21872c069`, Actions
+`42518978398`, merged authority
+`5e85106157afa6c600dd1983efde94fb80032977`. Python 3.11/3.12 pass the
+975-test suite; navigation passes on 3.11. All L0-L11 are green and all nine
+already-exposed DEVELOPMENT-0 smokes reduce with `smoke_failures=[]`.
+
+This is engineering readiness only. It does not evaluate survival, uptake,
+route frequency, omega direction or J1-J7.
+
+A new fresh Candidate-I DEVELOPMENT successor may now be **proposed and frozen**
+on disjoint conditions, but not opened until its own protocol, machine plan and
+source-locked runner pass prospectively. 60/61 and 62/63 remain permanently
+closed and are not calibration data.
 
 ## Current handoff: 58/59 exposed, no Candidate-H continuation verdict
 
