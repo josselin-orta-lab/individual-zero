@@ -6,7 +6,7 @@ of personally lived action/body effects for later cost-matched experiments.
 """
 from __future__ import annotations
 
-from .body import CognitiveBudget, CognitiveWork
+from .body import CognitiveBudget, CognitiveWork, validate_body
 from .mind import Mind
 from .personal_outcomes import STORE_WORK
 from .reference_branches import ReferenceBranchMemory
@@ -20,12 +20,22 @@ class ReferenceBranchMemoryMind(Mind):
         self.branch_memory = ReferenceBranchMemory()
         self.branch_records = 0
         self._pending_branch = None
+        self._branch_decision_start_body = None
         self._branch_decision_work = CognitiveWork()
+
+    def _set_branch_decision_settlement(self, start_body, work):
+        """Bind branch-memory work to the exact body that funded that work."""
+        if not isinstance(work, CognitiveWork):
+            raise ValueError("branch decision work must be CognitiveWork")
+        self._branch_decision_start_body = validate_body(start_body)
+        self._branch_decision_work = work
 
     def decide(self, cap, budget):
         self._pending_branch = None
+        self._branch_decision_start_body = None
+        start_body = tuple(budget.body)
         result = super().decide(cap, budget)
-        self._branch_decision_work = result[2]
+        self._set_branch_decision_settlement(start_body, result[2])
         return result
 
     def prepare_learning(self, result, budget):
@@ -37,6 +47,9 @@ class ReferenceBranchMemoryMind(Mind):
         additional block and never displaces a reference replay.
         """
         self._pending_branch = None
+        settlement_body = self._branch_decision_start_body
+        settlement_work = self._branch_decision_work
+        self._branch_decision_start_body = None
         if not isinstance(budget, CognitiveBudget) or budget.work != CognitiveWork():
             raise ValueError("fresh learning CognitiveBudget required")
         if tuple(result["body"]) != budget.body:
@@ -51,14 +64,17 @@ class ReferenceBranchMemoryMind(Mind):
         budget.spend(reference_budget.work)
         if budget.try_spend(STORE_WORK):
             before, key, action, _ = self.last
+            if settlement_body is None:
+                raise RuntimeError(
+                    "missing branch decision settlement start body")
             branch_key = (
                 action,
                 key[1] if action in ("manger", "collecter") else None,
             )
             self._pending_branch = (
                 branch_key,
-                tuple(before),
-                self._branch_decision_work,
+                tuple(settlement_body),
+                settlement_work,
                 tuple(result["body"]),
                 budget.laws,
             )
