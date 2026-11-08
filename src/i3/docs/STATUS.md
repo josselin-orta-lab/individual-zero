@@ -12,6 +12,35 @@ That integration changed documentation and priorities only. The subsequent
 Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
+## Latest software gate: Candidate-H first-contact relevance fallback passes
+
+8 November 2026: the frozen
+[Candidate-H first-contact gate](studies/stage1-candidate-h-relevance-fallback/RESULTS.md)
+passes all H0-H5 rules:
+`CANDIDATE_H_FIRST_CONTACT_SOFTWARE_GATE_PASS`.
+
+Candidate-H pays the canonical Candidate-F relevance probe first. In the 24
+strictly relevant states it executes no fallback. In all **56/56** non-relevant
+states it can still fund a complete P1.3 four-plan fallback from the body after
+the paid probe, with exact same-body P1.3 score identity (max error 0).
+
+Crucially, all **20/20** support-only projector-drift states identified by #1161
+return to their pre-probe P1.3 top set. Across all 56 fallback states there are
+**0** top-set changes versus pre-probe P1.3. The fallback adds paid work rather
+than hiding it: mean combined simulated work is 503.36 steps in fallback states
+versus canonical probe mean 470.05.
+
+The first implementation run reported H4 FAIL because the H4 verifier
+reconstructed fixture bodies with a captured outer-loop level=50. That
+bookkeeping defect was corrected to use each row's immutable level; candidate
+computation and H0-H5 were unchanged. Final run `42478647427` passes on
+Python 3.11/3.12.
+
+This PASS is **first-contact software evidence only**. No runtime Candidate-H or
+fresh live panel is authorized. Next freeze a separate software falsifier for
+**post-contact relevance gating** under personally learned actionable belief.
+P1.3 remains reference; 56/57 remain exposed and closed.
+
 ## Latest software diagnostic: support is not decision relevance
 
 8 November 2026: the declared

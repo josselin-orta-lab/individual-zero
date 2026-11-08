@@ -101,27 +101,32 @@ analysis or a new software-only architecture falsifier. Preserve no-omega,
 personal-observation-only cognition, paid work and P1.3 reference. Selection,
 validation, reserve, adoption and Stage 2 remain blocked.
 
-The next software-only falsifier is now justified by
-[the support-vs-relevance diagnostic](docs/studies/stage1-candidate-g-support-vs-relevance/RESULTS.md):
-Candidate-G's support-triggered projector switch changes the ordinary top set in
-**20/56 support-only nonselected states** and produces 4 unique-winner changes.
-Classification:
-`SUPPORT_TRIGGER_ORDINARY_POLICY_DRIFT_PRESENT`.
+The support-vs-relevance defect is now followed by a bounded
+[first-contact Candidate-H software PASS](docs/studies/stage1-candidate-h-relevance-fallback/RESULTS.md):
+all 56 fallback states are fundable, same-body P1.3 score identity is exact,
+and all 20/20 #1161 projector-drift states return to their pre-probe P1.3 top
+set. The extra fallback work is physically charged.
 
-Do **not** respond by tuning recurrence support or by selectively keeping
-favorable Candidate-F scores. Freeze a relevance-gated fallback before code:
+The first H4 result was a verifier defect, not candidate tuning: the verifier
+used the completed outer-loop `level=50` instead of each row's stored level.
+The corrected immutable-row check passes on Python 3.11/3.12 without changing
+Candidate-H or H0-H5.
 
-1. no support: ordinary P1.3 decision unchanged;
-2. support present: pay the canonical Candidate-F information probe first;
-3. if the epistemic trial is not strictly advantageous, discard its policy
-   effect and pay a complete P1.3 final decision from the same body/state;
-4. if it is strictly advantageous, the final actual decision must use one
-   commensurate Candidate-F score geometry for all options;
-5. both passes are physically charged when fallback occurs;
-6. no omega, no World/life, no action-specific rule, no hidden rescue.
+**Next software-only work:** do not integrate a runtime mind yet. Freeze and
+falsify the same support-versus-relevance distinction **after personal drink
+effect knowledge exists**, using the existing paid actionable-belief frontier
+mechanism. Required constraints:
 
-First falsify this only on established software fixtures. No live authorization
-follows from a software pass.
+1. no omega and no recurrence proxy once personal effect knowledge exists;
+2. pay post-contact information relevance before changing ordinary projection;
+3. non-relevant post-contact states must fall back to a complete P1.3 decision,
+   with both computations charged;
+4. relevant states must keep one commensurate Candidate-F geometry;
+5. no World/life, no 56/57 read, no action-specific rescue;
+6. a software PASS still authorizes no runtime or fresh panel.
+
+Only after first-contact and post-contact relevance semantics both pass bounded
+software gates may a unified runtime integration question be proposed.
 
 **History after #1154:** exact cache/reward reuse cannot reach Candidate-F cost
 parity even under an impossible free-memo lower bound
