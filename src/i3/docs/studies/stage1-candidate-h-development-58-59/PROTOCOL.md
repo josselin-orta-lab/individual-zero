@@ -284,6 +284,28 @@ Before any 58/59 World import, the eventual runner must reject:
   Stage-0 energy/revision or engine registry after the reviewed runtime
   implementation baseline.
 
+## Pre-exposure source-lock correction after transport #1166
+
+The first one-shot transport (#1166, Actions `42483603522`) failed inside
+`validate_launch` before importing P2 ecology/world generation.
+
+Cause: the runner's implementation lock named pre-squash branch commit
+`a6f0e636022e608239daf08f3bdbeda777c06928`. The merged implementation has
+identical reviewed runtime content under ancestor commit
+`369012dff6ec50b586c6464e9138869943d95fc1`, but the branch-only object was not
+resolvable in the execution checkout, so Git could not perform the protected
+path diff.
+
+Durable transport evidence records `worlds_may_have_opened: false`.
+Development 58/59 therefore remains fresh.
+
+Before any replacement transport, the runner lock is corrected only to the
+merged implementation commit `369012dff6ec50b586c6464e9138869943d95fc1`.
+No allocation, arm, seed, horizon, relevance rule, continuation rule, runtime
+behavior, cognition, observer or custody criterion changes.
+
+The replacement transport is a new PR/run, not a rerun of #1166.
+
 ## Execution custody
 
 Every original life must be written as deterministic gzip before reduction.

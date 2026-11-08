@@ -68,6 +68,26 @@ class CandidateHDevelopmentPilotTests(unittest.TestCase):
             "assert 'i3.modules.mind' not in sys.modules"
         ], check=True)
 
+    def test_implementation_baseline_is_reachable_merged_ancestor(self):
+        root = Path(d.__file__).resolve().parents[3]
+        result = subprocess.run(
+            ["git", "cat-file", "-e",
+             d.IMPLEMENTATION_BASELINE + "^{commit}"],
+            cwd=root,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True)
+        self.assertEqual(
+            result.returncode, 0,
+            msg=result.stderr or "merged implementation baseline unreachable")
+        ancestor = subprocess.run(
+            ["git", "merge-base", "--is-ancestor",
+             d.IMPLEMENTATION_BASELINE, "HEAD"],
+            cwd=root)
+        self.assertEqual(
+            ancestor.returncode, 0,
+            msg="implementation baseline must be an ancestor of HEAD")
+
     def test_launch_lock_rejects_wrong_protocol_and_runtime_drift(self):
         with patch.object(
                 d, "_git", side_effect=AssertionError("no git for bad SHA")):
