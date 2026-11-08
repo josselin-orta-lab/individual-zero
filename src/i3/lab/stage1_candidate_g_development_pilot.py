@@ -60,7 +60,6 @@ def plan():
                     })
     return {
         "protocol": PROTOCOL,
-        "implementation_baseline": IMPLEMENTATION_BASELINE,
         "horizon": HORIZON,
         "maximum_steps": HORIZON * len(cases),
         "allocation_contract":
