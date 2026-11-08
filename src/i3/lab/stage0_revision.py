@@ -186,6 +186,30 @@ def _multiphase_work(row, total_work, prefix, *, owner):
     raise ValueError("unknown multi-phase processing owner")
 
 
+def _candidate_h_processing_work(row, total_work):
+    """Authenticate Candidate-H processing ownership for direct or delegated use."""
+    info = row.get("info", {})
+    route = info.get("candidate_h_route")
+    nested = info.get("candidate_h_probe_funding")
+
+    if route == "PROBE_UNFUNDED":
+        if nested not in _COMPOSITE_INCOMPLETE_PROBE_FUNDING:
+            raise ValueError("invalid Candidate-H probe-unfunded processing receipt")
+        stage_b = _work_vector(
+            info.get("candidate_h_stage_b_work"), "candidate_h Stage B")
+        if any(stage_b.values()):
+            raise ValueError("Candidate-H probe-unfunded Stage B must be zero")
+        return _multiphase_work(
+            row, total_work, "candidate_h", owner="stage_a")
+
+    if route not in _H_COMPLETE_ROUTES:
+        raise ValueError("unknown Candidate-H processing route")
+    if nested not in _COMPLETE_H_PROBE_FUNDING:
+        raise ValueError("incomplete Candidate-H final processing receipt")
+    return _multiphase_work(
+        row, total_work, "candidate_h", owner="stage_b")
+
+
 def _processing_work(life, row, total_work):
     """Return the work block governed by the public processing status.
 
@@ -227,15 +251,7 @@ def _processing_work(life, row, total_work):
         return reference
 
     if manifest_policy == CANDIDATE_H_POLICY:
-        route = info.get("candidate_h_route")
-        if route == "PROBE_UNFUNDED":
-            return total_work
-        if route not in _H_COMPLETE_ROUTES:
-            raise ValueError("unknown Candidate-H processing route")
-        if info.get("candidate_h_probe_funding") not in _COMPLETE_H_PROBE_FUNDING:
-            raise ValueError("incomplete Candidate-H final processing receipt")
-        return _multiphase_work(
-            row, total_work, "candidate_h", owner="stage_b")
+        return _candidate_h_processing_work(row, total_work)
 
     if manifest_policy in CANDIDATE_I_POLICIES:
         route = info.get("candidate_i_route")
@@ -246,13 +262,9 @@ def _processing_work(life, row, total_work):
         if route == "POST_CONTACT_CANDIDATE_H":
             if (info.get("candidate_i_first_contact_omega_used") is not False
                     or info.get("candidate_i_post_contact_source")
-                    != "CANDIDATE_H_1163_UNCHANGED"
-                    or info.get("candidate_h_route") not in _H_COMPLETE_ROUTES
-                    or info.get("candidate_h_probe_funding")
-                    not in _COMPLETE_H_PROBE_FUNDING):
+                    != "CANDIDATE_H_1163_UNCHANGED"):
                 raise ValueError("invalid Candidate-I post-contact processing receipt")
-            return _multiphase_work(
-                row, total_work, "candidate_h", owner="stage_b")
+            return _candidate_h_processing_work(row, total_work)
 
         if info.get("candidate_i_probe_funding") != "FUNDED":
             raise ValueError("incomplete Candidate-I final processing receipt")
