@@ -12,6 +12,31 @@ That integration changed documentation and priorities only. The subsequent
 Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
+## Latest software gate: Candidate-H post-contact relevance fallback passes
+
+8 November 2026: the frozen
+[post-contact Candidate-H gate](studies/stage1-candidate-h-post-contact-relevance/RESULTS.md)
+passes P0-P6:
+`CANDIDATE_H_POST_CONTACT_SOFTWARE_GATE_PASS`.
+
+All 80 personally learned-water states fund the actionable-belief plus
+commensurate Candidate-F Stage A. **68** states are genuinely decision-relevant;
+**12** have positive information but do not change the top decision and
+therefore fall back. All 12/12 fallback states fund a complete P1.3 decision,
+match same-body P1.3 exactly (max score error 0), and preserve their pre-probe
+P1.3 top set.
+
+This confirms that positive information value alone is still too broad:
+relevance must be defined by an actual decision-top effect under one score
+geometry.
+
+Together with the first-contact H0-H5 PASS, both relevance semantics now have
+bounded software evidence. The next admissible slice is a **unified Candidate-H
+runtime software-integration gate** only. It must combine the two already-frozen
+rules without changing them, pay every probe/fallback, preserve P1.3 on
+fallback, and reconcile runtime forecast ceilings. No fresh World/life panel is
+authorized by this PASS.
+
 ## Latest software gate: Candidate-H first-contact relevance fallback passes
 
 8 November 2026: the frozen
