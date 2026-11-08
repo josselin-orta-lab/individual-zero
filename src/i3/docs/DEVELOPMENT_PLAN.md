@@ -8,13 +8,13 @@ second roadmap. Decision: [ADR-0016](../../../docs/decisions/ADR-0016-i3-general
 Integration tracking: [#1059](https://github.com/josselin-orta-lab/individual-zero/issues/1059).
 
 **Current operational intervention: Candidate-I runtime v2 S0-S11, branch
-settlement B0-B9 and probe-authority U0-U9 now PASS. 60/61 and 62/63 remain
-exposed/closed engineering stops with no J1-J7 verdict. Before any third fresh
-lived successor, prospectively freeze a software/already-exposed lifecycle
-custody stress gate spanning consecutive decision, learning, storage and
-revision cycles for Candidate-I native/omega0 and Candidate-H post-contact.
-Do not use 60/61 or 62/63 originals as acceptance data. Stage 0 remains open;
-Stage 2 stays blocked.**
+settlement B0-B9 and probe-authority U0-U9 PASS. 60/61 and 62/63 remain
+exposed/closed with no J1-J7 verdict. The next prospectively frozen gate is
+[Candidate-I lifecycle custody stress](STAGE1_CANDIDATE_I_LIFECYCLE_CUSTODY_STRESS.md):
+9 non-scientific smokes on already-exposed DEVELOPMENT index 0 plus forced
+no-World lifecycle cases, judged only by L0-L11 custody/funding/memory/reducer
+rules. No fresh lived successor may be allocated before this PASS. Stage 0
+remains open; Stage 2 stays blocked.**
 
 ## Source, scope and current reference
 
@@ -69,7 +69,7 @@ software defect. Keep adverse and null outcomes; do not tune them away.
 | Stage | Deliverable | Status / tracking |
 | --- | --- | --- |
 | 0 | Independent-population design, energetic mediation, complete paid Competition observation, individuality challenge, P5d uncertainty | Open in parallel; [#1060](https://github.com/josselin-orta-lab/individual-zero/issues/1060), existing #1026/#1054 |
-| 1 | Information value in predicted distress, replacing additive curiosity/relevance/prudence | **Current: Candidate-I runtime v2 S0-S11, branch settlement B0-B9 and probe-authority U0-U9 PASS; 60/61 and 62/63 are exposed/closed with no J1-J7 verdict.** Next freeze a consecutive lifecycle-custody stress gate on already-exposed fixtures before any new live allocation; no live retry. P80 remains energy/vigilance-driven and K80 non-monotone; [#1061](https://github.com/josselin-orta-lab/individual-zero/issues/1061) |
+| 1 | Information value in predicted distress, replacing additive curiosity/relevance/prudence | **Current: Candidate-I runtime v2 S0-S11, branch settlement B0-B9 and probe-authority U0-U9 PASS; 60/61 and 62/63 are exposed/closed with no J1-J7 verdict.** Execute the prospectively frozen lifecycle-custody stress L0-L11 on already-exposed fixtures before any new live allocation; no live retry. P80 remains energy/vigilance-driven and K80 non-monotone; [#1061](https://github.com/josselin-orta-lab/individual-zero/issues/1061) |
 | 2 | Decide how much to think by value of computation | **Blocked** until Stage-1 decision boundary is resolved; [#1062](https://github.com/josselin-orta-lab/individual-zero/issues/1062) |
 | 3 | Change detection, latent causes, then perceived-attribute factorization | Full stage deferred. One minimal generic future-opportunity representation may be tested early only as a Stage-1 prerequisite; do not start the Stage-3 bundle. |
 | 4 | Successor features and delayed credit evaluated by current bodily distress | Deferred after the required model/budget decisions |
