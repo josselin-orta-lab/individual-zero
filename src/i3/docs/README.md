@@ -66,9 +66,11 @@ bill is 7.759 energy / 3.532 vigilance even under the optimistic arm, versus
 The frozen runtime-advance rule therefore fails.
 
 The dominant cost is now identified: each fresh exact trace stores 1,035 paid
-memory items, while only 7.6% of trace accesses are hits. Next architecture
-question: sparse **exact checkpoints** plus per-step residual recomputation,
-reducing stored prefixes without reintroducing projection approximation.
+memory items, while only 7.6% of trace accesses are hits. Before adding another
+cache, test the simpler exact optimization already latent in the model:
+**per-step projection truncated at first predicted death**, with the absorbing
+tail summed analytically. Only if that remains too costly should sparse exact
+checkpoints be opened.
 
 ## Latest: exact separable projection cache passes its structural gate
 
