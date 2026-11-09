@@ -1,0 +1,37 @@
+{
+  "schema": "i3-stage2-b1-exploratory-development/v1",
+  "protocol_id": "I3_B1_NEW_F0_EXPLORATORY_DEVELOPMENT_2026_11_10",
+  "status": "FROZEN_PRE_EXPOSURE_PROPOSED",
+  "authorized_scope": "OWNER_DELEGATED_DEVELOPMENT_ONLY_2026_11_10",
+  "cohort": "development",
+  "index_start": 240000,
+  "pairs": 96,
+  "horizon": 400,
+  "arms": [
+    "reference",
+    "p13_replay_gate_v1"
+  ],
+  "sampling_frame": "KNOWN_F0_UNIFORM_THREE_FAMILY_HMAC_PRF_WITH_NEW_OS_SEEDED_WITNESS",
+  "witness": "ac89e1efa921ee9532e4fa3451eb2ce991faa6b3383968a615b0729d95861b49",
+  "witness_sha256": "3e0ddfc1f3f190daf9daaf0e7f0580b6cec3c67312a10c8f0cb409890920fa25",
+  "fixed_n_no_replacement": true,
+  "no_outcome_adaptive_stop": true,
+  "research_objective": "exploratory matched fixed-G0 survival and physically paid cognition, not confirmatory non-inferiority",
+  "primary_measure": "mean_400_step_horizon_survival_risk_difference_gate_minus_fixed",
+  "secondary_measures": [
+    "paired_horizon_discordance",
+    "mean_lived_steps",
+    "paid_energy_per_assigned_life",
+    "paid_vigilance_per_assigned_life",
+    "F0_family_heterogeneity"
+  ],
+  "null_policy": "NO_PROMOTION_NO_NI_MARGIN_NO_EXTERNAL_FAMILY_GENERALIZATION",
+  "external_independent_sampling_review": false,
+  "source_independent_external_witness": false,
+  "owner_authorization_scope": "2026-11-10 user-delegated prospective experimental work; this file is NOT an independent sign-off",
+  "scientific_validation_reserve_permitted": false,
+  "one_execution_per_source_claim": true,
+  "repetitions_permitted": false,
+  "preplanned_evidence": "all_originals_and_sha_manifest_must_be_retained_even_on_failure",
+  "notes": "Registered here before source branch PR launches; no old P2/80-81/reserve index or synthetic public preview is reused."
+}
