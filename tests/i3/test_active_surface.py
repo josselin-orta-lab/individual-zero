@@ -60,7 +60,11 @@ class ActiveSurfaceContract(unittest.TestCase):
                             offenders.append((rel, alias.name))
         self.assertEqual(offenders, [])
 
-    def test_replay_gate_stays_unregistered_while_moratorium_is_active(self):
+    def test_no_unreviewed_replay_gate_dispatch_in_current_runtime(self):
+        # Current-state stop, not a permanent ADR-0019 prohibition.
+        # Future pre-lift dispatch must replace this with explicit positive
+        # engineering-only admission and fail-closed scientific-cohort tests.
+        # Deleting this guard without those tests is not an authorized lift.
         runtime = (I3 / "runtime" / "life.py").read_text()
         self.assertNotIn("p13_replay_gate_v1", runtime)
         self.assertNotIn("p13_replay_gate_zero_perceived_cost_v1", runtime)
