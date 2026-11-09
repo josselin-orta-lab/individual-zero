@@ -27,6 +27,12 @@ Start here:
 [Code and dependency audit (9 November 2026)](I3_DEPENDENCY_AUDIT_2026-11-09.md)
 records source integrity, archived dependencies and remaining custody boundaries.
 
+[Proposed Stage-2.1 inference revision](studies/stage2-replay-gate-selected-design/PROTOCOL_REVISION_V2.md)
+documents why the original eight-population sign-test design cannot certify
+mean survival non-inferiority. The associated software arithmetic is conditional
+and does not authorize any World. Independent review and a separate owner
+decision remain required.
+
 ## Stage 2.1 engineering custody
 
 - [Hardened 36/36 sealed rehearsal](studies/stage2-replay-gate-development-80-81/HARDENED_REHEARSAL.md): structural PASS under ADR-0019, **not** an ADR-0017 lift.
