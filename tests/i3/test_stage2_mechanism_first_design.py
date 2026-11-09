@@ -54,6 +54,24 @@ class MechanismFirstDesignTests(unittest.TestCase):
         self.assertEqual(report["equal_population_mean_contrasts"]
                          ["GATE_minus_RANDOM"]["energy_paid_per_assigned_life"], 0)
         self.assertEqual(len(report["by_family"]), 3)
+        bridge = report["random_fixed_control_bridge"]
+        self.assertEqual(bridge["paired_blocks"], 240)
+        self.assertFalse(bridge["causal_mediation_certified"])
+        self.assertFalse(bridge["physical_replay_parity_proven"])
+        self.assertEqual(bridge["overall"]["survival_discordance"]["both_survived"], 240)
+        self.assertEqual(bridge["overall"]["random_minus_fixed_mean"]
+                         ["energy_paid_per_assigned_life"], -50)
+        self.assertEqual(bridge["overall"]["random_minus_fixed_mean"]
+                         ["vigilance_paid_per_assigned_life"], -10)
+        self.assertEqual(bridge["overall"]["random_minus_fixed_mean"]["lived_steps"], 0)
+        self.assertEqual(bridge["triangle_max_absolute_arithmetic_residual"]
+                         ["lived_steps"], 0)
+        self.assertEqual(bridge["triangle_max_absolute_arithmetic_residual"]
+                         ["survival_at_400"], 0)
+        for family in F0.FAMILIES:
+            self.assertEqual(bridge["by_family"][family]["paired_blocks"], 80)
+        for p in range(F0.POPULATIONS):
+            self.assertEqual(bridge["by_population"][p]["paired_blocks"], 30)
         profile = report["paired_outcome_profile"]
         self.assertEqual(profile["paired_blocks_per_contrast"], 240)
         self.assertFalse(profile["survival_noninferiority_certified"])
@@ -151,6 +169,41 @@ class MechanismFirstDesignTests(unittest.TestCase):
                          ["survival_discordance"]["gate_only_survived"], 1)
         self.assertEqual(profile["causal_replay_selection_advantage"],
                          "NOT_ESTABLISHED")
+
+    def test_full_policy_triangle_prevents_misattributing_control_harm(self):
+        rows = synthetic_rows()
+        # In one stable block GATE dies while both other policies live.
+        gate_loss = next(r for r in rows if r["arm"] == "GATE_G0"
+                         and r["family"] == "stable")
+        # In a different depletion block RANDOM dies while GATE/FIXED live.
+        random_loss = next(r for r in rows if r["arm"] == "RANDOM_G0"
+                           and r["family"] == "depletion")
+        for row in (gate_loss, random_loss):
+            row["terminal"] = "dead"
+            row["steps_lived"] = 100
+            row["energy_paid"] = 5
+            row["inactive_steps"] = 0
+        report = M.descriptive_readout(rows)
+        bridge = report["random_fixed_control_bridge"]
+        fixed = report["equal_population_mean_contrasts"]["GATE_minus_FIXED"]
+        random = report["equal_population_mean_contrasts"]["GATE_minus_RANDOM"]
+        control = bridge["overall"]["random_minus_fixed_mean"]
+        # A difference of differences is accounting, not a mediation result.
+        for metric in fixed:
+            self.assertAlmostEqual(fixed[metric], random[metric] + control[metric])
+            self.assertAlmostEqual(
+                bridge["triangle_max_absolute_arithmetic_residual"][metric], 0)
+        self.assertEqual(bridge["overall"]["survival_discordance"]
+                         ["fixed_only_survived"], 1)
+        self.assertEqual(bridge["overall"]["random_shorter"], 1)
+        self.assertEqual(bridge["by_family"]["depletion"]["survival_discordance"]
+                         ["fixed_only_survived"], 1)
+        self.assertEqual(bridge["by_family"]["stable"]["survival_discordance"]
+                         ["fixed_only_survived"], 0)
+        self.assertEqual(report["paired_outcome_profile"]["overall"]
+                         ["GATE_minus_FIXED"]["survival_discordance"]
+                         ["comparator_only_survived"], 1)
+        self.assertEqual(bridge["scientific_verdict"], "NOT_ISSUED")
 
     def test_missing_duplicate_foreign_and_invalid_receipts_fail_closed(self):
         base = synthetic_rows()
