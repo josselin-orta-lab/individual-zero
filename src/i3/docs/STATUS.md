@@ -14,6 +14,21 @@ Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
 
+## Stage 2.1 B1 new-world paired G/R witness integrated (10 November 2026)
+
+**192/192 ENGINEERING ORIGINALS SEALED AND REDUCED IN PYTHON 3.11 AND 3.12;
+NO BIOLOGICAL SURVIVAL VERDICT.** The
+[B1 96-pair result witness](studies/stage2-replay-gate-selected-design/B1_NEW_WORLD_GR_WITNESS_2026-11-10.md)
+records exact-head Actions `42718347325`, final tested source
+`7a4dc7e56aa64582edc72f58f895dc36a00017e0`,
+source-content fingerprint
+`6eb22c4d088084ca8751ba95b992c7b229da018523dc520b277d7a75e379bf9c`,
+7 applicable CI successes, and zero failures across 14 structural
+invariant categories. It also records the rejected local-ticket
+minting attempt and correction by the sole central source guard.
+This cohort used the fixed first 96 PUBLIC synthetic new-F0
+units and must NEVER become scientific inference evidence.
+
 ## Stage 2.1 B1 new-world full-policy engineering G/R campaign (10 November 2026)
 
 **96 PUBLIC-SYNTHETIC PAIRS / 192 REAL TECHNICAL LIVES / NO SCIENTIFIC
