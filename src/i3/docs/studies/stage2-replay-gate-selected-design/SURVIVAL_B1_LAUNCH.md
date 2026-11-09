@@ -46,3 +46,49 @@ This is a **transport smoke**, not the required full-scale rehearsal on the exac
 5. **Independent attestation and owner-scoped release:** externally witness the source SHA/World generator/manifest, register the complete protocol prospectively, then record an explicit new index/transport authorization. Only then open new science Worlds once under G/R, retain failures and negatives, and perform a read-only final analysis.
 
 **Current execution decision:** engineering and numerical study **RUN**; scientific cohort **LOCKED_PENDING_REVIEW**. This is a deliberate stop at the boundary, not an assertion that the requested research is scientifically complete. Neither owner delegation nor software CI can manufacture an external independent review.
+
+## Engineering failure captured and prospective funding correction (9 November 2026)
+
+The **first** B1 engineering smoke was attempted on the fixed 24-life
+non-evidentiary plan on both Python 3.11 and 3.12 and **FAILED closed**:
+Phase G recorded 21/24 originals, then structural
+\`ENGINEERING_FAILURE_NOT_A_DEATH\` at case index 21, error
+\`ValueError("unfunded or unknown motor command")\`. Phase R did not run;
+no mortality, survival, action trajectory or engineering original was
+read as evidence. The initial workflow placement also violated the
+repository's active/historical workflow boundary; this was corrected by
+moving the B1 job into the existing allowlisted
+\`.github/workflows/i3-proposal-checks.yml\`, gated to B1 branches.
+
+**Root cause:** \`P13ReplayGateMind.decide\` first called the original
+P1.3 Competition/Action Control using the exact then-funded cognition
+budget, but then conditionally spent **one extra residual-audit cycle
+after the action had already been admitted**. The added cycle could
+consume the motor energy that Action Control had reserved, so
+\`World.step\` correctly rejected the now-unfunded action. This is an
+engineering failure in the funding contract, **not a scientific death**.
+
+**Prospective correction, explicit source revision:** an optional
+post-decision residual audit is now funded *only if its exact cumulative
+bill leaves the already-admitted motor action fundable* under the same
+frozen \`ACTION_COSTS\`. If not, the action is preserved and the audit
+is simply not executed or counted as audited. All scored decisions
+still count toward the original GATE \`r_hat\` denominator. No new action
+choice, refund, fictitious charge, cognitive budget extension, physical
+motor tariff, sleep gate formula, ecological rule, random schedule or
+historical original is introduced. Synthetic unit tests demonstrate
+the formerly invalid motor-energy edge and preserve the original
+Competition/Action Control decision.
+
+This does change whether an audit is funded in rare low-energy
+states and can therefore change future learned gate statistics.
+It **must not be called byte-for-byte equivalent** to the frozen
+historical DEVELOPMENT 80/81 source. That earlier experiment and its
+evidence stay closed. Future scientific use needs this *new* exact
+source fingerprint, full-scale transport rehearsal, prospective
+methodology review and explicit new owner/source authorization.
+
+The CI engineering smoke on the patched source is an independent
+**structural regression**, not a scientific approval. Keep any further
+FAIL visible and stop; do not choose a different engineering seed
+solely to obtain PASS.
