@@ -24,6 +24,18 @@ If any pair shares either fingerprint, the entire synthetic audit **fails closed
 
 The dedicated job runs under the existing allowlisted I3 proposal workflow on Python 3.11 and Python 3.12. It is **not a 3,000-life rehearsal** of FIXED/GATE, and it does not provide a future scientific runner or admission token.
 
+## Follow-up: actual paired policies on generated synthetic worlds (10 November 2026)
+
+A separate [new-world fixed first-96 engineering G/R campaign](B1_NEW_WORLDS_PAIRED_GR.md)
+now exercises **full funded** FIXED and GATE on 96 new
+WorldSpecs from the predeclared public synthetic schedule (192
+temporary engineering lives). It uses independent source
+fingerprinting and the already sealed Phase-G/Phase-R transport.
+The original 1,500-spec check remains purely structural;
+neither this fixed-96 engineering run nor the WorldSpec check
+is admissible biological or inferential evidence. No change
+to historical source/physics is permitted.
+
 ## Statistical and custody limitations
 
 An observed 1,500/1,500 no-collision result would support only *distinct generated synthetic WorldSpec snapshots for one public-key schedule*. It would **not prove** independence or identical distribution of survival outcomes across proposed pairs, an unbiased ecological superpopulation outside the three F0 generators, an approved loss margin, full B1 inference power, or external research authority. Deterministic HMAC-derived seeds are a reproducibility contract, not independently witnessed entropy. The 1,500 proposed pairs remain **a resource capacity scenario**, never an arbitrarily selected confirmatory n.
