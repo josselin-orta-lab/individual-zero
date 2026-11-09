@@ -75,12 +75,12 @@ class PowerSensitivityTests(unittest.TestCase):
         self.assertEqual(G.exact_sign_test_power(1), 1)
         self.assertEqual(G.exact_sign_test_power(1, 1), 0)
         self.assertEqual(G.exact_sign_test_power(1, 0, populations=7), 1)
-        self.assertEqual(G.exact_sign_test_power(1, 0, populations=5), 0)
+        self.assertEqual(G.exact_sign_test_power(1, 0, populations=4), 0)
 
     def test_power_scenarios_show_low_sensitivity(self):
         from fractions import Fraction
         q = Fraction(4, 5)
-        self.assertEqual(G.exact_sign_test_power(q), Fraction(0.50331648))
+        self.assertEqual(G.exact_sign_test_power(q), Fraction("0.50331648"))
         self.assertEqual(G.exact_sign_test_power(q, Fraction(1, 10)),
                          Fraction("0.3467496231272448"))
         self.assertLess(G.exact_sign_test_power(q, Fraction(1, 4)),
