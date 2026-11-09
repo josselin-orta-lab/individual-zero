@@ -78,8 +78,8 @@ class ActiveSurfaceContract(unittest.TestCase):
         for rel in archived:
             self.assertTrue((ROOT / rel).is_file(), str(rel))
             parts = rel.parts
-            self.assertEqual(parts[3:5], ("archive", "stage1"))
-            old_path = I3 / parts[5] / parts[-1]
+            self.assertEqual(parts[2:4], ("archive", "stage1"))
+            old_path = I3 / parts[4] / parts[-1]
             self.assertFalse(old_path.exists(), f"duplicate active candidate: {old_path}")
             dotted = ".".join(rel.with_suffix("").parts[1:])
             self.assertIsNotNone(importlib.util.find_spec(dotted), dotted)
@@ -90,7 +90,7 @@ class ActiveSurfaceContract(unittest.TestCase):
             if p.startswith("src/i3/archive/stage1/") and p.endswith(".py")
         ]
         old_modules = {
-            f"i3.{p.parts[5]}.{p.stem}" for p in archived
+            f"i3.{p.parts[4]}.{p.stem}" for p in archived
         }
         offenders = []
         for root in (I3, ROOT / "tests" / "i3"):
