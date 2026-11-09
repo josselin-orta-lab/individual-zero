@@ -78,4 +78,6 @@ PYTHONPATH=src python -m unittest discover -s tests/i3 -p 'test_stage2_developme
 
 This **reads** 36 historical gzip records and outputs finite descriptive JSON. It neither regenerates those records nor opens new scientific Worlds. Corresponding tests detect missing/duplicate outcomes, malformed terminal/cognition claims, a tampered gzip original and a modified historical source lock. They are software checks only.
 
+**Phase B launched subsequently (9 November 2026):** [confirmatory survival study power and independence analysis](CONFIRMATORY_SURVIVAL_POWER_STUDY.md) is a separate, read-only prospective design effort. The new conditional power grid does not revise Phase A historical results, open new Worlds, approve a loss margin or independently certify the ecology sampling frame.
+
 **Next campaign stage:** external methodological arbitration of the v3 estimand and sampling model, not more internally invented positive thresholds. Preserve all negative outcomes and the historical sealed originals unchanged.
