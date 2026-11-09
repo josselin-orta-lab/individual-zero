@@ -58,16 +58,19 @@ Do not:
   pilot to canonical evidence;
 - import Stage-1 laboratory helpers into active Stage-2 science.
 
-The canonical software verdict is positive. Stage 2.1 therefore remains open
-for its frozen lived path after a valid ADR-0017 lift. Do not jump to Stage 2.2
-or create a second replay-gate architecture.
+The canonical software capacity verdict remains positive, but the frozen 80/81
+lived path is complete. The old scientific runner is now hard-closed, including
+if the historical owner-lift line is present. Future selected Stage-2.1 Worlds
+need a NEW prospective index-scoped source lock, claim, rehearsal and owner
+approval. Do not jump to Stage 2.2 or create a second replay-gate architecture.
 
 ## Active source boundary
 
 Current scientific files:
 
 - `modules/p13_replay_gate_mind.py`
-- `lab/stage2_replay_gate_falsifier.py`
+- `modules/stage2_random_equal_mean.py` (opt-in paid RANDOM control only)
+- `lab/stage2_replay_gate_falsifier.py` (frozen, never rerun)
 
 Current engineering/custody files:
 
@@ -102,11 +105,12 @@ sealing all originals, no retry after generation failure, and blind reduction
 repair without outcome inspection. The owner lift in `docs/STATUS.md` authorized exactly one prospective
 DEVELOPMENT 80/81 panel, which completed in run `42641395586` and is now
 **closed without retry**. The lift remains in custody history, but no
-additional World opening is authorized by that consumed decision. The
-existing runtime guard verifies the source lift fingerprint but does not
-itself track exhausted scientific indices; the archived one-shot claim
-and these instructions must not be bypassed. Before any *new* transport,
-close that operational gap prospectively and obtain new rehearsal/lift
-custody.
+additional World opening is authorized by that consumed decision. The retained `stage2_admission.py` and `stage2_panel.py` now fail closed for
+**every** scientific cohort, regardless of the historic owner-lift receipt;
+only `engineering` is admissible. This is a hard stop, not a replacement for a
+new index-scoped one-shot claim/consumption mechanism. Before any new scientific
+transport, design that mechanism and obtain fresh rehearsal and owner-lift
+custody. No scientific runner currently exists for the proposed 8-population
+gate.
 
 Green software tests are never a scientific GO.
