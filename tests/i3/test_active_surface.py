@@ -8,6 +8,7 @@ from __future__ import annotations
 import ast
 import importlib.util
 import json
+import re
 from pathlib import Path
 import unittest
 
@@ -160,6 +161,62 @@ class ActiveSurfaceContract(unittest.TestCase):
             text = (ROOT / source).read_text()
             self.assertIn(f"]({rel})", text)
             self.assertTrue(((ROOT / source).parent / rel).is_file(), source)
+
+    def test_every_i3_module_import_resolves_statically(self):
+        import importlib.util
+        modules = {"i3"}
+        for path in I3.rglob("*.py"):
+            rel = path.relative_to(I3).with_suffix("")
+            parts = rel.parts
+            if parts[-1] == "__init__":
+                parts = parts[:-1]
+            modules.add(".".join(("i3", *parts)))
+        for path in I3.rglob("*.py"):
+            rel = path.relative_to(I3).with_suffix("")
+            parts = rel.parts
+            package = ".".join(("i3", *parts[:-1]))
+            tree = ast.parse(path.read_text(), filename=str(path))
+            for node in ast.walk(tree):
+                targets = []
+                if isinstance(node, ast.Import):
+                    targets = [a.name for a in node.names]
+                elif isinstance(node, ast.ImportFrom):
+                    ref = "." * node.level + (node.module or "")
+                    resolved = (importlib.util.resolve_name(ref, package)
+                                if node.level else (node.module or ""))
+                    targets = [resolved]
+                for target in targets:
+                    if target.startswith("i3."):
+                        self.assertIn(target, modules, f"{path}: missing {target}")
+
+    def test_i3_internal_markdown_links_resolve(self):
+        broken = []
+        for file in I3.rglob("*.md"):
+            for match in re.finditer(r"\]\(([^)]+)\)", file.read_text()):
+                href = match.group(1).split("#", 1)[0].split(" ", 1)[0]
+                if (not href or "://" in href or href.startswith("mailto:")
+                        or "{" in href or "}" in href):
+                    continue
+                target = (file.parent / href).resolve()
+                if not target.is_relative_to(I3):
+                    continue  # Root-level ADRs/archives belong to the repo, not I3.
+                if target.suffix == ".gz":
+                    continue  # Exact binary evidence is checked by its hash custody.
+                if not target.exists():
+                    broken.append((str(file.relative_to(ROOT)), href))
+        self.assertEqual(broken, [])
+
+    def test_active_runtime_loads_historical_candidates_lazily(self):
+        runtime = ast.parse((I3 / "runtime" / "life.py").read_text())
+        top_level = []
+        for node in runtime.body:
+            if isinstance(node, ast.ImportFrom):
+                top_level.append(node.module or "")
+            elif isinstance(node, ast.Import):
+                top_level.extend(a.name for a in node.names)
+        self.assertFalse(
+            any(name.startswith("i3.archive.stage1") for name in top_level),
+            "reference runtime must not eagerly depend on closed Stage-1 code")
 
     def test_stage1_compatibility_set_is_not_current_science(self):
         current = set(self.data["active_science"])
