@@ -56,7 +56,8 @@ class FailClosedAdmissionTests(unittest.TestCase):
             forged_status = Path(tmp) / "STATUS.md"
             forged_status.write_text("note\n" + ADM.LIFT_PREFIX + fingerprint + "\n")
             self.assertTrue(ADM.owner_lift_recorded(forged_status.read_text(), fingerprint))
-            self.assertTrue(ADM.canonical_owner_lift_recorded(fingerprint))
+            # The historic lift remains on disk but cannot lift altered source.
+            self.assertFalse(ADM.canonical_owner_lift_recorded(fingerprint))
             with patch.object(ADM, "canonical_owner_lift_recorded", return_value=False):
                 with self.assertRaises(PermissionError):
                     ADM.admit("development", "stable", 80, PLAN)
@@ -72,26 +73,23 @@ class FailClosedAdmissionTests(unittest.TestCase):
     def test_scientific_execute_fails_before_creating_anything(self):
         with tempfile.TemporaryDirectory() as tmp:
             archive = Path(tmp) / "never"
-            with patch.object(ADM, "canonical_owner_lift_recorded", return_value=False):
+            with patch.object(ADM, "canonical_owner_lift_recorded", return_value=True):
                 with self.assertRaises(PermissionError):
                     SP.execute(PLAN, archive)
             self.assertFalse(archive.exists())
 
-    def test_owner_lift_is_recorded_and_admission_still_uses_pinned_cohort(self):
-        # Unit-test the lifted path without constructing a scientific World
-        # or executing a scientific life. A non-evidentiary engineering
-        # fixture stands in for P2.world_for inside this test only.
+    def test_historical_lift_never_reopens_consumed_development_indices(self):
+        # setUp makes scientific World construction a test failure. Even a
+        # forged positive lift check cannot reopen 80/81 or new cohorts.
         fingerprint = ADM.transport_fingerprint(PLAN)
-        self.assertTrue(ADM.canonical_owner_lift_recorded(fingerprint))
-        fixture = ENG.engineering_world("stable", 0)
-        P2.world_for = lambda family, cohort, index: fixture
-        ticket, spec = ADM.admit("development", "stable", 80, PLAN)
-        self.assertIs(spec, fixture)
-        self.assertEqual(ticket.cohort, "development")
-        self.assertEqual(ticket.index, 80)
-        self.assertEqual(ticket.world_seed, P2.COHORTS["development"][80])
-        self.assertEqual(ticket.world_sha256, RA.world_sha256(fixture))
-        self.assertEqual(ticket.transport_fingerprint, fingerprint)
+        self.assertFalse(ADM.canonical_owner_lift_recorded(fingerprint))
+        with patch.object(ADM, "canonical_owner_lift_recorded", return_value=True):
+            for cohort, index in (("development", 80), ("development", 81),
+                                  ("selection", 72), ("validation", 120),
+                                  ("reserve", 0)):
+                with self.subTest(cohort=cohort, index=index):
+                    with self.assertRaises(PermissionError):
+                        ADM.admit(cohort, "stable", index, PLAN)
 
 
 class TicketAndDispatchTests(unittest.TestCase):
@@ -145,11 +143,12 @@ class TicketAndDispatchTests(unittest.TestCase):
 class LedgerTests(unittest.TestCase):
     def test_status_ledger_records_exact_owner_lift_and_only_one_transport(self):
         status = (ROOT / "src/i3/docs/STATUS.md").read_text()
-        fingerprint = ADM.transport_fingerprint(PLAN)
-        self.assertTrue(ADM.owner_lift_recorded(status, fingerprint))
-        self.assertTrue(ADM.canonical_owner_lift_recorded(fingerprint))
-        self.assertEqual(status.count(ADM.LIFT_PREFIX + fingerprint), 1)
-        self.assertEqual(fingerprint, "dcada9e221f79b9450a4f05fecd20e60ac6595bb306aa871f29e45aefea0b6f1")
+        old_fingerprint = "dcada9e221f79b9450a4f05fecd20e60ac6595bb306aa871f29e45aefea0b6f1"
+        current_fingerprint = ADM.transport_fingerprint(PLAN)
+        self.assertTrue(ADM.owner_lift_recorded(status, old_fingerprint))
+        self.assertEqual(status.count(ADM.LIFT_PREFIX + old_fingerprint), 1)
+        self.assertNotEqual(current_fingerprint, old_fingerprint)
+        self.assertFalse(ADM.canonical_owner_lift_recorded(current_fingerprint))
         self.assertFalse(ADM.owner_lift_recorded(status, "0" * 64))
 
 
@@ -168,7 +167,7 @@ class OnePathTests(unittest.TestCase):
         files = [p.name for p in ADM.transport_files(PLAN)]
         for name in ("life.py", "admission.py", "p13_replay_gate_mind.py", "mind.py",
                      "two_phase_panel.py", "stage2_admission.py", "stage2_panel.py",
-                     "PLAN.json"):
+                     "PLAN.json", "stage2_random_equal_mean.py"):
             self.assertIn(name, files)
         with tempfile.TemporaryDirectory() as tmp:
             changed = Path(tmp) / "PLAN.json"
