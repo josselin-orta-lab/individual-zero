@@ -1,0 +1,41 @@
+name: I3 rationalization source audit (one-shot)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/i3-rationalization-source-audit.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    if: github.head_ref == 'refactor/i3-archive-stage1-english'
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Export only editable text sources for audited refactor
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import tarfile
+          allowed = {".py", ".md", ".txt", ".yml", ".yaml"}
+          sources = [*Path("src/i3").rglob("*"), *Path("tests/i3").rglob("*")]
+          paths = sorted(p for p in sources if p.is_file() and p.suffix in allowed)
+          with tarfile.open("/tmp/i3-source-audit.tar.gz", "w:gz") as tf:
+              for p in paths:
+                  tf.add(p, arcname=str(p))
+          print(f"i3_source_audit_text_paths={len(paths)}")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: i3-editable-source-audit
+          path: /tmp/i3-source-audit.tar.gz
+          retention-days: 7
+          if-no-files-found: error
