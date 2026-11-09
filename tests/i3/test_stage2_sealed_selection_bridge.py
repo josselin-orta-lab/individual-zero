@@ -160,6 +160,79 @@ class CompleteOriginalSelectionTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     BRIDGE.selection_from_originals("not-opened", "not-opened", PINS)
 
+    def test_real_runtime_reference_and_gate_ticket_contract(self):
+        fixed = next((i, life) for i, life in self.originals
+                     if i["policy"] == "FIXED")
+        gate = next((i, life) for i, life in self.originals
+                    if i["policy"] == "GATE")
+        self.assertNotIn("admission", fixed[1])
+        self.assertNotIn("experimental_policy", fixed[1]["manifest"])
+        self.assertIn("admission", gate[1])
+        self.assertEqual(gate[1]["manifest"]["experimental_policy"]["admission"],
+                         gate[1]["admission"])
+        for identity, life in (fixed, gate):
+            BRIDGE._actual_life(identity, life, BRIDGE.POLICIES[identity["policy"]],
+                                PINS, {}, {})
+
+    def test_forged_manifests_birth_genomes_and_admissions_fail_closed(self):
+        baseline = list(self.originals)
+        gates = next(j for j, (i, _) in enumerate(baseline)
+                     if i["policy"] == "GATE")
+        variants = [
+            ("wrong_seed_genome", 0),
+            ("source_head", 0),
+            ("dirty_source", 0),
+            ("world_snapshot", 0),
+            ("missing_death_causes", 0),
+            ("bad_reference_ticket", 0),
+            ("missing_gate_ticket", gates),
+            ("bad_gate_index", gates),
+            ("wrong_gate_mode", gates),
+            ("missing_source_hash", gates),
+            ("missing_requested_charge", gates),
+        ]
+        for name, index in variants:
+            original_id, original_life = baseline[index]
+            identity = dict(original_id)
+            life = json.loads(json.dumps(original_life))
+            if name == "wrong_seed_genome":
+                genome = generation_zero(F0.founder_seed(7, 31))
+                life["manifest"]["genome"] = genome
+                life["genome"] = genome_digest(genome)
+            elif name == "source_head":
+                life["manifest"]["source"]["git_head"] = "f" * 40
+            elif name == "dirty_source":
+                life["manifest"]["source"]["working_tree_dirty"] = True
+            elif name == "world_snapshot":
+                life["manifest"]["world"]["name"] = "tampered"
+                life["manifest"]["world_sha256"] = BRIDGE._json_digest(
+                    life["manifest"]["world"])
+                life["world"] = "tampered"
+            elif name == "missing_death_causes":
+                del life["death_causes"]
+            elif name == "bad_reference_ticket":
+                life["admission"] = {"cohort": "selection"}
+            elif name == "missing_gate_ticket":
+                del life["admission"]
+            elif name == "bad_gate_index":
+                life["admission"]["index"] += 1
+                life["manifest"]["experimental_policy"]["admission"]["index"] += 1
+                life["experimental_policy"]["admission"]["index"] += 1
+            elif name == "wrong_gate_mode":
+                life["replay_gate"]["mode"] = "zero_perceived_cost"
+                life["manifest"]["experimental_policy"]["mode"] = "zero_perceived_cost"
+                life["experimental_policy"]["mode"] = "zero_perceived_cost"
+            elif name == "missing_source_hash":
+                life["manifest"]["source"]["files"]["synthetic/test-only.py"] = "bad"
+            elif name == "missing_requested_charge":
+                del life["cognitive_accounting"]["totals"]["energy"]["requested"]
+            # Recompute the outer digest after intentional manifest edits:
+            # checks must not be satisfied by a self-consistent forged seal.
+            life["manifest_id"] = BRIDGE._json_digest(life["manifest"])
+            with self.subTest(name=name), self.assertRaises(ValueError):
+                BRIDGE._actual_life(identity, life, BRIDGE.POLICIES[identity["policy"]],
+                                    PINS, {}, {})
+
     def test_complete_validation_readout_keeps_genome_and_world_parity(self):
         with patch.object(BRIDGE, "_sealed", return_value=self.originals):
             selected = BRIDGE.selection_from_originals("not-opened", "not-opened", PINS)
