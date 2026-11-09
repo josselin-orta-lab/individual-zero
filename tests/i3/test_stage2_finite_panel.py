@@ -128,7 +128,7 @@ class FinitePanelContract(unittest.TestCase):
         for field, value in [
             ("random_draws", 9),
             ("random_draws", 0),
-            ("random_nominal_replays", 48),
+            ("random_nominal_replays", 47),
             ("random_nominal_replays", 57),
             ("random_eligible_replays", 51),
             ("replays_paid", 41),
