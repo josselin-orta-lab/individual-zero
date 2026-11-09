@@ -15,6 +15,8 @@ receipts, not cognition or physics; no validation/reserve world or scientific-st
 
 ## Stage 2.1 package audit: corrected falsifier pending
 
+Canonical status code: **`CORRECTED_FALSIFIER_PENDING`**.
+
 9 November 2026: the uploaded Stage-2 development package was verified and
 semantically audited. Its supplied software run reported
 `REPLAY_GATE_CAPACITY_SHOWN`, and its supplied 68/69 DEVELOPMENT pilot
