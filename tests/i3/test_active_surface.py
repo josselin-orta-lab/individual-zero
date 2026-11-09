@@ -61,10 +61,10 @@ class ActiveSurfaceContract(unittest.TestCase):
         self.assertNotIn("p13_replay_gate_v1", runtime)
         self.assertNotIn("p13_replay_gate_zero_perceived_cost_v1", runtime)
 
-    def test_status_points_to_corrected_software_falsifier(self):
+    def test_status_points_to_canonical_software_result(self):
         status = (I3 / "docs" / "STATUS.md").read_text()
         self.assertIn("REPLAY_GATE_CAPACITY_SHOWN", status)
-        self.assertIn("ADR-0017 therefore remains active", status)
+        self.assertIn("ADR-0017 remains active", status)
 
     def test_stage1_compatibility_set_is_not_current_science(self):
         current = set(self.data["active_science"])
