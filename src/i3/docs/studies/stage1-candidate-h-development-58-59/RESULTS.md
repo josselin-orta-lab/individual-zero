@@ -1,7 +1,7 @@
 # Candidate-H DEVELOPMENT 58/59: exposed engineering stop, no continuation verdict
 
 Protocol:
-[STAGE1_CANDIDATE_H_DEVELOPMENT_58_59.md](../../STAGE1_CANDIDATE_H_DEVELOPMENT_58_59.md).
+[the frozen 58/59 protocol](PROTOCOL.md).
 
 **WORLD EXPOSURE OCCURRED. NO RETRY. NO H1-H6 VERDICT.**
 

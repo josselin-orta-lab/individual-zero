@@ -5,6 +5,10 @@ inactive Stage-1 archive and is not a task queue. Current work belongs to
 [Stage 2.1](../../docs/STAGE2_REPLAY_GATE.md) and the
 [active surface](../../docs/ACTIVE_SURFACE.md).
 
+Historical command examples in the frozen protocols are **not live entrypoints**;
+see [historical CLI custody](HISTORICAL_ENTRYPOINTS.md) before attempting
+to locate their retired implementations.
+
 The 54 historical Stage-1 protocols/analysis notes and
 38 Stage-1 results are indexed below. Their original repository
 paths were **not moved**: those paths are used in original scientific
