@@ -81,8 +81,8 @@ class FinitePanelContract(unittest.TestCase):
         out = P.reduce_finite_panel(founders(), rows)
         self.assertEqual(out["families"]["stable"]["gate_minus_fixed_survival"], -1)
         self.assertEqual(out["families"]["depletion"]["gate_minus_fixed_survival"], 0)
-        self.assertEqual(out["finite_panel_population_mean_survival_deltas"]
-                         ["GATE_selected_minus_FIXED_selected"], -1 / 3)
+        self.assertAlmostEqual(out["finite_panel_population_mean_survival_deltas"]
+                               ["GATE_selected_minus_FIXED_selected"], -1 / 3)
 
     def test_incomplete_duplicate_foreign_and_forged_families_rejected(self):
         original = rows_for()
