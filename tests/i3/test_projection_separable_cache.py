@@ -9,7 +9,7 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from i3.lab import projection_consistency_characterization as P
-from i3.lab import projection_separable_cache_characterization as S
+from i3.archive.stage1.lab import projection_separable_cache_characterization as S
 from i3.modules.genome import midpoint
 
 
@@ -93,7 +93,7 @@ class SeparableProjectionCacheTests(unittest.TestCase):
         subprocess.run([
             sys.executable, "-c",
             "import sys; sys.path.insert(0, " + repr(root) + "); "
-            "import i3.lab.projection_separable_cache_characterization; "
+            "import i3.archive.stage1.lab.projection_separable_cache_characterization; "
             "assert 'i3.runtime.life' not in sys.modules"
         ], check=True)
 

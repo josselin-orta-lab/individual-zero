@@ -74,7 +74,7 @@ class ActiveSurfaceContract(unittest.TestCase):
             Path(p) for p in self.data["stage1_compatibility_only"]
             if p.startswith("src/i3/archive/stage1/") and p.endswith(".py")
         ]
-        self.assertEqual(len(archived), 30)
+        self.assertEqual(len(archived), 31)
         for rel in archived:
             self.assertTrue((ROOT / rel).is_file(), str(rel))
             parts = rel.parts
@@ -127,6 +127,39 @@ class ActiveSurfaceContract(unittest.TestCase):
                         if old in node.value:
                             stale.append((str(path), old))
         self.assertEqual(stale, [])
+
+    def test_active_lab_does_not_depend_on_closed_stage1_modules(self):
+        offenders = []
+        for path in (I3 / "lab").glob("*.py"):
+            tree = ast.parse(path.read_text(), filename=str(path))
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Import):
+                    for alias in node.names:
+                        if alias.name.startswith("i3.archive.stage1"):
+                            offenders.append((path.name, alias.name))
+                elif isinstance(node, ast.ImportFrom):
+                    if (node.module or "").startswith("i3.archive.stage1"):
+                        offenders.append((path.name, node.module))
+        self.assertEqual(offenders, [], "historical dependencies belong in archive")
+
+    def test_closed_stage2_68_69_runner_is_not_active(self):
+        archived = "src/i3/archive/stage2/development_68_69.py"
+        self.assertEqual(self.data["archived_noncanonical_transport"], [archived])
+        self.assertTrue((ROOT / archived).is_file())
+        self.assertFalse((I3 / "lab" / "stage2_replay_gate_development_pilot.py").exists())
+        self.assertNotIn(archived, self.data["active_engineering"])
+
+    def test_key_historical_evidence_links_resolve(self):
+        pairs = (
+            ("src/i3/docs/studies/stage1-affordable-projection-probes/RESULTS.md",
+             "../../../archive/stage1/lab/stage1_affordable_projection_probes.py"),
+            ("src/i3/docs/studies/stage1-candidate-h-development-58-59/RESULTS.md",
+             "PROTOCOL.md"),
+        )
+        for source, rel in pairs:
+            text = (ROOT / source).read_text()
+            self.assertIn(f"]({rel})", text)
+            self.assertTrue(((ROOT / source).parent / rel).is_file(), source)
 
     def test_stage1_compatibility_set_is_not_current_science(self):
         current = set(self.data["active_science"])

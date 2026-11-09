@@ -7,7 +7,7 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 from i3.lab import engineering_cohort as ENG
 from i3.lab import p2_ecologies as P2
-from i3.lab import stage2_replay_gate_development_pilot as PILOT
+from i3.archive.stage2 import development_68_69 as PILOT
 from i3.lab import two_phase_panel as TP
 
 
