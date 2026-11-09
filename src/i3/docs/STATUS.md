@@ -14,6 +14,23 @@ Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
 
+## Stage 2.1 archived evidence analysis campaign launched (9 November 2026)
+
+**READ-ONLY HISTORICAL ANALYSIS / NO NEW SCIENTIFIC WORLD.**
+The [first analysis campaign report](studies/stage2-replay-gate-selected-design/ANALYSIS_CAMPAIGN_2026-11-09.md)
+rechecks 36 archived DEVELOPMENT 80/81 original gzip lives and their
+frozen full-reduction records using published SHA pins, then reports
+survival, physical paid cognition **per assigned life**, paired deaths,
+F0 family differences and leave-one-block/family sensitivity.
+The observed GATE-minus-FIXED mean lived-time difference is -29.4167
+steps, despite lower cognitive spending. Adverse effects differ by
+F0 family; no causal mechanism, non-inferiority or ecological transfer
+is established. A reproducible read-only reanalyst and synthetic
+tamper/missingness regressions are provided.
+**Internal recommendation: REVISE/NO SCIENTIFIC GO.** Next is a genuinely
+independent prospective review of mechanism-first v3 versus a powered
+survival study. No new cohorts or old index reuse are authorized.
+
 ## Stage 2.1 complete three-policy accounting (9 November 2026)
 
 **SOFTWARE ONLY / NO NEW WORLD.** The existing v3 paired reader now
