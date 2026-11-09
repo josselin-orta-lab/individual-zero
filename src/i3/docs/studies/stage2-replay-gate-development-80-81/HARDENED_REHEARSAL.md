@@ -40,7 +40,7 @@ World definitions, genes, tariffs, arms, horizons, or scientific criteria.
 | GitHub Actions run | `42628475893` |
 | GitHub Actions artifact | `13679561877` (`i3-stage2-1-hardened-rehearsal`) |
 
-The full structural report is preserved inThe **same full-size 36-life sealed engineering rehearsal also PASSED on
+The same full-size 36-life sealed engineering rehearsal also PASSED on
 Python 3.12** at source `8b1e0527b6ee5f7f27ede7adf1bce24c85c91ee7`
 (Actions run `42629796562`, artifact `13680098108`). It yielded the same
 exact transport content fingerprint `dcada9e2…f1` and plan SHA-256, with
@@ -51,7 +51,7 @@ sealed manifest SHA-256
 `22b09edac4b01aba3e9359c950ad9d2a408bbffaa6dbd73633306d199294b461`,
 and mean time 1.244456 ms/step.
 
-
+The full Python 3.11 structural report is preserved in
 [`HARDENED_REHEARSAL.json`](HARDENED_REHEARSAL.json), also available as the
 immutable workflow artifact. The report contains no survival, death, body,
 resource, action, route, or replay outcomes. The engineering Worlds are
@@ -81,3 +81,10 @@ code review and the merged-source fingerprint check. Development indices
 The canonical software verdict `REPLAY_GATE_CAPACITY_SHOWN` is unchanged.
 A sealed engineering PASS says nothing about lived survival or replay
 economics.
+
+## Subsequent owner decision
+
+The owner explicitly approved the limited lift, recorded in the canonical
+[status ledger](../../STATUS.md) for fingerprint `dcada9e221f79b9450a4f05fecd20e60ac6595bb306aa871f29e45aefea0b6f1`.
+This post-rehearsal note does not alter either rehearsal receipt. The frozen
+DEVELOPMENT 80/81 pilot is the only next authorized scientific exposure.

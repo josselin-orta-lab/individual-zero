@@ -12,10 +12,10 @@ operational surface below.
 - **Stage 1:** closed negative under ADR-0018.
 - **Current stage:** Stage 2.1 replay gate.
 - **Canonical status:** `REPLAY_GATE_CAPACITY_SHOWN`.
-- **ADR-0017:** world-opening moratorium active.
-- **Next action:** review the hardened sealed engineering rehearsal PASS,
-  verify its exact merged-source fingerprint and seek the explicit owner
-  ADR-0017 lift. No scientific World/life is authorized yet. Both full-size engineering rehearsals (Python 3.11 and 3.12) passed.
+- **ADR-0017:** owner-lifted for exact transport `dcada9e2…f1` and frozen DEVELOPMENT 80/81 only.
+- **Next action:** open the prospectively frozen DEVELOPMENT 80/81 panel
+  once under the already-rehearsed exact G/R transport. Preserve immutable
+  originals and no-retry rules. The two engineering rehearsals already passed.
 
 Start here:
 

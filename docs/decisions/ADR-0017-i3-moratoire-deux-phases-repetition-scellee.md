@@ -175,3 +175,37 @@ aucune physique, aucun génome et aucune cognition ne sont modifiés.
 
 9 novembre 2026 : **ACCEPTÉ par le propriétaire.** Le moratoire prend effet à
 la fusion de cette ADR.
+
+## Post-acceptance implementation and owner-approved lift (9 November 2026)
+
+**LIFTED, limited to the exact Stage-2.1 transport and frozen DEVELOPMENT
+80/81 pilot.** The original moratorium and rationale above remain part of
+the decision history. The owner explicitly approved the final technical
+evaluation and the two disclosed custody equivalences before this lift:
+
+1. Two-phase generation (G) and read-only reduction (R) are implemented
+   and tested, with original gzip/SHA-256 custody.
+2. The disjoint, permanently non-evidentiary `engineering` cohort is
+   declared beside the historically pinned `P2.COHORTS`; the owner
+   accepted this equivalent boundary without modifying the immutable
+   ecological generator.
+3. The hardened transport fingerprint `dcada9e221f79b9450a4f05fecd20e60ac6595bb306aa871f29e45aefea0b6f1`
+   passed full-size sealed rehearsals in both Python 3.11 and Python 3.12:
+   36/36 generated and reduced, zero invariant failures. The owner accepted
+   the verified byte-for-byte identity of all 42 transport/plan files
+   across rehearsals and the squash-merged `main` source as satisfying
+   exact-source custody despite changed Git commit IDs.
+4. The owner authorized the exact lift line in the canonical
+   [I3 status ledger](../../src/i3/docs/STATUS.md). The ledger, not this
+   historical ADR appendix, is the machine-readable authorization source.
+
+The earlier unhardened fingerprint `15136d13…` is superseded and is
+**not** authorized. No source, cognitive rule, body law, genome,
+scientific control, cost model, frozen plan or R0-R4 rule was changed.
+
+The immediate authorization is a single prospective Stage-2.1
+DEVELOPMENT 80/81 pilot, **not** activation of I3 and **not** a general
+scientific GO. Validation, selection, reserve and other World indices
+retain their own prospective prerequisites. Panels 58/59 through 68/69
+remain closed. The ADR-0017 no-retry generation rule and bounded blind
+reducer-repair procedure remain fully binding after the lift.
