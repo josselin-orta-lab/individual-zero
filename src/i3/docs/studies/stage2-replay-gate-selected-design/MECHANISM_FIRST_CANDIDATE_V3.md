@@ -47,4 +47,6 @@ An independent methodology review and research-owner decision must explicitly ch
 
 **Subsequent three-policy accounting (9 November 2026):** [paired interpretation](PAIRED_SURVIVAL_PROFILE.md) now includes the separate RANDOM-minus-FIXED full-policy contrast and an additive arithmetic reconciliation across all three arms. This completes the finite-panel descriptive triangle without claiming causal mediation, equal physical replay work, a new experimental arm, or a revised owner-approved protocol.
 
+**Historical phase-A reanalysis (9 November 2026):** [sealed DEVELOPMENT 80/81 evidence analysis](ANALYSIS_CAMPAIGN_2026-11-09.md) confirms a cost/survival tradeoff and strong family heterogeneity from the *already executed* 36 originals. These are not v3 observations, cannot power v3 confirmatory claims, and do not authorize opening its 720 proposed lives.
+
 **Verdict now: PROPOSED SOFTWARE-ONLY, NO SCIENTIFIC WORLD AUTHORIZED.**
