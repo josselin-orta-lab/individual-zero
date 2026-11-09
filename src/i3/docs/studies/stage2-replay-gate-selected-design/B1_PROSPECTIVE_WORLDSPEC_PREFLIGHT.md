@@ -6,9 +6,9 @@ Continuation of the [1,500-pair metadata-only allocation](B1_PROSPECTIVE_SAMPLIN
 
 ## Mechanism-preserving candidate adapter
 
-New module: \`src/i3/lab/stage2_survival_b1_worldspec_audit.py\`.
+New module: `src/i3/lab/stage2_survival_b1_worldspec_audit.py`.
 
-The unchanged P2 ecology source \`p2_ecologies.py\` defines three mechanisms: \`stable\` (persistent water), \`depletion\` (near finite and far persistent source), and \`pulse\` (finite water with periodic external dry/recovery events). The B1 **private structural builder** separately reproduces the same transformations and calls the same \`p2_ecologies.validate_ecology\` checks. The only generation parameter difference is the *explicit*, bounded-by-preview \`worldgen.generate(..., development=False)\`, which permits proposed high seed values. The legacy P2 \`world_for\` cohort bounds, default-development guard, historical indices, physics, resource tariffs and active experiment registry remain untouched.
+The unchanged P2 ecology source `p2_ecologies.py` defines three mechanisms: `stable` (persistent water), `depletion` (near finite and far persistent source), and `pulse` (finite water with periodic external dry/recovery events). The B1 **private structural builder** separately reproduces the same transformations and calls the same `p2_ecologies.validate_ecology` checks. The only generation parameter difference is the *explicit*, bounded-by-preview `worldgen.generate(..., development=False)`, which permits proposed high seed values. The legacy P2 `world_for` cohort bounds, default-development guard, historical indices, physics, resource tariffs and active experiment registry remain untouched.
 
 To catch an unintended F0 change, dedicated tests compare the **entire canonical WorldSpec snapshot fingerprint**, not just a family name or sample geometry, between the new builder and historical P2 generation on non-reserve development, selection and validation seeds for all three ecologies. No historical life is rerun. This is compatibility against the current frozen P2 implementation; **future source fingerprinting must still explicitly record the entire byte-level generation chain** before any science.
 
@@ -18,9 +18,9 @@ The auditor accepts only the [fixed PUBLIC, synthetic preview witness](B1_PROSPE
 
 Two SHA-256 fingerprints per spec are checked across the 1,500 inputs, without convenient reseeding:
 1. The **full canonical initial snapshot** including its unique seed-based display name, for provenance.
-2. The **name-independent canonical initial snapshot**, removing \`name\` before hashing. This rules out a false uniqueness claim based solely on different names when the material initial ecology is identical.
+2. The **name-independent canonical initial snapshot**, removing `name` before hashing. This rules out a false uniqueness claim based solely on different names when the material initial ecology is identical.
 
-If any pair shares either fingerprint, the entire synthetic audit **fails closed**, reports the collision as an engineering fault, and does not drop or replace that pair. The audit computes one digest of the ordered \`(pair_id, family, full_digest, name_free_digest)\` rows for cross-version comparison. CI publishes *only* this aggregate fingerprint, per-family counts, structural PASS/FAIL, number of specs validated and explicit negative admission/independence flags. No individual world layouts, genomes, survival outcomes or original-life records are exported.
+If any pair shares either fingerprint, the entire synthetic audit **fails closed**, reports the collision as an engineering fault, and does not drop or replace that pair. The audit computes one digest of the ordered `(pair_id, family, full_digest, name_free_digest)` rows for cross-version comparison. CI publishes *only* this aggregate fingerprint, per-family counts, structural PASS/FAIL, number of specs validated and explicit negative admission/independence flags. No individual world layouts, genomes, survival outcomes or original-life records are exported.
 
 The dedicated job runs under the existing allowlisted I3 proposal workflow on Python 3.11 and Python 3.12. It is **not a 3,000-life rehearsal** of FIXED/GATE, and it does not provide a future scientific runner or admission token.
 
@@ -36,11 +36,11 @@ Prospective B1 scientific execution still requires:
 
 ## Reproduce the non-evidentiary checks
 
-\`\`\`bash
+```bash
 PYTHONPATH=src python -m unittest discover -s tests/i3 -p 'test_stage2_survival_b1_worldspec_audit.py'
 PYTHONPATH=src python -m i3.lab.stage2_survival_b1_worldspec_audit
-\`\`\`
+```
 
-This **does instantiate 1,500 temporary WorldSpecs and structural validators**, but does not execute a living individual. All outcomes and inferred scientific statuses remain \`NOT_ISSUED\`; only engineering/custody diagnostics may be published.
+This **does instantiate 1,500 temporary WorldSpecs and structural validators**, but does not execute a living individual. All outcomes and inferred scientific statuses remain `NOT_ISSUED`; only engineering/custody diagnostics may be published.
 
 **Disposition: SYNTHETIC_F0_WORLDSPEC_PREFLIGHT / NO BIOLOGICAL SURVIVAL RESULT / SCIENTIFIC ADMISSION STILL LOCKED.**
