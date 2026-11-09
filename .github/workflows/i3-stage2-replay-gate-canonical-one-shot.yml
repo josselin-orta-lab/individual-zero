@@ -1,0 +1,110 @@
+name: I3 Stage 2.1 corrected replay-gate canonical run
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/i3-stage2-replay-gate-canonical-one-shot.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: i3-stage2-replay-gate-canonical-one-shot
+  cancel-in-progress: false
+
+jobs:
+  falsifier:
+    if: github.head_ref == 'research/i3-stage2-replay-gate-canonical-run'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Verify exact source and governance boundary
+        run: |
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          active = json.loads(Path("src/i3/ACTIVE_SURFACE.json").read_text())
+          assert active["canonical_status"] == "CORRECTED_FALSIFIER_PENDING"
+          assert active["governance"]["adr_0017_world_opening_moratorium"] == "ACTIVE"
+          assert not active["governance"]["fresh_lived_worlds_allowed"]
+          runtime = Path("src/i3/runtime/life.py").read_text()
+          assert "p13_replay_gate_v1" not in runtime
+          PY
+
+      - name: Execute corrected R0-R4 falsifier exactly once
+        run: |
+          python -m i3.lab.stage2_replay_gate_falsifier /tmp/stage2-replay-gate-result.json
+
+      - name: Record canonical summary and digest
+        run: |
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          p = Path("/tmp/stage2-replay-gate-result.json")
+          raw = p.read_bytes()
+          r = json.loads(raw)
+          assert r["schema"] == "i3-stage2-replay-gate-software-falsifier/v1"
+          assert r["verdict"] in {
+              "REPLAY_GATE_DEFECT",
+              "REPLAY_GATE_NO_CAPACITY",
+              "REPLAY_GATE_CAPACITY_SHOWN",
+          }
+          summary = {
+              "source_sha": "${{ github.event.pull_request.head.sha }}",
+              "python": "3.11",
+              "sha256": hashlib.sha256(raw).hexdigest(),
+              "schema": r["schema"],
+              "verdict": r["verdict"],
+              "R0": {
+                  "pass": r["R0"]["pass"],
+                  "decision_mismatches": len(r["R0"]["decision_mismatches"]),
+                  "unexpected_extra_work": len(r["R0"]["unexpected_extra_work"]),
+                  "renaming_mismatches": len(r["R0"]["renaming_mismatches"]),
+                  "banned_imports": r["R0"]["banned_imports"],
+              },
+              "R1": {
+                  "pass": r["R1"]["pass"],
+                  "mismatches": len(r["R1"]["mismatches"]),
+              },
+              "R2": r["R2"],
+              "R3": r["R3"],
+              "R4": {
+                  "pass": r["R4"]["pass"],
+                  "gate_overhead_violations": len(r["R4"]["gate_overhead_violations"]),
+                  "audit_extra_work_violations": len(r["R4"]["audit_extra_work_violations"]),
+              },
+              "summary": r["summary"],
+              "fixed_replays_by_body": r["fixed_replays_by_body"],
+              "sleep_bodies": r["sleep_bodies"],
+          }
+          Path("/tmp/stage2-replay-gate-summary.json").write_text(
+              json.dumps(summary, sort_keys=True, indent=2) + "\n")
+          print("CANONICAL_STAGE2_REPLAY_GATE_RESULT=" +
+                json.dumps(summary, sort_keys=True, separators=(",", ":")))
+          PY
+
+      - name: Upload immutable result
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-stage2-replay-gate-canonical-result
+          path: |
+            /tmp/stage2-replay-gate-result.json
+            /tmp/stage2-replay-gate-summary.json
+          if-no-files-found: error
+          retention-days: 90
