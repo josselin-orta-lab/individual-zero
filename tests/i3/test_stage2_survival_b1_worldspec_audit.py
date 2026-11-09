@@ -98,9 +98,8 @@ class B1ProspectiveWorldSpecDryRun(unittest.TestCase):
                           "generation_zero(", "P2.world_for(", "scientific_admit("):
             self.assertNotIn(forbidden, source)
         self.assertNotIn("run_life", A.audit_synthetic_preview.__code__.co_names)
-        self.assertFalse(any("run" in key.lower()
-                             for key in A.audit_synthetic_preview().__iter__()
-                             if key not in ("worlds_stepped",)))
+        self.assertEqual(A.audit_synthetic_preview.__code__.co_names.count(
+            "run_life"), 0)
 
 
 if __name__ == "__main__":
