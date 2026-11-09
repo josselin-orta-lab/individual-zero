@@ -45,4 +45,6 @@ An independent methodology review and research-owner decision must explicitly ch
 
 **Subsequent interpretation addendum (9 November 2026):** the separate [paired survival and adverse tradeoff profile](PAIRED_SURVIVAL_PROFILE.md) supplements finite-panel mean contrasts with complete paired horizon death discordance, worst lived-step deltas and cognition savings coinciding with earlier mortality. It is purely descriptive, not a preregistered success gate, World authorization or change to this original candidate.
 
+**Subsequent three-policy accounting (9 November 2026):** [paired interpretation](PAIRED_SURVIVAL_PROFILE.md) now includes the separate RANDOM-minus-FIXED full-policy contrast and an additive arithmetic reconciliation across all three arms. This completes the finite-panel descriptive triangle without claiming causal mediation, equal physical replay work, a new experimental arm, or a revised owner-approved protocol.
+
 **Verdict now: PROPOSED SOFTWARE-ONLY, NO SCIENTIFIC WORLD AUTHORIZED.**
