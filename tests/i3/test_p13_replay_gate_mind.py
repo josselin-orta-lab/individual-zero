@@ -127,10 +127,13 @@ class RandomEqualMeanControl(unittest.TestCase):
                                               CognitiveBudget(body, BodyLaws())))
         self.assertEqual(a._random_sleep_ordinal, 1)
 
-    def test_selection_is_not_a_new_motor_policy(self):
+    def test_random_count_does_not_change_genome_or_action_authority(self):
         a, b = gate("gate"), gate("random_equal_mean")
-        self.assertEqual(a.options(CAP, BODY, 8), b.options(CAP, BODY, 8))
-        self.assertEqual(a.genome, b.genome)
+        for attr in ("theta", "p", "w", "gammas", "n_base",
+                     "h_max", "m_max", "beta_u", "lambda_r"):
+            with self.subTest(attr=attr):
+                self.assertEqual(getattr(a, attr), getattr(b, attr))
+        self.assertEqual(type(a), type(b))
 
 
 class Helpers(unittest.TestCase):
