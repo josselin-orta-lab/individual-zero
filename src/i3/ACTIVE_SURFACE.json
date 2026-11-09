@@ -3,8 +3,8 @@
   "updated": "2026-11-09",
   "reference": "P1.3 funded-v2",
   "current_stage": "2.1 replay gate",
-  "canonical_status": "CORRECTED_FALSIFIER_PENDING",
-  "next_scientific_action": "execute the corrected Stage-2.1 R0-R4 software falsifier exactly once",
+  "canonical_status": "REPLAY_GATE_CAPACITY_SHOWN",
+  "next_scientific_action": "prepare a fresh source-locked Stage-2.1 development transport and pass the ADR-0017 exact-SHA engineering rehearsal; no lived execution before an explicit owner lift",
   "governance": {
     "i3_registered": false,
     "stage1": "CLOSED_NEGATIVE_ADR_0018",
@@ -18,7 +18,9 @@
     "src/i3/lab/stage2_replay_gate_falsifier.py",
     "src/i3/docs/STAGE2_LAUNCH.md",
     "src/i3/docs/STAGE2_REPLAY_GATE.md",
-    "src/i3/docs/studies/stage2-replay-gate-software/RESULTS.md"
+    "src/i3/docs/studies/stage2-replay-gate-software/RESULTS.md",
+    "src/i3/docs/studies/stage2-replay-gate-software/canonical-summary.json",
+    "src/i3/docs/studies/stage2-replay-gate-software/canonical-result.json.gz"
   ],
   "active_engineering": [
     "src/i3/lab/engineering_cohort.py",
@@ -54,8 +56,21 @@
   "rules": [
     "Stage-2 active science must not import Stage-1 lab helpers.",
     "p13_replay_gate_v1 must remain unregistered in runtime/life.py until ADR-0017 is explicitly lifted and a later protocol authorizes lived support.",
-    "Supplied 68/69 observations are descriptive development evidence only.",
-    "Do not tune the corrected replay-gate formula from supplied 68/69 or the non-conforming supplied software result.",
-    "A non-capacity corrected software verdict closes slice 2.1 and moves to 2.2; there is no rescue loop."
-  ]
+    "The corrected canonical software verdict is REPLAY_GATE_CAPACITY_SHOWN; do not rerun or alter R0-R4 post hoc.",
+    "R3 is formally PASS but non-discriminating in software because S1 replays 16/16 memories at every tested body; do not repair the fixture after seeing the result.",
+    "Supplied 68/69 observations are descriptive development evidence only and must not be reused as prospective Stage-2.1 evidence.",
+    "Stage 2.1 remains active after software capacity; Stage 2.2 begins only if the frozen Stage-2.1 path later closes without adoption."
+  ],
+  "canonical_result": {
+    "source_sha": "e5d10aefea16cf4a5445b40848c2fff48b903e97",
+    "workflow_run_id": 42599443436,
+    "workflow_job_id": 129099996292,
+    "verdict": "REPLAY_GATE_CAPACITY_SHOWN",
+    "result_sha256": "96e4ab5215e1f1eed4c5ef6d43b1d9e716c4629c4ef1dfcaecafd7642097ca61",
+    "worlds": 0,
+    "lives": 0,
+    "rerun_allowed": false,
+    "r3_discriminating": false,
+    "r3_boundary": "formal PASS only; S1 replay count is flat at 16/16 across all tested bodies"
+  }
 }

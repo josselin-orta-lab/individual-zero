@@ -23,7 +23,7 @@ class ActiveSurfaceContract(unittest.TestCase):
     def test_manifest_declares_current_governance(self):
         self.assertEqual(self.data["schema"], "i3-active-surface/v1")
         self.assertEqual(self.data["current_stage"], "2.1 replay gate")
-        self.assertEqual(self.data["canonical_status"], "CORRECTED_FALSIFIER_PENDING")
+        self.assertEqual(self.data["canonical_status"], "REPLAY_GATE_CAPACITY_SHOWN")
         self.assertFalse(self.data["governance"]["i3_registered"])
         self.assertEqual(
             self.data["governance"]["adr_0017_world_opening_moratorium"], "ACTIVE")
@@ -61,10 +61,10 @@ class ActiveSurfaceContract(unittest.TestCase):
         self.assertNotIn("p13_replay_gate_v1", runtime)
         self.assertNotIn("p13_replay_gate_zero_perceived_cost_v1", runtime)
 
-    def test_status_points_to_corrected_software_falsifier(self):
+    def test_status_points_to_canonical_software_result(self):
         status = (I3 / "docs" / "STATUS.md").read_text()
-        self.assertIn("CORRECTED_FALSIFIER_PENDING", status)
-        self.assertIn("ADR-0017 therefore remains active", status)
+        self.assertIn("REPLAY_GATE_CAPACITY_SHOWN", status)
+        self.assertIn("ADR-0017 remains active", status)
 
     def test_stage1_compatibility_set_is_not_current_science(self):
         current = set(self.data["active_science"])

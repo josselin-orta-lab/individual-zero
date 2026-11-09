@@ -11,10 +11,10 @@ operational surface below.
 - **Reference:** P1.3 on funded v2.
 - **Stage 1:** closed negative under ADR-0018.
 - **Current stage:** Stage 2.1 replay gate.
-- **Canonical status:** `CORRECTED_FALSIFIER_PENDING`.
+- **Canonical status:** `REPLAY_GATE_CAPACITY_SHOWN`.
 - **ADR-0017:** world-opening moratorium active.
-- **Next scientific action:** execute the corrected software-only R0-R4
-  falsifier once.
+- **Next action:** prepare a fresh source-locked Stage-2.1 transport and pass
+  its ADR-0017 exact-SHA engineering rehearsal; no lived execution yet.
 
 Start here:
 
@@ -25,8 +25,8 @@ Start here:
 
 ## Stage 2.1 evidence
 
-- [Canonical software status](studies/stage2-replay-gate-software/RESULTS.md):
-  corrected falsifier pending.
+- [Canonical software result](studies/stage2-replay-gate-software/RESULTS.md):
+  `REPLAY_GATE_CAPACITY_SHOWN`, R0-R4 PASS, no World/life.
 - [Supplied software result](studies/stage2-replay-gate-software/SUPPLIED_RESULTS.md):
   preserved custody evidence, not canonical because the supplied denominator
   diverged from the frozen protocol.

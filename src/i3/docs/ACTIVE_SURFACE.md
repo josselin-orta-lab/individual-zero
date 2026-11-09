@@ -9,12 +9,14 @@ scientific evidence or ADRs. The machine-readable authority is
 - **Reference:** P1.3 on funded v2.
 - **Stage 1:** closed negative under ADR-0018.
 - **Current stage:** Stage 2.1, replay gate.
-- **Canonical Stage-2.1 status:** `CORRECTED_FALSIFIER_PENDING`.
+- **Canonical Stage-2.1 status:** `REPLAY_GATE_CAPACITY_SHOWN`.
 - **ADR-0017:** world-opening moratorium remains active.
 - **I3:** proposal only, unregistered.
 
-The next scientific action is deliberately narrow: execute the corrected R0-R4
-software falsifier once. It opens no World and no life.
+The corrected R0-R4 software falsifier has executed once and passed. The next
+work is to prepare a **fresh** source-locked Stage-2.1 development transport and
+pass the ADR-0017 exact-SHA sealed engineering rehearsal. No lived World may
+open until an explicit owner lift is recorded.
 
 ## Active scientific surface
 
@@ -73,11 +75,14 @@ Stop and re-evaluate if a change does any of the following:
 
 - opens a World while ADR-0017 is active;
 - registers `p13_replay_gate_v1` in the runtime;
-- changes the frozen replay-gate formula or R0-R4 rules after seeing supplied
-  68/69;
+- changes the frozen replay-gate formula or R0-R4 rules after the canonical
+  software verdict;
+- treats the formally passing but flat S1 R3 fixture as proof of graded cost
+  sensitivity;
 - imports Stage-1 lab helpers into active Stage-2 science;
 - creates another Stage-1 candidate;
-- adds a second Stage-2.1 architecture instead of accepting a negative verdict.
+- reuses supplied 68/69 as prospective evidence;
+- jumps to Stage 2.2 while the frozen positive Stage-2.1 path is still open.
 
 The purpose of this map is not to erase history. It is to stop history from
 pretending to be the present.

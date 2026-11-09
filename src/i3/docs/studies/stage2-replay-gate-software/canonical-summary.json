@@ -1,0 +1,48 @@
+{
+  "schema": "i3-stage2-replay-gate-canonical-summary/v1",
+  "source_sha": "e5d10aefea16cf4a5445b40848c2fff48b903e97",
+  "workflow_run_id": 42599443436,
+  "workflow_job_id": 129099996292,
+  "python": "3.11",
+  "result_schema": "i3-stage2-replay-gate-software-falsifier/v1",
+  "result_sha256": "96e4ab5215e1f1eed4c5ef6d43b1d9e716c4629c4ef1dfcaecafd7642097ca61",
+  "compressed_result_sha256": "dadeb866a33469bc6acff03bba306b703d642e6237220fe30da804c022132c02",
+  "artifact_id": 13665446102,
+  "artifact_digest": "sha256:16daf2273a9af58da324d8894a64dac0fc2afb2c0f96b3acbd4fa0e0036a10c8",
+  "verdict": "REPLAY_GATE_CAPACITY_SHOWN",
+  "R0": {
+    "pass": true,
+    "decision_mismatches": 0,
+    "unexpected_extra_work": 0,
+    "renaming_mismatches": 0,
+    "banned_imports": []
+  },
+  "R1": {"pass": true, "mismatches": 0},
+  "R2": {
+    "pass": true,
+    "S0_replays_by_body": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    "S1_replays_high_EV": [16,16,16,16]
+  },
+  "R3": {
+    "pass": true,
+    "ordered_pairs": 84,
+    "non_increasing_when_EV_fall": 84,
+    "share": 1.0,
+    "interpretation": "formally passes but does not discriminate cost sensitivity because S1 replays 16/16 memories at every tested body"
+  },
+  "R4": {
+    "pass": true,
+    "gate_overhead_violations": 0,
+    "audit_extra_work_violations": 0
+  },
+  "means": {
+    "S0_gate_replays": 0.0,
+    "S0_zero_perceived_cost_replays": 0.0,
+    "S1_gate_replays": 16.0,
+    "S1_zero_perceived_cost_replays": 16.0,
+    "fixed_replays": 16.0
+  },
+  "worlds": 0,
+  "lives": 0,
+  "adr_0017_moratorium": "UNCHANGED"
+}

@@ -13,40 +13,46 @@ Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
 
-## Stage 2.1 package audit: corrected falsifier pending
+## Stage 2.1 canonical software verdict: capacity shown
 
-Canonical status code: **`CORRECTED_FALSIFIER_PENDING`**.
+Canonical status code: **`REPLAY_GATE_CAPACITY_SHOWN`**.
 
-9 November 2026: the uploaded Stage-2 development package was verified and
-semantically audited. Its supplied software run reported
-`REPLAY_GATE_CAPACITY_SHOWN`, and its supplied 68/69 DEVELOPMENT pilot
-reported a continuation PASS. Both are preserved, but neither is the canonical
-Stage-2.1 scientific verdict.
+9 November 2026: the corrected frozen-protocol R0-R4 falsifier was executed
+exactly once from source
+`e5d10aefea16cf4a5445b40848c2fff48b903e97`, Python 3.11, Actions run
+`42599443436`. No World or life was opened.
 
-The audit found a material frozen-protocol divergence: #1212 defines
-`r_hat = (n_relevant + 1) / (n_decisions + 2)`, while the supplied
-implementation divided by audited decisions. The integrated
-`p13_replay_gate_v1` now uses all scored decisions and has a regression test
-for that denominator.
+All frozen rules PASS:
 
-The supplied 68/69 run is retained as descriptive development evidence only:
-its replay reduction and accounting observations are useful, but it used the
-non-conforming implementation. The package also attributes an ADR-0017 lift to
-a conversation quote that is not authenticated by the current repository
-history. **ADR-0017 therefore remains active in this ledger.**
+- R0: 0 decision, work, renaming or import-boundary failures;
+- R1: forced-open identity with FIXED, 0 mismatches;
+- R2: S0 replays 0/16, while every required high-E/V S1 state replays 16;
+- R3: 84/84 ordered pairs pass the frozen monotonic rule;
+- R4: 0 audit or gate overhead violations.
 
-Canonical next action: execute the corrected R0-R4 software falsifier once.
-No World or life is authorized. See
-[software audit](studies/stage2-replay-gate-software/RESULTS.md) and
-[68/69 custody](studies/stage2-replay-gate-development-68-69/RESULTS.md).
+Machine result SHA-256:
+`96e4ab5215e1f1eed4c5ef6d43b1d9e716c4629c4ef1dfcaecafd7642097ca61`.
+See [canonical result](studies/stage2-replay-gate-software/RESULTS.md).
+
+**Boundary:** R3 is formally green but non-discriminating: S1 replays the full
+16-memory batch at every tested body. This is recorded, not repaired post hoc.
+Software capacity therefore does not demonstrate lived replay reduction,
+active cost-awareness or survival non-inferiority.
+
+Stage 2.1 remains current. Its frozen protocol now proceeds to the lived path
+**only after ADR-0017 is validly lifted**. Supplied 68/69 remains descriptive
+and cannot be retroactively promoted or reused. The next work is to prepare a
+fresh source-locked Stage-2.1 transport and pass the required exact-SHA sealed
+engineering rehearsal. ADR-0017 remains active; no new lived World is
+authorized.
 
 ## Stage 2 launched: decide how much to think (#1062)
 
 9 November 2026: [launch document](STAGE2_LAUNCH.md). Reference: P1.3. No World,
 no life, no runtime change. The owner-approved first slice,
-[2.1 replay gate](STAGE2_REPLAY_GATE.md), remains prospectively frozen. Its
-implementation is now present, but its **corrected software falsifier has not
-yet been executed**.
+[2.1 replay gate](STAGE2_REPLAY_GATE.md), remains frozen. Its corrected
+software falsifier now returns **`REPLAY_GATE_CAPACITY_SHOWN`**; lived evidence
+still waits for the ADR-0017 lift.
 
 Pre-design measurements, disclosed but not scientific results:
 
@@ -59,7 +65,7 @@ Pre-design measurements, disclosed but not scientific results:
 
 Stage 2 proceeds in this order:
 
-1. **2.1 replay gate**: execute the corrected software falsifier once under the frozen R0-R4 rules;
+1. **2.1 replay gate**: software capacity shown; next complete ADR-0017 engineering/lift custody, then a fresh prospective lived path;
 2. **2.2 deliberation ceiling**;
 3. **2.3 simulation depth**;
 4. precision-on-demand remains deferred on the current P1.3 evidence.
