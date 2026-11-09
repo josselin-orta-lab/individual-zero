@@ -117,6 +117,103 @@ def _mean(rows: list, field: str) -> float:
     return fsum(row[field] for row in rows) / len(rows)
 
 
+def _paired_outcome_profile(received: Mapping) -> dict:
+    """Expose *all* matched adverse outcomes, without inference or GO.
+
+    No margin, rescue reward or pass/fail criterion is added. The observed
+    240 paired blocks share worlds and genomes: they are not independent
+    population samples. A death on step 400 is never a censoring event.
+    """
+    blocks = sorted({(p, index, seed) for p, index, seed, _ in received})
+    if len(blocks) != F0.POPULATIONS * F0.WORLDS_PER_POPULATION * F0.KEEP:
+        raise ValueError("incomplete finite matched blocks")
+    records = {name: [] for name, _, _ in CONTRASTS}
+    for p, index, seed in blocks:
+        arm_rows = {arm: received[(p, index, seed, arm)] for arm in ARMS}
+        family = arm_rows[ARMS[0]]["family"]
+        for name, a, b in CONTRASTS:
+            left, right = arm_rows[a], arm_rows[b]
+            records[name].append({
+                "population": p, "family": family,
+                "gate_survived": left["terminal"] == "censored",
+                "comparator_survived": right["terminal"] == "censored",
+                "steps_delta": left["steps_lived"] - right["steps_lived"],
+                "energy_delta": left["energy_paid"] - right["energy_paid"],
+                "vigilance_delta": left["vigilance_paid"] - right["vigilance_paid"],
+                "gate_dead_at_400": (left["terminal"] == "dead"
+                                     and left["steps_lived"] == F0.HORIZON),
+                "comparator_dead_at_400": (right["terminal"] == "dead"
+                                           and right["steps_lived"] == F0.HORIZON),
+            })
+
+    def summarize(pairs):
+        if not pairs:
+            raise ValueError("empty paired family or population")
+        survival = {
+            "both_survived": 0, "gate_only_survived": 0,
+            "comparator_only_survived": 0, "neither_survived": 0,
+        }
+        duration = {"gate_longer": 0, "gate_shorter": 0, "equal": 0}
+        for item in pairs:
+            a, b = item["gate_survived"], item["comparator_survived"]
+            category = (
+                "both_survived" if a and b else
+                "gate_only_survived" if a else
+                "comparator_only_survived" if b else "neither_survived"
+            )
+            survival[category] += 1
+            delta = item["steps_delta"]
+            duration["gate_longer" if delta > 0 else
+                     "gate_shorter" if delta < 0 else "equal"] += 1
+        n = len(pairs)
+        if sum(survival.values()) != n or sum(duration.values()) != n:
+            raise ValueError("paired outcomes failed reconciliation")
+        return {
+            "paired_blocks": n,
+            "survival_discordance": survival,
+            "lived_steps_direction": duration,
+            "worst_gate_minus_comparator_lived_steps": min(
+                r["steps_delta"] for r in pairs),
+            "best_gate_minus_comparator_lived_steps": max(
+                r["steps_delta"] for r in pairs),
+            "death_on_step_400": {
+                "gate": sum(r["gate_dead_at_400"] for r in pairs),
+                "comparator": sum(r["comparator_dead_at_400"] for r in pairs),
+            },
+            "lower_paid_energy_but_shorter_life": sum(
+                r["energy_delta"] < 0 and r["steps_delta"] < 0 for r in pairs),
+            "lower_paid_vigilance_but_shorter_life": sum(
+                r["vigilance_delta"] < 0 and r["steps_delta"] < 0 for r in pairs),
+            "lower_paid_energy_but_worse_horizon_survival": sum(
+                r["energy_delta"] < 0 and not r["gate_survived"]
+                and r["comparator_survived"] for r in pairs),
+            "observed_survival_difference": (
+                survival["gate_only_survived"] -
+                survival["comparator_only_survived"]) / n,
+        }
+
+    return {
+        "status": "DESCRIPTIVE_ONLY_NO_SCIENTIFIC_VERDICT",
+        "paired_blocks_per_contrast": len(blocks),
+        "overall": {name: summarize(pairs) for name, pairs in records.items()},
+        "by_family": {
+            family: {name: summarize([r for r in records[name]
+                                      if r["family"] == family])
+                     for name in records}
+            for family in F0.FAMILIES
+        },
+        "by_population": {
+            p: {name: summarize([r for r in records[name]
+                                 if r["population"] == p])
+                for name in records}
+            for p in range(F0.POPULATIONS)
+        },
+        "statistical_inference": "NOT_ESTABLISHED",
+        "survival_noninferiority_certified": False,
+        "causal_replay_selection_advantage": "NOT_ESTABLISHED",
+    }
+
+
 def descriptive_readout(rows: list, occupied_world_seeds=()) -> dict:
     """Describe paired lives after COMPLETE receipts; never a statistical gate.
 
@@ -184,6 +281,7 @@ def descriptive_readout(rows: list, occupied_world_seeds=()) -> dict:
         "selection_effect_tested": False,
         "survival_noninferiority_certified": False,
         "record_count": len(received), "paired_blocks": len(blocks),
+        "paired_outcome_profile": _paired_outcome_profile(received),
         "by_population": by_population, "by_family": by_family,
         "equal_population_mean_contrasts": {
             name: {metric: fsum(all_groups[name][p][metric] for p in by_population) /

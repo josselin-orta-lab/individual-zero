@@ -13,9 +13,11 @@ operational surface below.
 - **Current stage:** Stage 2.1 replay gate.
 - **Canonical status:** `REPLAY_GATE_CAPACITY_SHOWN`.
 - **ADR-0017:** owner-lifted for exact transport `dcada9e2…f1` and frozen DEVELOPMENT 80/81 only.
-- **Next action:** freeze RANDOM-EQUAL-MEAN implementation and the selected
-  multi-population Stage-2.1 gate prospectively, with no new World yet.
-  DEVELOPMENT 80/81 has completed once and is permanently closed.
+- **Next action:** obtain independent methodological review of the
+  mechanism-first v3 finite-panel question versus generalizable survival
+  non-inferiority; verify source/world provenance and prospective authority
+  before any World. Neither v3 nor the older selected-pipeline candidate
+  is an approved new exposure. DEVELOPMENT 80/81 is permanently closed.
 
 Start here:
 

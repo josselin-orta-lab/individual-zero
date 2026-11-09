@@ -43,4 +43,6 @@ As drafted, **v3 is a research option, not a replacement authorized protocol.** 
 
 An independent methodology review and research-owner decision must explicitly choose the scientific estimand and its significance. The recommended next planning default is the smaller fixed-G0 same-genome pilot **for mechanistic understanding only**, with no proposed confirmation of non-inferiority, no Stage-2.2 promotion and no automated acceptance. Separate source-locked G/R rehearsal, complete original custody, an index-scoped one-shot pre-exposure claim and explicit new owner permission are mandatory before even this smaller pilot could open a World. Any negative or null results would remain in custody.
 
+**Subsequent interpretation addendum (9 November 2026):** the separate [paired survival and adverse tradeoff profile](PAIRED_SURVIVAL_PROFILE.md) supplements finite-panel mean contrasts with complete paired horizon death discordance, worst lived-step deltas and cognition savings coinciding with earlier mortality. It is purely descriptive, not a preregistered success gate, World authorization or change to this original candidate.
+
 **Verdict now: PROPOSED SOFTWARE-ONLY, NO SCIENTIFIC WORLD AUTHORIZED.**
