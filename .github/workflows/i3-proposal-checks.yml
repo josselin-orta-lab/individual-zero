@@ -7,6 +7,7 @@ on:
     paths:
       - 'src/i3/**/*.py'
       - 'src/i3/engine.json'
+      - 'src/i3/ACTIVE_SURFACE.json'
       - 'tests/i3/**'
       - 'scripts/check_engine_repository.py'
       - 'tests/test_engine_repository.py'
