@@ -28,8 +28,12 @@ class ActiveSurfaceContract(unittest.TestCase):
         self.assertEqual(self.data["canonical_status"], "REPLAY_GATE_CAPACITY_SHOWN")
         self.assertFalse(self.data["governance"]["i3_registered"])
         self.assertEqual(
-            self.data["governance"]["adr_0017_world_opening_moratorium"], "ACTIVE")
-        self.assertFalse(self.data["governance"]["fresh_lived_worlds_allowed"])
+            self.data["governance"]["adr_0017_world_opening_moratorium"], "LIFTED_2026_11_09")
+        self.assertTrue(self.data["governance"]["fresh_lived_worlds_allowed"])
+        self.assertTrue(self.data["governance"]["adr_0017_owner_lift_recorded"])
+        self.assertEqual(self.data["governance"]["authorized_fresh_lived_scope"],
+                         "FROZEN_STAGE2_1_DEVELOPMENT_80_81_ONLY")
+        self.assertFalse(self.data["governance"]["scientific_gate_authorized"])
         self.assertEqual(self.data["governance"]["adr_0019"], "ACCEPTED_2026_11_09")
         self.assertEqual(self.data["governance"]["pre_lift_replay_runtime_support_allowed"], "ENGINEERING_COHORT_ONLY")
 
@@ -60,11 +64,10 @@ class ActiveSurfaceContract(unittest.TestCase):
                             offenders.append((rel, alias.name))
         self.assertEqual(offenders, [])
 
-    def test_replay_gate_dispatch_is_engineering_only_and_fail_closed(self):
-        # Replaces the earlier current-state stop, as that stop required:
-        # pre-lift dispatch now exists only behind a guard-minted, World-bound
-        # admission ticket, with explicit fail-closed scientific-cohort tests
-        # (ADR-0019). This is not an ADR-0017 lift.
+    def test_replay_gate_dispatch_remains_world_bound_after_owner_lift(self):
+        # Owner-lifted scientific dispatch still uses exactly the same
+        # WorldSpec-bound admission guard. The synthetic pre-lift condition
+        # remains fail-closed in tests; the live pilot is not a unit test.
         runtime = (I3 / "runtime" / "life.py").read_text()
         self.assertIn("p13_replay_gate_v1", runtime)
         self.assertIn("p13_replay_gate_zero_perceived_cost_v1", runtime)
@@ -79,12 +82,14 @@ class ActiveSurfaceContract(unittest.TestCase):
             self.assertIn(f"def {name}(", guard)
         self.assertEqual(self.data["governance"]["pre_lift_replay_runtime_support_allowed"],
                          "ENGINEERING_COHORT_ONLY")
-        self.assertEqual(self.data["governance"]["adr_0017_world_opening_moratorium"], "ACTIVE")
+        self.assertEqual(self.data["governance"]["adr_0017_world_opening_moratorium"], "LIFTED_2026_11_09")
 
     def test_status_points_to_canonical_software_result(self):
         status = (I3 / "docs" / "STATUS.md").read_text()
         self.assertIn("REPLAY_GATE_CAPACITY_SHOWN", status)
-        self.assertIn("ADR-0017 remains active", status)
+        self.assertIn("ADR-0017 OWNER LIFT: Stage-2.1 transport "
+                      "dcada9e221f79b9450a4f05fecd20e60ac6595bb306aa871f29e45aefea0b6f1",
+                      status)
 
     def test_archived_stage1_modules_resolve_and_active_paths_are_absent(self):
         archived = [
