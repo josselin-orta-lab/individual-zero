@@ -33,6 +33,11 @@ mean survival non-inferiority. The associated software arithmetic is conditional
 and does not authorize any World. Independent review and a separate owner
 decision remain required.
 
+[Proposed finite-panel receipt check](studies/stage2-replay-gate-selected-design/FINITE_PANEL_RECEIPTS.md)
+validates the candidate 1,200-cell F0 layout without constructing
+Worlds or claiming mean survival non-inferiority. It does not
+authenticate originals or grant selection/validation authority.
+
 ## Stage 2.1 engineering custody
 
 - [Hardened 36/36 sealed rehearsal](studies/stage2-replay-gate-development-80-81/HARDENED_REHEARSAL.md): structural PASS under ADR-0019, **not** an ADR-0017 lift.
