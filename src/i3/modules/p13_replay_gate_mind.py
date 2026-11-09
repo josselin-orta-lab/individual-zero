@@ -19,8 +19,8 @@ bookkeeping and a paid post-decision audit that cannot alter the choice.
 """
 from __future__ import annotations
 
-from .body import (CognitiveBudget, CognitiveFundingError, CognitiveWork,
-                   capacities, cognitive_cost)
+from .body import (ACTION_COSTS, CognitiveBudget, CognitiveFundingError,
+                   CognitiveWork, capacities, cognitive_cost)
 from .mind import (F, I, Mind, REPLAYS_PER_SLEEP, W)
 from .stage2_random_equal_mean import scheduled_replays
 
@@ -37,6 +37,32 @@ def strict_top(scores: dict):
     if len(ranked) == 1 or ranked[0][1] - ranked[1][1] > TOP_MARGIN:
         return ranked[0][0]
     return None
+
+
+def _optional_audit_preserves_funded_motor(budget: CognitiveBudget,
+                                           action: str | None) -> bool:
+    """Verify the extra post-decision audit cannot invalidate motor funding.
+
+    The original P1.3 Action Control admitted this action against the
+    already-spent decision budget. GATE's additional, *optional* audit cycle
+    occurs AFTER that admission. It must never consume the motor reserve
+    for an action already admitted. This changes audit availability, never
+    the chosen action, P1.3 competition, physical motor tariff or G equation.
+    """
+    if action in (None, "dormir"):
+        return True
+    if action not in ACTION_COSTS:
+        raise ValueError("unknown admitted motor command")
+    work = budget.work
+    with_audit = CognitiveWork(cycles=work.cycles + 1,
+                               simulated_steps=work.simulated_steps,
+                               memory_items=work.memory_items,
+                               replays=work.replays)
+    # Use exactly the same cumulative bill World will debit. Subtracting
+    # a single cycle from a rounded remaining balance can be misleading.
+    projected_energy = budget.body[E_INDEX] - cognitive_cost(
+        budget.laws, with_audit)[0]
+    return projected_energy >= ACTION_COSTS[action]
 
 
 class P13ReplayGateMind(Mind):
@@ -217,7 +243,12 @@ class P13ReplayGateMind(Mind):
             observer_families=observer_families)
         if scored:
             self.decisions_total += 1
-            if budget.try_spend(CognitiveWork(cycles=1)):
+            # The optional residual audit is *after* Action Control. Never
+            # invalidate a motor action admitted with the pre-audit budget.
+            # A skipped audit still counts as a scored decision for frozen
+            # r_hat; it is not fabricated as an audited decision.
+            if (_optional_audit_preserves_funded_motor(budget, action)
+                    and budget.try_spend(CognitiveWork(cycles=1))):
                 self._audit(scored, residuals)
                 work = budget.work
         return action, param, work, info
