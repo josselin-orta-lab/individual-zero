@@ -1,0 +1,210 @@
+name: I3 Stage 2.1 DEVELOPMENT 80/81 prospective single exposure
+
+on:
+  pull_request:
+    types: [opened]
+    branches: [main]
+    paths:
+      - '.github/workflows/i3-stage2-1-development-80-81-one-shot.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: i3-stage2-1-development-80-81-single-exposure
+  cancel-in-progress: false
+
+jobs:
+  one-scientific-panel:
+    if: >-
+      github.head_ref == 'study/i3-stage2-1-development-80-81-once' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    env:
+      PYTHONPATH: src
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+      TRANSPORT_FINGERPRINT: dcada9e221f79b9450a4f05fecd20e60ac6595bb306aa871f29e45aefea0b6f1
+      PLAN_SHA256: a28606678d13bb9af18f590c328a63eb9eb82f7130c90656e4f520260d294c92
+      PLAN: src/i3/docs/studies/stage2-replay-gate-development-80-81/PLAN.json
+      STUDY: src/i3/docs/studies/stage2-replay-gate-development-80-81
+      ARCHIVE_DIR: /tmp/i3-stage2-1-development-80-81-originals
+      CLAIM_BRANCH: custody/i3-stage2-1-development-80-81-claimed
+      EVIDENCE_BRANCH: evidence/i3-stage2-1-development-80-81-first-exposure
+    steps:
+      - name: Checkout the prospectively declared, exact execution source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Python 3.11, matching rehearsed transport matrix
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Fail-closed preregistration, owner lift, source and collision preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          git merge-base --is-ancestor e53e35a351f1c57a8ef23b42dc6133d93717eb52 "$SOURCE_SHA"
+          test -z "$(git status --porcelain)"
+          if git ls-remote --heads origin "$CLAIM_BRANCH" | grep -q .; then
+            echo "I3 SCIENTIFIC EXPOSURE ALREADY CLAIMED. No retry is authorized."
+            exit 2
+          fi
+          if git ls-remote --heads origin "$EVIDENCE_BRANCH" | grep -q .; then
+            echo "I3 SCIENTIFIC ORIGINALS ALREADY ARCHIVED. No new exposure."
+            exit 2
+          fi
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          from i3.lab import stage2_admission as A
+          from i3.lab import stage2_panel as SP
+          from i3.lab import p2_ecologies as P2
+          p=Path(os.environ["PLAN"])
+          plan=SP.load_plan(p)
+          assert hashlib.sha256(p.read_bytes()).hexdigest()==os.environ["PLAN_SHA256"]
+          assert A.transport_fingerprint(p)==os.environ["TRANSPORT_FINGERPRINT"]
+          assert A.canonical_owner_lift_recorded(os.environ["TRANSPORT_FINGERPRINT"])
+          assert plan["scientific"]=={"cohort":"development","indices":[80,81],
+                                      "genome_seeds":[911,912],"life_seed_base":7540000}
+          assert plan["families"]==["stable","depletion","pulse"]
+          assert plan["horizon"]==400
+          assert plan["arms"]==["reference","p13_replay_gate_v1",
+                                "p13_replay_gate_zero_perceived_cost_v1"]
+          cases=SP.cases(plan,"scientific")
+          assert len(cases)==36
+          assert set(c["index"] for c in cases)=={80,81}
+          assert set(c["cohort"] for c in cases)=={"development"}
+          assert set(c["life_seed"] for c in cases).isdisjoint(set(range(9010000,9015000)))
+          assert all(not (90000<=P2.COHORTS[c["cohort"]][c["index"]]<91000)
+                     for c in cases)
+          manifest=json.loads(Path("src/i3/ACTIVE_SURFACE.json").read_text())
+          assert manifest["governance"]["adr_0017_owner_lift_recorded"] is True
+          assert manifest["governance"]["authorized_fresh_lived_scope"]=="FROZEN_STAGE2_1_DEVELOPMENT_80_81_ONLY"
+          print("I3_PREFLIGHT=PASS; source="+os.environ["SOURCE_SHA"]+
+                "; plan_sha256="+os.environ["PLAN_SHA256"]+
+                "; fingerprint="+os.environ["TRANSPORT_FINGERPRINT"]+
+                "; scientific_worlds_not_yet_opened=TRUE")
+          PY
+
+      - name: Commit irreversible single-exposure claim before any World
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Individual Zero scientific custody"
+          git config user.email "334698467+josselin-orta-lab@users.noreply.github.com"
+          git switch --create "$CLAIM_BRANCH"
+          git commit --allow-empty -m "custody(i3): claim first and only 80/81 exposure; run $GITHUB_RUN_ID; source $SOURCE_SHA"
+          git push origin "HEAD:refs/heads/$CLAIM_BRANCH"
+          git checkout --detach "$SOURCE_SHA"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          test -z "$(git status --porcelain)"
+          echo "I3_SINGLE_EXPOSURE_CLAIM=COMMITTED; run_id=$GITHUB_RUN_ID; no retry permitted"
+
+      - name: Execute exactly one prospectively frozen 36-life scientific G/R panel
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json, os, subprocess
+          from pathlib import Path
+          from i3.lab import stage2_panel as SP
+          from i3.lab import two_phase_panel as TP
+          archive=Path(os.environ["ARCHIVE_DIR"])
+          plan=Path(os.environ["PLAN"])
+          source_sha=os.environ["SOURCE_SHA"]
+          archive.mkdir(parents=True,exist_ok=True)
+          try:
+              # Source-locked, existing parameterized transport. No secondary
+              # scientific runner, rule change, or life-level retry.
+              result=SP.execute(plan,archive)
+          except Exception as exc:
+              failure={"schema":"i3-stage2-1-80-81-structural-failure/v1",
+                       "status":"ENGINEERING_FAILURE_NOT_A_DEATH",
+                       "error_type":type(exc).__name__,"error":str(exc),
+                       "source_sha":source_sha,"no_retry":True,
+                       "outcome_reading_forbidden":True}
+              (archive/"STRUCTURAL_FAILURE.json").write_text(
+                  json.dumps(failure,sort_keys=True,indent=2)+"\n")
+              print("I3_PILOT_EXCEPTION="+type(exc).__name__+"; no retry permitted")
+              raise SystemExit(3)
+          if result.get("status")!="COMPLETE" or result.get("continuation")!="PASS":
+              safe={k:result.get(k) for k in ("status","continuation",
+                                               "transport_fingerprint","invariant_failures")}
+              safe["no_retry"]=True
+              safe["outcome_reading_forbidden"]=True
+              (archive/"STRUCTURAL_FAILURE.json").write_text(
+                  json.dumps(safe,sort_keys=True,indent=2)+"\n")
+              print("I3_PILOT_STRUCTURAL_STOP="+str(result.get("status"))+
+                    "; no results may be read and no life retried")
+              raise SystemExit(4)
+          body=(archive/"MANIFEST.json").read_bytes()
+          manifest=json.loads(body)
+          digest=hashlib.sha256(body).hexdigest()
+          assert digest==(archive/"MANIFEST.sha256").read_text().strip()
+          assert manifest["status"]=="GENERATED" and manifest["planned"]==36
+          assert manifest["generated"]==36 and len(manifest["files"])==36
+          assert len(result["rows"])==36
+          checked=0
+          for identity,life in TP.load_sealed(archive):
+              assert life["manifest"]["source"]["git_head"]==source_sha
+              assert life["manifest"]["source"]["working_tree_dirty"] is False
+              assert life["manifest"]["world_sha256"]==life["admission_receipt"]["world_sha256"]
+              assert identity["cohort"]=="development" and identity["index"] in (80,81)
+              checked+=1
+          assert checked==36
+          custody={"schema":"i3-stage2-1-development-80-81-original-custody/v1",
+                   "source_sha":source_sha,"owner_lift_main_sha":"e53e35a351f1c57a8ef23b42dc6133d93717eb52",
+                   "transport_fingerprint":os.environ["TRANSPORT_FINGERPRINT"],
+                   "plan_sha256":os.environ["PLAN_SHA256"],
+                   "run_id":os.environ["GITHUB_RUN_ID"],
+                   "manifest_sha256":digest,
+                   "planned":36,"generated":36,"reduced":36,
+                   "originals_sha256_verified":checked,
+                   "continuation":"PASS","no_retry":True,
+                   "scientific_gate":"NOT_EXECUTED"}
+          (archive/"SOURCE_LOCK.json").write_text(
+              json.dumps(custody,sort_keys=True,indent=2)+"\n")
+          public_result={**custody,"invariant_failures":result["invariant_failures"],
+                         "rows":result["rows"],"summary":result["summary"],
+                         "status":result["status"]}
+          raw=json.dumps(public_result,sort_keys=True,separators=(",",":")).encode()+b"\n"
+          (archive/"SCIENTIFIC_RESULT.json").write_bytes(raw)
+          print("I3_DEVELOPMENT_80_81=COMPLETE; planned=36; generated=36; reduced=36"+
+                "; invariant_failures=0; manuscript=not-a-confirmatory-gate"+
+                "; manifest_sha256="+digest+
+                "; scientific_result_sha256="+hashlib.sha256(raw).hexdigest())
+          PY
+
+      - name: Publish original scientific evidence on an independent immutable branch
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git switch --create "$EVIDENCE_BRANCH" "$SOURCE_SHA"
+          mkdir -p "$STUDY/evidence"
+          cp "$ARCHIVE_DIR"/MANIFEST.json "$ARCHIVE_DIR"/MANIFEST.sha256 "$STUDY/evidence/"
+          cp "$ARCHIVE_DIR"/life-*.json.gz "$STUDY/evidence/"
+          cp "$ARCHIVE_DIR"/SOURCE_LOCK.json "$ARCHIVE_DIR"/SCIENTIFIC_RESULT.json "$STUDY/evidence/"
+          mkdir -p archive/i3/workflows
+          git mv .github/workflows/i3-stage2-1-development-80-81-one-shot.yml archive/i3/workflows/i3-stage2-1-development-80-81-one-shot.yml
+          git add "$STUDY/evidence" archive/i3/workflows
+          git commit -m "evidence(i3 stage2): preserve once-only DEVELOPMENT 80/81 originals and complete G/R result"
+          git push origin "HEAD:refs/heads/$EVIDENCE_BRANCH"
+          echo "I3_EVIDENCE_BRANCH=$EVIDENCE_BRANCH"
+          echo "I3_EVIDENCE_SHA=$(git rev-parse HEAD)"
+
+      - name: Preserve sealed originals and structural failure receipts even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-stage2-1-development-80-81-original-custody
+          path: /tmp/i3-stage2-1-development-80-81-originals/
+          retention-days: 90
+          if-no-files-found: warn
