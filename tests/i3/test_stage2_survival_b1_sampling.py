@@ -68,7 +68,8 @@ class B1ProspectiveAllocationDryRun(unittest.TestCase):
     def test_no_reseed_on_tampered_or_duplicate_unit(self):
         for label, mutator in (
             ("edited_world", lambda d: d["proposed_units"][0].update(world_seed=17)),
-            ("changed_family", lambda d: d["proposed_units"][0].update(family="stable")),
+            ("changed_family", lambda d: d["proposed_units"][0].update(
+                family="pulse" if d["proposed_units"][0]["family"] != "pulse" else "stable")),
             ("duplicated_seed", lambda d: d["proposed_units"][1].update(
                 world_seed=d["proposed_units"][0]["world_seed"])),
             ("deleted_unit", lambda d: d["proposed_units"].pop()),
