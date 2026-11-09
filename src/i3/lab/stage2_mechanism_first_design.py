@@ -84,8 +84,8 @@ def _validate_row(row: Mapping, cells: Mapping) -> tuple:
         raise ValueError("invalid exact reduced receipt fields")
     p, index, seed, arm = (row[k] for k in
                           ("population", "world_index", "genome_seed", "arm"))
-    if any(type(x) is not int for x in (p, index, seed)) or
-            type(arm) is not str or arm not in ARMS:
+    if (any(type(x) is not int for x in (p, index, seed)) or
+            type(arm) is not str or arm not in ARMS):
         raise ValueError("invalid matched cell identifier")
     key = (p, index, seed, arm)
     world = cells.get(key)
