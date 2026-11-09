@@ -3,6 +3,7 @@
 This directory is for preserved historical material, **not** for a second active runtime.
 
 - [I0 frozen archive](i0/README.md): historical Lab, tests and workflows. Never rewrite, rename, or mix archived bytes into an I1/I2 runtime. The [registered archive manifest](../config/archives/i0-20261017.json) records the frozen custody boundary.
+- [I3 Stage-1 closure archive](i3/stage1-2026-11-09/README.md): retired Stage-1 scientific runners/tests after the ADR-0018 negative closure; evidence and runtime compatibility surfaces remain in place.
 - [Research historical files](../docs/research/archive/README.md) and [dated research records](../docs/research/README.md): experiment-specific source snapshots (including Issue 110 GA08) are **separate** from the frozen I0 manifest. Historical studies may remain outside `archive/` because their paths are referenced by reports, code, or source-pinned evidence.
 - [Versioned architectural references](../docs/architecture/reference/README.md): historical specifications, not current engine authority.
 - [Current architecture and generation status](../docs/architecture/ATLAS.md): consult this before comparing the archived material with a living generation.

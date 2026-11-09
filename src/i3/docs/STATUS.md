@@ -13,6 +13,33 @@ Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
 
+## Stage 1 closed negative: Candidate-J software falsifier DEFECT (ADR-0018)
+
+9 November 2026: the single execution of the frozen
+[Candidate-J software falsifier](studies/stage1-candidate-j-software-falsifier/RESULTS.md)
+returns **`CANDIDATE_J_DEFECT`**.
+
+J0 fails for both declared projectors against the #1155 per-step Decimal oracle
+(12,960 option scores, 2,088 decisive states):
+
+- `event_quadratic`: max value error 0.0555 and 48 top mismatches;
+- `event_local_quadratic4`: decision-equivalent on the decisive states, but
+  max value error 0.0178, above the frozen 0.01 tolerance.
+
+J1-J4 were not evaluated. First-contact capacity remains unobserved.
+
+Under ADR-0018 decisions 4 and 5, **Stage 1 is closed negative**:
+
+- **P1.3 remains the reference.** Its curiosity is recognized as an innate
+  disposition with designer form and heritable weight `beta_u` (option B).
+- **No Stage-1 candidate follows.**
+- **Stage 2 is unblocked on P1.3.**
+
+Changing the J0 tolerance or projector after this verdict would be a post-hoc
+rescue and is excluded. ADR-0017 still governs every lived panel. Any lower
+dated Stage-1 section that says Stage 2 is blocked is a historical ledger entry
+and is superseded by this closure.
+
 ## World-opening moratorium: ADR-0017
 
 9 November 2026: the owner accepted
@@ -46,7 +73,9 @@ scientific rules, thresholds, arms, seeds or original bytes.
 retroactively completed.
 
 
-## Stage-1 closure arbitration: ADR-0018 and Candidate-J
+## Historical Stage-1 closure arbitration: ADR-0018 and Candidate-J
+
+**Historical pre-execution record. Superseded by the final closure above.**
 
 9 November 2026: the owner accepted
 [ADR-0018](../../../docs/decisions/ADR-0018-i3-cloture-etape-1.md).

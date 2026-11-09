@@ -41,30 +41,18 @@ sealed rehearsal PASS on the exact next transport SHA, and an explicit owner
 entry in `docs/STATUS.md`.
 
 
-[ADR-0018](../../docs/decisions/ADR-0018-i3-cloture-etape-1.md) now governs
-Stage-1 scientific closure. [Candidate-J](docs/STAGE1_CANDIDATE_J.md) is the
-**last Stage-1 candidate**. Do not create Candidate-K or reinterpret a J failure
-as permission for another architecture.
+**Stage 1 is closed negative (9 November 2026).** The single Candidate-J software
+falsifier returned `CANDIDATE_J_DEFECT`: J0 failed for both declared
+projectors against the frozen oracle criterion. [Results](docs/studies/stage1-candidate-j-software-falsifier/RESULTS.md)
+are final under [ADR-0018](../../docs/decisions/ADR-0018-i3-cloture-etape-1.md).
 
-During the ADR-0017 moratorium, the only Candidate-J scientific work permitted
-is its prospectively frozen **software falsifier**. Do not open 68/69,
-selection, validation or reserve conditions. J software work must preserve:
+P1.3 remains the reference. **Do not** change J0 tolerance/projector, rerun the
+falsifier, create Candidate-K, or implement a lived Candidate-J path. Stage 2 is
+the current scientific stage on P1.3. ADR-0017 still governs every lived panel.
 
-- no designer score addend on any route;
-- one-phase decision ownership with no probe rollback/finalizer pair;
-- J0 projector oracle validity and declared projector fallback;
-- J1 renaming/payment/work-count integrity;
-- frozen omega x kappa arms and P80/F108/K80/newborn/satiated fixtures;
-- J3 need-sensitive first-contact capacity as the sole capacity question;
-- J4 cost wall at 2.5x P1.3.
-
-A non-`CANDIDATE_J_CAPACITY_SHOWN` software verdict closes Stage 1
-negatively. If capacity is shown, lived 68/69 is still forbidden until the
-ADR-0017 moratorium is separately lifted. The validation space currently
-planned by Stage 0 starts at index 120 and is not opened by this decision.
-
-Lifecycle-custody stress v3 W0-W9 remains allowed as engineering regression
-work. It is not a license to create another Stage-1 candidate or open a World.
+Lifecycle-custody stress v3 W0-W9 may remain as an ADR-0017 engineering
+regression, not as Stage-1 scientific continuation. All lower Candidate F-I
+handoffs are historical custody records and do not override this closure.
 
 **Current handoff after 58/59 exposure:** run `42484179997` opened the frozen
 Candidate-H DEVELOPMENT panel and then stopped on a post-life reduction
