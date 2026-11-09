@@ -1,0 +1,51 @@
+name: I3 audit source export (one-shot)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/i3-audit-source-export.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  source-export:
+    if: github.head_ref == 'refactor/i3-dependency-consistency-audit-2026-11-09'
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout exact PR source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Export source, tests, governance and CI as text
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json, tarfile
+          roots = [Path("src/i3"), Path("tests/i3"), Path("scripts"),
+                   Path("tools"), Path(".github/workflows")]
+          allowed = {".py", ".md", ".json", ".yml", ".yaml", ".txt",
+                     ".toml", ".ini", ".cfg"}
+          files = sorted({p for root in roots if root.exists()
+                          for p in root.rglob("*") if p.is_file()
+                          and p.suffix in allowed})
+          files += [p for p in (Path("AGENTS.md"), Path("pyproject.toml"),
+                    Path("setup.cfg"), Path("pytest.ini"), Path("ruff.toml"))
+                    if p.is_file()]
+          with tarfile.open("/tmp/i3-audit-source.tar.gz", "w:gz") as tf:
+              for p in files:
+                  tf.add(p, arcname=str(p))
+          print(json.dumps({"source_sha": "${{ github.event.pull_request.head.sha }}",
+                            "text_files": len(files)}, sort_keys=True))
+          PY
+      - name: Save read-only audit inputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-audit-source-text
+          path: /tmp/i3-audit-source.tar.gz
+          retention-days: 7
+          if-no-files-found: error
