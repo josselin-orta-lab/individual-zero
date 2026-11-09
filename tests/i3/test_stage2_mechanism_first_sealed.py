@@ -64,6 +64,13 @@ class MechanismFirstOriginals(unittest.TestCase):
         self.assertEqual(report["originals_checked"], 720)
         self.assertEqual(report["paired_blocks"], 240)
         self.assertEqual(report["readout"]["record_count"], 720)
+        control = report["readout"]["random_fixed_control_bridge"]
+        self.assertEqual(control["paired_blocks"], 240)
+        self.assertEqual(control["overall"]["survival_discordance"]["both_survived"], 240)
+        self.assertEqual(control["overall"]["random_minus_fixed_mean"]
+                         ["energy_paid_per_assigned_life"], -1)
+        self.assertFalse(control["causal_mediation_certified"])
+        self.assertEqual(control["scientific_verdict"], "NOT_ISSUED")
         profile = report["readout"]["paired_outcome_profile"]
         self.assertEqual(profile["paired_blocks_per_contrast"], 240)
         self.assertEqual(profile["overall"]["GATE_minus_RANDOM"]
