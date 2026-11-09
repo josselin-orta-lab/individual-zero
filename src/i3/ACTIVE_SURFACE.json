@@ -4,7 +4,7 @@
   "reference": "P1.3 funded-v2",
   "current_stage": "2.1 replay gate",
   "canonical_status": "REPLAY_GATE_CAPACITY_SHOWN",
-  "next_scientific_action": "exact Stage-2.1 transport implemented (runtime dispatch behind guard-minted World-bound tickets; scientific cohorts fail closed); run the full-scale sealed engineering rehearsal on its exact fingerprint, record it, then stop for the explicit owner ADR-0017 lift decision",
+  "next_scientific_action": "review the hardened 36/36 sealed engineering PASS and exact merged-source fingerprint, then request an explicit owner ADR-0017 lift; all scientific cohorts remain closed until recorded",
   "governance": {
     "i3_registered": false,
     "stage1": "CLOSED_NEGATIVE_ADR_0018",
@@ -14,7 +14,9 @@
     "candidate_k_allowed": false,
     "stage2_transport_deadlock": "RESOLVED_BY_ACCEPTED_ADR_0019",
     "pre_lift_replay_runtime_support_allowed": "ENGINEERING_COHORT_ONLY",
-    "adr_0019": "ACCEPTED_2026_11_09"
+    "adr_0019": "ACCEPTED_2026_11_09",
+    "adr_0017_engineering_gate": "HARDENED_REHEARSAL_PASS_OWNER_LIFT_PENDING",
+    "adr_0017_owner_lift_recorded": false
   },
   "active_science": [
     "src/i3/modules/p13_replay_gate_mind.py",
@@ -98,5 +100,18 @@
   },
   "archived_noncanonical_transport": [
     "src/i3/archive/stage2/development_68_69.py"
-  ]
+  ],
+  "engineering_rehearsal": {
+    "source_sha": "75a4f325eb5c73c3c14d9f0dcdf313f651061fc0",
+    "transport_fingerprint": "dcada9e221f79b9450a4f05fecd20e60ac6595bb306aa871f29e45aefea0b6f1",
+    "workflow_run_id": 42628475893,
+    "artifact_id": 13679561877,
+    "status": "PASS",
+    "planned": 36,
+    "generated": 36,
+    "reduced": 36,
+    "invariant_failures": 0,
+    "report_sha256": "dc36b2632165e1e7287ef1b068dc2f2463769bb8edd75e19971fa894922d4f23",
+    "owner_lift": false
+  }
 }

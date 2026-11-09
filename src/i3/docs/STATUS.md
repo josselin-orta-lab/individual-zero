@@ -14,6 +14,32 @@ Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
 
+## Stage 2.1 hardened exact transport: technical rehearsal PASS, owner lift pending
+
+9 November 2026: PR #1220 imported the prospective 80/81 transport bundle
+with its original three-commit history. Admission review revealed two
+engineering-custody weaknesses (caller-selected owner STATUS, tickets bound
+only to a World name). Both were repaired **before a new sealed rehearsal**.
+
+The hardened full-scale engineering rehearsal on source
+`75a4f325eb5c73c3c14d9f0dcdf313f651061fc0`, fingerprint
+`dcada9e221f79b9450a4f05fecd20e60ac6595bb306aa871f29e45aefea0b6f1`,
+**PASSED**: 36/36 lives generated, 36/36 reduced, 0 failures across 10
+structural invariants and 0.816 ms per step. Source: [hardened rehearsal](studies/stage2-replay-gate-development-80-81/HARDENED_REHEARSAL.md).
+
+The previous fingerprint `15136d13…d967f9` is superseded, **not** eligible
+for a future lift. Confirm that merged source bytes retain the hardened
+fingerprint before using the rehearsal as exact-transport custody.
+
+ADR-0017 conditions: two-phase G/R met; disjoint non-evidentiary engineering
+cohort met (declared alongside, not inside the pinned `P2.COHORTS`);
+full-scale sealed rehearsal met on the stated source; **owner's explicit lift
+entry NOT RECORDED**.
+
+**ADR-0017 REMAINS ACTIVE. No scientific World, including DEVELOPMENT 80/81,
+may open.** The engineering result is not a survival, learning, replay or
+validation verdict.
+
 ## Stage 2.1 exact transport: sealed engineering rehearsal PASS (awaiting owner decision)
 
 The exact Stage-2.1 transport required by ADR-0019 is implemented and rehearsed:

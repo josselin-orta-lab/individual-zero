@@ -13,8 +13,9 @@ operational surface below.
 - **Current stage:** Stage 2.1 replay gate.
 - **Canonical status:** `REPLAY_GATE_CAPACITY_SHOWN`.
 - **ADR-0017:** world-opening moratorium active.
-- **Next action:** prepare a fresh source-locked Stage-2.1 transport and pass
-  its ADR-0017 exact-SHA engineering rehearsal; no lived execution yet.
+- **Next action:** review the hardened sealed engineering rehearsal PASS,
+  verify its exact merged-source fingerprint and seek the explicit owner
+  ADR-0017 lift. No scientific World/life is authorized yet.
 
 Start here:
 
@@ -25,6 +26,11 @@ Start here:
 
 [Code and dependency audit (9 November 2026)](I3_DEPENDENCY_AUDIT_2026-11-09.md)
 records source integrity, archived dependencies and remaining custody boundaries.
+
+## Stage 2.1 engineering custody
+
+- [Hardened 36/36 sealed rehearsal](studies/stage2-replay-gate-development-80-81/HARDENED_REHEARSAL.md): structural PASS under ADR-0019, **not** an ADR-0017 lift.
+- [Uploaded bundle integration audit](studies/stage2-replay-gate-development-80-81/INTEGRATION_AUDIT.md).
 
 ## Stage 2.1 evidence
 
