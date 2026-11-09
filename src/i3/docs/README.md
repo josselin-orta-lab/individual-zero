@@ -13,9 +13,9 @@ operational surface below.
 - **Current stage:** Stage 2.1 replay gate.
 - **Canonical status:** `REPLAY_GATE_CAPACITY_SHOWN`.
 - **ADR-0017:** owner-lifted for exact transport `dcada9e2…f1` and frozen DEVELOPMENT 80/81 only.
-- **Next action:** open the prospectively frozen DEVELOPMENT 80/81 panel
-  once under the already-rehearsed exact G/R transport. Preserve immutable
-  originals and no-retry rules. The two engineering rehearsals already passed.
+- **Next action:** freeze RANDOM-EQUAL-MEAN implementation and the selected
+  multi-population Stage-2.1 gate prospectively, with no new World yet.
+  DEVELOPMENT 80/81 has completed once and is permanently closed.
 
 Start here:
 
@@ -31,6 +31,12 @@ records source integrity, archived dependencies and remaining custody boundaries
 
 - [Hardened 36/36 sealed rehearsal](studies/stage2-replay-gate-development-80-81/HARDENED_REHEARSAL.md): structural PASS under ADR-0019, **not** an ADR-0017 lift.
 - [Uploaded bundle integration audit](studies/stage2-replay-gate-development-80-81/INTEGRATION_AUDIT.md).
+
+- [Completed 80/81 DEVELOPMENT result](studies/stage2-replay-gate-development-80-81/RESULTS.md):
+  36/36 G/R PASS, replay-cost reduction observed, survival non-inferiority
+  **not** established.
+- [Frozen future RANDOM-EQUAL-MEAN parameter](studies/stage2-replay-gate-development-80-81/RANDOM_EQUAL_MEAN_PARAMETER.md):
+  5,532/867, no additional World authorized.
 
 ## Stage 2.1 evidence
 
