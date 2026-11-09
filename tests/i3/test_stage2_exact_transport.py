@@ -40,26 +40,34 @@ class FailClosedAdmissionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             status = Path(tmp) / "STATUS.md"
             status.write_text("ADR-0017 OWNER LIFT: Stage-2.1 transport " + "0" * 64 + "\n")
+            self.assertFalse(ADM.owner_lift_recorded(status.read_text(),
+                                                       ADM.transport_fingerprint(PLAN)))
             with self.assertRaises(PermissionError):
-                ADM.admit("development", "stable", 80, PLAN, lift_status_path=status)
+                ADM.admit("development", "stable", 80, PLAN)
 
-    def test_exact_lift_line_is_the_only_key(self):
+    def test_fake_owner_lift_file_cannot_authorize_scientific_cohort(self):
         fingerprint = ADM.transport_fingerprint(PLAN)
-        dummy = ENG.engineering_world("stable", 0)
-        P2.world_for = lambda family, cohort, index: dummy  # no development World built
         with tempfile.TemporaryDirectory() as tmp:
-            status = Path(tmp) / "STATUS.md"
-            status.write_text("note\n" + ADM.LIFT_PREFIX + fingerprint + "\n")
-            ticket, spec = ADM.admit("development", "stable", 80, PLAN, lift_status_path=status)
-        self.assertEqual(ticket.cohort, "development")
-        self.assertEqual(ticket.transport_fingerprint, fingerprint)
-        self.assertEqual(ticket.world_name, spec.name)
+            forged_status = Path(tmp) / "STATUS.md"
+            forged_status.write_text("note\n" + ADM.LIFT_PREFIX + fingerprint + "\n")
+            self.assertTrue(ADM.owner_lift_recorded(forged_status.read_text(), fingerprint))
+            self.assertFalse(ADM.canonical_owner_lift_recorded(fingerprint))
+            with self.assertRaises(PermissionError):
+                ADM.admit("development", "stable", 80, PLAN)
+            with self.assertRaises(TypeError):
+                ADM.admit("development", "stable", 80, PLAN,
+                          lift_status_path=forged_status)
+            with self.assertRaises(TypeError):
+                SP.execute(PLAN, Path(tmp) / "out",
+                           lift_status_path=forged_status)
+        self.assertEqual(ADM.CANONICAL_STATUS_PATH.resolve(),
+                         ROOT / "src/i3/docs/STATUS.md")
 
     def test_scientific_execute_fails_before_creating_anything(self):
         with tempfile.TemporaryDirectory() as tmp:
             archive = Path(tmp) / "never"
             with self.assertRaises(PermissionError):
-                SP.execute(PLAN, archive, lift_status_path=None)
+                SP.execute(PLAN, archive)
             self.assertFalse(archive.exists())
 
 
@@ -67,6 +75,7 @@ class TicketAndDispatchTests(unittest.TestCase):
     def test_engineering_ticket_is_bound_to_its_world(self):
         ticket, spec = ADM.admit("engineering", "pulse", 2, PLAN)
         self.assertEqual(ticket.world_name, spec.name)
+        self.assertEqual(ticket.world_sha256, RA.world_sha256(spec))
         self.assertTrue(ENG.is_engineering_seed(ticket.world_seed))
         with self.assertRaises(ValueError):
             ADM.admit("engineering", "pulse", 5000, PLAN)
@@ -79,8 +88,14 @@ class TicketAndDispatchTests(unittest.TestCase):
             run_life(g, spec, 1, 5, decision_policy="p13_replay_gate_v1")
         with self.assertRaises(PermissionError):
             run_life(g, other, 1, 5, decision_policy="p13_replay_gate_v1", admission=ticket)
+        from dataclasses import replace
+        same_name_changed_spec = replace(spec, width=spec.width + 1)
+        with self.assertRaises(PermissionError):
+            run_life(g, same_name_changed_spec, 1, 5,
+                     decision_policy="p13_replay_gate_v1", admission=ticket)
         forged = RA.AdmissionTicket("engineering", "stable", 2, ticket.world_seed,
-                                    spec.name, ticket.transport_fingerprint, object())
+                                    spec.name, ticket.world_sha256,
+                                    ticket.transport_fingerprint, object())
         with self.assertRaises(PermissionError):
             run_life(g, spec, 1, 5, decision_policy="p13_replay_gate_v1", admission=forged)
         with self.assertRaises(ValueError):
@@ -94,6 +109,8 @@ class TicketAndDispatchTests(unittest.TestCase):
                             decision_policy=policy, admission=ticket)
             self.assertEqual(life["replay_gate"]["mode"], mode)
             self.assertEqual(life["admission"]["world_name"], life["world"])
+            self.assertEqual(life["admission"]["world_sha256"],
+                             life["manifest"]["world_sha256"])
             self.assertEqual(life["manifest"]["experimental_policy"]["name"], policy)
 
     def test_only_the_guard_mints_tickets(self):
@@ -107,6 +124,7 @@ class LedgerTests(unittest.TestCase):
         # ADR-0017 is active: only the owner may add the lift line.
         status = (ROOT / "src/i3/docs/STATUS.md").read_text()
         self.assertFalse(ADM.owner_lift_recorded(status, ADM.transport_fingerprint(PLAN)))
+        self.assertFalse(ADM.canonical_owner_lift_recorded(ADM.transport_fingerprint(PLAN)))
         self.assertNotIn(ADM.LIFT_PREFIX + ADM.transport_fingerprint(PLAN), status)
 
 
