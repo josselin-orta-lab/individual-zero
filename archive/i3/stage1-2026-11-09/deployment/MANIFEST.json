@@ -1,0 +1,69 @@
+{
+  "schema": "i3-deployment-package/v1",
+  "name": "i3-etape1-cloture",
+  "repository": "josselin-orta-lab/individual-zero",
+  "base_commit": "0d4ac7d025430397891f1a73b72b523782a8637e",
+  "base_subject": "docs(i3 stage1): accept ADR-0018 and freeze Candidate-J (#1210)",
+  "commits": [
+    {
+      "sha": "15e8d3d485b913057b3d6a794ec19ca95ba251c9",
+      "role": "implementation and implementation notes, committed before execution",
+      "committed_utc": "2026-11-09T00:18:37Z"
+    },
+    {
+      "sha": "0c41b4a1f988d7b9721f134e613dc0a49e05eb54",
+      "role": "results and Stage-1 closure entries",
+      "committed_utc": "2026-11-09T00:27:17Z"
+    }
+  ],
+  "bundle": {
+    "file": "git/i3-etape1-cloture.bundle",
+    "branch": "candidate-j-falsifier",
+    "prerequisite": "0d4ac7d025430397891f1a73b72b523782a8637e"
+  },
+  "execution": {
+    "single_execution_utc": [
+      "2026-11-09T00:24:08Z",
+      "2026-11-09T00:25:22Z"
+    ],
+    "from_commit": "15e8d3d485b913057b3d6a794ec19ca95ba251c9",
+    "aborted_background_launch": "00:18 UTC, terminated by the sandbox after about one minute, no output produced or read",
+    "results_json_sha256": "8888c91038bcdb3f89dcf66f70223e88cd61bf22f1a7fa98e8e48d9cae8b7d4f",
+    "verdict": "CANDIDATE_J_DEFECT",
+    "J0": [
+      {
+        "projector": "event_quadratic",
+        "options_compared": 12960,
+        "max_abs_value_error": 0.05548533154131152,
+        "states_with_oracle_gap_above_1e-3": 2088,
+        "pass": false,
+        "top_mismatches": 48
+      },
+      {
+        "projector": "event_local_quadratic4",
+        "options_compared": 12960,
+        "max_abs_value_error": 0.017805983190607666,
+        "states_with_oracle_gap_above_1e-3": 2088,
+        "pass": false,
+        "top_mismatches": 0
+      }
+    ]
+  },
+  "governance_effect": {
+    "stage1": "CLOSED_NEGATIVE_UNDER_ADR_0018",
+    "reference": "P1.3",
+    "stage2": "UNBLOCKED_ON_P1.3",
+    "adr_0017_moratorium": "UNCHANGED"
+  },
+  "tests": {
+    "candidate_j_unit_tests": 11,
+    "i3_suite_at_pre_execution_commit": "1042 tests OK"
+  },
+  "not_done": [
+    "no World or life",
+    "no rerun of the falsifier",
+    "no change of J0 tolerance or projector",
+    "no runtime registration",
+    "current genome schema stays v4"
+  ]
+}
