@@ -201,3 +201,70 @@ jobs:
           path: ${{ runner.temp }}/b1-sampling-preview-structure.json
           if-no-files-found: error
           retention-days: 30
+
+
+  b1-worldspec-preflight:
+    # NON-EVIDENTIARY: create/validate only synthetic WorldSpecs,
+    # never a Mind, life, World step or scientific original archive.
+    if: startsWith(github.head_ref, 'research/i3-survival-b1-worldspec-')
+    name: I3 B1 WorldSpec structural preflight (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Checkout exact synthetic WorldSpec candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Verify frozen P2 parity and duplicate-name-independent worlds
+        run: |
+          python -m unittest discover -s tests/i3 -p 'test_stage2_survival_b1_worldspec_audit.py' -v
+          python -m i3.lab.stage2_survival_b1_worldspec_audit > "$RUNNER_TEMP/b1-synthetic-worldspec-audit.json"
+          python - "$RUNNER_TEMP/b1-synthetic-worldspec-audit.json" <<'PY'
+          import json, sys
+          with open(sys.argv[1]) as stream:
+              r = json.load(stream)
+          assert r["status"] == "SYNTHETIC_SPEC_PREFLIGHT_NOT_PROSPECTIVE_AUTHORITY"
+          assert r["worldspec_structures_generated"] == 1500
+          assert r["structural_world_validations"] == 1500
+          assert r["unique_full_worldspec_digests"] == 1500
+          assert r["unique_name_independent_worldspec_digests"] == 1500
+          assert sum(r["ecological_families"].values()) == 1500
+          assert r["worlds_stepped"] == r["scientific_lives_executed"] == 0
+          assert r["originals_written"] == 0
+          assert r["independent_world_sampling_verified"] is False
+          assert r["target_ecology_superpopulation_verified"] is False
+          assert r["scientific_margin_approved"] is False
+          assert r["external_witness_and_owner_admission"] is False
+          assert r["scientific_verdict"] == "NOT_ISSUED"
+          assert len(r["aggregate_worldspec_digest_sha256"]) == 64
+          assert set(r) == {
+              "schema", "status", "public_synthetic_allocation_sha256",
+              "aggregate_worldspec_digest_sha256", "worldspec_structures_generated",
+              "structural_world_validations", "unique_full_worldspec_digests",
+              "unique_name_independent_worldspec_digests", "ecological_families",
+              "worlds_stepped", "scientific_lives_executed", "originals_written",
+              "independent_world_sampling_verified",
+              "target_ecology_superpopulation_verified", "scientific_margin_approved",
+              "external_witness_and_owner_admission", "scientific_verdict",
+          }, "unexpected nonstructural audit field"
+          print("B1_SYNTHETIC_WORLDSPEC_1500_PARITY_AND_COLLISION_PASS")
+          PY
+      - name: Upload synthetic structural SHA/counts only
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-b1-synthetic-worldspecs-py${{ matrix.python-version }}
+          path: ${{ runner.temp }}/b1-synthetic-worldspec-audit.json
+          if-no-files-found: error
+          retention-days: 30

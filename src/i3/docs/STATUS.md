@@ -14,6 +14,21 @@ Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
 
+## Stage 2.1 B1 synthetic WorldSpec parity and collision audit (9 November 2026)
+
+**NON-EVIDENTIARY SPEC-GENERATION CHECK / NO SCIENTIFIC LIFE.**
+The [F0 WorldSpec preflight](studies/stage2-replay-gate-selected-design/B1_PROSPECTIVE_WORLDSPEC_PREFLIGHT.md)
+builds and structurally validates the 1,500 proposed **synthetic**
+WorldSpecs via explicit non-development generator calls, preserving
+P2 stable/depletion/pulse mechanics and comparing canonical fingerprints
+to historical non-reserve P2 generation. It checks unique **full and
+name-independent** initial ecology SHA-256s, not unique names alone.
+Structural validation briefly constructs a World validator, but
+no individual, step, motor choice or survival result is produced.
+No source authority, iid ecology proof, new cohort or GO follows.
+The historical P2 API, reserved seeds and old 80/81 archive remain
+unchanged.
+
 ## Stage 2.1 B1 prospective sample-frame preflight (9 November 2026)
 
 **SOURCE-LOCK CANDIDATE METADATA / NO SCIENTIFIC WORLD.**

@@ -20,6 +20,20 @@ Existing `p2_ecologies.world_for` accepts only its fixed DEVELOPMENT, SELECTION 
 
 A **separately reviewed prospective WorldSpec adapter** will be needed. It must preserve the three F0 ecological mechanisms and deterministic WorldSpec provenance, call the appropriate base worldgen with explicit `development=False` only for a newly authorized and unconsumed B1 science namespace, and remain fail-closed for engineering/archive/selection/validation/reserve reuse. Do not implement such an executable admission path in this *metadata* slice. The prospective review must compare any adapted WorldSpec against the frozen P2 semantics and full source/world digest witnesses. In particular, no change of physics or world-generation distribution may be hidden behind a different seed range.
 
+## Follow-up: synthetic WorldSpec generation/parity audit (9 November 2026)
+
+A separate [non-evidentiary F0 WorldSpec adapter and structural
+collision audit](B1_PROSPECTIVE_WORLDSPEC_PREFLIGHT.md) now uses the
+public preview identifiers to instantiate **temporary** initial
+WorldSpecs, reproduces frozen P2 mechanisms and verifies canonical
+provenance fingerprints *with and without display names*. This is
+a subsequent engineering slice, not a revision of this original
+metadata-only source; the sampling module itself still
+instantiates zero Worlds. It neither executes an individual nor makes
+unique seeds into proven independent ecological sampling, and its
+structural validator can transiently instantiate a World to check
+physical consistency. No biological or admission conclusions follow.
+
 ## 3. Capacity preview and research decision, not a preregistration
 
 The preview produces **1,500 paired metadata units** and **3,000 proposed full-policy lives** (maximum **1,200,000 world steps** at horizon 400). These are simply an engineering resource scenario, **NOT** the approved n or independent observations already collected. The deterministic public root `PREVIEW_WITNESS` is labeled **synthetic and NOT a scientific seed**. It must never be moved into a genuine scientific plan. The preview CLI outputs only a structural summary with per-family counts, HMAC witness digest and whole-manifest SHA; it never serializes life outcomes or instantiates a World.
