@@ -14,6 +14,25 @@ Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
 
+## Stage 2.1 confirmatory survival power study initiated (9 November 2026)
+
+**STUDY DESIGN/POWER ANALYSIS ACTIVE; SCIENTIFIC WORLD EXECUTION BLOCKED.**
+The [confirmatory survival power campaign](studies/stage2-replay-gate-selected-design/CONFIRMATORY_SURVIVAL_POWER_STUDY.md)
+compares a rigorously bounded independent-paired-unit survival
+non-inferiority approach with transparent hypothesis-dependent
+normal-approximation sensitivity. Under illustrative one-sided
+alpha=0.05, target power=0.80, margin=5 percentage points,
+true mean difference zero, the conservative Hoeffding bound requires
+**7,198 genuinely independent matched units** (14,396 two-arm lives);
+the much smaller paired-model scenarios are **not** approved
+sample sizes. The F0 8 population labels / 240 paired G0 blocks
+are not demonstrably independent ecological draws and cannot
+be inflated by recounting shared Worlds or genomes. An independent
+reviewer must settle target sampling, meaningful margin, coverage,
+ecological heterogeneity, resources and a new pre-exposure source
+and owner authorization. Historical 80/81 is closed.
+**No scientific lives opened, no inference GO or new adoption.**
+
 ## Stage 2.1 archived evidence analysis campaign launched (9 November 2026)
 
 **READ-ONLY HISTORICAL ANALYSIS / NO NEW SCIENTIFIC WORLD.**
