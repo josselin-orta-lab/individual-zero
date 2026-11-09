@@ -21,11 +21,12 @@ Do not reconstruct the current handoff from old Stage-1 documents.
 - I3 remains **unregistered**.
 - Stage 1 is **closed negative** under ADR-0018.
 - Stage 2.1 replay gate is the current stage.
-- Canonical status: **`CORRECTED_FALSIFIER_PENDING`**.
+- Canonical status: **`REPLAY_GATE_CAPACITY_SHOWN`**.
 - ADR-0017's world-opening moratorium is **active**.
 
-The next scientific action is one corrected, software-only R0-R4 replay-gate
-falsifier execution. It opens no World and no life.
+The corrected R0-R4 falsifier has executed exactly once and passed. Do not
+rerun it. Next, prepare a fresh Stage-2.1 lived transport and its exact-SHA
+engineering rehearsal. ADR-0017 still forbids actual lived execution.
 
 ## Hard boundaries
 
@@ -36,13 +37,14 @@ Do not:
 - register `p13_replay_gate_v1` in `runtime/life.py`;
 - open a fresh Stage-2 World while ADR-0017 remains active;
 - change the frozen Stage-2.1 replay-gate formula, controls, fixtures,
-  thresholds or verdict table from supplied 68/69 observations;
+  thresholds or verdict table after the canonical software result;
 - promote the supplied non-conforming replay-gate software result or 68/69
   pilot to canonical evidence;
 - import Stage-1 laboratory helpers into active Stage-2 science.
 
-A negative corrected Stage-2.1 verdict advances to Stage 2.2. There is no
-architecture-rescue loop.
+The canonical software verdict is positive. Stage 2.1 therefore remains open
+for its frozen lived path after a valid ADR-0017 lift. Do not jump to Stage 2.2
+or create a second replay-gate architecture.
 
 ## Active source boundary
 
