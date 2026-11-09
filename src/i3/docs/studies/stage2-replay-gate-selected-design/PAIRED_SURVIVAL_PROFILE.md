@@ -20,6 +20,21 @@ The already proposed v3 `descriptive_readout` reports equal-population mean cont
 
 The pure helper `stage2_mechanism_first_design._paired_outcome_profile` computes these **descriptive finite-panel** counts, always returning `statistical_inference=NOT_ESTABLISHED`, `survival_noninferiority_certified=false` and `causal_replay_selection_advantage=NOT_ESTABLISHED`. Because the profile is part of the existing `descriptive_readout`, the sealed-original adapter obtains it without any new execution or admission route.
 
+
+## Third policy contrast: RANDOM minus FIXED (follow-up, 9 November 2026)
+
+The two existing contrasts alone invite an attribution error. Comparing GATE with FIXED measures the *whole policy difference* (including audit, funding, replay counts and downstream decisions); comparing GATE with RANDOM is closer to replay prioritization, but actual replay quantities may differ. The **third** matched control, RANDOM minus FIXED, must therefore be reported explicitly rather than inferred in prose. It asks whether the full RANDOM funded-replay policy differed from the reference at the same newborn-G0/world slots.
+
+The read-only `random_fixed_control_bridge` from `stage2_mechanism_first_design.descriptive_readout` reports all **240** matched RANDOM/FIXED blocks, the three F0 families (80 each) and eight population labels (30 each). It provides mean differences in lived steps, horizon survival, physical energy/vigilance paid per assigned life and inactivity, plus both survived, RANDOM only survived, FIXED only survived, neither survived and longer/shorter lived-time counts. It never changes the original v3 cohort, adds a policy or reruns a life. The sealed-original reader automatically obtains this addition from the existing reduced readout.
+
+For any additive **matched** outcome (Y), at every block and hence for an equally weighted finite-panel mean:
+
+`Y(GATE)-Y(FIXED) = [Y(GATE)-Y(RANDOM)] + [Y(RANDOM)-Y(FIXED)]`.
+
+The software exposes the largest absolute numerical residual for the five named outcomes, preserving any floating-point rounding as a diagnostic. This equality is an **accounting identity**, not statistical significance, a causal mediation model, proof that RANDOM isolates only the audit cost, or confirmation of equal physically paid replay work. All three policies can change behavior and survival. Never promote a favorable triangle into a superiority or non-inferiority verdict, and never filter to a post hoc matched-payment subset.
+
+**Interpretive stopping point:** these three-policy finite-panel quantities are adequate to *describe* full-policy differences if a separately authorized source-locked F0 study ever takes place. They cannot establish evolutionary advantage, transfer to unseen ecologies or justify new World exposure. Before that, the next meaningful intervention is independent adjudication of the mechanism-only objective and its valid study protocol, not additional automated acceptance thresholds.
+
 ## What the result cannot authorize
 
 The proposed eight labeled populations and correlated world/genome blocks are not proven independent random samples from a broader ecological population. No confidence interval for generalizable non-inferiority, biological loss margin, family transfer claim, multiplicity rule, joint power estimate or automatic positive GO follows from this profile. Nor does a count of a severe subgroup establish a population-level frequency outside this finite F0 panel. The current eight-population mean non-inferiority **NO_GO** remains untouched.

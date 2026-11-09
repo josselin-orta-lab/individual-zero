@@ -214,6 +214,93 @@ def _paired_outcome_profile(received: Mapping) -> dict:
     }
 
 
+def _random_fixed_control_bridge(received: Mapping) -> dict:
+    """The missing *third* paired contrast: RANDOM minus FIXED.
+
+    Exposes a three-policy algebraic accounting check, NOT causal mediation.
+    No independence, significance, claimed control equivalence or GO is
+    inferred from identities, even if all arithmetic residuals are zero.
+    """
+    measures = ("lived_steps", "survival_at_400", "energy_paid_per_assigned_life",
+                "vigilance_paid_per_assigned_life",
+                "inactive_steps_per_assigned_life")
+    sources = {
+        "lived_steps": "steps_lived",
+        "energy_paid_per_assigned_life": "energy_paid",
+        "vigilance_paid_per_assigned_life": "vigilance_paid",
+        "inactive_steps_per_assigned_life": "inactive_steps",
+    }
+
+    def value(row, metric):
+        if metric == "survival_at_400":
+            return int(row["terminal"] == "censored")
+        return row[sources[metric]]
+
+    blocks = sorted({(p, index, seed) for p, index, seed, _ in received})
+    if len(blocks) != F0.POPULATIONS * F0.KEEP * F0.WORLDS_PER_POPULATION:
+        raise ValueError("incomplete G0 matched control blocks")
+    triples = []
+    residuals = {metric: [] for metric in measures}
+    for p, index, seed in blocks:
+        fixed, gate, random = (received[(p, index, seed, arm)] for arm in ARMS)
+        deltas = {}
+        for metric in measures:
+            f, g, r = (value(row, metric) for row in (fixed, gate, random))
+            deltas[metric] = r - f
+            residuals[metric].append(abs(fsum((g - f, -(g - r), -(r - f)))))
+        triples.append({
+            "population": p, "family": fixed["family"], "deltas": deltas,
+            "random_survived": random["terminal"] == "censored",
+            "fixed_survived": fixed["terminal"] == "censored",
+        })
+
+    def summary(group):
+        if not group:
+            raise ValueError("missing F0 control stratum")
+        survival = {
+            "both_survived": 0, "random_only_survived": 0,
+            "fixed_only_survived": 0, "neither_survived": 0,
+        }
+        for item in group:
+            r, f = item["random_survived"], item["fixed_survived"]
+            survival["both_survived" if r and f else
+                     "random_only_survived" if r else
+                     "fixed_only_survived" if f else "neither_survived"] += 1
+        return {
+            "paired_blocks": len(group),
+            "random_minus_fixed_mean": {
+                metric: fsum(item["deltas"][metric] for item in group) / len(group)
+                for metric in measures
+            },
+            "survival_discordance": survival,
+            "random_shorter": sum(x["deltas"]["lived_steps"] < 0 for x in group),
+            "random_longer": sum(x["deltas"]["lived_steps"] > 0 for x in group),
+            "equal_lived_steps": sum(x["deltas"]["lived_steps"] == 0 for x in group),
+        }
+
+    return {
+        "status": "DESCRIPTIVE_ONLY_NO_CAUSAL_DECOMPOSITION",
+        "question": "random_full_policy_minus_fixed_full_policy",
+        "paired_blocks": len(triples),
+        "overall": summary(triples),
+        "by_family": {
+            family: summary([x for x in triples if x["family"] == family])
+            for family in F0.FAMILIES
+        },
+        "by_population": {
+            p: summary([x for x in triples if x["population"] == p])
+            for p in range(F0.POPULATIONS)
+        },
+        "triangle_identity": "GATE_minus_FIXED = GATE_minus_RANDOM + RANDOM_minus_FIXED",
+        "triangle_max_absolute_arithmetic_residual": {
+            metric: max(residuals[metric]) for metric in measures
+        },
+        "causal_mediation_certified": False,
+        "physical_replay_parity_proven": False,
+        "scientific_verdict": "NOT_ISSUED",
+    }
+
+
 def descriptive_readout(rows: list, occupied_world_seeds=()) -> dict:
     """Describe paired lives after COMPLETE receipts; never a statistical gate.
 
@@ -282,6 +369,7 @@ def descriptive_readout(rows: list, occupied_world_seeds=()) -> dict:
         "survival_noninferiority_certified": False,
         "record_count": len(received), "paired_blocks": len(blocks),
         "paired_outcome_profile": _paired_outcome_profile(received),
+        "random_fixed_control_bridge": _random_fixed_control_bridge(received),
         "by_population": by_population, "by_family": by_family,
         "equal_population_mean_contrasts": {
             name: {metric: fsum(all_groups[name][p][metric] for p in by_population) /
