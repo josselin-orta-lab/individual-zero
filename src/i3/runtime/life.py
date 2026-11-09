@@ -244,28 +244,28 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
             ReferenceFrontierInformationMind)
         mind_type = ReferenceFrontierInformationMind
     elif decision_policy == "genomic_omega_frontier_information_v1":
-        from i3.modules.genomic_omega_frontier_information_mind import (
+        from i3.archive.stage1.modules.genomic_omega_frontier_information_mind import (
             GenomicOmegaFrontierInformationMind)
         mind_type = GenomicOmegaFrontierInformationMind
     elif decision_policy == "personal_recurrence_candidate_g_v1":
-        from i3.modules.personal_recurrence_candidate_g_mind import (
+        from i3.archive.stage1.modules.personal_recurrence_candidate_g_mind import (
             PersonalRecurrenceCandidateGMind)
         mind_type = PersonalRecurrenceCandidateGMind
     elif decision_policy == "personal_relevance_candidate_h_v1":
-        from i3.modules.personal_relevance_candidate_h_mind import (
+        from i3.archive.stage1.modules.personal_relevance_candidate_h_mind import (
             PersonalRelevanceCandidateHMind)
         mind_type = PersonalRelevanceCandidateHMind
     elif decision_policy in (
             "personal_shared_prior_candidate_i_v1",
             "personal_shared_prior_candidate_i_omega0_ablation_v1"):
-        from i3.modules.personal_shared_prior_candidate_i_mind import (
+        from i3.archive.stage1.modules.personal_shared_prior_candidate_i_mind import (
             PersonalSharedPriorCandidateIMind)
         mind_type = PersonalSharedPriorCandidateIMind
         if decision_policy == (
                 "personal_shared_prior_candidate_i_omega0_ablation_v1"):
             mind_kwargs["first_contact_omega_override"] = 0.0
     elif decision_policy == "candidate_f_shadow_upper_cost_reference_controller_v1":
-        from i3.modules.candidate_f_upper_cost_reference_controller import (
+        from i3.archive.stage1.modules.candidate_f_upper_cost_reference_controller import (
             CandidateFUpperCostReferenceController)
         mind_type = CandidateFUpperCostReferenceController
     mind = mind_type(genome, life_seed, effect_readout=effect_readout,

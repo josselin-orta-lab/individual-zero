@@ -9,13 +9,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from i3.modules.body import (
     BodyLaws, CognitiveBudget, CognitiveWork, debit_cognition)
-from i3.modules.candidate_f_cost_control import (
+from i3.archive.stage1.modules.candidate_f_cost_control import (
     paid_candidate_f_shadow_then_reference_choice)
-from i3.modules.candidate_f_shadow_state import (
+from i3.archive.stage1.modules.candidate_f_shadow_state import (
     commit_actual_reference_branch, prepay_actual_reference_branch,
     synchronize_candidate_shadow)
 from i3.modules.genome import midpoint
-from i3.modules.genomic_omega_frontier_information_mind import (
+from i3.archive.stage1.modules.genomic_omega_frontier_information_mind import (
     GenomicOmegaFrontierInformationMind)
 from i3.modules.mind import Mind
 from i3.modules.personal_outcomes import STORE_WORK
@@ -218,7 +218,7 @@ class CandidateFShadowStateTests(unittest.TestCase):
         subprocess.run([
             sys.executable, "-c",
             "import sys; sys.path.insert(0, " + repr(root) + "); "
-            "import i3.modules.candidate_f_shadow_state; "
+            "import i3.archive.stage1.modules.candidate_f_shadow_state; "
             "assert 'i3.modules.mind' not in sys.modules; "
             "assert 'i3.modules.world' not in sys.modules; "
             "assert 'i3.runtime.life' not in sys.modules"

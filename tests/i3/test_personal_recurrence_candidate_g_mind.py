@@ -10,9 +10,9 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from i3.lab import stage1_candidate_g_no_omega_integration as G
+from i3.archive.stage1.lab import stage1_candidate_g_no_omega_integration as G
 from i3.modules.body import BodyLaws, CognitiveBudget, CognitiveFundingError
-from i3.modules.personal_recurrence_candidate_g_mind import (
+from i3.archive.stage1.modules.personal_recurrence_candidate_g_mind import (
     PersonalRecurrenceCandidateGMind)
 from i3.modules.reference_frontier_information_mind import (
     ReferenceFrontierInformationMind)
@@ -76,7 +76,7 @@ class PersonalRecurrenceCandidateGTests(unittest.TestCase):
         mind = G.make_mind(observer=True)
         G.prime_recurrence(mind)
         with patch(
-            "i3.modules.personal_recurrence_candidate_g_mind.debit_cognition",
+            "i3.archive.stage1.modules.personal_recurrence_candidate_g_mind.debit_cognition",
             side_effect=CognitiveFundingError("forced software boundary")):
             result = mind.decide(
                 G.cap(), CognitiveBudget(G.BODY, BodyLaws()))
@@ -120,7 +120,7 @@ class PersonalRecurrenceCandidateGTests(unittest.TestCase):
         subprocess.run([
             sys.executable, "-c",
             "import sys; sys.path.insert(0, " + repr(root) + "); "
-            "import i3.modules.personal_recurrence_candidate_g_mind; "
+            "import i3.archive.stage1.modules.personal_recurrence_candidate_g_mind; "
             "assert 'i3.runtime.life' not in sys.modules"
         ], check=True)
 

@@ -10,8 +10,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from i3.modules.body import (
     BodyLaws, CognitiveBudget, CognitiveWork)
-from i3.modules.candidate_f_cost_control import _validate_pair
-from i3.modules.candidate_f_upper_cost_reference_controller import (
+from i3.archive.stage1.modules.candidate_f_cost_control import _validate_pair
+from i3.archive.stage1.modules.candidate_f_upper_cost_reference_controller import (
     CandidateFUpperCostReferenceController, POLICY)
 from i3.modules.genome import midpoint
 from i3.modules.personal_outcomes import STORE_WORK
@@ -231,7 +231,7 @@ class CandidateFUpperCostControllerTests(unittest.TestCase):
         subprocess.run([
             sys.executable, "-c",
             "import sys; sys.path.insert(0, " + repr(root) + "); "
-            "import i3.modules.candidate_f_upper_cost_reference_controller; "
+            "import i3.archive.stage1.modules.candidate_f_upper_cost_reference_controller; "
             "assert 'i3.modules.mind' not in sys.modules; "
             "assert 'i3.modules.world' not in sys.modules; "
             "assert 'i3.runtime.life' not in sys.modules"

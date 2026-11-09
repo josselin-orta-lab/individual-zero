@@ -8,7 +8,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from i3.lab import projection_candidate_e_characterization as E
+from i3.archive.stage1.lab import projection_candidate_e_characterization as E
 from i3.lab import projection_consistency_characterization as P
 from i3.lab import projection_end_to_end_numeric_oracle as O
 from i3.modules.body import BodyLaws, CognitiveBudget
@@ -95,7 +95,7 @@ class CandidateELocalQuadraticTests(unittest.TestCase):
         subprocess.run([
             sys.executable, "-c",
             "import sys; sys.path.insert(0, " + repr(root) + "); "
-            "import i3.lab.projection_candidate_e_characterization; "
+            "import i3.archive.stage1.lab.projection_candidate_e_characterization; "
             "assert 'i3.runtime.life' not in sys.modules"
         ], check=True)
 

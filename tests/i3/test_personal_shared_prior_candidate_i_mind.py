@@ -7,7 +7,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from i3.lab import stage1_candidate_g_reference_recurrence_falsifier as G
+from i3.archive.stage1.lab import stage1_candidate_g_reference_recurrence_falsifier as G
 from i3.lab.p2_ecologies import world_for
 from i3.lab.stage0_energy import energy_receipt
 from i3.lab.stage0_revision import (
@@ -15,9 +15,9 @@ from i3.lab.stage0_revision import (
 from i3.modules.body import (
     BodyLaws, CognitiveBudget, CognitiveWork, debit_cognition)
 from i3.modules.genome import generation_zero, midpoint
-from i3.modules.personal_relevance_candidate_h_mind import (
+from i3.archive.stage1.modules.personal_relevance_candidate_h_mind import (
     PersonalRelevanceCandidateHMind)
-from i3.modules.personal_shared_prior_candidate_i_mind import (
+from i3.archive.stage1.modules.personal_shared_prior_candidate_i_mind import (
     POLICY, PersonalSharedPriorCandidateIMind)
 from i3.runtime.life import run_life
 

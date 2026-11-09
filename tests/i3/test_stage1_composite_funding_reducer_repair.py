@@ -7,7 +7,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from i3.lab import stage1_composite_funding_reducer_repair as G
+from i3.archive.stage1.lab import stage1_composite_funding_reducer_repair as G
 
 
 class CompositeFundingReducerRepairTests(unittest.TestCase):
@@ -49,7 +49,7 @@ class CompositeFundingReducerRepairTests(unittest.TestCase):
         subprocess.run([
             sys.executable, "-c",
             "import sys; sys.path.insert(0, " + repr(root) + "); "
-            "import i3.lab.stage1_composite_funding_reducer_repair; "
+            "import i3.archive.stage1.lab.stage1_composite_funding_reducer_repair; "
             "assert 'i3.modules.world' not in sys.modules; "
             "assert 'i3.runtime.life' not in sys.modules; "
             "assert 'i3.lab.worldgen' not in sys.modules; "

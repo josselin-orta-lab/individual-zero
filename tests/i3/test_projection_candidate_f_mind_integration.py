@@ -8,8 +8,8 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from i3.lab import projection_candidate_f_characterization as F
-from i3.lab import projection_candidate_f_mind_integration as I
+from i3.archive.stage1.lab import projection_candidate_f_characterization as F
+from i3.archive.stage1.lab import projection_candidate_f_mind_integration as I
 from i3.lab import projection_consistency_characterization as P
 from i3.modules.body import BodyLaws, CognitiveBudget, CognitiveWork
 from i3.modules.genome import midpoint
@@ -114,7 +114,7 @@ class CandidateFMindIntegrationTests(unittest.TestCase):
         subprocess.run([
             sys.executable, "-c",
             "import sys; sys.path.insert(0, " + repr(root) + "); "
-            "import i3.lab.projection_candidate_f_mind_integration; "
+            "import i3.archive.stage1.lab.projection_candidate_f_mind_integration; "
             "assert 'i3.runtime.life' not in sys.modules"
         ], check=True)
 

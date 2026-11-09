@@ -7,7 +7,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from i3.lab import stage1_candidate_g_reference_recurrence_falsifier as G
+from i3.archive.stage1.lab import stage1_candidate_g_reference_recurrence_falsifier as G
 
 
 class CandidateGReferenceRecurrenceTests(unittest.TestCase):
@@ -71,7 +71,7 @@ class CandidateGReferenceRecurrenceTests(unittest.TestCase):
         subprocess.run([
             sys.executable, "-c",
             "import sys; sys.path.insert(0, " + repr(root) + "); "
-            "import i3.lab.stage1_candidate_g_reference_recurrence_falsifier as g; "
+            "import i3.archive.stage1.lab.stage1_candidate_g_reference_recurrence_falsifier as g; "
             "assert 'i3.runtime.life' not in sys.modules; "
             "assert g.SCHEMA.endswith('/v1')"
         ], check=True)

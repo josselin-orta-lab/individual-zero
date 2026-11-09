@@ -65,7 +65,7 @@ Current engineering/custody files:
 - `lab/stage2_replay_gate_development_pilot.py`
 
 The full classification is authoritative in `ACTIVE_SURFACE.json`.
-Stage-1 files still present under `lab/` are compatibility or regression
+Stage-1 candidate modules archived under `archive/stage1/` are compatibility or regression
 support unless explicitly classified otherwise.
 
 ## Evidence discipline

@@ -46,8 +46,8 @@ ADR-0017 currently forbids a new lived Stage-2 panel.
 
 ## Compatibility-only Stage 1
 
-Several Stage-1 lab modules remain under `src/i3/lab/` because retained tests,
-runtime compatibility paths or ADR-0017 regression tooling still import them.
+Stage-1 candidate code is archived under `src/i3/archive/stage1/`
+for retained compatibility tests and regression tooling.
 They are listed in `ACTIVE_SURFACE.json`.
 
 Their presence does **not** mean Stage 1 is open. Do not extend them into a new

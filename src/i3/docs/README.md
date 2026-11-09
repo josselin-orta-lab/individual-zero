@@ -40,8 +40,8 @@ Stage-1 evidence remains under `studies/` at stable citation paths. Retired
 Stage-1 scientific runners/tests are under
 `archive/i3/stage1-2026-11-09/`.
 
-Some Stage-1 source still exists under `src/i3/lab/` only because retained
-compatibility tests or engineering regression tools import it. Its presence
+Stage-1 candidate implementations are under `src/i3/archive/stage1/`;
+retained tests and historical opt-in runtime paths import this package. Its presence
 does not reopen Stage 1. See [ACTIVE_SURFACE.md](ACTIVE_SURFACE.md).
 
 The pre-rationalization navigation ledgers are preserved under

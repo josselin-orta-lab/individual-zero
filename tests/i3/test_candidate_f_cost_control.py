@@ -8,10 +8,10 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from i3.modules.body import BodyLaws, CognitiveBudget, CognitiveWork
-from i3.modules.candidate_f_cost_control import (
+from i3.archive.stage1.modules.candidate_f_cost_control import (
     SCHEMA, paid_candidate_f_shadow_then_reference_choice)
 from i3.modules.genome import midpoint
-from i3.modules.genomic_omega_frontier_information_mind import (
+from i3.archive.stage1.modules.genomic_omega_frontier_information_mind import (
     GenomicOmegaFrontierInformationMind)
 from i3.modules.mind import Mind
 
@@ -192,7 +192,7 @@ class CandidateFCostControlTests(unittest.TestCase):
         subprocess.run([
             sys.executable, "-c",
             "import sys; sys.path.insert(0, " + repr(root) + "); "
-            "import i3.modules.candidate_f_cost_control; "
+            "import i3.archive.stage1.modules.candidate_f_cost_control; "
             "assert 'i3.modules.world' not in sys.modules; "
             "assert 'i3.runtime.life' not in sys.modules"
         ], check=True)

@@ -10,8 +10,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 from i3.modules.body import (
     BodyLaws, CognitiveBudget, CognitiveWork)
 from i3.modules.genome import midpoint, validate
-from i3.modules.genomic_omega_candidate_f import GenomicOmegaCandidateFMind
-from i3.modules.genomic_omega_frontier_information_mind import (
+from i3.archive.stage1.modules.genomic_omega_candidate_f import GenomicOmegaCandidateFMind
+from i3.archive.stage1.modules.genomic_omega_frontier_information_mind import (
     GenomicOmegaFrontierInformationMind, POLICY, STOP_AFTER_PREFIX)
 from i3.modules.reference_frontier_information_mind import (
     ReferenceFrontierInformationMind)
@@ -270,7 +270,7 @@ class GenomicOmegaLiveFrontierTests(unittest.TestCase):
 
     def test_reference_and_storage_only_never_construct_live_omega_candidate(self):
         with patch(
-            "i3.modules.genomic_omega_frontier_information_mind."
+            "i3.archive.stage1.modules.genomic_omega_frontier_information_mind."
             "GenomicOmegaFrontierInformationMind.__init__",
             side_effect=AssertionError("implicit genomic omega policy")):
             for policy in ("reference", "reference_branch_memory_v1"):

@@ -20,7 +20,7 @@ from i3.modules.personal_outcomes import PersonalOutcomes, STORE_WORK
 from i3.modules.world import World, WorldSpec, WaterSource
 from i3.runtime.life import run_life
 from i3.lab.stage0_energy import energy_receipt
-from i3.lab.stage1_cost_profile import summarize_decision_cost
+from i3.archive.stage1.lab.stage1_cost_profile import summarize_decision_cost
 
 BASE = "942b973faec73f1020505bd53b841691eb01c590"
 BODY = (80., 60., 30., 80., 80.)

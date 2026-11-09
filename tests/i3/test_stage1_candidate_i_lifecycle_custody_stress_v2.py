@@ -7,7 +7,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from i3.lab import stage1_candidate_i_lifecycle_custody_stress_v2 as V
+from i3.archive.stage1.lab import stage1_candidate_i_lifecycle_custody_stress_v2 as V
 
 
 class CandidateILifecycleCustodyStressV2Tests(unittest.TestCase):
@@ -145,7 +145,7 @@ class CandidateILifecycleCustodyStressV2Tests(unittest.TestCase):
         subprocess.run([
             sys.executable, "-c",
             "import sys; sys.path.insert(0, " + repr(root) + "); "
-            "import i3.lab.stage1_candidate_i_lifecycle_custody_stress_v2; "
+            "import i3.archive.stage1.lab.stage1_candidate_i_lifecycle_custody_stress_v2; "
             "assert 'i3.runtime.life' not in sys.modules; "
             "assert 'i3.lab.p2_ecologies' not in sys.modules"
         ], check=True)

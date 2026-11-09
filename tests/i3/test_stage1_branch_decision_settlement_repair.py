@@ -8,7 +8,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from i3.lab import stage1_branch_decision_settlement_repair as G
+from i3.archive.stage1.lab import stage1_branch_decision_settlement_repair as G
 from i3.modules.body import CognitiveWork
 
 
@@ -101,7 +101,7 @@ class BranchDecisionSettlementRepairTests(unittest.TestCase):
         subprocess.run([
             sys.executable, "-c",
             "import sys; sys.path.insert(0, " + repr(root) + "); "
-            "import i3.lab.stage1_branch_decision_settlement_repair; "
+            "import i3.archive.stage1.lab.stage1_branch_decision_settlement_repair; "
             "assert 'i3.runtime.life' not in sys.modules; "
             "assert 'i3.lab.p2_ecologies' not in sys.modules"
         ], check=True)

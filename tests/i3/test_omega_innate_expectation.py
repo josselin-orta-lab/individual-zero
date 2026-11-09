@@ -6,7 +6,7 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from i3.lab import stage1_omega_falsifier as F
+from i3.archive.stage1.lab import stage1_omega_falsifier as F
 from i3.modules.body import BodyLaws, CognitiveBudget
 from i3.modules.recent_rms_effect_prior import paid_recent_rms_zero_mean_effect_prior
 from i3.modules.rms_three_leaf_target_prior import paid_rms_three_leaf_target_prior
