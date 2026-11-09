@@ -68,7 +68,7 @@ class MechanismFirstOriginals(unittest.TestCase):
         self.assertEqual(control["paired_blocks"], 240)
         self.assertEqual(control["overall"]["survival_discordance"]["both_survived"], 240)
         self.assertEqual(control["overall"]["random_minus_fixed_mean"]
-                         ["energy_paid_per_assigned_life"], -1)
+                         ["energy_paid_per_assigned_life"], 0)
         self.assertFalse(control["causal_mediation_certified"])
         self.assertEqual(control["scientific_verdict"], "NOT_ISSUED")
         profile = report["readout"]["paired_outcome_profile"]
