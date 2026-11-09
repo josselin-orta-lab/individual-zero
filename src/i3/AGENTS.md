@@ -54,6 +54,17 @@ Lifecycle-custody stress v3 W0-W9 may remain as an ADR-0017 engineering
 regression, not as Stage-1 scientific continuation. All lower Candidate F-I
 handoffs are historical custody records and do not override this closure.
 
+**Stage 2 is now the current scientific stage.** Read
+[STAGE2_LAUNCH.md](docs/STAGE2_LAUNCH.md) and the prospectively frozen
+[Stage-2.1 replay gate](docs/STAGE2_REPLAY_GATE.md) before Stage-2 code edits.
+
+The first allowed scientific implementation is software-only
+`p13_replay_gate_v1` plus its frozen R0-R4 falsifier. Do not alter the replay
+gate formula, controls, fixtures, thresholds or verdicts after this freeze.
+Do not add runtime lived-arm support before software capacity is known and
+ADR-0017 is explicitly lifted. A non-capacity result advances to Stage 2.2;
+there is no rescue loop.
+
 **Current handoff after 58/59 exposure:** run `42484179997` opened the frozen
 Candidate-H DEVELOPMENT panel and then stopped on a post-life reduction
 engineering error. The evidence branch is
