@@ -13,12 +13,38 @@ Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
 
+## Stage 2.1 package audit: corrected falsifier pending
+
+9 November 2026: the uploaded Stage-2 development package was verified and
+semantically audited. Its supplied software run reported
+`REPLAY_GATE_CAPACITY_SHOWN`, and its supplied 68/69 DEVELOPMENT pilot
+reported a continuation PASS. Both are preserved, but neither is the canonical
+Stage-2.1 scientific verdict.
+
+The audit found a material frozen-protocol divergence: #1212 defines
+`r_hat = (n_relevant + 1) / (n_decisions + 2)`, while the supplied
+implementation divided by audited decisions. The integrated
+`p13_replay_gate_v1` now uses all scored decisions and has a regression test
+for that denominator.
+
+The supplied 68/69 run is retained as descriptive development evidence only:
+its replay reduction and accounting observations are useful, but it used the
+non-conforming implementation. The package also attributes an ADR-0017 lift to
+a conversation quote that is not authenticated by the current repository
+history. **ADR-0017 therefore remains active in this ledger.**
+
+Canonical next action: execute the corrected R0-R4 software falsifier once.
+No World or life is authorized. See
+[software audit](studies/stage2-replay-gate-software/RESULTS.md) and
+[68/69 custody](studies/stage2-replay-gate-development-68-69/RESULTS.md).
+
 ## Stage 2 launched: decide how much to think (#1062)
 
 9 November 2026: [launch document](STAGE2_LAUNCH.md). Reference: P1.3. No World,
 no life, no runtime change. The owner-approved first slice,
-[2.1 replay gate](STAGE2_REPLAY_GATE.md), is now **prospectively frozen before
-implementation**.
+[2.1 replay gate](STAGE2_REPLAY_GATE.md), remains prospectively frozen. Its
+implementation is now present, but its **corrected software falsifier has not
+yet been executed**.
 
 Pre-design measurements, disclosed but not scientific results:
 
@@ -31,7 +57,7 @@ Pre-design measurements, disclosed but not scientific results:
 
 Stage 2 proceeds in this order:
 
-1. **2.1 replay gate**: software falsifier first, under the frozen R0-R4 rules;
+1. **2.1 replay gate**: execute the corrected software falsifier once under the frozen R0-R4 rules;
 2. **2.2 deliberation ceiling**;
 3. **2.3 simulation depth**;
 4. precision-on-demand remains deferred on the current P1.3 evidence.
