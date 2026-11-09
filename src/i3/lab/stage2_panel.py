@@ -8,7 +8,7 @@ genomes, life seeds) differs. Every life of every arm passes the admission
 guard; scientific cohorts fail closed before any World is built.
 
     python -m i3.lab.stage2_panel rehearse PLAN.json
-    python -m i3.lab.stage2_panel run PLAN.json ARCHIVE_DIR OUT.json STATUS.md   # after a lift only
+    python -m i3.lab.stage2_panel run PLAN.json ARCHIVE_DIR OUT.json   # after a lift only
 """
 from __future__ import annotations
 
@@ -57,12 +57,11 @@ def cases(plan: dict, namespace: str) -> list:
     return rows
 
 
-def make_run_case(plan_path, *, lift_status_path=None):
+def make_run_case(plan_path):
     plan = load_plan(plan_path)
 
     def run_case(case):
-        ticket, spec = ADM.admit(case["cohort"], case["family"], case["index"], plan_path,
-                                 lift_status_path=lift_status_path)
+        ticket, spec = ADM.admit(case["cohort"], case["family"], case["index"], plan_path)
         gated = case["policy"] in REPLAY_GATE_POLICIES
         life = run_life(generation_zero(case["genome_seed"]), spec, case["life_seed"],
                         plan["horizon"], protocol=plan["protocol_id"],
@@ -88,7 +87,9 @@ def make_invariants(plan: dict, fingerprint: str):
             "within_horizon": 0 < life["steps_lived"] <= horizon,
             "declared_policy": policy == identity["policy"],
             "gate_summary_iff_gate": (identity["policy"] != FIXED) == ("replay_gate" in life),
-            "admission_bound_to_world": receipt["world_name"] == life["world"],
+            "admission_bound_to_world": (
+                receipt["world_name"] == life["world"] and
+                receipt["world_sha256"] == life["manifest"]["world_sha256"]),
             "admission_cohort_matches": receipt["cohort"] == identity["cohort"],
             "admission_fingerprint_matches": receipt["transport_fingerprint"] == fingerprint,
         }
@@ -149,15 +150,14 @@ def rehearse(plan_path) -> dict:
     return report
 
 
-def execute(plan_path, archive_dir, *, lift_status_path):
-    """Scientific pilot. Fails closed before any World unless the owner lift names this transport."""
+def execute(plan_path, archive_dir):
+    """Scientific pilot. Require canonical owner lift before any World is built."""
     plan = load_plan(plan_path)
     fingerprint = ADM.transport_fingerprint(plan_path)
-    text = Path(lift_status_path).read_text() if lift_status_path else ""
-    if not ADM.owner_lift_recorded(text, fingerprint):
-        raise PermissionError("ADR-0017 active: no owner lift for this exact transport")
+    if not ADM.canonical_owner_lift_recorded(fingerprint):
+        raise PermissionError("ADR-0017 active: no canonical owner lift for this transport")
     g = TP.generate(cases(plan, "scientific"),
-                    make_run_case(plan_path, lift_status_path=lift_status_path), archive_dir)
+                    make_run_case(plan_path), archive_dir)
     if g["status"] != "GENERATED":
         return {"status": "ENGINEERING_FAILURE_NOT_A_DEATH",
                 "generation": {k: g[k] for k in ("status", "planned", "generated", "failure")}}
@@ -178,12 +178,12 @@ def execute(plan_path, archive_dir, *, lift_status_path):
 def main(argv):
     if len(argv) == 3 and argv[1] == "rehearse":
         print(json.dumps(rehearse(argv[2]), sort_keys=True, indent=1))
-    elif len(argv) == 6 and argv[1] == "run":
-        result = execute(argv[2], argv[3], lift_status_path=argv[5])
+    elif len(argv) == 5 and argv[1] == "run":
+        result = execute(argv[2], argv[3])
         Path(argv[4]).write_text(json.dumps(result, sort_keys=True, separators=(",", ":")) + "\n")
         print(json.dumps({k: v for k, v in result.items() if k != "rows"}, sort_keys=True, indent=1))
     else:
-        raise SystemExit("usage: rehearse PLAN | run PLAN ARCHIVE OUT STATUS")
+        raise SystemExit("usage: rehearse PLAN | run PLAN ARCHIVE OUT")
 
 
 if __name__ == "__main__":

@@ -2,8 +2,9 @@
 
 Before an explicit owner ADR-0017 lift, only the `engineering` cohort is
 admitted. Development, selection, validation and reserve raise before any
-World is constructed. A lift is recognised only as one exact line in the
-STATUS ledger naming this transport's fingerprint:
+World is constructed. A lift is recognized only from the canonical repository
+`src/i3/docs/STATUS.md` ledger, never from a caller-supplied file, using one
+exact line naming this transport's fingerprint:
 
     ADR-0017 OWNER LIFT: Stage-2.1 transport <64 hex fingerprint>
 
@@ -23,6 +24,7 @@ from . import p2_ecologies as P2
 from ..runtime import admission as RA
 
 I3 = Path(__file__).resolve().parents[1]
+CANONICAL_STATUS_PATH = I3 / "docs" / "STATUS.md"
 LAB_TRANSPORT_FILES = ("two_phase_panel.py", "engineering_cohort.py", "p2_ecologies.py",
                        "stage2_admission.py", "stage2_panel.py")
 LIFT_PREFIX = "ADR-0017 OWNER LIFT: Stage-2.1 transport "
@@ -47,7 +49,12 @@ def owner_lift_recorded(status_text: str, fingerprint: str) -> bool:
     return any(line.strip() == LIFT_PREFIX + fingerprint for line in status_text.splitlines())
 
 
-def admit(cohort: str, family: str, index: int, plan_path, *, lift_status_path=None):
+def canonical_owner_lift_recorded(fingerprint: str) -> bool:
+    """Only the version-controlled I3 STATUS ledger can authorize scientific Worlds."""
+    return owner_lift_recorded(CANONICAL_STATUS_PATH.read_text(), fingerprint)
+
+
+def admit(cohort: str, family: str, index: int, plan_path):
     """Return (ticket, spec) or raise. Scientific cohorts fail closed pre-lift."""
     if cohort not in RA.COHORTS:
         raise ValueError("unknown cohort")
@@ -56,13 +63,12 @@ def admit(cohort: str, family: str, index: int, plan_path, *, lift_status_path=N
         spec = ENG.engineering_world(family, index)
         seed = ENG.ENGINEERING[index]
     else:
-        text = Path(lift_status_path).read_text() if lift_status_path else ""
-        if not owner_lift_recorded(text, fingerprint):
+        if not canonical_owner_lift_recorded(fingerprint):
             raise PermissionError(
                 "ADR-0017 active: scientific cohort fails closed (no owner lift for this transport)")
         seed = P2.COHORTS[cohort][index]
         ENG.assert_not_engineering(seed)
         spec = P2.world_for(family, cohort, index)
     ticket = RA.mint(cohort=cohort, family=family, index=index, world_seed=seed,
-                     world_name=spec.name, transport_fingerprint=fingerprint)
+                     spec=spec, transport_fingerprint=fingerprint)
     return ticket, spec

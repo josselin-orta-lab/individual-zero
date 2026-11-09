@@ -52,7 +52,7 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
         # ticket bound to this exact World; scientific cohorts fail closed in
         # the guard until an explicit owner lift.
         from i3.runtime.admission import verify as verify_admission
-        admission_receipt = verify_admission(admission, spec.name)
+        admission_receipt = verify_admission(admission, spec)
     elif admission is not None:
         raise ValueError("admission tickets are only defined for replay-gate policies")
     if decision_policy != "reference" and (
