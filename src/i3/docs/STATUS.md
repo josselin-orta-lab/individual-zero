@@ -14,6 +14,23 @@ Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
 
+## Stage 2.1 B1 new-world full-policy engineering G/R campaign (10 November 2026)
+
+**96 PUBLIC-SYNTHETIC PAIRS / 192 REAL TECHNICAL LIVES / NO SCIENTIFIC
+SURVIVAL CLAIM.** The [prospective-type WorldSpec paired G/R protocol](studies/stage2-replay-gate-selected-design/B1_NEW_WORLDS_PAIRED_GR.md)
+uses the first 96 frozen PUBLIC synthetic B1 allocation rows on the
+new high-range stable/depletion/pulse WorldSpec builder, same world,
+genome and life seed per FIXED/GATE pair. It executes actual funded
+policies in temporary G/R originals and verifies paid cognition,
+admission bound to exact physical World, source fingerprint,
+horizon, identity and no-shortfall, exposing only structural CI
+receipt/digests. The historical Stage-2.1 science executor
+still rejects all scientific calls. Even a complete PASS is
+**engineering-only**, not a valid survival inferential sample;
+independent review, scientific source witness, margin/estimand,
+fixed n, full-scale rehearsal and new owner lift still block B1
+science.
+
 ## Stage 2.1 B1 synthetic WorldSpec parity and collision audit (9 November 2026)
 
 **NON-EVIDENTIARY SPEC-GENERATION CHECK / NO SCIENTIFIC LIFE.**
