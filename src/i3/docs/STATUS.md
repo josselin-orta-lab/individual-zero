@@ -14,6 +14,48 @@ Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
 
+## Stage 2.1 DEVELOPMENT 80/81: FIRST PROSPECTIVE EXPOSURE COMPLETE
+
+**9 November 2026. DEVELOPMENT_COMPLETE_ENGINEERING_CONTINUATION_PASS.**
+The owner-lifted, formerly unopened Stage-2.1 DEVELOPMENT indices
+**80/81 were each used exactly once** in run
+[42641395586](https://github.com/josselin-orta-lab/individual-zero/actions/runs/42641395586).
+The irreversible [claim branch](https://github.com/josselin-orta-lab/individual-zero/tree/custody/i3-stage2-1-development-80-81-claimed)
+was created before any World. Executed source SHA
+`5d362e226f8e87df226dae5b239e26cc99072a13`, fingerprint
+`dcada9e2…f1`. **Phase G 36/36, phase R 36/36, zero failures on
+ten structural invariants.** All 36 original gzip life records and complete
+manifest are preserved on immutable [evidence commit
+`5a13efc5`](https://github.com/josselin-orta-lab/individual-zero/commit/5a13efc53dafc10e9b9248479a4756eda6a55eeb).
+Manifest SHA-256 `c6893bb1b2457890e3d66680f10bf0c14b451e62c2e5c381951f1119f286b76e`;
+full result SHA-256 `a6652f4d8cd1f8ccb87d8bf902ecb2eabf68ec0a548b187db140ea61dfc9401b`.
+
+**Descriptive DEVELOPMENT results, not a gate verdict:** GATE replayed
+6.380623 memories/sleep versus FIXED 15.997053 and ZERO-PERCEIVED-COST
+12.623037. Pooled paid cognitive energy/lived step was 0.469401 for GATE
+versus 0.555897 for FIXED; vigilance 0.599448 versus 0.674306. Mean life
+length was **262.17 steps for GATE, 291.58 for FIXED**, with 3/12 versus
+4/12 censored at the 400-step horizon. GATE was longer than FIXED in
+3/12 matched blocks, shorter in 3/12, equal in 6/12. A `stable-81-g911`
+block was 300 steps shorter under GATE. **Survival non-inferiority has NOT
+been demonstrated; no architecture is adopted from this pilot.**
+
+The predeclared RANDOM-EQUAL-MEAN parameter is now **frozen** from
+DEVELOPMENT only: **5,532 GATE replays / 867 sleep steps =
+6.380622837370242**. See
+[prospective results](studies/stage2-replay-gate-development-80-81/RESULTS.md)
+and [control-parameter custody](studies/stage2-replay-gate-development-80-81/RANDOM_EQUAL_MEAN_PARAMETER.md).
+
+**Development indices 80/81 are permanently closed and shall not be
+rerun.** ADR-0017's owner lift remains historically valid, but its
+**single authorized scientific exposure has been consumed**.
+No additional development, selection, validation or reserve World is
+currently authorized. Next is software-only preregistration of the
+RANDOM-EQUAL-MEAN distribution and ≥8-population ADR-0015 Stage-2.1 gate,
+including frozen margins, uncertainty, seeds and held-out allocation,
+followed by separate approval and exact-transport custody as required.
+I3 remains unregistered and P1.3 is the reference.
+
 ## Owner decision: ADR-0017 LIFTED for the exact Stage-2.1 transport (9 November 2026)
 
 **Explicit owner validation received after the technical audit.** The owner
