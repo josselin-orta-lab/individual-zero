@@ -45,6 +45,51 @@ scientific rules, thresholds, arms, seeds or original bytes.
 58/59, 60/61, 62/63, 64/65 and 66/67 remain permanently closed and are not
 retroactively completed.
 
+
+## Stage-1 closure arbitration: ADR-0018 and Candidate-J
+
+9 November 2026: the owner accepted
+[ADR-0018](../../../docs/decisions/ADR-0018-i3-cloture-etape-1.md).
+[Candidate-J](STAGE1_CANDIDATE_J.md) is now the **last allowed Stage-1
+candidate** and its protocol is prospectively frozen before implementation.
+
+Candidate-J is intentionally different from Candidate-I:
+
+- no designer curiosity/relevance/prudence addend on any route;
+- one decision phase, with no detached probe, rollback or second finalizer;
+- one accurate projector for every option, with a predeclared projector
+  fallback if J0 fails;
+- one shared first-contact prior `(omega +/- 1) * s`, with
+  `s = kappa * body_capacity`;
+- existing omega is unchanged; kappa is a new generic persistence-selected gene;
+- after personal contact, personal effects replace the inherited prior.
+
+The first and only currently authorized Candidate-J exposure is its **software
+falsifier**. It opens no World and therefore remains compatible with ADR-0017.
+Its J0/J1 defect stops, J3 capacity criterion and J4 2.5x cost wall are frozen.
+Any verdict other than `CANDIDATE_J_CAPACITY_SHOWN` closes Stage 1 negatively
+with P1.3 retained.
+
+If software capacity is shown, lived 68/69 remains blocked until ADR-0017 is
+explicitly lifted. After a valid lift, the declared path is one three-arm
+DEVELOPMENT pilot (P1.3 / J-native / same-genome J omega=0), then the Stage-1
+ADR-0015 gate on R-depletion-v1. The current detached Stage-0 design reserves
+validation indices 120-167 and records known historical allocation only through
+119; this ADR does not open them.
+
+Stage 1 closes at the first of: the Stage-1 gate verdict, a non-capacity
+Candidate-J software verdict, two sealed-rehearsal-validated 68/69 executions
+that fail to complete, or **15 December 2026**. No Candidate-K or other new
+Stage-1 architecture may follow.
+
+Stage 2 remains blocked **until that closure event occurs**. Under ADR-0018 it
+is then unblocked on whichever reference the closure selects: J after positive
+closure, otherwise P1.3.
+
+The already-frozen lifecycle-custody stress v3 W0-W9 remains admissible as
+software engineering work under ADR-0017; it does not open a World or replace
+Candidate-J's scientific software falsifier.
+
 ## Latest software result: shared first-contact prior shows generic capacity
 
 8 November 2026: the prospectively frozen

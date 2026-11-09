@@ -5,6 +5,27 @@ The [engine contract](../engine.json) has no active entrypoints; the
 [registry](../../../config/engine-registry.json) keeps I1 active.
 A green software test is not a scientific GO.
 
+
+## Current: Candidate-J is the final Stage-1 candidate
+
+[ADR-0018](../../../docs/decisions/ADR-0018-i3-cloture-etape-1.md) is
+owner-accepted and [Candidate-J](STAGE1_CANDIDATE_J.md) is prospectively frozen
+as the **last** Stage-1 architecture.
+
+J removes designer curiosity/relevance/prudence from every route, uses one
+decision phase and one accurate projector, and replaces Candidate-I's recent-RMS
+first-contact scale with a generic capacity-relative inherited scale controlled
+by existing omega plus new generic kappa. Its first test is software-only:
+P80/F108/K80 plus newborn/satiated fixtures, frozen omega x kappa arms, J0/J1
+defect stops, J3 need-sensitive capacity and a J4 2.5x P1.3 cost wall.
+
+ADR-0017's moratorium remains active. Therefore **no 68/69, selection,
+validation or reserve World may open now**. The Candidate-J falsifier and the
+already-frozen W0-W9 lifecycle regression are software-only work. If J does not
+return `CANDIDATE_J_CAPACITY_SHOWN`, Stage 1 closes negatively with P1.3.
+If it does, lived work still waits for a valid ADR-0017 lift. No further
+Stage-1 candidate is permitted.
+
 ## Latest: Candidate-I runnable multi-option v2 passes in software
 
 The failed v1 runtime generalization remains immutable evidence:
