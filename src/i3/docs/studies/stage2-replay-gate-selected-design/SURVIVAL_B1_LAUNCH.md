@@ -47,6 +47,19 @@ This is a **transport smoke**, not the required full-scale rehearsal on the exac
 
 **Current execution decision:** engineering and numerical study **RUN**; scientific cohort **LOCKED_PENDING_REVIEW**. This is a deliberate stop at the boundary, not an assertion that the requested research is scientifically complete. Neither owner delegation nor software CI can manufacture an external independent review.
 
+## Follow-up: prospective independent-pair sample metadata (9 November 2026)
+
+The [source-independent B1 sampling preview](B1_PROSPECTIVE_SAMPLING_PREFLIGHT.md)
+now documents a *candidate* HMAC-keyed allocation of 1,500 distinct
+matched newborn-G0/world pairs with separate seed namespaces.
+The **synthetic root is public and not a source authorization**.
+It computes no WorldSpec and proves no iid ecology claim; it cannot
+be used to determine a final experimental n, margin or actual World
+exposure. The default P2 generator rejects the novel high-range
+seeds in development mode. A separate future-source adapter,
+independent review, claim, full-size rehearsal and owner lift are
+still required.
+
 ## Engineering failure captured and prospective funding correction (9 November 2026)
 
 The **first** B1 engineering smoke was attempted on the fixed 24-life

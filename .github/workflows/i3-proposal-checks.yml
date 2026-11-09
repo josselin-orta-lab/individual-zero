@@ -145,3 +145,59 @@ jobs:
             ${{ runner.temp }}/b1-power-synthetic.json
           if-no-files-found: error
           retention-days: 30
+
+
+  b1-sampling-preflight:
+    # Pure future allocation *metadata*, not World generation or approval.
+    if: startsWith(github.head_ref, 'research/i3-survival-b1-')
+    name: I3 B1 prospective sample dry-run (Python 3.11)
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Checkout the exact candidate source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Prove metadata only and reject prospectively tampered pairs
+        run: |
+          python -m unittest discover -s tests/i3 -p 'test_stage2_survival_b1_sampling.py' -v
+          python -m i3.lab.stage2_survival_b1_sampling > "$RUNNER_TEMP/b1-sampling-preview-structure.json"
+          python - "$RUNNER_TEMP/b1-sampling-preview-structure.json" <<'PY'
+          import json, sys
+          with open(sys.argv[1]) as stream:
+              s = json.load(stream)
+          assert s["status"] == "DRY_RUN_ALLOCATION_ONLY_NO_WORLD_EXPOSURE"
+          assert s["pair_count"] == 1500
+          assert s["maximum_proposed_lives"] == 3000
+          assert s["maximum_horizon_steps"] == 1200000
+          assert sum(s["family_counts"].values()) == 1500
+          assert s["world_instances_created"] == 0
+          assert s["individual_lives_executed"] == 0
+          assert s["independent_iid_world_pairs_verified"] is False
+          assert s["witness_is_authorized_for_scientific_births"] is False
+          assert s["scientific_verdict"] == "NOT_ISSUED"
+          assert set(s) == {
+              "schema", "status", "witness_sha256", "pair_count",
+              "family_counts", "maximum_proposed_lives", "maximum_horizon_steps",
+              "allocation_sha256", "world_instances_created",
+              "individual_lives_executed", "scientific_verdict",
+              "independent_iid_world_pairs_verified",
+              "witness_is_authorized_for_scientific_births",
+          }
+          print("B1_PROPOSED_1500_PAIR_METADATA_ONLY_NO_WORLD_PASS")
+          PY
+      - name: Archive the synthetic structural metadata digest only
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-b1-prospective-sample-dryrun
+          path: ${{ runner.temp }}/b1-sampling-preview-structure.json
+          if-no-files-found: error
+          retention-days: 30
