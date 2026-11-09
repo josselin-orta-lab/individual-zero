@@ -76,10 +76,10 @@ class NewWorldGRCustodyTests(unittest.TestCase):
             receipt = RA.verify(admission, spec)
             self.assertEqual(receipt["world_seed"], case["world_seed"])
             self.assertEqual(receipt["cohort"], "engineering")
-            self.assertEqual(receipt["transport_fingerprint"], "d"*64)
+            self.assertEqual(receipt["transport_fingerprint"], B1.source_fingerprint())
             return {"mocked": True}
         with patch.object(B1, "run_life", side_effect=fake_run):
-            receipt = B1._run_case(self.rows, "d"*64)(case)
+            receipt = B1._run_case(self.rows, B1.source_fingerprint())(case)
         self.assertTrue(receipt["mocked"])
         self.assertEqual(receipt["admission_receipt"]["world_seed"],
                          case["world_seed"])
@@ -92,7 +92,7 @@ class NewWorldGRCustodyTests(unittest.TestCase):
             self.assertIsNone(admission)
             return {"mocked": True}
         with patch.object(B1, "run_life", side_effect=no_ticket):
-            result = B1._run_case(self.rows, "a"*64)(case)
+            result = B1._run_case(self.rows, B1.source_fingerprint())(case)
         self.assertEqual(result["admission_receipt"]["cohort"], "engineering")
 
     def test_rehearsal_only_returns_finite_structural_receipt(self):
@@ -115,6 +115,34 @@ class NewWorldGRCustodyTests(unittest.TestCase):
         for field in ("death", "survival", "energy", "vigilance",
                       "mean_lived_steps", "rows", "genome"):
             self.assertNotIn(field, result)
+
+    def test_guard_refuses_tampered_world_even_same_name_and_forged_source(self):
+        from dataclasses import replace
+        from i3.lab import stage2_admission as GUARD
+        case = self.rows[1]
+        spec = SPECS._construct_f0_spec(case["family"], case["world_seed"])
+        for kwargs in (
+            {"index": 96},
+            {"index": True},
+            {"world_seed": case["world_seed"] + 1},
+            {"family": "unknown"},
+            {"transport_fingerprint": "f" * 64},
+        ):
+            payload = {
+                "family": case["family"], "index": case["index"],
+                "world_seed": case["world_seed"], "spec": spec,
+                "transport_fingerprint": B1.source_fingerprint(),
+            }
+            payload.update(kwargs)
+            with self.subTest(change=kwargs), self.assertRaises(PermissionError):
+                GUARD.admit_b1_newworld_engineering(**payload)
+        fake = replace(spec, body=(1.0, 60.0, 60.0, 60.0, 60.0))
+        with self.assertRaises(PermissionError):
+            GUARD.admit_b1_newworld_engineering(
+                family=case["family"], index=case["index"],
+                world_seed=case["world_seed"], spec=fake,
+                transport_fingerprint=B1.source_fingerprint())
+        self.assertNotEqual(RA.world_sha256(spec), RA.world_sha256(fake))
 
     def test_no_scientific_entrypoint_or_unscoped_cli(self):
         for argv in (["prog", "run"], ["prog", "run", "archive"],
