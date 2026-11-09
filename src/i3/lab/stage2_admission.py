@@ -67,3 +67,37 @@ def admit(cohort: str, family: str, index: int, plan_path):
     ticket = RA.mint(cohort=cohort, family=family, index=index, world_seed=seed,
                      spec=spec, transport_fingerprint=fingerprint)
     return ticket, spec
+
+
+def admit_b1_newworld_engineering(*, family: str, index: int, world_seed: int,
+                                  spec, transport_fingerprint: str):
+    """Only guard-minted ticket for fixed PUBLIC B1 new-world ENGINEERING.
+
+    This is distinct from the consumed 80/81 scientific transport. It
+    allows exactly 96 preselected synthetic public-root unit identifiers,
+    requires an exact F0 physical WorldSpec and current source fingerprint,
+    and NEVER admits a B1 scientific, reserve, validation or selection life.
+    """
+    from . import stage2_survival_b1_sampling as SAMPLE
+    from . import stage2_survival_b1_worldspec_audit as SPECS
+    from . import stage2_survival_b1_engineering as B1
+    if type(index) is not int or not 0 <= index < B1.PAIRS:
+        raise PermissionError("outside the first 96 B1 public engineering units")
+    if type(world_seed) is not int or family not in SAMPLE.FAMILIES:
+        raise PermissionError("foreign B1 engineering world seed/family")
+    expected = SAMPLE.preview(SAMPLE.PREVIEW_WITNESS)["proposed_units"][index]
+    if (expected["ordinal"] != index or expected["family"] != family or
+            expected["world_seed"] != world_seed):
+        raise PermissionError("B1 engineering world not in public fixed allocation")
+    if (type(transport_fingerprint) is not str or
+            transport_fingerprint != B1.source_fingerprint()):
+        raise PermissionError("B1 engineering source fingerprint mismatch")
+    # A spoofed spec is rejected even if its name and world seed look right.
+    if not isinstance(spec, RA.WorldSpec):
+        raise PermissionError("B1 engineering WorldSpec is absent or invalid")
+    known_spec = SPECS._construct_f0_spec(family, world_seed)
+    if RA.world_sha256(spec) != RA.world_sha256(known_spec):
+        raise PermissionError("B1 engineering WorldSpec digest does not match source")
+    return RA.mint(cohort="engineering", family=family, index=index,
+                   world_seed=world_seed, spec=spec,
+                   transport_fingerprint=transport_fingerprint)
