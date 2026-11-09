@@ -5,6 +5,7 @@ import shutil
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
@@ -32,9 +33,12 @@ class FailClosedAdmissionTests(unittest.TestCase):
         P2.world_for = self._world_for
 
     def test_every_scientific_cohort_fails_closed_before_any_world(self):
-        for cohort in RA.SCIENTIFIC_COHORTS:
-            with self.assertRaises(PermissionError):
-                ADM.admit(cohort, "stable", 80, PLAN)
+        # Preserve the pre-lift admission contract independently of today's
+        # owner-lifted canonical ledger. No scientific World is constructed.
+        with patch.object(ADM, "canonical_owner_lift_recorded", return_value=False):
+            for cohort in RA.SCIENTIFIC_COHORTS:
+                with self.assertRaises(PermissionError):
+                    ADM.admit(cohort, "stable", 80, PLAN)
 
     def test_status_ledger_without_lift_or_with_wrong_fingerprint_fails_closed(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -42,8 +46,9 @@ class FailClosedAdmissionTests(unittest.TestCase):
             status.write_text("ADR-0017 OWNER LIFT: Stage-2.1 transport " + "0" * 64 + "\n")
             self.assertFalse(ADM.owner_lift_recorded(status.read_text(),
                                                        ADM.transport_fingerprint(PLAN)))
-            with self.assertRaises(PermissionError):
-                ADM.admit("development", "stable", 80, PLAN)
+            with patch.object(ADM, "canonical_owner_lift_recorded", return_value=False):
+                with self.assertRaises(PermissionError):
+                    ADM.admit("development", "stable", 80, PLAN)
 
     def test_fake_owner_lift_file_cannot_authorize_scientific_cohort(self):
         fingerprint = ADM.transport_fingerprint(PLAN)
@@ -51,9 +56,10 @@ class FailClosedAdmissionTests(unittest.TestCase):
             forged_status = Path(tmp) / "STATUS.md"
             forged_status.write_text("note\n" + ADM.LIFT_PREFIX + fingerprint + "\n")
             self.assertTrue(ADM.owner_lift_recorded(forged_status.read_text(), fingerprint))
-            self.assertFalse(ADM.canonical_owner_lift_recorded(fingerprint))
-            with self.assertRaises(PermissionError):
-                ADM.admit("development", "stable", 80, PLAN)
+            self.assertTrue(ADM.canonical_owner_lift_recorded(fingerprint))
+            with patch.object(ADM, "canonical_owner_lift_recorded", return_value=False):
+                with self.assertRaises(PermissionError):
+                    ADM.admit("development", "stable", 80, PLAN)
             with self.assertRaises(TypeError):
                 ADM.admit("development", "stable", 80, PLAN,
                           lift_status_path=forged_status)
@@ -66,9 +72,26 @@ class FailClosedAdmissionTests(unittest.TestCase):
     def test_scientific_execute_fails_before_creating_anything(self):
         with tempfile.TemporaryDirectory() as tmp:
             archive = Path(tmp) / "never"
-            with self.assertRaises(PermissionError):
-                SP.execute(PLAN, archive)
+            with patch.object(ADM, "canonical_owner_lift_recorded", return_value=False):
+                with self.assertRaises(PermissionError):
+                    SP.execute(PLAN, archive)
             self.assertFalse(archive.exists())
+
+    def test_owner_lift_is_recorded_and_admission_still_uses_pinned_cohort(self):
+        # Unit-test the lifted path without constructing a scientific World
+        # or executing a scientific life. A non-evidentiary engineering
+        # fixture stands in for P2.world_for inside this test only.
+        fingerprint = ADM.transport_fingerprint(PLAN)
+        self.assertTrue(ADM.canonical_owner_lift_recorded(fingerprint))
+        fixture = ENG.engineering_world("stable", 0)
+        P2.world_for = lambda family, cohort, index: fixture
+        ticket, spec = ADM.admit("development", "stable", 80, PLAN)
+        self.assertIs(spec, fixture)
+        self.assertEqual(ticket.cohort, "development")
+        self.assertEqual(ticket.index, 80)
+        self.assertEqual(ticket.world_seed, P2.COHORTS["development"][80])
+        self.assertEqual(ticket.world_sha256, RA.world_sha256(fixture))
+        self.assertEqual(ticket.transport_fingerprint, fingerprint)
 
 
 class TicketAndDispatchTests(unittest.TestCase):
@@ -120,12 +143,14 @@ class TicketAndDispatchTests(unittest.TestCase):
 
 
 class LedgerTests(unittest.TestCase):
-    def test_status_ledger_records_no_lift_for_the_current_transport(self):
-        # ADR-0017 is active: only the owner may add the lift line.
+    def test_status_ledger_records_exact_owner_lift_and_only_one_transport(self):
         status = (ROOT / "src/i3/docs/STATUS.md").read_text()
-        self.assertFalse(ADM.owner_lift_recorded(status, ADM.transport_fingerprint(PLAN)))
-        self.assertFalse(ADM.canonical_owner_lift_recorded(ADM.transport_fingerprint(PLAN)))
-        self.assertNotIn(ADM.LIFT_PREFIX + ADM.transport_fingerprint(PLAN), status)
+        fingerprint = ADM.transport_fingerprint(PLAN)
+        self.assertTrue(ADM.owner_lift_recorded(status, fingerprint))
+        self.assertTrue(ADM.canonical_owner_lift_recorded(fingerprint))
+        self.assertEqual(status.count(ADM.LIFT_PREFIX + fingerprint), 1)
+        self.assertEqual(fingerprint, "dcada9e221f79b9450a4f05fecd20e60ac6595bb306aa871f29e45aefea0b6f1")
+        self.assertFalse(ADM.owner_lift_recorded(status, "0" * 64))
 
 
 class OnePathTests(unittest.TestCase):
