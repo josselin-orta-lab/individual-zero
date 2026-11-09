@@ -27,11 +27,11 @@ Do not reconstruct the current handoff from old Stage-1 documents.
 The corrected R0-R4 falsifier has executed exactly once and passed. Do not
 rerun it.
 
-**Current blocker:** proposed
-[ADR-0019](../../docs/decisions/ADR-0019-i3-exact-transport-rehearsal-before-lift.md)
-requires explicit owner acceptance before any pre-lift replay-gate runtime
-dispatch is added. ADR-0017 remains active. Do not implement around this
-ordering conflict with a rehearsal clone or a premature lift.
+**Governance now accepted:** [ADR-0019](../../docs/decisions/ADR-0019-i3-exact-transport-rehearsal-before-lift.md)
+allows exact pre-lift Stage-2.1 transport code **for the engineering cohort
+only**. Development, selection, validation and reserve must fail closed until
+the separate owner lift is recorded. ADR-0017 remains active. Use the same G/R
+path and candidate implementation in the sealed rehearsal, not a clone.
 
 ## Hard boundaries
 
