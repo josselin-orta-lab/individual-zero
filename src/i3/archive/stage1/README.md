@@ -5,6 +5,9 @@ for historical opt-in runtime compatibility, regression tests and sealed
 engineering checks. They are **not** active Stage-2 science.
 
 Historical tests remain under `tests/i3/` and import this archive.
+
+The historical protocols and findings remain at their original evidence paths
+and are indexed in [the Stage-1 document catalogue](DOCUMENTS.md).
 The original scientific evidence, World indices, experimental verdicts,
 fixtures, action identifiers, and behavior contracts are unchanged.
 

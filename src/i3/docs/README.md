@@ -47,7 +47,8 @@ does not reopen Stage 1. See [ACTIVE_SURFACE.md](ACTIVE_SURFACE.md).
 Translation originals are preserved under
 `archive/i3/original-language-records-2026-11-09/`. See
 [translation custody](TRANSLATION_CUSTODY.md). The closed Stage-1 candidate
-implementations live under [archive/stage1](../archive/stage1/README.md).
+implementations live under [archive/stage1](../archive/stage1/README.md),
+with the [historical document catalogue](../archive/stage1/DOCUMENTS.md).
 
 The pre-rationalization navigation ledgers are preserved under
 `archive/i3/navigation-pre-stage2-rationalization-2026-11-09/`.

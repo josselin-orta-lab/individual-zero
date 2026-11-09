@@ -54,7 +54,9 @@ They are listed in `ACTIVE_SURFACE.json`.
 Their presence does **not** mean Stage 1 is open. Do not extend them into a new
 candidate or use them as the current scientific handoff.
 
-Historical Stage-1 scientific runners and tests already moved to
+The [Stage-1 historical document catalogue](../archive/stage1/DOCUMENTS.md)
+links to the frozen protocols and results at their unchanged evidence paths.
+Older Stage-1 scientific runners and retired tests already moved to
 `archive/i3/stage1-2026-11-09/`. Evidence under `docs/studies/` stays at its
 stable paths for citation and custody.
 
