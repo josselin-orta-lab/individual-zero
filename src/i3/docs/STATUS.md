@@ -14,6 +14,20 @@ Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
 
+## Stage 2.1 mechanism-first alternative proposed (9 November 2026)
+
+**SOFTWARE ONLY / NO SCIENTIFIC EXPOSURE.** A separate
+[fixed-newborn-G0 paired candidate v3](studies/stage2-replay-gate-selected-design/MECHANISM_FIRST_CANDIDATE_V3.md)
+offers a smaller question: fixed birth genomes under the same worlds and
+life seeds with FIXED/GATE/RANDOM, no genetic selection. Its pure
+`lab/stage2_mechanism_first_design.py` layout specifies 720 proposed lives
+(288,000 maximum steps) versus 5,040 in the earlier selected-pipeline
+design. It does not test evolutionary selection or justify a mean survival
+non-inferiority claim; scientific power, population independence and
+margin remain unresolved. No F0 World index is approved or opened and
+no old lift is reused. External methodological review and explicit owner
+decision must precede any new scientific protocol.
+
 ## Stage 2.1 original-custody bridge proposal (9 November 2026)
 
 **SOFTWARE-ONLY / NO NEW SCIENTIFIC OPENING.**
