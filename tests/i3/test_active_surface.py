@@ -6,6 +6,7 @@ scientific falsifier or create any World/life.
 from __future__ import annotations
 
 import ast
+import importlib.util
 import json
 from pathlib import Path
 import unittest
@@ -67,6 +68,47 @@ class ActiveSurfaceContract(unittest.TestCase):
         status = (I3 / "docs" / "STATUS.md").read_text()
         self.assertIn("REPLAY_GATE_CAPACITY_SHOWN", status)
         self.assertIn("ADR-0017 remains active", status)
+
+    def test_archived_stage1_modules_resolve_and_active_paths_are_absent(self):
+        archived = [
+            Path(p) for p in self.data["stage1_compatibility_only"]
+            if p.startswith("src/i3/archive/stage1/") and p.endswith(".py")
+        ]
+        self.assertEqual(len(archived), 30)
+        for rel in archived:
+            self.assertTrue((ROOT / rel).is_file(), str(rel))
+            parts = rel.parts
+            self.assertEqual(parts[3:5], ("archive", "stage1"))
+            old_path = I3 / parts[5] / parts[-1]
+            self.assertFalse(old_path.exists(), f"duplicate active candidate: {old_path}")
+            dotted = ".".join(rel.with_suffix("").parts[1:])
+            self.assertIsNotNone(importlib.util.find_spec(dotted), dotted)
+
+    def test_repointed_python_imports_never_reference_removed_candidate_paths(self):
+        archived = [
+            Path(p) for p in self.data["stage1_compatibility_only"]
+            if p.startswith("src/i3/archive/stage1/") and p.endswith(".py")
+        ]
+        old_modules = {
+            f"i3.{p.parts[5]}.{p.stem}" for p in archived
+        }
+        offenders = []
+        for root in (I3, ROOT / "tests" / "i3"):
+            for path in root.rglob("*.py"):
+                parsed = ast.parse(path.read_text(), filename=str(path))
+                for node in ast.walk(parsed):
+                    if isinstance(node, ast.Import):
+                        for alias in node.names:
+                            if alias.name in old_modules:
+                                offenders.append((str(path), alias.name))
+                    elif isinstance(node, ast.ImportFrom):
+                        mod = node.module or ""
+                        if mod in old_modules:
+                            offenders.append((str(path), mod))
+                        for alias in node.names:
+                            if f"{mod}.{alias.name}" in old_modules:
+                                offenders.append((str(path), f"{mod}.{alias.name}"))
+        self.assertEqual(offenders, [])
 
     def test_stage1_compatibility_set_is_not_current_science(self):
         current = set(self.data["active_science"])
