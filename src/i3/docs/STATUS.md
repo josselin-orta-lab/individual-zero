@@ -13,17 +13,16 @@ Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
 
-## Stage 2.1 transport governance blocker
+## Stage 2.1 transport governance: ADR-0019 owner-accepted
 
-**Owner decision pending:** [ADR-0019](../../../docs/decisions/ADR-0019-i3-exact-transport-rehearsal-before-lift.md)
-is PROPOSED, not accepted.
+**Owner accepted [ADR-0019](../../../docs/decisions/ADR-0019-i3-exact-transport-rehearsal-before-lift.md) on 9 November 2026.**
 
-ADR-0017 requires an exact-SHA full-scale rehearsal before its lift, while the
-frozen Stage-2.1 protocol says lived-arm runtime support comes only after that
-lift. Implementing either order literally is circular. Until ADR-0019 is
-explicitly accepted or rejected, do **not** add replay-gate runtime dispatch and
-do not open a new World. Existing software capacity and engineering
-infrastructure remain valid.
+The exact Stage-2.1 transport, including runtime dispatch, may now be built and
+rehearsed before the ADR-0017 lift **only in the permanently non-evidentiary
+engineering cohort**. Development, selection, validation and reserve remain
+fail-closed. Source-identical G/R execution and an exact-SHA sealed rehearsal
+are required. An engineering PASS is not a scientific verdict or an owner lift.
+**ADR-0017 REMAINS ACTIVE. NO NEW SCIENTIFIC WORLD OR LIFE IS AUTHORIZED.**
 
 ## Stage 2.1 canonical software verdict: capacity shown
 

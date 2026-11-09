@@ -139,3 +139,14 @@ histories:
 Runtime support for lived arms comes only after software capacity and the
 ADR-0017 lift. A non-capacity verdict is recorded and Stage 2 moves to slice
 2.2. There is no rescue.
+
+## Governance clarification accepted 9 November 2026 (ADR-0019)
+
+The frozen software criteria and lived gate above are unchanged. The sentence
+about runtime support after the ADR-0017 lift governs **scientific lived-arm
+authorization**, not preparatory engineering-cohort transport code. The exact
+candidate dispatch and same G/R path may be implemented and rehearsed before
+lift only behind a fail-closed engineering-cohort admission gate. An explicit
+owner lift in STATUS.md is still required before any development/selection/
+validation/reserve World opens. This clarification is not a new scientific
+mechanism, test or evidence.

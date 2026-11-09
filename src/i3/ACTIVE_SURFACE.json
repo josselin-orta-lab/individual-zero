@@ -4,7 +4,7 @@
   "reference": "P1.3 funded-v2",
   "current_stage": "2.1 replay gate",
   "canonical_status": "REPLAY_GATE_CAPACITY_SHOWN",
-  "next_scientific_action": "OWNER_DECISION_REQUIRED: accept or reject proposed ADR-0019 before implementing pre-lift Stage-2.1 transport support",
+  "next_scientific_action": "implement a pre-lift engineering-only exact Stage-2.1 transport with fail-closed scientific cohort admission; rehearse exact SHA without scientific World exposure",
   "governance": {
     "i3_registered": false,
     "stage1": "CLOSED_NEGATIVE_ADR_0018",
@@ -12,8 +12,9 @@
     "fresh_lived_worlds_allowed": false,
     "candidate_j_reopen_allowed": false,
     "candidate_k_allowed": false,
-    "stage2_transport_deadlock": "PROPOSED_ADR_0019_OWNER_DECISION_PENDING",
-    "pre_lift_replay_runtime_support_allowed": false
+    "stage2_transport_deadlock": "RESOLVED_BY_ACCEPTED_ADR_0019",
+    "pre_lift_replay_runtime_support_allowed": "ENGINEERING_COHORT_ONLY",
+    "adr_0019": "ACCEPTED_2026_11_09"
   },
   "active_science": [
     "src/i3/modules/p13_replay_gate_mind.py",
@@ -56,7 +57,7 @@
     "src/i3/docs/studies/"
   ],
   "rules": [
-    "Do not add pre-lift replay-gate runtime dispatch until ADR-0019 is explicitly accepted by the owner.",
+    "Before an explicit ADR-0017 owner lift, any replay-gate runtime dispatch is engineering-cohort-only, and all scientific cohorts must fail closed (ADR-0019).",
     "Stage-2 active science must not import Stage-1 lab helpers.",
     "p13_replay_gate_v1 must remain unregistered in runtime/life.py until ADR-0017 is explicitly lifted and a later protocol authorizes lived support.",
     "The corrected canonical software verdict is REPLAY_GATE_CAPACITY_SHOWN; do not rerun or alter R0-R4 post hoc.",

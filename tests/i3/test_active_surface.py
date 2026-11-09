@@ -28,6 +28,8 @@ class ActiveSurfaceContract(unittest.TestCase):
         self.assertEqual(
             self.data["governance"]["adr_0017_world_opening_moratorium"], "ACTIVE")
         self.assertFalse(self.data["governance"]["fresh_lived_worlds_allowed"])
+        self.assertEqual(self.data["governance"]["adr_0019"], "ACCEPTED_2026_11_09")
+        self.assertEqual(self.data["governance"]["pre_lift_replay_runtime_support_allowed"], "ENGINEERING_COHORT_ONLY")
 
     def test_every_declared_active_or_compatibility_path_exists(self):
         for key in ("active_science", "active_engineering", "stage1_compatibility_only"):

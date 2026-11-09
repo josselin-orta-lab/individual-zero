@@ -2,7 +2,7 @@
 
 ## Status
 
-**PROPOSED — owner decision required. Not yet accepted.**
+**ACCEPTED BY OWNER, 9 NOVEMBER 2026.** Narrow pre-lift engineering-transport clarification only. ADR-0017 is still active; this does not lift the world-opening moratorium.
 
 ## Context
 
@@ -41,11 +41,11 @@ repository ledger. It remains descriptive development evidence only.
 | Lift ADR-0017 before the exact rehearsal | Rejected | Directly violates ADR-0017 |
 | Rehearse a separate engineering-only imitation of the candidate | Rejected | The rehearsal would no longer certify the exact intended transport |
 | Add the runtime path only after lift, then rehearse it | Rejected | Circular and reverses ADR-0017 ordering |
-| **Permit the exact transport code pre-lift, but admit only the engineering cohort** | **Proposed** | Preserves exact-path rehearsal while keeping every scientific World closed |
+| **Permit the exact transport code pre-lift, but admit only the engineering cohort** | **Accepted** | Preserves exact-path rehearsal while keeping every scientific World closed |
 
-## Proposed decision
+## Accepted decision
 
-If accepted, ADR-0017 remains active and its four lift conditions remain
+ADR-0017 remains active and its four lift conditions remain
 unchanged. The following narrow clarification applies:
 
 1. **Pre-lift code is not pre-lift scientific authorization.** The exact
@@ -91,7 +91,7 @@ This proposal does not change:
 It only makes ADR-0017's exact-transport rehearsal executable without creating
 a second, non-identical rehearsal implementation.
 
-## Consequences if accepted
+## Implementation consequences
 
 The next engineering sequence becomes:
 
@@ -104,7 +104,7 @@ The next engineering sequence becomes:
 6. stop for the explicit owner lift decision;
 7. only after the lift may a lived development workflow open the fresh panel.
 
-## Consequences if rejected
+## Previously considered consequence of rejection (not selected)
 
 Stage 2.1 remains software-capacity-only. No lived replay-gate transport can be
 rehearsed and therefore ADR-0017 cannot be lifted for this slice without a
@@ -116,5 +116,4 @@ I3 research execution custody only. No cognitive or behavioral rule is changed.
 
 ## Date
 
-9 November 2026. **PROPOSED after canonical Stage-2.1 software capacity; owner
-decision pending.**
+9 November 2026. **ACCEPTED by the owner on 9 November 2026.** No automatic lift and no scientific cohort exposure.
