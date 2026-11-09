@@ -18,7 +18,8 @@ from i3.modules.mind import Mind
 from i3.modules.world import World, WorldSpec
 
 REPLAY_GATE_POLICIES = {"p13_replay_gate_v1": "gate",
-                        "p13_replay_gate_zero_perceived_cost_v1": "zero_perceived_cost"}
+                        "p13_replay_gate_zero_perceived_cost_v1": "zero_perceived_cost",
+                        "p13_replay_gate_random_equal_mean_v1": "random_equal_mean"}
 
 
 def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
@@ -462,6 +463,17 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
             "final_r_hat": r_hat, "final_m_hat": m_hat, "final_H": horizon_of_use,
             "last_gate": mind.last_gate,
         }
+        if decision_policy == "p13_replay_gate_random_equal_mean_v1":
+            out["replay_gate"]["random_schedule"] = {
+                "policy": "i3-stage2-1-random-equal-mean-v1",
+                "draws_funded": mind.random_schedule_draws,
+                "nominal_replays_scheduled": mind.random_nominal_replays,
+                "eligible_replays_scheduled": mind.random_eligible_replays,
+                "actual_replays_paid": replays_done,
+                "lived_sleep_ordinals": mind._random_sleep_ordinal,
+                "mean_numerator": 5532,
+                "mean_denominator": 867,
+            }
     if decision_policy == "local_information_v1":
         out["experimental_policy"] = dict(manifest["experimental_policy"])
         out["personal_effect_memory"] = {

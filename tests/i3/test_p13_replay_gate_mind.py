@@ -10,6 +10,7 @@ from i3.modules.body import BodyLaws, CognitiveBudget, CognitiveWork
 from i3.modules.genome import midpoint
 from i3.modules.mind import Mind
 from i3.modules.p13_replay_gate_mind import P13ReplayGateMind, strict_top
+from i3.modules.stage2_random_equal_mean import scheduled_replays
 
 BODY = (70.0, 70.0, 70.0, 70.0, 70.0)
 CAP = {"body": BODY, "here": (True, ()), "neighbors": F.NEIGHBORS, "inventory": ()}
@@ -84,6 +85,55 @@ class Gate(unittest.TestCase):
         extra = out["work"].cycles - out["base"].cycles
         self.assertEqual(extra, 1)
         self.assertGreater(out["work"].simulated_steps, out["base"].simulated_steps)
+
+
+
+class RandomEqualMeanControl(unittest.TestCase):
+    def test_decision_and_paid_audit_identical_to_gate(self):
+        a, b = F._decide(gate("gate"), CAP), F._decide(gate("random_equal_mean"), CAP)
+        self.assertEqual((a["option"], a["action"], a["param"], a["scores"], a["work"]),
+                         (b["option"], b["action"], b["param"], b["scores"], b["work"]))
+
+    def test_nominal_draw_is_reproducible_but_work_actually_paid(self):
+        a = gate("random_equal_mean")
+        out = F.sleep_step(a, SLEEP_BODY)
+        nominal = scheduled_replays(F.SEED, 0)
+        self.assertEqual(out["gate_simulations"], 2)
+        self.assertEqual(a._random_sleep_ordinal, 1)
+        self.assertEqual((a.random_schedule_draws, a.random_nominal_replays), (1, nominal))
+        self.assertEqual(out["gate"]["random_nominal_k"], nominal)
+        self.assertEqual(out["gate"]["k"], min(nominal, out["gate"]["eligible"]))
+        self.assertEqual(a.random_eligible_replays, out["gate"]["k"])
+        self.assertEqual(out["prepared"], out["executed"])
+        self.assertEqual(out["prepared"], out["work"].replays)
+        self.assertLessEqual(out["prepared"], out["gate"]["k"])
+        self.assertEqual(out["work"].cycles - out["base"].cycles, 1)
+        self.assertGreater(out["work"].simulated_steps, out["base"].simulated_steps)
+        self.assertEqual(F.sleep_step(gate("random_equal_mean"), SLEEP_BODY)["gate"], out["gate"])
+
+    def test_sleep_ordinal_includes_unaffordable_learning_without_faking_charge(self):
+        a = gate("random_equal_mean")
+        body = (0.01,) * 5
+        a.last = (body, ("dormir",), "dormir", None)
+        result = {"body": body, "dead": False, "moved": False}
+        budget = CognitiveBudget(body, BodyLaws())
+        self.assertIsNone(a.prepare_learning(result, budget))
+        self.assertEqual(a._random_sleep_ordinal, 1)
+        self.assertEqual(a.random_schedule_draws, 0)
+        self.assertEqual(a.random_nominal_replays, 0)
+        self.assertEqual(budget.work, CognitiveWork())
+        self.assertEqual(a.sleep_steps, 0)
+        self.assertIsNone(a.prepare_learning({**result, "dead": True},
+                                              CognitiveBudget(body, BodyLaws())))
+        self.assertEqual(a._random_sleep_ordinal, 1)
+
+    def test_random_count_does_not_change_genome_or_action_authority(self):
+        a, b = gate("gate"), gate("random_equal_mean")
+        for attr in ("theta", "p", "w", "gammas", "n_base",
+                     "h_max", "m_max", "beta_u", "lambda_r"):
+            with self.subTest(attr=attr):
+                self.assertEqual(getattr(a, attr), getattr(b, attr))
+        self.assertEqual(type(a), type(b))
 
 
 class Helpers(unittest.TestCase):

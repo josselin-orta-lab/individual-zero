@@ -25,14 +25,18 @@ The **single prospective DEVELOPMENT 80/81 pilot has now completed**:
 It reduced replay and pooled paid cognition, but did **not** establish survival
 non-inferiority. The owner-lifted scope is **consumed** and 80/81 is closed
 without retry. All additional Worlds, validation, selection, reserve and
-confirmatory gates remain closed until newly frozen authorization.
+confirmatory gates remain closed until newly frozen authorization. The current
+legacy `stage2_panel.execute()` and `stage2_admission.admit()` are now hard-closed
+for all scientific cohorts, even when the historical owner-lift entry exists.
+The new random-control policy is an engineering-only opt-in, not a new lift.
 
 ## Active scientific surface
 
 Only these files define the current scientific intervention:
 
 - `modules/p13_replay_gate_mind.py`
-- `lab/stage2_replay_gate_falsifier.py`
+- `modules/stage2_random_equal_mean.py` (RANDOM-EQUAL-MEAN control)
+- `lab/stage2_replay_gate_falsifier.py` (historical one-shot, do not rerun)
 - `docs/STAGE2_LAUNCH.md`
 - `docs/STAGE2_REPLAY_GATE.md`
 - `docs/studies/stage2-replay-gate-software/RESULTS.md`
@@ -49,16 +53,18 @@ These files support ADR-0017 execution custody and are not themselves evidence:
 - `lab/two_phase_panel.py`
 - `tests/i3/test_stage2_execution_pipeline.py`
 - `runtime/admission.py` (World-bound admission tickets)
-- `lab/stage2_admission.py` (canonical owner-lift check and full-WorldSpec ticket admission)
-- `lab/stage2_panel.py` (one parameterized runner for rehearsal and post-lift pilot)
+- `lab/stage2_admission.py` (engineering tickets only, old science hard-closed)
+- `lab/stage2_panel.py` (engineering rehearsal only; old pilot `execute` disabled)
+- `lab/stage2_random_equal_mean.py`, `lab/stage2_gate_design.py` (software-only design)
+- `tests/i3/test_stage2_random_equal_mean.py`, `tests/i3/test_stage2_gate_design.py`
 - `tests/i3/test_stage2_exact_transport.py`
 - `docs/studies/stage2-replay-gate-development-80-81/` (frozen plan,
   sealed rehearsal, completed immutable scientific originals and descriptive result)
 
 The supplied 68/69 pilot runner is **archived**, not an active transport:
 `archive/stage2/development_68_69.py`. Its historical observations cannot
-be reused as prospective evidence. The exact transport is now owner-lifted only for the frozen DEVELOPMENT
-80/81 pilot. This does not retroactively legitimize the supplied 68/69 run.
+be reused as prospective evidence. The historical transport was owner-lifted only for the frozen DEVELOPMENT
+80/81 pilot; its authority is consumed. This does not retroactively legitimize the supplied 68/69 run.
 
 ## Compatibility-only Stage 1
 

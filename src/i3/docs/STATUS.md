@@ -14,6 +14,33 @@ Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
 
+## Stage 2.1 continuation: opt-in funded RANDOM control (software only)
+
+**9 November 2026, prospective engineering branch, no new scientific World.**
+The development-only frozen mean 5532/867 now supplies an independently
+seeded RANDOM-EQUAL-MEAN replay-count control (6 with 179/289 or 7 with
+110/289 probability). The opt-in `p13_replay_gate_random_equal_mean_v1`
+Mind is prepaid for its real decision audit, gate forecasts and replays;
+it does not borrow hidden World knowledge or change P1.3 motor authority.
+A separately counted executed-sleep ordinal prevents unfunded sleeps from
+silently shifting later random draws. Software tests and engineering-only
+rehearsals, not fresh selection/validation lives, cover this intervention.
+
+**Operational hard stop:** the historical DEVELOPMENT 80/81 authorization is
+consumed, and the retained `stage2_panel.execute()` / scientific admission
+routes now **raise before constructing any scientific World**, irrespective
+of the old ADR-0017 lift line. The historic source-locked evidence and owner
+decision remain unchanged. The current source fingerprint differs from the
+historical `dcada9e2…f1`; no new owner lift or scientific cohort is implied.
+
+The [selected-gate design candidate](studies/stage2-replay-gate-selected-design/PROTOCOL.md)
+is explicitly **not yet preregistered or owner-approved**: proposed margins,
+power, uncertainty, full paid control/selection and a new irreversible,
+index-scoped transport claim still require independent review and a new
+prospective permission. P1.3 funded-v2 remains the reference, I3 unregistered,
+and Stage 2.1 has no survival non-inferiority verdict.
+
+
 ## Stage 2.1 DEVELOPMENT 80/81: FIRST PROSPECTIVE EXPOSURE COMPLETE
 
 **9 November 2026. DEVELOPMENT_COMPLETE_ENGINEERING_CONTINUATION_PASS.**

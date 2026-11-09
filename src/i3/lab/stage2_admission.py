@@ -1,18 +1,14 @@
-"""Stage-2.1 exact-transport admission guard (ADR-0019, fail closed).
+"""Stage-2.1 historical transport: ENGINEERING ONLY, science permanently closed.
 
-Before an explicit owner ADR-0017 lift, only the `engineering` cohort is
-admitted. Development, selection, validation and reserve raise before any
-World is constructed. A lift is recognized only from the canonical repository
-`src/i3/docs/STATUS.md` ledger, never from a caller-supplied file, using one
-exact line naming this transport's fingerprint:
+The original ADR-0017 owner lift was valid for the single frozen DEVELOPMENT
+80/81 exposure at source 5d362e22, now completed and exhausted without retry.
+Its source-locked historical receipts remain readable but are NOT reusable
+permission. The legacy runner and this old admission path no longer admit any
+scientific cohort, even if a STATUS ledger line records a past lift.
 
-    ADR-0017 OWNER LIFT: Stage-2.1 transport <64 hex fingerprint>
-
-The fingerprint covers every file of the exact transport: cognition and
-runtime (`src/i3/modules`, `src/i3/runtime`), the G/R pipeline, the panel
-runner, this guard, the cohort and ecology generators and the frozen plan.
-Any change to any of them yields a new fingerprint, which invalidates an
-earlier rehearsal PASS and any lift line naming the old fingerprint.
+A future selected Stage-2.1 study needs its OWN prospective index-scoped
+source lock, irreversible claim, rehearsal and separate owner authorization.
+The fingerprint still covers all cognition/runtime, transport and plan files.
 """
 from __future__ import annotations
 
@@ -63,12 +59,11 @@ def admit(cohort: str, family: str, index: int, plan_path):
         spec = ENG.engineering_world(family, index)
         seed = ENG.ENGINEERING[index]
     else:
-        if not canonical_owner_lift_recorded(fingerprint):
-            raise PermissionError(
-                "ADR-0017 active: scientific cohort fails closed (no owner lift for this transport)")
-        seed = P2.COHORTS[cohort][index]
-        ENG.assert_not_engineering(seed)
-        spec = P2.world_for(family, cohort, index)
+        # The only past owner lift was single-use and exhausted by 80/81.
+        # This legacy transport is NOT selected-study authorization, even if
+        # the historical source-valid lift is present in STATUS.md.
+        raise PermissionError(
+            "Stage-2.1 legacy pilot closed: 80/81 consumed, no new scientific scope authorized")
     ticket = RA.mint(cohort=cohort, family=family, index=index, world_seed=seed,
                      spec=spec, transport_fingerprint=fingerprint)
     return ticket, spec

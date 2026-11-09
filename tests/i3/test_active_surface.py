@@ -76,6 +76,13 @@ class ActiveSurfaceContract(unittest.TestCase):
         runtime = (I3 / "runtime" / "life.py").read_text()
         self.assertIn("p13_replay_gate_v1", runtime)
         self.assertIn("p13_replay_gate_zero_perceived_cost_v1", runtime)
+        self.assertIn("p13_replay_gate_random_equal_mean_v1", runtime)
+        mind = (I3 / "modules" / "p13_replay_gate_mind.py").read_text()
+        self.assertIn("from .stage2_random_equal_mean import scheduled_replays", mind)
+        admission = (I3 / "lab" / "stage2_admission.py").read_text()
+        panel = (I3 / "lab" / "stage2_panel.py").read_text()
+        self.assertIn("legacy pilot closed: 80/81 consumed", admission)
+        self.assertIn("legacy scientific runner exhausted", panel)
         self.assertLess(runtime.index("verify_admission(admission, spec)"),
                         runtime.index("world = World(spec)"))
         guard = (ROOT / "tests" / "i3" / "test_stage2_exact_transport.py").read_text()

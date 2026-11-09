@@ -1,14 +1,14 @@
 """Parameterized Stage-2 panel runner: the exact Stage-2.1 transport (ADR-0019).
 
-One runner for the sealed engineering rehearsal and, only after an explicit
-owner ADR-0017 lift, the scientific pilot. Both use the same plan, the same
-admission guard, the same runtime dispatch, the same G/R pipeline, the same
-reducer, arms, horizon and panel shape. Only the declared namespace (worlds,
-genomes, life seeds) differs. Every life of every arm passes the admission
+Historical Stage-2.1 runner with active sealed ENGINEERING rehearsals only.
+The exact scientific DEVELOPMENT 80/81 panel has already executed once;
+its old owner lift has been consumed, and `execute` is permanently closed.
+Historical original G/R receipts remain source-pinned at their executed SHA.
+New selected studies require a separate prospective entrypoint and owner lift. Every life of every arm passes the admission
 guard; scientific cohorts fail closed before any World is built.
 
     python -m i3.lab.stage2_panel rehearse PLAN.json
-    python -m i3.lab.stage2_panel run PLAN.json ARCHIVE_DIR OUT.json   # after a lift only
+    # Historical `run` route now fails closed, even with the old lift.
 """
 from __future__ import annotations
 
@@ -151,29 +151,15 @@ def rehearse(plan_path) -> dict:
 
 
 def execute(plan_path, archive_dir):
-    """Scientific pilot. Require canonical owner lift before any World is built."""
-    plan = load_plan(plan_path)
-    fingerprint = ADM.transport_fingerprint(plan_path)
-    if not ADM.canonical_owner_lift_recorded(fingerprint):
-        raise PermissionError("ADR-0017 active: no canonical owner lift for this transport")
-    g = TP.generate(cases(plan, "scientific"),
-                    make_run_case(plan_path), archive_dir)
-    if g["status"] != "GENERATED":
-        return {"status": "ENGINEERING_FAILURE_NOT_A_DEATH",
-                "generation": {k: g[k] for k in ("status", "planned", "generated", "failure")}}
-    r = TP.reduce(archive_dir, reduce_row)
-    if r["status"] != "COMPLETE":
-        return {"status": r["status"], "reduction": r}
-    checks = {}
-    invariants = make_invariants(plan, fingerprint)
-    for identity, life in TP.load_sealed(archive_dir):
-        for name, ok in invariants(identity, life).items():
-            checks[name] = checks.get(name, 0) + (not ok)
-    return {"status": "COMPLETE", "transport_fingerprint": fingerprint,
-            "continuation": "PASS" if not any(checks.values()) else "FAIL",
-            "invariant_failures": checks, "rows": r["rows"],
-            "summary": summarize(plan, r["rows"])}
+    """The DEVELOPMENT 80/81 source-locked permission was consumed once.
 
+    This retained pilot executor is permanently closed. New selected studies
+    must use a separately authorized, prospectively scoped source-locked path
+    with its own irreversible pre-exposure claim. Engineering rehearsals are
+    still supported by `rehearse`; none of this path can open a science World.
+    """
+    raise PermissionError(
+        "DEVELOPMENT 80/81 closed without retry; legacy scientific runner exhausted")
 
 def main(argv):
     if len(argv) == 3 and argv[1] == "rehearse":
