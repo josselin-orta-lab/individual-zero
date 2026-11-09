@@ -17,7 +17,7 @@ from . import stage2_survival_b1_sampling as SAMPLE
 from . import stage2_survival_b1_worldspec_audit as SPECS
 from . import two_phase_panel as TP
 from ..modules.genome import generation_zero
-from ..runtime import admission as TICKETS
+from . import stage2_admission as GUARD
 from ..runtime.life import run_life
 
 SCHEMA = "i3-b1-newworld-paired-engineering-gr/v1"
@@ -93,8 +93,8 @@ def _run_case(expected_cases: list, fingerprint: str):
             raise PermissionError("policy outside B1 public preview")
         _match_case(case, expected_cases[pos])
         spec = SPECS._construct_f0_spec(case["family"], case["world_seed"])
-        ticket = TICKETS.mint(
-            cohort=COHORT, family=case["family"], index=ordinal,
+        ticket = GUARD.admit_b1_newworld_engineering(
+            family=case["family"], index=ordinal,
             world_seed=case["world_seed"], spec=spec,
             transport_fingerprint=fingerprint)
         experimental = case["policy"] == "p13_replay_gate_v1"
