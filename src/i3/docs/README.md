@@ -6,25 +6,21 @@ The [engine contract](../engine.json) has no active entrypoints; the
 A green software test is not a scientific GO.
 
 
-## Current: Candidate-J is the final Stage-1 candidate
+## Current: Stage 1 closed negative; Stage 2 is next
 
-[ADR-0018](../../../docs/decisions/ADR-0018-i3-cloture-etape-1.md) is
-owner-accepted and [Candidate-J](STAGE1_CANDIDATE_J.md) is prospectively frozen
-as the **last** Stage-1 architecture.
+On 9 November 2026, the single prospectively frozen
+[Candidate-J software falsifier](studies/stage1-candidate-j-software-falsifier/RESULTS.md)
+returned **`CANDIDATE_J_DEFECT`**. Both declared J0 projectors failed the
+frozen oracle criterion. J1-J4 were therefore not evaluated and first-contact
+capacity remains unobserved.
 
-J removes designer curiosity/relevance/prudence from every route, uses one
-decision phase and one accurate projector, and replaces Candidate-I's recent-RMS
-first-contact scale with a generic capacity-relative inherited scale controlled
-by existing omega plus new generic kappa. Its first test is software-only:
-P80/F108/K80 plus newborn/satiated fixtures, frozen omega x kappa arms, J0/J1
-defect stops, J3 need-sensitive capacity and a J4 2.5x P1.3 cost wall.
+Under [ADR-0018](../../../docs/decisions/ADR-0018-i3-cloture-etape-1.md),
+Stage 1 is closed negative: **P1.3 remains the reference**, no Candidate-K or
+other Stage-1 architecture may follow, and Stage 2 is unblocked on P1.3. The
+ADR-0017 world-opening moratorium is unchanged.
 
-ADR-0017's moratorium remains active. Therefore **no 68/69, selection,
-validation or reserve World may open now**. The Candidate-J falsifier and the
-already-frozen W0-W9 lifecycle regression are software-only work. If J does not
-return `CANDIDATE_J_CAPACITY_SHOWN`, Stage 1 closes negatively with P1.3.
-If it does, lived work still waits for a valid ADR-0017 lift. No further
-Stage-1 candidate is permitted.
+The Stage-1 studies and older candidate handoffs below are retained as
+historical evidence. They are not current next-work instructions.
 
 ## Latest: Candidate-I runnable multi-option v2 passes in software
 
