@@ -60,14 +60,26 @@ class ActiveSurfaceContract(unittest.TestCase):
                             offenders.append((rel, alias.name))
         self.assertEqual(offenders, [])
 
-    def test_no_unreviewed_replay_gate_dispatch_in_current_runtime(self):
-        # Current-state stop, not a permanent ADR-0019 prohibition.
-        # Future pre-lift dispatch must replace this with explicit positive
-        # engineering-only admission and fail-closed scientific-cohort tests.
-        # Deleting this guard without those tests is not an authorized lift.
+    def test_replay_gate_dispatch_is_engineering_only_and_fail_closed(self):
+        # Replaces the earlier current-state stop, as that stop required:
+        # pre-lift dispatch now exists only behind a guard-minted, World-bound
+        # admission ticket, with explicit fail-closed scientific-cohort tests
+        # (ADR-0019). This is not an ADR-0017 lift.
         runtime = (I3 / "runtime" / "life.py").read_text()
-        self.assertNotIn("p13_replay_gate_v1", runtime)
-        self.assertNotIn("p13_replay_gate_zero_perceived_cost_v1", runtime)
+        self.assertIn("p13_replay_gate_v1", runtime)
+        self.assertIn("p13_replay_gate_zero_perceived_cost_v1", runtime)
+        self.assertLess(runtime.index("verify_admission(admission, spec)"),
+                        runtime.index("world = World(spec)"))
+        guard = (ROOT / "tests" / "i3" / "test_stage2_exact_transport.py").read_text()
+        for name in ("test_every_scientific_cohort_fails_closed_before_any_world",
+                     "test_status_ledger_without_lift_or_with_wrong_fingerprint_fails_closed",
+                     "test_scientific_execute_fails_before_creating_anything",
+                     "test_runtime_refuses_missing_forged_or_misbound_tickets",
+                     "test_only_the_guard_mints_tickets"):
+            self.assertIn(f"def {name}(", guard)
+        self.assertEqual(self.data["governance"]["pre_lift_replay_runtime_support_allowed"],
+                         "ENGINEERING_COHORT_ONLY")
+        self.assertEqual(self.data["governance"]["adr_0017_world_opening_moratorium"], "ACTIVE")
 
     def test_status_points_to_canonical_software_result(self):
         status = (I3 / "docs" / "STATUS.md").read_text()

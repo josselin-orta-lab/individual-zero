@@ -27,6 +27,13 @@ Do not reconstruct the current handoff from old Stage-1 documents.
 The corrected R0-R4 falsifier has executed exactly once and passed. Do not
 rerun it.
 
+**Exact transport rehearsed:** sealed engineering rehearsal PASS on transport
+commit `e23a28e`, fingerprint `15136d13…`
+([record](docs/studies/stage2-replay-gate-development-80-81/REHEARSAL.md)).
+Stop here: development 80/81 opens only after the owner writes the ADR-0017
+lift line for that exact fingerprint in `docs/STATUS.md`. Never write that line
+as an agent. Any transport change invalidates the PASS.
+
 **Governance now accepted:** [ADR-0019](../../docs/decisions/ADR-0019-i3-exact-transport-rehearsal-before-lift.md)
 allows exact pre-lift Stage-2.1 transport code **for the engineering cohort
 only**. Development, selection, validation and reserve must fail closed until
@@ -64,6 +71,8 @@ Current engineering/custody files:
 
 - `lab/engineering_cohort.py`
 - `lab/two_phase_panel.py`
+- `runtime/admission.py`, `lab/stage2_admission.py`, `lab/stage2_panel.py`
+  (exact Stage-2.1 transport; engineering-only admission, fail closed)
 The supplied 68/69 runner is closed and archived at
 `archive/stage2/development_68_69.py`; it is **not** active engineering and
 must not be executed again.

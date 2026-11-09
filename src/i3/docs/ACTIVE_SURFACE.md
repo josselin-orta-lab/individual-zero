@@ -15,9 +15,10 @@ rationale, checked references and deliberate compatibility boundaries. The machi
 - **ADR-0017:** world-opening moratorium remains active.
 - **I3:** proposal only, unregistered.
 
-The corrected R0-R4 software falsifier has executed once and passed. The next
-work is to prepare a **fresh** source-locked Stage-2.1 development transport and
-pass the ADR-0017 exact-SHA sealed engineering rehearsal. No **scientific** World may open until an explicit owner lift is recorded.
+The corrected R0-R4 software falsifier has executed once and passed. The fresh
+exact Stage-2.1 transport is implemented and its full-scale sealed engineering
+rehearsal **passed** (fingerprint `15136d13…`, commit `e23a28e`). The next step
+is the owner's explicit ADR-0017 lift decision. No **scientific** World may open until an explicit owner lift is recorded.
 Owner-accepted ADR-0019 permits an engineering-cohort-only exact rehearsal
 before that lift, with all scientific cohorts failing closed.
 
@@ -42,6 +43,11 @@ These files support ADR-0017 execution custody and are not themselves evidence:
 - `lab/engineering_cohort.py`
 - `lab/two_phase_panel.py`
 - `tests/i3/test_stage2_execution_pipeline.py`
+- `runtime/admission.py` (World-bound admission tickets)
+- `lab/stage2_admission.py` (engineering-only admission; scientific cohorts fail closed)
+- `lab/stage2_panel.py` (one parameterized runner for rehearsal and post-lift pilot)
+- `tests/i3/test_stage2_exact_transport.py`
+- `docs/studies/stage2-replay-gate-development-80-81/` (frozen plan, sealed rehearsal PASS)
 
 The supplied 68/69 pilot runner is **archived**, not an active transport:
 `archive/stage2/development_68_69.py`. Its historical observations cannot

@@ -1,0 +1,86 @@
+name: I3 Stage 2.1 hardened exact transport sealed rehearsal (one-shot)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/i3-stage2-hardened-rehearsal-one-shot.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: i3-stage2-1-hardened-rehearsal-one-shot
+  cancel-in-progress: false
+
+jobs:
+  sealed-rehearsal:
+    if: github.head_ref == 'i3/stage2-1-exact-transport'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Checkout exact intended transport
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify exact source SHA and canonical no-lift state
+        run: |
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          python - <<'PY'
+          from i3.lab import stage2_admission as A
+          from pathlib import Path
+          p=Path("src/i3/docs/studies/stage2-replay-gate-development-80-81/PLAN.json")
+          fp=A.transport_fingerprint(p)
+          assert not A.canonical_owner_lift_recorded(fp)
+          print("SOURCE_SHA=${{ github.event.pull_request.head.sha }}")
+          print("TRANSPORT_FINGERPRINT="+fp)
+          print("ADR0017_ACTIVE=TRUE")
+          PY
+      - name: Full-scale sealed rehearsal, engineering namespace only
+        run: |
+          python -m i3.lab.stage2_panel rehearse src/i3/docs/studies/stage2-replay-gate-development-80-81/PLAN.json > /tmp/i3-stage2-1-hardened-rehearsal.json
+      - name: Verify structural-only PASS and emit digest
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib, json
+          path=Path("/tmp/i3-stage2-1-hardened-rehearsal.json")
+          raw=path.read_bytes()
+          r=json.loads(raw)
+          assert r["namespace"]=="engineering", r
+          assert (r["status"], r["phase_G"], r["phase_R"])==("PASS","GENERATED","COMPLETE"), r
+          assert (r["planned"],r["generated"],r["reduced"])==(36,36,36), r
+          assert not any(r.get("invariant_failures",{}).values()), r
+          assert "rows" not in r and "summary" not in r
+          assert not any(k in r for k in ("survivors","deaths","steps_lived","body","actions","replays"))
+          print("SEALED_REHEARSAL_SUMMARY="+json.dumps({
+            "source_sha":"${{ github.event.pull_request.head.sha }}",
+            "report_sha256":hashlib.sha256(raw).hexdigest(),
+            "transport_fingerprint":r["transport_fingerprint"],
+            "plan_sha256":r["plan_sha256"],
+            "manifest_sha256":r["manifest_sha256"],
+            "status":r["status"],
+            "phase_G":r["phase_G"],
+            "phase_R":r["phase_R"],
+            "planned":r["planned"],
+            "generated":r["generated"],
+            "reduced":r["reduced"],
+            "invariant_failures":r["invariant_failures"],
+            "mean_step_ms":r.get("mean_step_ms")
+          },sort_keys=True,separators=(",",":")))
+          PY
+      - name: Preserve sealed structural report
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-stage2-1-hardened-rehearsal
+          path: /tmp/i3-stage2-1-hardened-rehearsal.json
+          if-no-files-found: error
+          retention-days: 90

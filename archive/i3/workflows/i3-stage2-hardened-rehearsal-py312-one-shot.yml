@@ -1,0 +1,78 @@
+name: I3 Stage 2.1 hardened sealed rehearsal Python 3.12 (one-shot)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/i3-stage2-hardened-rehearsal-py312-one-shot.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: i3-stage2-1-hardened-sealed-python312
+  cancel-in-progress: false
+
+jobs:
+  sealed-rehearsal-python312:
+    if: github.head_ref == 'i3/stage2-1-exact-transport'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Exact source checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Ensure ADR-0017 owner lift is absent
+        run: |
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          python - <<'PY'
+          from i3.lab import stage2_admission as A
+          from pathlib import Path
+          p=Path("src/i3/docs/studies/stage2-replay-gate-development-80-81/PLAN.json")
+          fp=A.transport_fingerprint(p)
+          assert not A.canonical_owner_lift_recorded(fp)
+          assert fp=="dcada9e221f79b9450a4f05fecd20e60ac6595bb306aa871f29e45aefea0b6f1"
+          print("PY312_TRANSPORT_FINGERPRINT="+fp)
+          PY
+      - name: Same full-scale sealed engineering G/R pipeline
+        run: |
+          python -m i3.lab.stage2_panel rehearse src/i3/docs/studies/stage2-replay-gate-development-80-81/PLAN.json > /tmp/i3-stage2-1-py312-rehearsal.json
+      - name: Structural PASS verification and immutable report hash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from hashlib import sha256
+          import json
+          p=Path("/tmp/i3-stage2-1-py312-rehearsal.json")
+          r=json.loads(p.read_bytes())
+          assert r["namespace"]=="engineering"
+          assert (r["status"],r["phase_G"],r["phase_R"])==("PASS","GENERATED","COMPLETE")
+          assert (r["planned"],r["generated"],r["reduced"])==(36,36,36)
+          assert not any(r["invariant_failures"].values())
+          assert "rows" not in r and "summary" not in r
+          print("SEALED_PY312_SUMMARY="+json.dumps({
+            "sha":"${{ github.event.pull_request.head.sha }}",
+            "python":"3.12", "report_sha256":sha256(p.read_bytes()).hexdigest(),
+            "transport_fingerprint":r["transport_fingerprint"],
+            "plan_sha256":r["plan_sha256"],"manifest_sha256":r["manifest_sha256"],
+            "status":r["status"],"generated":r["generated"],"reduced":r["reduced"],
+            "invariant_failures":r["invariant_failures"],
+            "mean_step_ms":r.get("mean_step_ms")
+          },sort_keys=True,separators=(",",":")))
+          PY
+      - name: Preserve structural report only
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-stage2-1-hardened-rehearsal-python312
+          path: /tmp/i3-stage2-1-py312-rehearsal.json
+          if-no-files-found: error
+          retention-days: 90

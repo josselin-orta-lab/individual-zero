@@ -4,7 +4,7 @@
   "reference": "P1.3 funded-v2",
   "current_stage": "2.1 replay gate",
   "canonical_status": "REPLAY_GATE_CAPACITY_SHOWN",
-  "next_scientific_action": "implement a pre-lift engineering-only exact Stage-2.1 transport with fail-closed scientific cohort admission; rehearse exact SHA without scientific World exposure",
+  "next_scientific_action": "review the hardened 36/36 sealed engineering PASS and exact merged-source fingerprint, then request an explicit owner ADR-0017 lift; all scientific cohorts remain closed until recorded",
   "governance": {
     "i3_registered": false,
     "stage1": "CLOSED_NEGATIVE_ADR_0018",
@@ -14,7 +14,9 @@
     "candidate_k_allowed": false,
     "stage2_transport_deadlock": "RESOLVED_BY_ACCEPTED_ADR_0019",
     "pre_lift_replay_runtime_support_allowed": "ENGINEERING_COHORT_ONLY",
-    "adr_0019": "ACCEPTED_2026_11_09"
+    "adr_0019": "ACCEPTED_2026_11_09",
+    "adr_0017_engineering_gate": "HARDENED_REHEARSAL_PASS_OWNER_LIFT_PENDING",
+    "adr_0017_owner_lift_recorded": false
   },
   "active_science": [
     "src/i3/modules/p13_replay_gate_mind.py",
@@ -28,7 +30,13 @@
   "active_engineering": [
     "src/i3/lab/engineering_cohort.py",
     "src/i3/lab/two_phase_panel.py",
-    "tests/i3/test_stage2_execution_pipeline.py"
+    "tests/i3/test_stage2_execution_pipeline.py",
+    "src/i3/runtime/admission.py",
+    "src/i3/lab/stage2_admission.py",
+    "src/i3/lab/stage2_panel.py",
+    "tests/i3/test_stage2_exact_transport.py",
+    "src/i3/docs/studies/stage2-replay-gate-development-80-81/PLAN.json",
+    "src/i3/docs/studies/stage2-replay-gate-development-80-81/PROTOCOL.md"
   ],
   "stage1_compatibility_only": [
     "src/i3/archive/stage1/lab/projection_candidate_e_characterization.py",
@@ -92,5 +100,33 @@
   },
   "archived_noncanonical_transport": [
     "src/i3/archive/stage2/development_68_69.py"
-  ]
+  ],
+  "engineering_rehearsal": {
+    "source_sha": "75a4f325eb5c73c3c14d9f0dcdf313f651061fc0",
+    "transport_fingerprint": "dcada9e221f79b9450a4f05fecd20e60ac6595bb306aa871f29e45aefea0b6f1",
+    "workflow_run_id": 42628475893,
+    "artifact_id": 13679561877,
+    "status": "PASS",
+    "planned": 36,
+    "generated": 36,
+    "reduced": 36,
+    "invariant_failures": 0,
+    "report_sha256": "dc36b2632165e1e7287ef1b068dc2f2463769bb8edd75e19971fa894922d4f23",
+    "owner_lift": false,
+    "python_versions": [
+      "3.11",
+      "3.12"
+    ],
+    "python312": {
+      "source_sha": "8b1e0527b6ee5f7f27ede7adf1bce24c85c91ee7",
+      "workflow_run_id": 42629796562,
+      "artifact_id": 13680098108,
+      "status": "PASS",
+      "generated": 36,
+      "reduced": 36,
+      "invariant_failures": 0,
+      "report_sha256": "b6a84169ac58cca106bd4c03f25769c579a81d704d7657fd87c9066461ac08c7",
+      "transport_fingerprint": "dcada9e221f79b9450a4f05fecd20e60ac6595bb306aa871f29e45aefea0b6f1"
+    }
+  }
 }

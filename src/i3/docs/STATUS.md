@@ -14,6 +14,58 @@ Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
 
+## Stage 2.1 hardened exact transport: technical rehearsal PASS, owner lift pending
+
+9 November 2026: PR #1220 imported the prospective 80/81 transport bundle
+with its original three-commit history. Admission review revealed two
+engineering-custody weaknesses (caller-selected owner STATUS, tickets bound
+only to a World name). Both were repaired **before a new sealed rehearsal**.
+
+The hardened full-scale engineering rehearsal on source
+`75a4f325eb5c73c3c14d9f0dcdf313f651061fc0`, fingerprint
+`dcada9e221f79b9450a4f05fecd20e60ac6595bb306aa871f29e45aefea0b6f1`,
+**PASSED**: 36/36 lives generated, 36/36 reduced, 0 failures across 10
+structural invariants and 0.816 ms per step. The same full-size sealed
+engineering matrix **also PASSED on Python 3.12** (Actions `42629796562`):
+36/36 G, 36/36 R, 0 invariant failures, same fingerprint, 1.244 ms per step. Source: [hardened rehearsal](studies/stage2-replay-gate-development-80-81/HARDENED_REHEARSAL.md).
+
+The previous fingerprint `15136d13…d967f9` is superseded, **not** eligible
+for a future lift. Confirm that merged source bytes retain the hardened
+fingerprint before using the rehearsal as exact-transport custody.
+
+ADR-0017 conditions: two-phase G/R met; disjoint non-evidentiary engineering
+cohort met (declared alongside, not inside the pinned `P2.COHORTS`);
+full-scale sealed rehearsal met on the stated source; **owner's explicit lift
+entry NOT RECORDED**.
+
+**ADR-0017 REMAINS ACTIVE. No scientific World, including DEVELOPMENT 80/81,
+may open.** The engineering result is not a survival, learning, replay or
+validation verdict.
+
+## Stage 2.1 exact transport: sealed engineering rehearsal PASS (awaiting owner decision)
+
+The exact Stage-2.1 transport required by ADR-0019 is implemented and rehearsed:
+
+- **Runtime dispatch.** `p13_replay_gate_v1` and its zero-perceived-cost control
+  run only with a guard-minted admission ticket bound to the exact World,
+  verified before the World is built.
+- **Fail-closed admission.** The guard admits only the engineering cohort.
+  Development, selection, validation and reserve raise before any World exists.
+- **One runner.** A single parameterized panel runner serves both the rehearsal
+  and the later pilot.
+- **Fresh plan.** Development pilot 80/81 was frozen first, after a collision
+  search: [plan](studies/stage2-replay-gate-development-80-81/PROTOCOL.md).
+
+Full-scale sealed rehearsal on transport commit `e23a28e`, fingerprint
+`15136d132b5244bf511a576b44619a5f44ef945d6472324bc1102ce449d967f9`:
+**PASS**. G 36/36, R 36/36, 0 failures on 10 structural invariants, 0.86 ms per
+step ([rehearsal](studies/stage2-replay-gate-development-80-81/REHEARSAL.md)).
+
+This is engineering custody only: not evidence and not a lift. **ADR-0017
+remains active.** Development 80/81 stays closed until the owner records the
+lift for this exact fingerprint in this file. The rehearsal record gives the
+required line format. Any change to the transport requires a new rehearsal.
+
 ## Stage 2.1 transport governance: ADR-0019 owner-accepted
 
 **Owner accepted [ADR-0019](../../../docs/decisions/ADR-0019-i3-exact-transport-rehearsal-before-lift.md) on 9 November 2026.**
