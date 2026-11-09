@@ -14,6 +14,24 @@ Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
 
+## Stage 2.1 B1 prospective sample-frame preflight (9 November 2026)
+
+**SOURCE-LOCK CANDIDATE METADATA / NO SCIENTIFIC WORLD.**
+The [B1 independent-pair preflight](studies/stage2-replay-gate-selected-design/B1_PROSPECTIVE_SAMPLING_PREFLIGHT.md)
+proposes a deterministic, domain-separated and collision-checked
+**1,500-pair (3,000 potential lives)** metadata schedule covering
+three known F0 ecologies with equal *sampling probability*, not
+post-hoc forced equal counts. A public **synthetic preview** key
+reproduces the schedule; no WorldSpec, genotype object or life
+is constructed. New world/genome/life namespaces are disjoint from
+P2/historical/engineering/reserve. **Unique PRF seeds DO NOT
+prove iid ecological independence**, and the P2 generator's default
+development-mode guard rejects future seeds above one million.
+A separately reviewed prospective World adapter and independently
+witnessed source/entropy, acceptable NI margin, sample size, full-scale
+G/R and owner-scoped permission remain prerequisites.
+No scientific admission, survivor, superiority or Stage-2.2 promotion.
+
 ## Stage 2.1 B1 engineering execution witness (9 November 2026)
 
 **24/24 structural PASS on Python 3.11 and 3.12; NO SCIENTIFIC WORLD OPENED.**
