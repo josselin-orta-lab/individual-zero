@@ -268,3 +268,78 @@ jobs:
           path: ${{ runner.temp }}/b1-synthetic-worldspec-audit.json
           if-no-files-found: error
           retention-days: 30
+
+
+  b1-newworld-paired-gr:
+    # Real new-world ENGINEERING actions and G/R receipt sealing only.
+    # This is not an inferential study or access to scientific cohorts.
+    if: startsWith(github.head_ref, 'research/i3-survival-b1-newworld-')
+    name: I3 B1 96-pair new-world engineering G/R (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Checkout exact prospective transport source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Check paired source admission and fail-closed science
+        run: |
+          python -m unittest discover -s tests/i3 -p 'test_stage2_survival_b1_engineering.py' -v
+      - name: Launch 192 new-world technical lives through sealed G/R
+        run: |
+          python -m i3.lab.stage2_survival_b1_engineering rehearse > "$RUNNER_TEMP/b1-newworld-gr-structural.json"
+          python - "$RUNNER_TEMP/b1-newworld-gr-structural.json" <<'PY'
+          import json, sys
+          with open(sys.argv[1]) as stream:
+              r = json.load(stream)
+          allowed = {
+              "schema", "planned", "phase_G", "generated", "generation_failure",
+              "phase_R", "reduced", "reduction_failure", "invariant_failures",
+              "manifest_sha256", "mean_step_ms", "status", "runner",
+              "source_fingerprint", "protocol_id", "cohort", "pair_count",
+              "unique_worlds_expected", "public_root_synthetic",
+              "world_source_external_attestation", "observed_survival_results_published",
+              "independent_pairs_proven", "scientific_lives", "scientific_admission",
+              "scientific_verdict"
+          }
+          assert set(r) <= allowed, "unexpected engineering life field in public report"
+          # Structural-only receipt is printed even if G/R has a failure.
+          print(json.dumps(r, sort_keys=True))
+          assert r["cohort"] == "engineering"
+          assert r["pair_count"] == r["unique_worlds_expected"] == 96
+          assert r["public_root_synthetic"] is True
+          assert r["world_source_external_attestation"] is False
+          assert r["observed_survival_results_published"] is False
+          assert r["independent_pairs_proven"] is False
+          assert r["scientific_lives"] == 0
+          assert r["scientific_admission"] == "BLOCKED"
+          assert r["scientific_verdict"] == "NOT_ISSUED"
+          assert r["status"] == "PASS", "new-world G/R engineering failure, NOT a death"
+          assert r["planned"] == r["generated"] == r["reduced"] == 192
+          assert r["phase_G"] == "GENERATED"
+          assert r["phase_R"] == "COMPLETE"
+          assert r["generation_failure"] is None
+          assert r["reduction_failure"] is None
+          assert r["invariant_failures"] and not any(r["invariant_failures"].values())
+          print("B1_NEW_WORLDS_FIXED_FIRST_96_PAIRS_ENGINEERING_PASS_192_LIVES")
+          PY
+      - name: Upload structural-only temporary engineering receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-b1-newworld-gr-structure-py${{ matrix.python-version }}
+          path: ${{ runner.temp }}/b1-newworld-gr-structural.json
+          if-no-files-found: warn
+          retention-days: 30
