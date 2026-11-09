@@ -4,19 +4,23 @@
   "reference": "P1.3 funded-v2",
   "current_stage": "2.1 replay gate",
   "canonical_status": "REPLAY_GATE_CAPACITY_SHOWN",
-  "next_scientific_action": "review the hardened 36/36 sealed engineering PASS and exact merged-source fingerprint, then request an explicit owner ADR-0017 lift; all scientific cohorts remain closed until recorded",
+  "next_scientific_action": "open exactly once the prospectively frozen DEVELOPMENT 80/81 panel with unchanged transport, G/R original custody, and no retries; do not open gate/validation/reserve",
   "governance": {
     "i3_registered": false,
     "stage1": "CLOSED_NEGATIVE_ADR_0018",
-    "adr_0017_world_opening_moratorium": "ACTIVE",
-    "fresh_lived_worlds_allowed": false,
+    "adr_0017_world_opening_moratorium": "LIFTED_2026_11_09",
+    "fresh_lived_worlds_allowed": true,
     "candidate_j_reopen_allowed": false,
     "candidate_k_allowed": false,
     "stage2_transport_deadlock": "RESOLVED_BY_ACCEPTED_ADR_0019",
     "pre_lift_replay_runtime_support_allowed": "ENGINEERING_COHORT_ONLY",
     "adr_0019": "ACCEPTED_2026_11_09",
-    "adr_0017_engineering_gate": "HARDENED_REHEARSAL_PASS_OWNER_LIFT_PENDING",
-    "adr_0017_owner_lift_recorded": false
+    "adr_0017_engineering_gate": "HARDENED_REHEARSAL_PASS_OWNER_LIFT_RECORDED",
+    "adr_0017_owner_lift_recorded": true,
+    "authorized_fresh_lived_scope": "FROZEN_STAGE2_1_DEVELOPMENT_80_81_ONLY",
+    "scientific_gate_authorized": false,
+    "other_world_indices_authorized": false,
+    "stage2_owner_lift_transport_fingerprint": "dcada9e221f79b9450a4f05fecd20e60ac6595bb306aa871f29e45aefea0b6f1"
   },
   "active_science": [
     "src/i3/modules/p13_replay_gate_mind.py",
@@ -78,7 +82,7 @@
     "src/i3/docs/studies/"
   ],
   "rules": [
-    "Before an explicit ADR-0017 owner lift, any replay-gate runtime dispatch is engineering-cohort-only, and all scientific cohorts must fail closed (ADR-0019).",
+    "After the explicit ADR-0017 owner lift, only the frozen prospective DEVELOPMENT 80/81 pilot may open next under the exact Stage-2.1 fingerprint; other Worlds need their own protocol.",
     "Stage-2 active science must not import Stage-1 lab helpers.",
     "Pre-lift p13_replay_gate_v1 may be routed only for ADR-0019 engineering-cohort rehearsal; scientific cohort admission must fail closed until explicit ADR-0017 owner lift.",
     "The corrected canonical software verdict is REPLAY_GATE_CAPACITY_SHOWN; do not rerun or alter R0-R4 post hoc.",
@@ -112,7 +116,7 @@
     "reduced": 36,
     "invariant_failures": 0,
     "report_sha256": "dc36b2632165e1e7287ef1b068dc2f2463769bb8edd75e19971fa894922d4f23",
-    "owner_lift": false,
+    "owner_lift": true,
     "python_versions": [
       "3.11",
       "3.12"
