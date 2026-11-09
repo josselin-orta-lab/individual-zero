@@ -13,6 +13,7 @@ operational surface below.
 - **Current stage:** Stage 2.1 replay gate.
 - **Canonical status:** `REPLAY_GATE_CAPACITY_SHOWN`.
 - **ADR-0017:** owner-lifted for exact transport `dcada9e2…f1` and frozen DEVELOPMENT 80/81 only.
+- **B1 live-system research engineering:** [Fixed first-96 synthetic new-world paired FIXED/GATE G/R](studies/stage2-replay-gate-selected-design/B1_NEW_WORLDS_PAIRED_GR.md), 192 temporary technical lives, no biological evidence or science opening.
 - **B1 synthetic WorldSpec preflight:** [1,500 F0-world structural-parity and name-independent collision checks](studies/stage2-replay-gate-selected-design/B1_PROSPECTIVE_WORLDSPEC_PREFLIGHT.md); no biological lives or source authorization.
 - **B1 prospective pair sampling:** [1,500-pair metadata-only preflight](studies/stage2-replay-gate-selected-design/B1_PROSPECTIVE_SAMPLING_PREFLIGHT.md); cryptographic seed separation and collision checks are not proof of independent populations or scientific approval.
 - **B1 execution witness:** [24/24 engineering G/R structural PASS, Python 3.11/3.12](studies/stage2-replay-gate-selected-design/B1_ENGINEERING_WITNESS_2026-11-09.md), after a retained 21/24 motor-funding FAIL; no scientific cohort opened.
