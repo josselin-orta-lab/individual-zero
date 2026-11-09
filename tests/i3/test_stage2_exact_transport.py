@@ -124,7 +124,8 @@ class TicketAndDispatchTests(unittest.TestCase):
 
     def test_admitted_gate_lives_report_policy_summary_and_receipt(self):
         for policy, mode in (("p13_replay_gate_v1", "gate"),
-                             ("p13_replay_gate_zero_perceived_cost_v1", "zero_perceived_cost")):
+                             ("p13_replay_gate_zero_perceived_cost_v1", "zero_perceived_cost"),
+                             ("p13_replay_gate_random_equal_mean_v1", "random_equal_mean")):
             ticket, spec = ADM.admit("engineering", "depletion", 3, PLAN)
             life = run_life(generation_zero(90012), spec, 9_010_011, 30,
                             decision_policy=policy, admission=ticket)
@@ -133,6 +134,16 @@ class TicketAndDispatchTests(unittest.TestCase):
             self.assertEqual(life["admission"]["world_sha256"],
                              life["manifest"]["world_sha256"])
             self.assertEqual(life["manifest"]["experimental_policy"]["name"], policy)
+            if mode == "random_equal_mean":
+                schedule = life["replay_gate"]["random_schedule"]
+                self.assertEqual(schedule["mean_numerator"], 5532)
+                self.assertEqual(schedule["mean_denominator"], 867)
+                self.assertEqual(schedule["actual_replays_paid"],
+                                 life["cognitive_accounting"]["replays_executed"])
+                self.assertLessEqual(schedule["draws_funded"],
+                                     schedule["lived_sleep_ordinals"])
+                self.assertLessEqual(schedule["eligible_replays_scheduled"],
+                                     schedule["nominal_replays_scheduled"])
 
     def test_only_the_guard_mints_tickets(self):
         callers = [p for p in (ROOT / "src/i3").rglob("*.py")
@@ -175,6 +186,25 @@ class OnePathTests(unittest.TestCase):
             data["horizon"] = 401
             changed.write_text(json.dumps(data))
             self.assertNotEqual(ADM.transport_fingerprint(changed), ADM.transport_fingerprint(PLAN))
+
+    def test_four_arm_random_rehearsal_is_engineering_only(self):
+        # Future random control is exercised on NON-EVIDENTIARY engineering
+        # worlds, without changing the frozen three-arm 80/81 plan or Worlds.
+        with tempfile.TemporaryDirectory() as tmp:
+            mini = Path(tmp) / "PLAN.json"
+            data = json.loads(PLAN.read_text())
+            data["arms"].append("p13_replay_gate_random_equal_mean_v1")
+            data["families"] = ["stable"]
+            data["horizon"] = 25
+            for ns in ("engineering", "scientific"):
+                data[ns]["indices"] = data[ns]["indices"][:1]
+                data[ns]["genome_seeds"] = data[ns]["genome_seeds"][:1]
+            mini.write_text(json.dumps(data))
+            report = SP.rehearse(mini)
+            self.assertEqual(report["status"], "PASS", report)
+            self.assertEqual((report["planned"], report["reduced"]), (4, 4))
+            self.assertEqual(report["namespace"], "engineering")
+            self.assertNotIn("rows", report)
 
     def test_miniature_rehearsal_passes_end_to_end(self):
         with tempfile.TemporaryDirectory() as tmp:
