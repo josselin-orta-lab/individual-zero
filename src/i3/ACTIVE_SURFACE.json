@@ -68,6 +68,9 @@
     "verdict": "REPLAY_GATE_CAPACITY_SHOWN",
     "result_sha256": "96e4ab5215e1f1eed4c5ef6d43b1d9e716c4629c4ef1dfcaecafd7642097ca61",
     "worlds": 0,
-    "lives": 0
+    "lives": 0,
+    "rerun_allowed": false,
+    "r3_discriminating": false,
+    "r3_boundary": "formal PASS only; S1 replay count is flat at 16/16 across all tested bodies"
   }
 }
