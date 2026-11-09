@@ -1,0 +1,42 @@
+{
+  "schema": "i3-stage2-panel-plan/v1",
+  "protocol_id": "I3_SURVIVAL_B1_NON_EVIDENTIARY_ENGINEERING_SMOKE",
+  "protocol": "src/i3/docs/studies/stage2-replay-gate-selected-design/SURVIVAL_B1_LAUNCH.md",
+  "governance": "ENGINEERING ONLY ADR-0017/0019; no scientific lift, no source admission, no reserved or old 80/81 worlds",
+  "arms": [
+    "reference",
+    "p13_replay_gate_v1"
+  ],
+  "families": [
+    "stable",
+    "depletion",
+    "pulse"
+  ],
+  "horizon": 400,
+  "scientific": {
+    "cohort": "validation",
+    "indices": [],
+    "genome_seeds": [],
+    "life_seed_base": 0
+  },
+  "engineering": {
+    "cohort": "engineering",
+    "indices": [
+      30,
+      31,
+      32,
+      33
+    ],
+    "genome_seeds": [
+      5030303
+    ],
+    "life_seed_base": 13003000
+  },
+  "life_seed_rule": "base + 1000 * family_position + 10 * index_position + genome_position",
+  "panel_shape": "3 known F0 families x 4 engineering World indices x 1 G0 founder x 2 full policy arms = 24 temporary lives",
+  "source_status": "PROPOSED_ENGINEERING_SMOKE_WITH_NO_SCIENTIFIC_PERMISSION",
+  "future_scientific_scenario": "separate independent paired source/world sampler and new authoritative source lock required",
+  "no_inference": true,
+  "no_engineering_outcomes_publish": true,
+  "never": "scientific.indices is deliberately empty; no reserve, selection, validation, development or old 80/81 run"
+}
