@@ -44,6 +44,11 @@ selection receipts, then checks validation originals against the selected
 IDs. External digest pins are required; consistency cannot independently
 certify source provenance or authorize a new study.
 
+[Stage-2.1 mechanism-first design alternative](studies/stage2-replay-gate-selected-design/MECHANISM_FIRST_CANDIDATE_V3.md)
+proposes a 720-life fixed-newborn-G0 matched policy comparison, avoiding
+selection confounding while giving up evolutionary and ecological
+generalization claims. It is NOT an authorization or a revised frozen protocol.
+
 ## Stage 2.1 engineering custody
 
 - [Hardened 36/36 sealed rehearsal](studies/stage2-replay-gate-development-80-81/HARDENED_REHEARSAL.md): structural PASS under ADR-0019, **not** an ADR-0017 lift.
