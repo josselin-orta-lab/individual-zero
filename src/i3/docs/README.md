@@ -6,23 +6,27 @@ The [engine contract](../engine.json) has no active entrypoints; the
 A green software test is not a scientific GO.
 
 
-## Current: Stage 2 launched on P1.3
+## Current: Stage 2.1 corrected falsifier pending
 
 Stage 1 remains closed negative under
-[ADR-0018](../../../docs/decisions/ADR-0018-i3-cloture-etape-1.md). P1.3 is the
-reference and no Stage-1 candidate may follow.
+[ADR-0018](../../../docs/decisions/ADR-0018-i3-cloture-etape-1.md), with P1.3
+as reference.
 
-Stage 2 is now launched by [STAGE2_LAUNCH.md](STAGE2_LAUNCH.md). Its first
-owner-approved slice, [Stage 2.1 replay gate](STAGE2_REPLAY_GATE.md), is
-**prospectively frozen before implementation**.
+Stage 2 is launched by [STAGE2_LAUNCH.md](STAGE2_LAUNCH.md), and
+[Stage 2.1 replay gate](STAGE2_REPLAY_GATE.md) remains the frozen first slice.
+The uploaded development package has been integrated after audit.
 
-The immediate scientific work is software-only: implement
-`p13_replay_gate_v1`, execute its frozen R0-R4 mechanism falsifier once, and
-record the verdict. No World, life or lived runtime arm is authorized while
-ADR-0017 remains active.
+The supplied software run reported capacity and the supplied 68/69 pilot
+reported strong replay/cost reductions, but the implementation used the wrong
+denominator for frozen `r_hat`. Those results are preserved as supplied
+evidence, not promoted. The integrated implementation is corrected.
 
-The Stage-1 studies and older candidate handoffs below are retained as
-historical evidence. They are not current next-work instructions.
+**Immediate scientific work:** run the corrected R0-R4 software falsifier once.
+ADR-0017 remains active, so no new lived Stage-2 panel is authorized. See the
+[canonical package audit](studies/stage2-replay-gate-software/RESULTS.md).
+
+The Stage-1 studies and older candidate handoffs below remain historical
+evidence, not current next-work instructions.
 
 ## Latest: Candidate-I runnable multi-option v2 passes in software
 
