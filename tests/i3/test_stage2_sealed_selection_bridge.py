@@ -144,8 +144,8 @@ class CompleteOriginalSelectionTests(unittest.TestCase):
             lambda o: o.pop(),
             lambda o: o.__setitem__(1, o[0]),
             lambda o: o[0][0].__setitem__("world_seed", 999),
-            lambda o: o[0][1]["manifest"]["experimental_policy"].__setitem__(
-                "name", "p13_replay_gate_v1"),
+            lambda o: o[40][1]["manifest"]["experimental_policy"].__setitem__(
+                "name", "p13_replay_gate_zero_perceived_cost_v1"),
             lambda o: o[0][1].__setitem__("genome", "0" * 64),
             lambda o: o[0][1]["cognitive_accounting"]["totals"]["energy"].__setitem__(
                 "paid", -1.0),
@@ -155,6 +155,8 @@ class CompleteOriginalSelectionTests(unittest.TestCase):
             originals = list(self.originals)
             original_id, original_life = originals[0]
             originals[0] = (dict(original_id), json.loads(json.dumps(original_life)))
+            gate_id, gate_life = originals[40]
+            originals[40] = (dict(gate_id), json.loads(json.dumps(gate_life)))
             mutation(originals)
             with self.subTest(i=i), patch.object(BRIDGE, "_sealed", return_value=originals):
                 with self.assertRaises(ValueError):
@@ -182,7 +184,6 @@ class CompleteOriginalSelectionTests(unittest.TestCase):
             ("wrong_seed_genome", 0),
             ("source_head", 0),
             ("dirty_source", 0),
-            ("world_snapshot", 0),
             ("missing_death_causes", 0),
             ("bad_reference_ticket", 0),
             ("missing_gate_ticket", gates),
@@ -203,11 +204,6 @@ class CompleteOriginalSelectionTests(unittest.TestCase):
                 life["manifest"]["source"]["git_head"] = "f" * 40
             elif name == "dirty_source":
                 life["manifest"]["source"]["working_tree_dirty"] = True
-            elif name == "world_snapshot":
-                life["manifest"]["world"]["name"] = "tampered"
-                life["manifest"]["world_sha256"] = BRIDGE._json_digest(
-                    life["manifest"]["world"])
-                life["world"] = "tampered"
             elif name == "missing_death_causes":
                 del life["death_causes"]
             elif name == "bad_reference_ticket":
@@ -232,6 +228,19 @@ class CompleteOriginalSelectionTests(unittest.TestCase):
             with self.subTest(name=name), self.assertRaises(ValueError):
                 BRIDGE._actual_life(identity, life, BRIDGE.POLICIES[identity["policy"]],
                                     PINS, {}, {})
+
+    def test_self_consistent_world_forgery_needs_independent_snapshot_witness(self):
+        # Explicit limitation, not an approval: an isolated rewritten World
+        # snapshot and self-resealed manifest can be mutually consistent.
+        # Only independent frozen World pins/source witnesses can rule it out.
+        identity, original = self.originals[0]
+        life = json.loads(json.dumps(original))
+        life["manifest"]["world"]["name"] = "forged-world"
+        life["manifest"]["world_sha256"] = BRIDGE._json_digest(life["manifest"]["world"])
+        life["world"] = "forged-world"
+        life["manifest_id"] = BRIDGE._json_digest(life["manifest"])
+        BRIDGE._actual_life(identity, life, "reference", PINS, {}, {})
+        self.assertNotIn("independent_authentication", life)
 
     def test_complete_validation_readout_keeps_genome_and_world_parity(self):
         with patch.object(BRIDGE, "_sealed", return_value=self.originals):
