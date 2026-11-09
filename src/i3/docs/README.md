@@ -49,6 +49,8 @@ Translation originals are preserved under
 [translation custody](TRANSLATION_CUSTODY.md). The closed Stage-1 candidate
 implementations live under [archive/stage1](../archive/stage1/README.md),
 with the [historical document catalogue](../archive/stage1/DOCUMENTS.md).
+The [archived Stage-2.1 68/69 runner](../archive/stage2/README.md) is not a
+valid prospective transport.
 
 The pre-rationalization navigation ledgers are preserved under
 `archive/i3/navigation-pre-stage2-rationalization-2026-11-09/`.

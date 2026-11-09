@@ -1,8 +1,10 @@
 # Closed Stage-2.1 pilot transport: supplied 68/69
 
 `development_68_69.py` is the historical runner from the supplied package. It
-belongs to **descriptive development custody only**. It used a non-conforming
-`r_hat` denominator and its claimed ADR-0017 lift was not accepted as evidence.
+belongs to **descriptive development custody only**. The supplied execution used a non-conforming
+`r_hat` denominator, and its asserted ADR-0017 lift was not authenticated
+by the repository's decision ledger. Archiving the runner does not change
+or repair those observations.
 
 The 68/69 Worlds are already exposed, cannot be reused prospectively, and the
 runner must **not** be executed again. The immutable supplied protocol,
