@@ -22,9 +22,10 @@ from __future__ import annotations
 from .body import (CognitiveBudget, CognitiveFundingError, CognitiveWork,
                    capacities, cognitive_cost)
 from .mind import (F, I, Mind, REPLAYS_PER_SLEEP, W)
+from .stage2_random_equal_mean import scheduled_replays
 
 POLICY = "p13_replay_gate_v1"
-MODES = ("gate", "zero_perceived_cost", "forced_open")
+MODES = ("gate", "zero_perceived_cost", "forced_open", "random_equal_mean")
 TOP_MARGIN = 1e-12
 E_INDEX, V_INDEX = 0, 4
 
@@ -60,6 +61,12 @@ class P13ReplayGateMind(Mind):
         self._last_residual = 0.0
         self.last_gate = None
         self.gate_simulations = 0
+        # The RANDOM control is seeded only by this newborn life, not a World.
+        self._random_life_seed = life_seed
+        self._random_sleep_ordinal = 0
+        self.random_schedule_draws = 0
+        self.random_nominal_replays = 0
+        self.random_eligible_replays = 0
 
     def simulate(self, body, plan, horizon, budget):
         if self.simulation_mode != "reference":
@@ -269,10 +276,23 @@ class P13ReplayGateMind(Mind):
                 k += 1
             else:
                 break
+        # RANDOM performs the SAME actual funded audit, gate cycle and two
+        # forecasts. It changes only the count decision after that work.
+        # Keep the frozen GATE/zero-cost/forced-open branches untouched.
+        random_nominal = None
+        if self.replay_gate_mode == "random_equal_mean":
+            random_nominal = scheduled_replays(
+                self._random_life_seed, self._random_sleep_ordinal - 1)
+            self.random_schedule_draws += 1
+            self.random_nominal_replays += random_nominal
+            k = min(random_nominal, len(priorities))
+            self.random_eligible_replays += k
         self.last_gate = {"r_hat": r_hat, "m_hat": m_hat, "H": horizon_of_use,
                           "G": gain, "cost_per_replay": perceived,
                           "cost_used": cost, "eligible": len(priorities),
                           "k": k}
+        if random_nominal is not None:
+            self.last_gate["random_nominal_k"] = random_nominal
         return k
 
     def prepare_learning(self, result, budget: CognitiveBudget):
@@ -280,6 +300,11 @@ class P13ReplayGateMind(Mind):
             return None
         if tuple(result["body"]) != budget.body or budget.work != CognitiveWork():
             raise ValueError("learning allowance must match the current body")
+        # Count every actually executed nonterminal sleep, including one
+        # where the base learning block cannot be afforded. This separate
+        # counter never changes the already-frozen GATE H formula.
+        if self.replay_gate_mode == "random_equal_mean" and self.last[2] == "dormir":
+            self._random_sleep_ordinal += 1
         base = CognitiveWork(cycles=2, simulated_steps=2 * len(self.proj_chunks),
                              memory_items=len(self.buffer) + len(self.effects.stats) + 1)
         if not budget.try_spend(base):
