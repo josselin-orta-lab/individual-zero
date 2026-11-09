@@ -15,8 +15,9 @@ scientific evidence or ADRs. The machine-readable authority is
 
 The corrected R0-R4 software falsifier has executed once and passed. The next
 work is to prepare a **fresh** source-locked Stage-2.1 development transport and
-pass the ADR-0017 exact-SHA sealed engineering rehearsal. No lived World may
-open until an explicit owner lift is recorded.
+pass the ADR-0017 exact-SHA sealed engineering rehearsal. No **scientific** World may open until an explicit owner lift is recorded.
+Owner-accepted ADR-0019 permits an engineering-cohort-only exact rehearsal
+before that lift, with all scientific cohorts failing closed.
 
 ## Active scientific surface
 

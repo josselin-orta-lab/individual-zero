@@ -71,7 +71,7 @@
   "rules": [
     "Before an explicit ADR-0017 owner lift, any replay-gate runtime dispatch is engineering-cohort-only, and all scientific cohorts must fail closed (ADR-0019).",
     "Stage-2 active science must not import Stage-1 lab helpers.",
-    "p13_replay_gate_v1 must remain unregistered in runtime/life.py until ADR-0017 is explicitly lifted and a later protocol authorizes lived support.",
+    "Pre-lift p13_replay_gate_v1 may be routed only for ADR-0019 engineering-cohort rehearsal; scientific cohort admission must fail closed until explicit ADR-0017 owner lift.",
     "The corrected canonical software verdict is REPLAY_GATE_CAPACITY_SHOWN; do not rerun or alter R0-R4 post hoc.",
     "R3 is formally PASS but non-discriminating in software because S1 replays 16/16 memories at every tested body; do not repair the fixture after seeing the result.",
     "Supplied 68/69 observations are descriptive development evidence only and must not be reused as prospective Stage-2.1 evidence.",
