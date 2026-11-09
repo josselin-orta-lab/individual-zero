@@ -1,7 +1,7 @@
 """Run one I3 life: (code, genome, world spec, life seed) -> one exact history.
 
 No retry, no reset, no action after death. The per-step trace is laboratory
-custody (spec 'Traçabilité'), hashed in a chain; the mind never reads it.
+custody (spec 'traceability'), hashed in a chain; the mind never reads it.
 """
 from __future__ import annotations
 
