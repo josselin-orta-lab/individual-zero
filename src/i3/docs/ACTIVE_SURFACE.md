@@ -1,7 +1,9 @@
 # I3 active surface
 
 This is the short operational map for developers and agents. It does not replace
-scientific evidence or ADRs. The machine-readable authority is
+scientific evidence or ADRs. See the
+[code/dependency audit](I3_DEPENDENCY_AUDIT_2026-11-09.md) for archival
+rationale, checked references and deliberate compatibility boundaries. The machine-readable authority is
 [`../ACTIVE_SURFACE.json`](../ACTIVE_SURFACE.json).
 
 ## Current state

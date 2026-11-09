@@ -79,8 +79,9 @@ before moving them; a filename alone is not sufficient grounds for deletion.
   pre-lift transport. It does not certify the old 68/69 panel or lift ADR-0017.
 
 The supplied 68/69 pilot is closed descriptive evidence. Its old runner is not
-the future source-locked transport. No pilot, rehearsal or falsifier was run
-during this code audit.
+the future source-locked transport. No new scientific World, life, lived pilot, sealed transport rehearsal or
+canonical Stage-2.1 one-shot falsifier was run. Historical *software-only*
+characterization code ran solely through the retained regression tests.
 
 **Open engineering dependency:** the fresh fail-closed ADR-0019 transport and
 its exact-SHA full-scale sealed rehearsal remain to be implemented/verified
