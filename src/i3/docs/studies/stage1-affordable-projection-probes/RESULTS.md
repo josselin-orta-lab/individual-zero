@@ -2,7 +2,7 @@
 
 **Declared exploratory probes, not a protocol.** No World, no life, no study
 index, nothing adopted. Script:
-[`stage1_affordable_projection_probes.py`](../../../lab/stage1_affordable_projection_probes.py);
+[`stage1_affordable_projection_probes.py`](../../../archive/stage1/lab/stage1_affordable_projection_probes.py);
 data: [probes.json](probes.json). Reference cognition unchanged.
 
 ## Why

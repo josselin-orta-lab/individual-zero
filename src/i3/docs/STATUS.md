@@ -5,8 +5,9 @@ I1 remains the active engine. Authority: [engine contract](../engine.json),
 [registry](../../../config/engine-registry.json),
 [ADR-0014](../../../docs/decisions/ADR-0014-i3-lignee-enjeu-de-soi.md).
 
-Updated 6 November 2026 for the owner-requested scenario integration
+Historical 6 November 2026 scenario-integration baseline:
 [#1059](https://github.com/josselin-orta-lab/individual-zero/issues/1059).
+Current governance and Stage-2.1 status are recorded below (9 November 2026).
 Evidence baseline: `e4eb3e80c9dc48e131e05383d952909bd86213b7` (PR #1058).
 That integration changed documentation and priorities only. The subsequent
 Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
@@ -54,8 +55,9 @@ Stage 2.1 remains current. Its frozen protocol now proceeds to the lived path
 **only after ADR-0017 is validly lifted**. Supplied 68/69 remains descriptive
 and cannot be retroactively promoted or reused. The next work is to prepare a
 fresh source-locked Stage-2.1 transport and pass the required exact-SHA sealed
-engineering rehearsal. ADR-0017 remains active; no new lived World is
-authorized.
+engineering rehearsal. ADR-0017 remains active; no new **scientific** World is
+authorized. Under accepted ADR-0019, pre-lift engineering-only rehearsal is
+permitted behind a fail-closed scientific cohort admission guard.
 
 ## Stage 2 launched: decide how much to think (#1062)
 

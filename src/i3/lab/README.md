@@ -16,8 +16,9 @@ Candidate source from the closed Stage 1 now lives in the internal
 
 - `engineering_cohort.py`: permanently non-evidentiary cohort.
 - `two_phase_panel.py`: generation followed by sealed reduction.
-- `stage2_replay_gate_development_pilot.py`: historical/pending transport
-  support, **not** permission to run a fresh development panel.
+The former 68/69 pilot runner is archived at
+`../archive/stage2/development_68_69.py` and is **not** an engineering
+entrypoint. It must not be rerun on exposed Worlds.
 
 ADR-0017 remains active. Owner-accepted ADR-0019 allows implementation and
 exact-SHA rehearsal only in the engineering cohort, with development,

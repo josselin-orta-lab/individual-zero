@@ -1,7 +1,9 @@
 # I3 active surface
 
 This is the short operational map for developers and agents. It does not replace
-scientific evidence or ADRs. The machine-readable authority is
+scientific evidence or ADRs. See the
+[code/dependency audit](I3_DEPENDENCY_AUDIT_2026-11-09.md) for archival
+rationale, checked references and deliberate compatibility boundaries. The machine-readable authority is
 [`../ACTIVE_SURFACE.json`](../ACTIVE_SURFACE.json).
 
 ## Current state
@@ -39,11 +41,12 @@ These files support ADR-0017 execution custody and are not themselves evidence:
 
 - `lab/engineering_cohort.py`
 - `lab/two_phase_panel.py`
-- `lab/stage2_replay_gate_development_pilot.py`
 - `tests/i3/test_stage2_execution_pipeline.py`
 
-The development pilot runner exists for reproducibility and future use, but
-ADR-0017 currently forbids a new lived Stage-2 panel.
+The supplied 68/69 pilot runner is **archived**, not an active transport:
+`archive/stage2/development_68_69.py`. Its historical observations cannot
+be reused as prospective evidence. A fresh exact-SHA engineering transport
+may be prepared under ADR-0019, but scientific cohorts remain closed.
 
 ## Compatibility-only Stage 1
 
@@ -77,7 +80,8 @@ older Stage-1 documents only for a named historical question.
 Stop and re-evaluate if a change does any of the following:
 
 - opens a World while ADR-0017 is active;
-- registers `p13_replay_gate_v1` in the runtime;
+- exposes `p13_replay_gate_v1` to a scientific World before the ADR-0017 owner
+  lift, or permits engineering dispatch without a fail-closed cohort guard;
 - changes the frozen replay-gate formula or R0-R4 rules after the canonical
   software verdict;
 - treats the formally passing but flat S1 R3 fixture as proof of graded cost

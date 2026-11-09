@@ -6,7 +6,7 @@ Current source-of-truth: [ACTIVE_SURFACE.md](ACTIVE_SURFACE.md).
 
 | Area | Current check | Scientific meaning |
 | --- | --- | --- |
-| Active-surface contract | `tests/i3/test_active_surface.py` | Prevents Stage-1 laboratory leakage into active Stage 2, keeps replay-gate runtime unregistered under ADR-0017, and checks current governance/navigation only |
+| Active-surface contract | `tests/i3/test_active_surface.py` | Checks all intra-I3 imports and internal links, archived Stage-1 modules, lazy legacy runtime isolation, the closed 68/69 runner, and current ADR-0017/ADR-0019 governance; software-only checks, never a scientific GO |
 | Stage 2.1 replay gate | `tests/i3/test_p13_replay_gate_mind.py` | Software/unit properties of the corrected frozen mechanism; **not** the one-shot R0-R4 scientific verdict |
 | ADR-0017 execution custody | `tests/i3/test_stage2_execution_pipeline.py` | Two-phase G/R, engineering cohort and sealed-rehearsal mechanics; never evidence by itself |
 | Corrected R0-R4 falsifier | `lab/stage2_replay_gate_falsifier.py` | **Executed once: `REPLAY_GATE_CAPACITY_SHOWN`**, R0-R4 PASS; no World/life. Machine result is preserved under `studies/stage2-replay-gate-software/` |

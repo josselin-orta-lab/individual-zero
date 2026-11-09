@@ -23,6 +23,9 @@ Start here:
 3. [STAGE2_REPLAY_GATE.md](STAGE2_REPLAY_GATE.md) — frozen Stage-2.1 protocol.
 4. [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) — stage ordering and dependencies.
 
+[Code and dependency audit (9 November 2026)](I3_DEPENDENCY_AUDIT_2026-11-09.md)
+records source integrity, archived dependencies and remaining custody boundaries.
+
 ## Stage 2.1 evidence
 
 - [Canonical software result](studies/stage2-replay-gate-software/RESULTS.md):
@@ -49,6 +52,8 @@ Translation originals are preserved under
 [translation custody](TRANSLATION_CUSTODY.md). The closed Stage-1 candidate
 implementations live under [archive/stage1](../archive/stage1/README.md),
 with the [historical document catalogue](../archive/stage1/DOCUMENTS.md).
+The [archived Stage-2.1 68/69 runner](../archive/stage2/README.md) is not a
+valid prospective transport.
 
 The pre-rationalization navigation ledgers are preserved under
 `archive/i3/navigation-pre-stage2-rationalization-2026-11-09/`.
