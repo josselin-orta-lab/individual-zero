@@ -55,3 +55,9 @@ Controls (GATE vs RANDOM; GATE vs ZERO-PERCEIVED-COST; GATE vs FIXED on GATE-sel
 5. Separate owner approval for **selection**, then an explicitly frozen, distinct **validation** release; none is inferred from this document, code, passing tests or historical ADR-0017 lift.
 
 No new World, living individual, experiment, validation or scientific promotion was performed or authorized by this intervention. Failed/null/adverse scientific results retain the reference and prevent silent Stage-2.2 adoption. The helper `stage2_gate_design.directional_gate` performs arithmetic only, never scientific adjudication.
+
+## Subsequent statistical audit (9 November 2026; original proposal unchanged)
+
+[Inference and power audit](INFERENCE_POWER_AUDIT.md) identifies a **blocking mismatch** between the proposal's directional population-median sign criterion and its motivating *mean survival non-inferiority* claim. Seven of eight favorable signs can pass the sign test while mean survival falls by 15.42 percentage points (hypothetical 30-life-per-arm population example). Exact single-endpoint power is only ~50.3% under assumed favorable-sign probability 0.8 with no ties and ~34.7% with 10% ties. The four co-primary requirements are not power-validated.
+
+**Status: REVISE / NO SCIENTIFIC OPENING.** The above original arithmetic, thresholds, count and selection design are retained for traceability, **not approved**. Before any selection or validation World: independently review the estimand, survival margin, mean-focused confidence method, power, heterogeneity and multiplicity, then freeze a prospective revision and obtain a new owner authorization. This addition is a review warning, not a post-hoc change to any exposed preregistration.
