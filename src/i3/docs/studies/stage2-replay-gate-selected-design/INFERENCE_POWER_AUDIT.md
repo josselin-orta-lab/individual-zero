@@ -5,7 +5,7 @@
 ## Immutable context
 
 - Current reference: P1.3 funded-v2; I3 unregistered.
-- Exact main baseline for this audit: `06f7f928eef928f000aebe19afe520ba87ba6ce0` (merged PR #1225). Proposed plan: [PROTOCOL.md](PROTOCOL.md), code [stage2_gate_design.py](../../../../lab/stage2_gate_design.py); original DEVELOPMENT results [80/81](../stage2-replay-gate-development-80-81/RESULTS.md). The canonical R0-R4 result is unchanged. The old 80/81 authorization is exhausted.
+- Exact main baseline for this audit: `06f7f928eef928f000aebe19afe520ba87ba6ce0` (merged PR #1225). Proposed plan: [PROTOCOL.md](PROTOCOL.md), code [stage2_gate_design.py](../../../lab/stage2_gate_design.py); original DEVELOPMENT results [80/81](../stage2-replay-gate-development-80-81/RESULTS.md). The canonical R0-R4 result is unchanged. The old 80/81 authorization is exhausted.
 - All arithmetic below uses **hypothetical values**, no new genomes, Worlds, scientific lives, or observed outcomes. No old held-out life is reclassified.
 
 ## Defect: a population sign test is not mean-survival non-inferiority
