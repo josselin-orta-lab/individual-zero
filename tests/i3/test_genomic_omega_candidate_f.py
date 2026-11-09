@@ -81,7 +81,7 @@ class GenomicOmegaCandidateFWiringTests(unittest.TestCase):
             "assert 'i3.runtime.life' not in sys.modules"
         ], check=True)
         source = (
-            root / "i3/modules/genomic_omega_candidate_f.py").read_text()
+            root / "i3/archive/stage1/modules/genomic_omega_candidate_f.py").read_text()
         self.assertNotIn("from .world import", source)
         self.assertNotIn("import i3.modules.world", source)
         self.assertNotIn("runtime.life", source)
