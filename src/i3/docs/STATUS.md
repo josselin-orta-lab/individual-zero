@@ -14,6 +14,17 @@ Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
 
+## Stage 2.1 paid replay exposure audit (9 November 2026)
+
+**SOFTWARE ONLY; NO NEW WORLD.** The [v3 original readout](studies/stage2-replay-gate-selected-design/MECHANISM_FIRST_SEALED_READOUT.md)
+also reports funded decision-audit counts, reached and funded sleep,
+physically paid replay counts, and RANDOM nominal/eligible/paid gaps by
+arm, population and family. The frozen RANDOM nominal 5532/867 mean
+does **not** establish equal actual replay work in v3; even perfect
+physical parity is not proof of a causal replay-choice advantage.
+This is descriptive, not a gate, source authorization, non-inferiority
+test or reason to select or rerun lives.
+
 ## Stage 2.1 mechanism-first v3 sealed original reader (9 November 2026)
 
 **SOFTWARE-ONLY; NO SCIENTIFIC WORLD.** The separate
