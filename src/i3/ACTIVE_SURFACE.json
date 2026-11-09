@@ -4,7 +4,7 @@
   "reference": "P1.3 funded-v2",
   "current_stage": "2.1 replay gate",
   "canonical_status": "REPLAY_GATE_CAPACITY_SHOWN",
-  "next_scientific_action": "implement a pre-lift engineering-only exact Stage-2.1 transport with fail-closed scientific cohort admission; rehearse exact SHA without scientific World exposure",
+  "next_scientific_action": "exact Stage-2.1 transport implemented (runtime dispatch behind guard-minted World-bound tickets; scientific cohorts fail closed); run the full-scale sealed engineering rehearsal on its exact fingerprint, record it, then stop for the explicit owner ADR-0017 lift decision",
   "governance": {
     "i3_registered": false,
     "stage1": "CLOSED_NEGATIVE_ADR_0018",
@@ -28,7 +28,13 @@
   "active_engineering": [
     "src/i3/lab/engineering_cohort.py",
     "src/i3/lab/two_phase_panel.py",
-    "tests/i3/test_stage2_execution_pipeline.py"
+    "tests/i3/test_stage2_execution_pipeline.py",
+    "src/i3/runtime/admission.py",
+    "src/i3/lab/stage2_admission.py",
+    "src/i3/lab/stage2_panel.py",
+    "tests/i3/test_stage2_exact_transport.py",
+    "src/i3/docs/studies/stage2-replay-gate-development-80-81/PLAN.json",
+    "src/i3/docs/studies/stage2-replay-gate-development-80-81/PROTOCOL.md"
   ],
   "stage1_compatibility_only": [
     "src/i3/archive/stage1/lab/projection_candidate_e_characterization.py",

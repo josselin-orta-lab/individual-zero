@@ -17,6 +17,9 @@ from i3.runtime.provenance import build_manifest, digest
 from i3.modules.mind import Mind
 from i3.modules.world import World, WorldSpec
 
+REPLAY_GATE_POLICIES = {"p13_replay_gate_v1": "gate",
+                        "p13_replay_gate_zero_perceived_cost_v1": "zero_perceived_cost"}
+
 
 def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
              *, keep_trace: bool = False,
@@ -28,7 +31,8 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
              score_addend_mode: str = "normal",
              observer_resource_acquisition: bool = False,
              observer_full_competition: bool = False,
-             decision_policy: str = "reference") -> dict:
+             decision_policy: str = "reference",
+             admission=None) -> dict:
     started = time.perf_counter()
     if decision_policy not in (
             "reference", "local_information_v1", "reference_branch_memory_v1",
@@ -39,8 +43,18 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
             "personal_relevance_candidate_h_v1",
             "personal_shared_prior_candidate_i_v1",
             "personal_shared_prior_candidate_i_omega0_ablation_v1",
-            "candidate_f_shadow_upper_cost_reference_controller_v1"):
+            "candidate_f_shadow_upper_cost_reference_controller_v1",
+            *REPLAY_GATE_POLICIES):
         raise ValueError("unknown decision policy")
+    admission_receipt = None
+    if decision_policy in REPLAY_GATE_POLICIES:
+        # ADR-0017/ADR-0019: a replay-gate life runs only with a guard-minted
+        # ticket bound to this exact World; scientific cohorts fail closed in
+        # the guard until an explicit owner lift.
+        from i3.runtime.admission import verify as verify_admission
+        admission_receipt = verify_admission(admission, spec.name)
+    elif admission is not None:
+        raise ValueError("admission tickets are only defined for replay-gate policies")
     if decision_policy != "reference" and (
             learning_mode != "normal" or effect_readout != "full" or
             score_addend_mode != "normal"):
@@ -69,6 +83,10 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
     if type(horizon) is not int or horizon < 1:
         raise ValueError("positive integer horizon required")
     manifest = build_manifest(genome, spec, life_seed, horizon, protocol)
+    if decision_policy in REPLAY_GATE_POLICIES:
+        manifest["experimental_policy"] = {
+            "name": decision_policy, "mode": REPLAY_GATE_POLICIES[decision_policy],
+            "protocol": "STAGE2_REPLAY_GATE", "admission": admission_receipt}
     if decision_policy == "local_information_v1":
         manifest["experimental_policy"] = {
             "name": decision_policy, "unknown": "stationary_zero_delta_v1",
@@ -268,6 +286,10 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
         from i3.archive.stage1.modules.candidate_f_upper_cost_reference_controller import (
             CandidateFUpperCostReferenceController)
         mind_type = CandidateFUpperCostReferenceController
+    elif decision_policy in REPLAY_GATE_POLICIES:
+        from i3.modules.p13_replay_gate_mind import P13ReplayGateMind
+        mind_type = P13ReplayGateMind
+        mind_kwargs["mode"] = REPLAY_GATE_POLICIES[decision_policy]
     mind = mind_type(genome, life_seed, effect_readout=effect_readout,
                 observer_decision_diagnostics=(observer_decision_diagnostics or
                                                observer_resource_acquisition or
@@ -427,6 +449,19 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
         "mean_step_ms": round(1000.0 * elapsed / max(1, steps), 4),
         "trace_head": head,
     }
+    if decision_policy in REPLAY_GATE_POLICIES:
+        r_hat, m_hat, horizon_of_use = mind.gate_inputs()
+        out["experimental_policy"] = dict(manifest["experimental_policy"])
+        out["admission"] = dict(admission_receipt)
+        out["replay_gate"] = {
+            "mode": mind.replay_gate_mode,
+            "decisions_total": mind.decisions_total,
+            "audited_decisions": mind.audited_decisions,
+            "relevant_decisions": mind.relevant_decisions,
+            "sleep_steps_seen_by_gate": mind.sleep_steps,
+            "final_r_hat": r_hat, "final_m_hat": m_hat, "final_H": horizon_of_use,
+            "last_gate": mind.last_gate,
+        }
     if decision_policy == "local_information_v1":
         out["experimental_policy"] = dict(manifest["experimental_policy"])
         out["personal_effect_memory"] = {
