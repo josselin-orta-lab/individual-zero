@@ -36,6 +36,11 @@ POLICIES = {
     "RANDOM_on_GATE_selected": "p13_replay_gate_random_equal_mean_v1",
     "ZERO_PERCEIVED_COST_on_GATE_selected": "p13_replay_gate_zero_perceived_cost_v1",
 }
+POLICY_MODES = {
+    "p13_replay_gate_v1": "gate",
+    "p13_replay_gate_random_equal_mean_v1": "random_equal_mean",
+    "p13_replay_gate_zero_perceived_cost_v1": "zero_perceived_cost",
+}
 
 
 def _hex(value, n):
@@ -171,6 +176,9 @@ def _actual_life(identity, life, policy, pins, seen_genomes, seen_worlds):
             source.get("git_head") != pins["source_sha"] or
             source.get("working_tree_dirty") is not False or
             not isinstance(source.get("files"), Mapping) or
+            not source["files"] or
+            any(type(k) is not str or not k or not _hex(v, 64)
+                for k, v in source["files"].items()) or
             not _hex(source.get("sha256"), 64) or
             _json_digest(source["files"]) != source["sha256"]):
         raise ValueError("original source does not agree with pinned checkout")
@@ -226,9 +234,9 @@ def _actual_life(identity, life, policy, pins, seen_genomes, seen_worlds):
                 type(ticket.get("world_seed")) is not int or
                 ticket["world_seed"] != identity["world_seed"]):
             raise ValueError("original replay admission not bound to exact World")
-        if (not isinstance(life.get("replay_gate"), Mapping) or
-                life["replay_gate"].get("mode") not in
-                ("gate", "random_equal_mean", "zero_perceived_cost")):
+        if (experimental.get("mode") != POLICY_MODES[policy] or
+                not isinstance(life.get("replay_gate"), Mapping) or
+                life["replay_gate"].get("mode") != POLICY_MODES[policy]):
             raise ValueError("missing original replay-gate evidence")
 
     ca = life.get("cognitive_accounting")
