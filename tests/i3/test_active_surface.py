@@ -110,6 +110,24 @@ class ActiveSurfaceContract(unittest.TestCase):
                                 offenders.append((str(path), f"{mod}.{alias.name}"))
         self.assertEqual(offenders, [])
 
+    def test_retained_tests_do_not_open_removed_candidate_source_paths(self):
+        archived = [
+            Path(p) for p in self.data["stage1_compatibility_only"]
+            if p.startswith("src/i3/archive/stage1/") and p.endswith(".py")
+        ]
+        legacy_fragments = {
+            f"i3/{rel.parts[4]}/{rel.name}" for rel in archived
+        }
+        stale = []
+        for path in (ROOT / "tests" / "i3").rglob("*.py"):
+            tree = ast.parse(path.read_text(), filename=str(path))
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Constant) and isinstance(node.value, str):
+                    for old in legacy_fragments:
+                        if old in node.value:
+                            stale.append((str(path), old))
+        self.assertEqual(stale, [])
+
     def test_stage1_compatibility_set_is_not_current_science(self):
         current = set(self.data["active_science"])
         compatibility = set(self.data["stage1_compatibility_only"])
