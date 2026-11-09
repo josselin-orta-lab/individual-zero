@@ -55,7 +55,7 @@ def _pins(pins):
         raise ValueError("invalid expected source/digest pin")
 
 
-def _sealed(archive_dir, plan_path, pins, cohort, count):
+def _sealed(archive_dir, plan_path, pins, cohort, count, *, lock_schema=LOCK_SCHEMA):
     """Only read sealed evidence, never mint tickets or construct WorldSpecs."""
     _pins(pins)
     root = Path(archive_dir)
@@ -74,7 +74,7 @@ def _sealed(archive_dir, plan_path, pins, cohort, count):
         raise ValueError("self-seal differs from prospective manifest pin")
     lock = json.loads((root / "SOURCE_LOCK.json").read_bytes())
     expected_lock = {
-        "schema": LOCK_SCHEMA, "cohort": cohort, "planned": count,
+        "schema": lock_schema, "cohort": cohort, "planned": count,
         "generated": count, "no_retry": True, **dict(pins),
     }
     if type(lock) is not dict or lock != expected_lock:
