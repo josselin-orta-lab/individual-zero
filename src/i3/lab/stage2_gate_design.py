@@ -119,3 +119,54 @@ def directional_gate(population_deltas: Mapping[str, Mapping[int, float]]) -> di
         "scope": "eight_population_directional_median_only; not mean equivalence",
         "status": "ARITHMETIC_ONLY_NOT_A_SCIENTIFIC_VERDICT",
     }
+
+
+def _hypothetical_probability(value, name: str):
+    """Exact rational for explicit scenario inputs; never estimate from Worlds."""
+    from fractions import Fraction
+
+    if type(value) is Fraction:
+        probability = value
+    elif type(value) in (int, float) and isfinite(value):
+        probability = Fraction(str(value))
+    else:
+        raise ValueError(f"{name} must be a finite numeric probability, not boolean")
+    if not 0 <= probability <= 1:
+        raise ValueError(f"{name} must be between zero and one")
+    return probability
+
+
+def exact_sign_test_power(favorable_given_non_tie, tie_probability=0, *,
+                          populations=F0.POPULATIONS):
+    """Exact power of ONE directional sign test under hypothetical iid signs.
+
+    Every independent population is favorable with probability
+    (1-tie_probability) * favorable_given_non_tie, unfavorable with
+    (1-tie_probability) * (1-favorable_given_non_tie), or tied otherwise.
+    The unchanged candidate test excludes ties and uses one-sided alpha=.05.
+
+    Returns an exact Fraction. This is a scenario sensitivity calculation,
+    NOT a biological effect estimate, a mean non-inferiority test, a review
+    approval, or joint power for four correlated co-primary endpoints.
+    """
+    from fractions import Fraction
+
+    if type(populations) is not int or not 1 <= populations <= 64:
+        raise ValueError("population count must be an integer in 1..64")
+    q = _hypothetical_probability(favorable_given_non_tie, "favorable_given_non_tie")
+    t = _hypothetical_probability(tie_probability, "tie_probability")
+    positive, negative = (1 - t) * q, (1 - t) * (1 - q)
+    alpha = Fraction(str(ALPHA))
+    power = Fraction(0)
+    for ties in range(populations + 1):
+        effective = populations - ties
+        for wins in range(effective + 1):
+            losses = effective - wins
+            p_one_sided = Fraction(
+                sum(comb(effective, k) for k in range(wins, effective + 1)),
+                2 ** effective,
+            )
+            if p_one_sided <= alpha:
+                power += (comb(populations, ties) * comb(effective, wins)
+                          * t ** ties * positive ** wins * negative ** losses)
+    return power
