@@ -14,6 +14,30 @@ Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
 
+## Stage 2.1 exact transport: sealed engineering rehearsal PASS (awaiting owner decision)
+
+The exact Stage-2.1 transport required by ADR-0019 is implemented and rehearsed:
+
+- **Runtime dispatch.** `p13_replay_gate_v1` and its zero-perceived-cost control
+  run only with a guard-minted admission ticket bound to the exact World,
+  verified before the World is built.
+- **Fail-closed admission.** The guard admits only the engineering cohort.
+  Development, selection, validation and reserve raise before any World exists.
+- **One runner.** A single parameterized panel runner serves both the rehearsal
+  and the later pilot.
+- **Fresh plan.** Development pilot 80/81 was frozen first, after a collision
+  search: [plan](studies/stage2-replay-gate-development-80-81/PROTOCOL.md).
+
+Full-scale sealed rehearsal on transport commit `e23a28e`, fingerprint
+`15136d132b5244bf511a576b44619a5f44ef945d6472324bc1102ce449d967f9`:
+**PASS**. G 36/36, R 36/36, 0 failures on 10 structural invariants, 0.86 ms per
+step ([rehearsal](studies/stage2-replay-gate-development-80-81/REHEARSAL.md)).
+
+This is engineering custody only: not evidence and not a lift. **ADR-0017
+remains active.** Development 80/81 stays closed until the owner records the
+lift for this exact fingerprint in this file. The rehearsal record gives the
+required line format. Any change to the transport requires a new rehearsal.
+
 ## Stage 2.1 transport governance: ADR-0019 owner-accepted
 
 **Owner accepted [ADR-0019](../../../docs/decisions/ADR-0019-i3-exact-transport-rehearsal-before-lift.md) on 9 November 2026.**

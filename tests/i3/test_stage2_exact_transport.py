@@ -102,6 +102,14 @@ class TicketAndDispatchTests(unittest.TestCase):
         self.assertEqual([p.name for p in callers], ["stage2_admission.py"])
 
 
+class LedgerTests(unittest.TestCase):
+    def test_status_ledger_records_no_lift_for_the_current_transport(self):
+        # ADR-0017 is active: only the owner may add the lift line.
+        status = (ROOT / "src/i3/docs/STATUS.md").read_text()
+        self.assertFalse(ADM.owner_lift_recorded(status, ADM.transport_fingerprint(PLAN)))
+        self.assertNotIn(ADM.LIFT_PREFIX + ADM.transport_fingerprint(PLAN), status)
+
+
 class OnePathTests(unittest.TestCase):
     def test_rehearsal_and_pilot_share_shape_and_differ_only_by_namespace(self):
         plan = SP.load_plan(PLAN)
