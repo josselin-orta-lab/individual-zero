@@ -22,23 +22,24 @@ Do not reconstruct the current handoff from old Stage-1 documents.
 - Stage 1 is **closed negative** under ADR-0018.
 - Stage 2.1 replay gate is the current stage.
 - Canonical status: **`REPLAY_GATE_CAPACITY_SHOWN`**.
-- ADR-0017's world-opening moratorium is **active**.
+- ADR-0017 has been **owner-lifted for exact Stage-2.1 transport `dcada9e2…f1`**, limited to frozen DEVELOPMENT 80/81.
 
 The corrected R0-R4 falsifier has executed exactly once and passed. Do not
 rerun it.
 
-**Exact transport rehearsed:** sealed engineering rehearsal PASS on transport
-commit `e23a28e`, fingerprint `15136d13…`
-([record](docs/studies/stage2-replay-gate-development-80-81/REHEARSAL.md)).
-Stop here: development 80/81 opens only after the owner writes the ADR-0017
-lift line for that exact fingerprint in `docs/STATUS.md`. Never write that line
-as an agent. Any transport change invalidates the PASS.
+**Exact transport owner-lifted:** hardened G/R engineering rehearsals passed
+36/36 in Python 3.11 and 3.12, fingerprint `dcada9e2…f1`
+([custody](docs/studies/stage2-replay-gate-development-80-81/HARDENED_REHEARSAL.md)).
+The owner has expressly authorized the two custody equivalences and the lift
+is recorded in `docs/STATUS.md`. Never fabricate a new owner decision,
+broaden an existing one, or change the source-locked transport. Only frozen
+DEVELOPMENT 80/81 may open next; other Worlds require separate authority.
 
 **Governance now accepted:** [ADR-0019](../../docs/decisions/ADR-0019-i3-exact-transport-rehearsal-before-lift.md)
-allows exact pre-lift Stage-2.1 transport code **for the engineering cohort
-only**. Development, selection, validation and reserve must fail closed until
-the separate owner lift is recorded. ADR-0017 remains active. Use the same G/R
-path and candidate implementation in the sealed rehearsal, not a clone.
+authorized the exact pre-lift transport solely for the engineering cohort.
+Now that the owner lift is recorded, the frozen DEVELOPMENT 80/81 pilot may
+use that same G/R path, runner and cognition; there is no clone or post-hoc
+transport modification.
 
 ## Hard boundaries
 
@@ -49,7 +50,7 @@ Do not:
 - expose `p13_replay_gate_v1` to any scientific cohort before the explicit
   ADR-0017 lift; pre-lift engineering-only dispatch is allowed under ADR-0019
   only if scientific admission fails closed;
-- open a fresh Stage-2 World while ADR-0017 remains active;
+- open a fresh World outside the frozen and owner-lifted DEVELOPMENT 80/81 pilot;
 - change the frozen Stage-2.1 replay-gate formula, controls, fixtures,
   thresholds or verdict table after the canonical software result;
 - promote the supplied non-conforming replay-gate software result or 68/69
@@ -95,9 +96,9 @@ before proceeding.
 
 ## Execution custody
 
-ADR-0017 remains the authority for lived panels. Software-only work and
-engineering rehearsals remain allowed. A future lived panel requires the
-recorded ADR-0017 lift conditions, including an explicit owner entry in
-`docs/STATUS.md`.
+ADR-0017 remains authoritative on two-phase generation and reduction,
+sealing all originals, no retry after generation failure, and blind reduction
+repair without outcome inspection. The owner lift in `docs/STATUS.md` applies
+to only one prospective DEVELOPMENT 80/81 pilot, not a general scientific GO.
 
 Green software tests are never a scientific GO.
