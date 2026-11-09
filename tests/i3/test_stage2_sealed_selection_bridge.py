@@ -8,6 +8,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+from i3.modules.genome import generation_zero, digest as genome_digest
 from i3.lab import stage0_design as F0
 from i3.lab import stage2_finite_panel as PANEL
 from i3.lab import stage2_sealed_selection_bridge as BRIDGE
@@ -19,12 +20,13 @@ def sha(value):
 
 
 def synthetic_life(identity):
+    """Faithful run_life *shape* only; constructed without any World/Mind."""
     seed = identity["genome_seed"]
     condition = identity.get("condition")
-    policy = BRIDGE.POLICIES[condition or identity["policy"]]
+    policy = BRIDGE.POLICIES[condition if condition is not None
+                             else identity["policy"]]
     is_random = condition == "RANDOM_on_GATE_selected"
-    # Selection intentionally produces one top-ranked seed for the GATE arm,
-    # while FIXED is best at another. All outcomes remain deterministic.
+    # One top-ranked G0 seed per policy, still purely synthetic.
     slot = seed % F0.CANDIDATES
     if condition is None:
         terminal = "censored" if (
@@ -33,34 +35,61 @@ def synthetic_life(identity):
     else:
         terminal = "censored"
     n = 400 if terminal == "censored" else 50
-    world_digest = sha(("world", identity["cohort"], identity["world_index"]))
     spec_name = "synthetic-world-" + str(identity["world_index"])
-    return {
-        "world": spec_name, "manifest": {
-            "world_sha256": world_digest,
-            "experimental_policy": {"name": policy}},
-        "genome": sha(("genome", seed)), "steps_lived": n,
-        "terminal": terminal, "horizon": 400, "life_seed": identity["life_seed"],
+    world = {"name": spec_name, "synthetic_only": True,
+             "cohort": identity["cohort"], "index": identity["world_index"]}
+    world_digest = BRIDGE._json_digest(world)
+    genome = generation_zero(seed)
+    ticket = {
+        "cohort": identity["cohort"], "family": identity["family"],
+        "index": identity["world_index"], "world_seed": identity["world_seed"],
+        "world_name": spec_name, "world_sha256": world_digest,
+        "transport_fingerprint": "d" * 64}
+    source_files = {"synthetic/test-only.py": "e" * 64}
+    manifest = {
+        "schema": "i3-life-manifest/v2", "execution_model": "i3-funded-v2",
+        "protocol": "SYNTHETIC_TEST_NO_WORLD",
+        "source": {"files": source_files,
+                   "sha256": BRIDGE._json_digest(source_files),
+                   "git_head": PINS["source_sha"], "working_tree_dirty": False},
+        "life_seed": identity["life_seed"], "horizon": 400,
+        "world": world, "world_sha256": world_digest,
+        "genome": genome,
+    }
+    if policy != "reference":
+        mode = {"p13_replay_gate_v1": "gate",
+                "p13_replay_gate_random_equal_mean_v1": "random_equal_mean",
+                "p13_replay_gate_zero_perceived_cost_v1": "zero_perceived_cost"}[policy]
+        manifest["experimental_policy"] = {
+            "name": policy, "mode": mode,
+            "protocol": "STAGE2_REPLAY_GATE", "admission": ticket}
+    result = {
+        "manifest": manifest, "manifest_id": BRIDGE._json_digest(manifest),
+        "world": spec_name, "genome": genome_digest(genome),
+        "steps_lived": n, "terminal": terminal,
+        "death_causes": [] if terminal == "censored" else ["synthetic_death"],
+        "horizon": 400, "life_seed": identity["life_seed"],
         "actions": {"dormir": 4},
-        "admission_receipt": {
-            "cohort": identity["cohort"], "world_name": spec_name,
-            "world_sha256": world_digest, "world_seed": identity["world_seed"],
-            "transport_fingerprint": "d" * 64},
         "cognitive_accounting": {
+            "schema": "i3-cognitive-funding/v2",
             "status": "SETTLED_FOR_DECLARED_WORK", "shortfall_steps": 0,
             "totals": {
-                "energy": {"paid": 3.0, "unpaid": 0.0},
-                "vigilance": {"paid": 4.0, "unpaid": 0.0}},
+                "energy": {"requested": 3.0, "paid": 3.0, "unpaid": 0.0},
+                "vigilance": {"requested": 4.0, "paid": 4.0, "unpaid": 0.0}},
             "replays_executed": 24 if is_random else 16,
             "inactive_steps": 2},
-        **({"replay_gate": {"random_schedule": {
+    }
+    if policy != "reference":
+        result["admission"] = ticket
+        result["experimental_policy"] = manifest["experimental_policy"]
+        result["replay_gate"] = {"mode": manifest["experimental_policy"]["mode"]}
+    if is_random:
+        result["replay_gate"]["random_schedule"] = {
             "draws_funded": 4, "lived_sleep_ordinals": 4,
             "nominal_replays_scheduled": 24,
             "eligible_replays_scheduled": 24, "actual_replays_paid": 24,
-            "mean_numerator": 5532, "mean_denominator": 867}}}
-            if is_random else {}),
-    }
-
+            "mean_numerator": 5532, "mean_denominator": 867}
+    return result
 
 def selection_originals():
     for w in F0.world_rows("selection"):
@@ -115,8 +144,8 @@ class CompleteOriginalSelectionTests(unittest.TestCase):
             lambda o: o.pop(),
             lambda o: o.__setitem__(1, o[0]),
             lambda o: o[0][0].__setitem__("world_seed", 999),
-            lambda o: o[0][1]["manifest"]["experimental_policy"].__setitem__(
-                "name", "p13_replay_gate_v1"),
+            lambda o: o[40][1]["manifest"]["experimental_policy"].__setitem__(
+                "name", "p13_replay_gate_zero_perceived_cost_v1"),
             lambda o: o[0][1].__setitem__("genome", "0" * 64),
             lambda o: o[0][1]["cognitive_accounting"]["totals"]["energy"].__setitem__(
                 "paid", -1.0),
@@ -126,10 +155,92 @@ class CompleteOriginalSelectionTests(unittest.TestCase):
             originals = list(self.originals)
             original_id, original_life = originals[0]
             originals[0] = (dict(original_id), json.loads(json.dumps(original_life)))
+            gate_id, gate_life = originals[40]
+            originals[40] = (dict(gate_id), json.loads(json.dumps(gate_life)))
             mutation(originals)
             with self.subTest(i=i), patch.object(BRIDGE, "_sealed", return_value=originals):
                 with self.assertRaises(ValueError):
                     BRIDGE.selection_from_originals("not-opened", "not-opened", PINS)
+
+    def test_real_runtime_reference_and_gate_ticket_contract(self):
+        fixed = next((i, life) for i, life in self.originals
+                     if i["policy"] == "FIXED")
+        gate = next((i, life) for i, life in self.originals
+                    if i["policy"] == "GATE")
+        self.assertNotIn("admission", fixed[1])
+        self.assertNotIn("experimental_policy", fixed[1]["manifest"])
+        self.assertIn("admission", gate[1])
+        self.assertEqual(gate[1]["manifest"]["experimental_policy"]["admission"],
+                         gate[1]["admission"])
+        for identity, life in (fixed, gate):
+            BRIDGE._actual_life(identity, life, BRIDGE.POLICIES[identity["policy"]],
+                                PINS, {}, {})
+
+    def test_forged_manifests_birth_genomes_and_admissions_fail_closed(self):
+        baseline = list(self.originals)
+        gates = next(j for j, (i, _) in enumerate(baseline)
+                     if i["policy"] == "GATE")
+        variants = [
+            ("wrong_seed_genome", 0),
+            ("source_head", 0),
+            ("dirty_source", 0),
+            ("missing_death_causes", 0),
+            ("bad_reference_ticket", 0),
+            ("missing_gate_ticket", gates),
+            ("bad_gate_index", gates),
+            ("wrong_gate_mode", gates),
+            ("missing_source_hash", gates),
+            ("missing_requested_charge", gates),
+        ]
+        for name, index in variants:
+            original_id, original_life = baseline[index]
+            identity = dict(original_id)
+            life = json.loads(json.dumps(original_life))
+            if name == "wrong_seed_genome":
+                genome = generation_zero(F0.founder_seed(7, 31))
+                life["manifest"]["genome"] = genome
+                life["genome"] = genome_digest(genome)
+            elif name == "source_head":
+                life["manifest"]["source"]["git_head"] = "f" * 40
+            elif name == "dirty_source":
+                life["manifest"]["source"]["working_tree_dirty"] = True
+            elif name == "missing_death_causes":
+                del life["death_causes"]
+            elif name == "bad_reference_ticket":
+                life["admission"] = {"cohort": "selection"}
+            elif name == "missing_gate_ticket":
+                del life["admission"]
+            elif name == "bad_gate_index":
+                life["admission"]["index"] += 1
+                life["manifest"]["experimental_policy"]["admission"]["index"] += 1
+                life["experimental_policy"]["admission"]["index"] += 1
+            elif name == "wrong_gate_mode":
+                life["replay_gate"]["mode"] = "zero_perceived_cost"
+                life["manifest"]["experimental_policy"]["mode"] = "zero_perceived_cost"
+                life["experimental_policy"]["mode"] = "zero_perceived_cost"
+            elif name == "missing_source_hash":
+                life["manifest"]["source"]["files"]["synthetic/test-only.py"] = "bad"
+            elif name == "missing_requested_charge":
+                del life["cognitive_accounting"]["totals"]["energy"]["requested"]
+            # Recompute the outer digest after intentional manifest edits:
+            # checks must not be satisfied by a self-consistent forged seal.
+            life["manifest_id"] = BRIDGE._json_digest(life["manifest"])
+            with self.subTest(name=name), self.assertRaises(ValueError):
+                BRIDGE._actual_life(identity, life, BRIDGE.POLICIES[identity["policy"]],
+                                    PINS, {}, {})
+
+    def test_self_consistent_world_forgery_needs_independent_snapshot_witness(self):
+        # Explicit limitation, not an approval: an isolated rewritten World
+        # snapshot and self-resealed manifest can be mutually consistent.
+        # Only independent frozen World pins/source witnesses can rule it out.
+        identity, original = self.originals[0]
+        life = json.loads(json.dumps(original))
+        life["manifest"]["world"]["name"] = "forged-world"
+        life["manifest"]["world_sha256"] = BRIDGE._json_digest(life["manifest"]["world"])
+        life["world"] = "forged-world"
+        life["manifest_id"] = BRIDGE._json_digest(life["manifest"])
+        BRIDGE._actual_life(identity, life, "reference", PINS, {}, {})
+        self.assertNotIn("independent_authentication", life)
 
     def test_complete_validation_readout_keeps_genome_and_world_parity(self):
         with patch.object(BRIDGE, "_sealed", return_value=self.originals):

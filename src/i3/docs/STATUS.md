@@ -14,6 +14,19 @@ Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
 
+## Stage 2.1 exact original-life runtime contract repaired (9 November 2026)
+
+**SOFTWARE-ONLY; NO SCIENTIFIC WORLD.** A follow-up to the sealed
+selection bridge corrects its mismatch to actual `run_life`:
+P1.3 `reference` has no replay admission, whereas GATE/RANDOM/
+ZERO use the top-level `admission` receipt, with matching manifest
+metadata and World-bound identity. Additional fail-closed checks now
+compare original manifest, source, world and newborn G0 digests,
+declared physically paid cognition and replay mode. See
+[the corrected bridge contract](studies/stage2-replay-gate-selected-design/SEALED_SELECTION_BRIDGE.md).
+External signed/pre-exposure source provenance remains unauthenticated,
+and Stage 2.1's statistical NO_GO remains in effect.
+
 ## Stage 2.1 mechanism-first alternative proposed (9 November 2026)
 
 **SOFTWARE ONLY / NO SCIENTIFIC EXPOSURE.** A separate
