@@ -1,5 +1,20 @@
 # I3 — Plan de test
 
+## Current Stage 2 checks
+
+Current source-of-truth: [ACTIVE_SURFACE.md](ACTIVE_SURFACE.md).
+
+| Area | Current check | Scientific meaning |
+| --- | --- | --- |
+| Active-surface contract | `tests/i3/test_active_surface.py` | Prevents Stage-1 laboratory leakage into active Stage 2, keeps replay-gate runtime unregistered under ADR-0017, and checks current governance/navigation only |
+| Stage 2.1 replay gate | `tests/i3/test_p13_replay_gate_mind.py` | Software/unit properties of the corrected frozen mechanism; **not** the one-shot R0-R4 scientific verdict |
+| ADR-0017 execution custody | `tests/i3/test_stage2_execution_pipeline.py` | Two-phase G/R, engineering cohort and sealed-rehearsal mechanics; never evidence by itself |
+| Corrected R0-R4 falsifier | `lab/stage2_replay_gate_falsifier.py` | **Pending one canonical software execution**; opens no World/life |
+
+Historical suite-size statements below certify their own dated commits only.
+They are not the current I3 test count.
+
+
 | Niveau | Contenu | État |
 | --- | --- | --- |
 | Contrat logiciel | `tests/i3/test_core.py` : génome fermé, physique v4, monnaie vitale, capacités, capture locale, mort irréversible, nouveau-né vierge, rejeu exact, invariance par renommage, pas d'abstention par défaut, `attendre` non privilégié, budget de temps | Implémenté |
