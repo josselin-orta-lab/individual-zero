@@ -9,9 +9,12 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from hashlib import sha256
+from functools import lru_cache
 import json
 from math import isfinite
 from pathlib import Path
+
+from i3.modules.genome import digest as genome_digest, generation_zero
 
 from . import stage0_design as F0
 from . import stage2_finite_panel as PANEL
@@ -117,62 +120,134 @@ def _identity(identity, world, keys, cohort):
         raise ValueError("identity fails fixed F0 population/world/seed allocation")
 
 
+def _json_digest(value):
+    """Match the observer's canonical SHA-256; no World or runtime import."""
+    return sha256(json.dumps(value, sort_keys=True, separators=(",", ":"),
+                            ensure_ascii=False, allow_nan=False).encode("utf-8")).hexdigest()
+
+
+@lru_cache(maxsize=512)
+def _expected_birth_genome_digest(seed: int) -> str:
+    """Every Stage-2.1 F0 individual is born from its declared G0 seed."""
+    return genome_digest(generation_zero(seed))
+
+
 def _actual_life(identity, life, policy, pins, seen_genomes, seen_worlds):
-    """Verify observable full-life fields and cross-arm genotype/world parity."""
+    """Check real run_life output, never a synthetic ticket field.
+
+    Reference emits NO replay-gate admission. GATE/RANDOM/ZERO emit the
+    guard-minted receipt as \`admission\` and embed it in the manifest.
+    The source and per-world claims are only as authoritative as caller
+    pins and an independently inspected checkout.
+    """
     if not isinstance(life, Mapping):
         raise ValueError("original payload has no life mapping")
-    n = life.get("steps_lived")
-    terminal = life.get("terminal")
+    n, terminal = life.get("steps_lived"), life.get("terminal")
+    causes = life.get("death_causes")
     if (type(n) is not int or not 1 <= n <= F0.HORIZON or
             terminal not in ("dead", "censored") or
             (terminal == "censored" and n != F0.HORIZON) or
-            life.get("horizon") != F0.HORIZON or
+            type(causes) is not list or bool(causes) != (terminal == "dead") or
+            type(life.get("horizon")) is not int or
+            life["horizon"] != F0.HORIZON or
             type(life.get("life_seed")) is not int or
             life["life_seed"] != identity["life_seed"]):
-        raise ValueError("invalid or missing death/censoring original life")
-    if (type(life.get("world")) is not str or not life["world"] or
-            not isinstance(life.get("manifest"), Mapping)):
-        raise ValueError("missing World or manifest")
-    world_hash = life["manifest"].get("world_sha256")
-    genome_hash = life.get("genome")
-    if not _hex(world_hash, 64) or not _hex(genome_hash, 64):
-        raise ValueError("missing original world/genome digest")
-    world_key = (identity["cohort"], identity["world_index"])
-    if world_key in seen_worlds and seen_worlds[world_key] != (
-            life["world"], world_hash):
-        raise ValueError("world digest/name drift inside paired cohort")
-    seen_worlds[world_key] = (life["world"], world_hash)
+        raise ValueError("invalid original death/censoring/life seed")
+
+    manifest = life.get("manifest")
+    if (not isinstance(manifest, Mapping) or
+            manifest.get("schema") != "i3-life-manifest/v2" or
+            manifest.get("execution_model") != "i3-funded-v2" or
+            type(manifest.get("protocol")) is not str or
+            not manifest["protocol"].strip() or
+            manifest.get("life_seed") != identity["life_seed"] or
+            manifest.get("horizon") != F0.HORIZON or
+            not _hex(life.get("manifest_id"), 64) or
+            _json_digest(manifest) != life["manifest_id"]):
+        raise ValueError("original manifest is absent or changed")
+
+    source = manifest.get("source")
+    if (not isinstance(source, Mapping) or
+            source.get("git_head") != pins["source_sha"] or
+            source.get("working_tree_dirty") is not False or
+            not isinstance(source.get("files"), Mapping) or
+            not _hex(source.get("sha256"), 64) or
+            _json_digest(source["files"]) != source["sha256"]):
+        raise ValueError("original source does not agree with pinned checkout")
+
+    snapshot = manifest.get("world")
+    world_hash, genome_hash = manifest.get("world_sha256"), life.get("genome")
+    if (not isinstance(snapshot, Mapping) or
+            type(snapshot.get("name")) is not str or
+            snapshot["name"] != life.get("world") or
+            not _hex(world_hash, 64) or
+            world_hash != _json_digest(snapshot) or
+            not _hex(genome_hash, 64)):
+        raise ValueError("World snapshot/digest or genome digest inconsistent")
+
+    genome = manifest.get("genome")
     seed = identity["genome_seed"]
+    if (not isinstance(genome, Mapping) or
+            genome_digest(dict(genome)) != genome_hash or
+            genome_hash != _expected_birth_genome_digest(seed)):
+        raise ValueError("genome digest not authentic to declared G0 birth seed")
+
+    world_key = (identity["cohort"], identity["world_index"])
+    world_value = (life["world"], world_hash)
+    if world_key in seen_worlds and seen_worlds[world_key] != world_value:
+        raise ValueError("paired original World changed across policies")
+    seen_worlds[world_key] = world_value
     if seed in seen_genomes and seen_genomes[seed] != genome_hash:
         raise ValueError("genome digest changed across paired originals")
     seen_genomes[seed] = genome_hash
-    actual_policy = life["manifest"].get("experimental_policy", {}).get("name", "reference")
-    if actual_policy != policy:
-        raise ValueError("original policy differs from declared identity")
-    ticket = life.get("admission_receipt")
-    if (not isinstance(ticket, Mapping) or
-            ticket.get("cohort") != identity["cohort"] or
-            ticket.get("world_name") != life["world"] or
-            ticket.get("world_sha256") != world_hash or
-            ticket.get("transport_fingerprint") != pins["transport_fingerprint"] or
-            type(ticket.get("world_seed")) is not int or
-            ticket["world_seed"] != identity["world_seed"]):
-        raise ValueError("original ticket is not bound to declared World")
+
+    experimental = manifest.get("experimental_policy")
+    if policy == "reference":
+        # Real run_life does not mint a replay-gate admission for FIXED.
+        # The paired, source-locked GATE receipt anchors this reference
+        # World only IF the exact full original panel is checked.
+        if (experimental is not None or "admission" in life or
+                "experimental_policy" in life or "replay_gate" in life):
+            raise ValueError("reference must not claim a replay admission")
+    else:
+        ticket = life.get("admission")
+        if (not isinstance(experimental, Mapping) or
+                experimental.get("name") != policy or
+                life.get("experimental_policy") != experimental or
+                not isinstance(ticket, Mapping) or
+                experimental.get("admission") != ticket or
+                ticket.get("cohort") != identity["cohort"] or
+                ticket.get("family") != identity["family"] or
+                type(ticket.get("index")) is not int or
+                ticket["index"] != identity["world_index"] or
+                ticket.get("world_name") != life["world"] or
+                ticket.get("world_sha256") != world_hash or
+                ticket.get("transport_fingerprint") != pins["transport_fingerprint"] or
+                type(ticket.get("world_seed")) is not int or
+                ticket["world_seed"] != identity["world_seed"]):
+            raise ValueError("original replay admission not bound to exact World")
+        if (not isinstance(life.get("replay_gate"), Mapping) or
+                life["replay_gate"].get("mode") not in
+                ("gate", "random_equal_mean", "zero_perceived_cost")):
+            raise ValueError("missing original replay-gate evidence")
+
     ca = life.get("cognitive_accounting")
     if (not isinstance(ca, Mapping) or
+            ca.get("schema") != "i3-cognitive-funding/v2" or
             ca.get("status") != "SETTLED_FOR_DECLARED_WORK" or
-            type(ca.get("shortfall_steps")) is not int or ca["shortfall_steps"] != 0 or
+            type(ca.get("shortfall_steps")) is not int or
+            ca["shortfall_steps"] != 0 or
             not isinstance(ca.get("totals"), Mapping)):
         raise ValueError("unsettled or absent cognitive account")
     for resource in ("energy", "vigilance"):
-        ch = ca["totals"].get(resource)
-        if not isinstance(ch, Mapping):
+        channel = ca["totals"].get(resource)
+        if not isinstance(channel, Mapping):
             raise ValueError("missing real paid cognitive channel")
-        for field in ("paid", "unpaid"):
-            v = ch.get(field)
-            if type(v) not in (float, int) or not isfinite(v) or v < 0:
+        for field in ("requested", "paid", "unpaid"):
+            value = channel.get(field)
+            if type(value) not in (int, float) or not isfinite(value) or value < 0:
                 raise ValueError("invalid actual cognitive account")
-        if ch["unpaid"] > 1e-12:
+        if channel["unpaid"] > 1e-12:
             raise ValueError("unpaid cognitive work")
     if type(ca.get("replays_executed")) is not int or ca["replays_executed"] < 0:
         raise ValueError("invalid original replays")
@@ -188,7 +263,6 @@ def _actual_life(identity, life, policy, pins, seen_genomes, seen_worlds):
     if ca["replays_executed"] > 16 * sleep:
         raise ValueError("replays exceed lived sleep capacity")
     return sleep, ca
-
 
 def selection_from_originals(archive_dir, plan_path, pins):
     """Rank both architectures from exactly 3840 complete sealed originals."""
