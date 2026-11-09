@@ -14,9 +14,11 @@ remains the reference and Stage 2 is now the next scientific stage.
 
 The owner lifted ADR-0017 for exact Stage-2.1 transport fingerprint
 `dcada9e2…f1` after full-scale G/R engineering rehearsals passed on
-Python 3.11 and 3.12. Only the prospectively frozen DEVELOPMENT 80/81
-pilot may open next. The no-retry, sealed-original, blind-reduction-repair
-and prospective-custody rules remain mandatory. Candidate-J must not
+Python 3.11 and 3.12. The prospectively frozen DEVELOPMENT 80/81 pilot was opened once
+and completed: 36/36 generated, 36/36 reduced, zero structural defects.
+Its resulting source-locked originals and descriptive outcomes are archived.
+The one-time authorization is now exhausted. The no-retry, sealed-original,
+blind-reduction-repair and prospective-custody rules remain mandatory. Candidate-J must not
 be rerun, rescued post hoc or extended into a lived path.
 
 ## Source, scope and current reference
@@ -75,7 +77,7 @@ software defect. Keep adverse and null outcomes; do not tune them away.
 | --- | --- | --- |
 | 0 | Independent-population design, energetic mediation, complete paid Competition observation, individuality challenge, P5d uncertainty | Open in parallel; [#1060](https://github.com/josselin-orta-lab/individual-zero/issues/1060), existing #1026/#1054 |
 | 1 | Information value in predicted distress, replacing additive curiosity/relevance/prudence | **CLOSED NEGATIVE on 9 November 2026 under ADR-0018.** The single Candidate-J software falsifier returned `CANDIDATE_J_DEFECT` (J0 projector validity failed for both declared projectors; capacity unobserved): [results](studies/stage1-candidate-j-software-falsifier/RESULTS.md). P1.3 remains the reference; its curiosity is an acknowledged innate disposition with heritable weight `beta_u` (option B). No later Stage-1 candidate; [#1061](https://github.com/josselin-orta-lab/individual-zero/issues/1061) |
-| 2 | Decide how much to think by value of computation | **Current stage.** [2.1 replay gate](STAGE2_REPLAY_GATE.md) now has canonical software verdict **`REPLAY_GATE_CAPACITY_SHOWN`** ([result](studies/stage2-replay-gate-software/RESULTS.md)): R0-R4 PASS on the corrected frozen formula, no World/life. R3 is formally PASS but flat/non-discriminating in S1 and must not be repaired post hoc. Stage 2.1 therefore remains active for its frozen lived path after a valid ADR-0017 lift. Supplied 68/69 remains descriptive only. Next: the single source-locked DEVELOPMENT 80/81 pilot on frozen original G/R custody after the recorded owner lift; 2.2 remains subsequent, not current. [#1062](https://github.com/josselin-orta-lab/individual-zero/issues/1062) |
+| 2 | Decide how much to think by value of computation | **Current stage.** [2.1 replay gate](STAGE2_REPLAY_GATE.md) now has canonical software verdict **`REPLAY_GATE_CAPACITY_SHOWN`** ([result](studies/stage2-replay-gate-software/RESULTS.md)): R0-R4 PASS on the corrected frozen formula, no World/life. R3 is formally PASS but flat/non-discriminating in S1 and must not be repaired post hoc. Stage 2.1 therefore remains active for its frozen lived path after a valid ADR-0017 lift. Supplied 68/69 remains descriptive only. DEVELOPMENT 80/81 is now complete ([results](studies/stage2-replay-gate-development-80-81/RESULTS.md)): G/R PASS and pooled replay/cognitive-cost reduction, but no demonstrated survival non-inferiority. Its predeclared RANDOM-EQUAL-MEAN mean is frozen at 5532/867. Next: software-only prospective freeze of the random-control stream and the ≥8-population selected Stage-2.1 gate, uncertainty and margins, *before* any new World authorization; 2.2 remains subsequent, not current. [#1062](https://github.com/josselin-orta-lab/individual-zero/issues/1062) |
 | 3 | Change detection, latent causes, then perceived-attribute factorization | Full stage deferred. One minimal generic future-opportunity representation may be tested early only as a Stage-1 prerequisite; do not start the Stage-3 bundle. |
 | 4 | Successor features and delayed credit evaluated by current bodily distress | Deferred after the required model/budget decisions |
 | 5 | Learned topology for obstacles and larger F1 worlds | Deferred; unchanged perception radius |

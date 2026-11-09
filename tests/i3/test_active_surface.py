@@ -29,10 +29,15 @@ class ActiveSurfaceContract(unittest.TestCase):
         self.assertFalse(self.data["governance"]["i3_registered"])
         self.assertEqual(
             self.data["governance"]["adr_0017_world_opening_moratorium"], "LIFTED_2026_11_09")
-        self.assertTrue(self.data["governance"]["fresh_lived_worlds_allowed"])
+        # ADR-0017 was lifted, but the owner's only authorized 80/81 panel
+        # has been executed and exhausted; no new World is now authorized.
+        self.assertFalse(self.data["governance"]["fresh_lived_worlds_allowed"])
         self.assertTrue(self.data["governance"]["adr_0017_owner_lift_recorded"])
         self.assertEqual(self.data["governance"]["authorized_fresh_lived_scope"],
-                         "FROZEN_STAGE2_1_DEVELOPMENT_80_81_ONLY")
+                         "EXHAUSTED_80_81_NO_FURTHER_WORLD_AUTHORIZED")
+        self.assertEqual(self.data["governance"]["development_80_81"],
+                         "CLOSED_COMPLETE_NO_RETRY")
+        self.assertFalse(self.data["governance"]["next_scientific_cohort_authorized"])
         self.assertFalse(self.data["governance"]["scientific_gate_authorized"])
         self.assertEqual(self.data["governance"]["adr_0019"], "ACCEPTED_2026_11_09")
         self.assertEqual(self.data["governance"]["pre_lift_replay_runtime_support_allowed"], "ENGINEERING_COHORT_ONLY")

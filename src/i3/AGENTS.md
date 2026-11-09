@@ -32,8 +32,8 @@ rerun it.
 ([custody](docs/studies/stage2-replay-gate-development-80-81/HARDENED_REHEARSAL.md)).
 The owner has expressly authorized the two custody equivalences and the lift
 is recorded in `docs/STATUS.md`. Never fabricate a new owner decision,
-broaden an existing one, or change the source-locked transport. Only frozen
-DEVELOPMENT 80/81 may open next; other Worlds require separate authority.
+broaden an existing one, or change the source-locked transport. The one-off DEVELOPMENT 80/81 panel has completed and is now closed
+without retry; other Worlds require separate prospective authority.
 
 **Governance now accepted:** [ADR-0019](../../docs/decisions/ADR-0019-i3-exact-transport-rehearsal-before-lift.md)
 authorized the exact pre-lift transport solely for the engineering cohort.
@@ -50,7 +50,8 @@ Do not:
 - expose `p13_replay_gate_v1` to any scientific cohort before the explicit
   ADR-0017 lift; pre-lift engineering-only dispatch is allowed under ADR-0019
   only if scientific admission fails closed;
-- open a fresh World outside the frozen and owner-lifted DEVELOPMENT 80/81 pilot;
+- reopen DEVELOPMENT 80/81 or open any further scientific World without a
+  new prospective protocol and owner authorization;
 - change the frozen Stage-2.1 replay-gate formula, controls, fixtures,
   thresholds or verdict table after the canonical software result;
 - promote the supplied non-conforming replay-gate software result or 68/69
@@ -98,7 +99,14 @@ before proceeding.
 
 ADR-0017 remains authoritative on two-phase generation and reduction,
 sealing all originals, no retry after generation failure, and blind reduction
-repair without outcome inspection. The owner lift in `docs/STATUS.md` applies
-to only one prospective DEVELOPMENT 80/81 pilot, not a general scientific GO.
+repair without outcome inspection. The owner lift in `docs/STATUS.md` authorized exactly one prospective
+DEVELOPMENT 80/81 panel, which completed in run `42641395586` and is now
+**closed without retry**. The lift remains in custody history, but no
+additional World opening is authorized by that consumed decision. The
+existing runtime guard verifies the source lift fingerprint but does not
+itself track exhausted scientific indices; the archived one-shot claim
+and these instructions must not be bypassed. Before any *new* transport,
+close that operational gap prospectively and obtain new rehearsal/lift
+custody.
 
 Green software tests are never a scientific GO.

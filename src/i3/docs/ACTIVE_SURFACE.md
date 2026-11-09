@@ -19,9 +19,13 @@ The corrected R0-R4 software falsifier executed exactly once and passed.
 The hardened transport passed 36/36 G/R rehearsals on Python 3.11 and 3.12
 with the **same exact content fingerprint** `dcada9e2…f1`, verified after
 merging PR #1220. The owner lift is recorded in [STATUS.md](STATUS.md).
-**Only the previously frozen DEVELOPMENT 80/81 scientific pilot may open
-next.** All validation, selection, reserve, unrelated worlds and confirmatory
-gates remain closed pending their own prospective plans.
+The **single prospective DEVELOPMENT 80/81 pilot has now completed**:
+36/36 original lives generated, 36/36 reduced, zero structural failures;
+[descriptive findings](studies/stage2-replay-gate-development-80-81/RESULTS.md).
+It reduced replay and pooled paid cognition, but did **not** establish survival
+non-inferiority. The owner-lifted scope is **consumed** and 80/81 is closed
+without retry. All additional Worlds, validation, selection, reserve and
+confirmatory gates remain closed until newly frozen authorization.
 
 ## Active scientific surface
 
@@ -48,7 +52,8 @@ These files support ADR-0017 execution custody and are not themselves evidence:
 - `lab/stage2_admission.py` (canonical owner-lift check and full-WorldSpec ticket admission)
 - `lab/stage2_panel.py` (one parameterized runner for rehearsal and post-lift pilot)
 - `tests/i3/test_stage2_exact_transport.py`
-- `docs/studies/stage2-replay-gate-development-80-81/` (frozen plan, sealed rehearsal PASS)
+- `docs/studies/stage2-replay-gate-development-80-81/` (frozen plan,
+  sealed rehearsal, completed immutable scientific originals and descriptive result)
 
 The supplied 68/69 pilot runner is **archived**, not an active transport:
 `archive/stage2/development_68_69.py`. Its historical observations cannot
@@ -86,7 +91,8 @@ older Stage-1 documents only for a named historical question.
 
 Stop and re-evaluate if a change does any of the following:
 
-- opens a World outside the owner-authorized frozen DEVELOPMENT 80/81 plan;
+- reopens the now-closed DEVELOPMENT 80/81 panel or any other World without
+  a separately frozen protocol and fresh owner authorization;
 - dispatches replay-gate cognition without a matching canonical owner lift,
   exact transport fingerprint and full-WorldSpec-bound ticket;
 - changes the frozen replay-gate formula or R0-R4 rules after the canonical

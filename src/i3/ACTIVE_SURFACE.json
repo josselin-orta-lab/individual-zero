@@ -4,12 +4,12 @@
   "reference": "P1.3 funded-v2",
   "current_stage": "2.1 replay gate",
   "canonical_status": "REPLAY_GATE_CAPACITY_SHOWN",
-  "next_scientific_action": "open exactly once the prospectively frozen DEVELOPMENT 80/81 panel with unchanged transport, G/R original custody, and no retries; do not open gate/validation/reserve",
+  "next_scientific_action": "software-only prospective freeze of RANDOM-EQUAL-MEAN stream/count distribution and selected >=8-population Stage-2.1 gate design; no World authorized until separate owner decision",
   "governance": {
     "i3_registered": false,
     "stage1": "CLOSED_NEGATIVE_ADR_0018",
     "adr_0017_world_opening_moratorium": "LIFTED_2026_11_09",
-    "fresh_lived_worlds_allowed": true,
+    "fresh_lived_worlds_allowed": false,
     "candidate_j_reopen_allowed": false,
     "candidate_k_allowed": false,
     "stage2_transport_deadlock": "RESOLVED_BY_ACCEPTED_ADR_0019",
@@ -17,10 +17,12 @@
     "adr_0019": "ACCEPTED_2026_11_09",
     "adr_0017_engineering_gate": "HARDENED_REHEARSAL_PASS_OWNER_LIFT_RECORDED",
     "adr_0017_owner_lift_recorded": true,
-    "authorized_fresh_lived_scope": "FROZEN_STAGE2_1_DEVELOPMENT_80_81_ONLY",
+    "authorized_fresh_lived_scope": "EXHAUSTED_80_81_NO_FURTHER_WORLD_AUTHORIZED",
     "scientific_gate_authorized": false,
     "other_world_indices_authorized": false,
-    "stage2_owner_lift_transport_fingerprint": "dcada9e221f79b9450a4f05fecd20e60ac6595bb306aa871f29e45aefea0b6f1"
+    "stage2_owner_lift_transport_fingerprint": "dcada9e221f79b9450a4f05fecd20e60ac6595bb306aa871f29e45aefea0b6f1",
+    "development_80_81": "CLOSED_COMPLETE_NO_RETRY",
+    "next_scientific_cohort_authorized": false
   },
   "active_science": [
     "src/i3/modules/p13_replay_gate_mind.py",
@@ -29,7 +31,9 @@
     "src/i3/docs/STAGE2_REPLAY_GATE.md",
     "src/i3/docs/studies/stage2-replay-gate-software/RESULTS.md",
     "src/i3/docs/studies/stage2-replay-gate-software/canonical-summary.json",
-    "src/i3/docs/studies/stage2-replay-gate-software/canonical-result.json.gz"
+    "src/i3/docs/studies/stage2-replay-gate-software/canonical-result.json.gz",
+    "src/i3/docs/studies/stage2-replay-gate-development-80-81/RESULTS.md",
+    "src/i3/docs/studies/stage2-replay-gate-development-80-81/RANDOM_EQUAL_MEAN_PARAMETER.md"
   ],
   "active_engineering": [
     "src/i3/lab/engineering_cohort.py",
@@ -82,7 +86,7 @@
     "src/i3/docs/studies/"
   ],
   "rules": [
-    "After the explicit ADR-0017 owner lift, only the frozen prospective DEVELOPMENT 80/81 pilot may open next under the exact Stage-2.1 fingerprint; other Worlds need their own protocol.",
+    "The owner's narrow 80/81 opening was consumed once and is CLOSED; no additional science World may open without a newly frozen protocol and separate authorization.",
     "Stage-2 active science must not import Stage-1 lab helpers.",
     "Pre-lift p13_replay_gate_v1 may be routed only for ADR-0019 engineering-cohort rehearsal; scientific cohort admission must fail closed until explicit ADR-0017 owner lift.",
     "The corrected canonical software verdict is REPLAY_GATE_CAPACITY_SHOWN; do not rerun or alter R0-R4 post hoc.",
@@ -132,5 +136,30 @@
       "report_sha256": "b6a84169ac58cca106bd4c03f25769c579a81d704d7657fd87c9066461ac08c7",
       "transport_fingerprint": "dcada9e221f79b9450a4f05fecd20e60ac6595bb306aa871f29e45aefea0b6f1"
     }
+  },
+  "development_80_81": {
+    "status": "DEVELOPMENT_COMPLETE_ENGINEERING_CONTINUATION_PASS",
+    "scientific_interpretation": "DESCRIPTIVE_ONLY_NONINFERIORITY_NOT_SHOWN",
+    "owner_lift_main_sha": "e53e35a351f1c57a8ef23b42dc6133d93717eb52",
+    "execution_source_sha": "5d362e226f8e87df226dae5b239e26cc99072a13",
+    "transport_fingerprint": "dcada9e221f79b9450a4f05fecd20e60ac6595bb306aa871f29e45aefea0b6f1",
+    "plan_sha256": "a28606678d13bb9af18f590c328a63eb9eb82f7130c90656e4f520260d294c92",
+    "workflow_run_id": 42641395586,
+    "claim_sha": "3de2194328cede760c48c575a892447cadeec1fb",
+    "evidence_sha": "5a13efc53dafc10e9b9248479a4756eda6a55eeb",
+    "manifest_sha256": "c6893bb1b2457890e3d66680f10bf0c14b451e62c2e5c381951f1119f286b76e",
+    "result_sha256": "a6652f4d8cd1f8ccb87d8bf902ecb2eabf68ec0a548b187db140ea61dfc9401b",
+    "planned": 36,
+    "generated": 36,
+    "reduced": 36,
+    "invariant_failures": 0,
+    "next_control_parameter": {
+      "numerator_replays": 5532,
+      "denominator_sleep_steps": 867,
+      "pooled_mean": 6.380622837370242
+    },
+    "survival_noninferiority": "NOT_ESTABLISHED",
+    "rerun_allowed": false,
+    "confirmatory_stage2_1_gate_executed": false
   }
 }

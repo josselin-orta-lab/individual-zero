@@ -1,0 +1,16 @@
+{
+  "continuation": "PASS",
+  "generated": 36,
+  "manifest_sha256": "c6893bb1b2457890e3d66680f10bf0c14b451e62c2e5c381951f1119f286b76e",
+  "no_retry": true,
+  "originals_sha256_verified": 36,
+  "owner_lift_main_sha": "e53e35a351f1c57a8ef23b42dc6133d93717eb52",
+  "plan_sha256": "a28606678d13bb9af18f590c328a63eb9eb82f7130c90656e4f520260d294c92",
+  "planned": 36,
+  "reduced": 36,
+  "run_id": "42641395586",
+  "schema": "i3-stage2-1-development-80-81-original-custody/v1",
+  "scientific_gate": "NOT_EXECUTED",
+  "source_sha": "5d362e226f8e87df226dae5b239e26cc99072a13",
+  "transport_fingerprint": "dcada9e221f79b9450a4f05fecd20e60ac6595bb306aa871f29e45aefea0b6f1"
+}

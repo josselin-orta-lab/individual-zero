@@ -9,6 +9,7 @@ Current source-of-truth: [ACTIVE_SURFACE.md](ACTIVE_SURFACE.md).
 | Active-surface contract | `tests/i3/test_active_surface.py` | Checks all intra-I3 imports and internal links, archived Stage-1 modules, lazy legacy runtime isolation, the closed 68/69 runner, and current ADR-0017/ADR-0019 governance; software-only checks, never a scientific GO |
 | Stage 2.1 replay gate | `tests/i3/test_p13_replay_gate_mind.py` | Software/unit properties of the corrected frozen mechanism; **not** the one-shot R0-R4 scientific verdict |
 | ADR-0017 execution custody | `tests/i3/test_stage2_execution_pipeline.py` | Two-phase G/R, engineering cohort and sealed-rehearsal mechanics; never evidence by itself |
+| Stage-2.1 first-exposure original custody | `tests/i3/test_stage2_development_80_81_archive.py` | Read-only hash and identity verification of 36 immutable originals, one-shot source lock, G/R result and prospectively calculated RANDOM-EQUAL-MEAN mean; never reopens a World or asserts favorable outcomes |
 | Corrected R0-R4 falsifier | `lab/stage2_replay_gate_falsifier.py` | **Executed once: `REPLAY_GATE_CAPACITY_SHOWN`**, R0-R4 PASS; no World/life. Machine result is preserved under `studies/stage2-replay-gate-software/` |
 
 Historical suite-size statements below certify their own dated commits only.
