@@ -12,15 +12,16 @@ rationale, checked references and deliberate compatibility boundaries. The machi
 - **Stage 1:** closed negative under ADR-0018.
 - **Current stage:** Stage 2.1, replay gate.
 - **Canonical Stage-2.1 status:** `REPLAY_GATE_CAPACITY_SHOWN`.
-- **ADR-0017:** world-opening moratorium remains active.
+- **ADR-0017:** **owner-lifted on 9 November 2026** for fingerprint `dcada9e2…f1` and the frozen DEVELOPMENT 80/81 pilot only.
 - **I3:** proposal only, unregistered.
 
-The corrected R0-R4 software falsifier has executed once and passed. The fresh
-exact Stage-2.1 transport is implemented and its full-scale sealed engineering
-rehearsal **passed** (fingerprint `15136d13…`, commit `e23a28e`). The next step
-is the owner's explicit ADR-0017 lift decision. No **scientific** World may open until an explicit owner lift is recorded.
-Owner-accepted ADR-0019 permits an engineering-cohort-only exact rehearsal
-before that lift, with all scientific cohorts failing closed.
+The corrected R0-R4 software falsifier executed exactly once and passed.
+The hardened transport passed 36/36 G/R rehearsals on Python 3.11 and 3.12
+with the **same exact content fingerprint** `dcada9e2…f1`, verified after
+merging PR #1220. The owner lift is recorded in [STATUS.md](STATUS.md).
+**Only the previously frozen DEVELOPMENT 80/81 scientific pilot may open
+next.** All validation, selection, reserve, unrelated worlds and confirmatory
+gates remain closed pending their own prospective plans.
 
 ## Active scientific surface
 
@@ -44,15 +45,15 @@ These files support ADR-0017 execution custody and are not themselves evidence:
 - `lab/two_phase_panel.py`
 - `tests/i3/test_stage2_execution_pipeline.py`
 - `runtime/admission.py` (World-bound admission tickets)
-- `lab/stage2_admission.py` (engineering-only admission; scientific cohorts fail closed)
+- `lab/stage2_admission.py` (canonical owner-lift check and full-WorldSpec ticket admission)
 - `lab/stage2_panel.py` (one parameterized runner for rehearsal and post-lift pilot)
 - `tests/i3/test_stage2_exact_transport.py`
 - `docs/studies/stage2-replay-gate-development-80-81/` (frozen plan, sealed rehearsal PASS)
 
 The supplied 68/69 pilot runner is **archived**, not an active transport:
 `archive/stage2/development_68_69.py`. Its historical observations cannot
-be reused as prospective evidence. A fresh exact-SHA engineering transport
-may be prepared under ADR-0019, but scientific cohorts remain closed.
+be reused as prospective evidence. The exact transport is now owner-lifted only for the frozen DEVELOPMENT
+80/81 pilot. This does not retroactively legitimize the supplied 68/69 run.
 
 ## Compatibility-only Stage 1
 
@@ -85,9 +86,9 @@ older Stage-1 documents only for a named historical question.
 
 Stop and re-evaluate if a change does any of the following:
 
-- opens a World while ADR-0017 is active;
-- exposes `p13_replay_gate_v1` to a scientific World before the ADR-0017 owner
-  lift, or permits engineering dispatch without a fail-closed cohort guard;
+- opens a World outside the owner-authorized frozen DEVELOPMENT 80/81 plan;
+- dispatches replay-gate cognition without a matching canonical owner lift,
+  exact transport fingerprint and full-WorldSpec-bound ticket;
 - changes the frozen replay-gate formula or R0-R4 rules after the canonical
   software verdict;
 - treats the formally passing but flat S1 R3 fixture as proof of graded cost
