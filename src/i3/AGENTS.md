@@ -25,8 +25,13 @@ Do not reconstruct the current handoff from old Stage-1 documents.
 - ADR-0017's world-opening moratorium is **active**.
 
 The corrected R0-R4 falsifier has executed exactly once and passed. Do not
-rerun it. Next, prepare a fresh Stage-2.1 lived transport and its exact-SHA
-engineering rehearsal. ADR-0017 still forbids actual lived execution.
+rerun it.
+
+**Current blocker:** proposed
+[ADR-0019](../../docs/decisions/ADR-0019-i3-exact-transport-rehearsal-before-lift.md)
+requires explicit owner acceptance before any pre-lift replay-gate runtime
+dispatch is added. ADR-0017 remains active. Do not implement around this
+ordering conflict with a rehearsal clone or a premature lift.
 
 ## Hard boundaries
 
