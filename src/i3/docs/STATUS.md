@@ -14,6 +14,19 @@ Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
 
+## Stage 2.1 complete three-policy accounting (9 November 2026)
+
+**SOFTWARE ONLY / NO NEW WORLD.** The existing v3 paired reader now
+reports [RANDOM versus FIXED](studies/stage2-replay-gate-selected-design/PAIRED_SURVIVAL_PROFILE.md)
+across the same 240 newborn-G0/world blocks, alongside GATE-FIXED and
+GATE-RANDOM. The software exposes full-policy horizon discordance,
+lived-time and paid cognition by population and ecological family,
+and checks the arithmetic identity GATE-FIXED = GATE-RANDOM +
+RANDOM-FIXED (with floating-point residuals recorded). This **cannot**
+establish causal mediation, equal paid replay quantities, mean-survival
+non-inferiority, owner authority, World access or engine promotion.
+No new test acceptance thresholds are introduced.
+
 ## Stage 2.1 paired-survival harm profile (9 November 2026)
 
 **SOFTWARE ONLY; NO NEW EXPOSURE.** The current v3
