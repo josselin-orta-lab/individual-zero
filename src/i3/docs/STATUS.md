@@ -14,6 +14,25 @@ Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
 
+## Stage 2.1 selected-gate inferential revision proposed (9 November 2026)
+
+**SOFTWARE-ONLY / NO_GO FOR CURRENT EIGHT-POPULATION MEAN NON-INFERIORITY.**
+After the [inferential defect audit](studies/stage2-replay-gate-selected-design/INFERENCE_POWER_AUDIT.md),
+the separate [v2 revision candidate](studies/stage2-replay-gate-selected-design/PROTOCOL_REVISION_V2.md)
+specifies the target as equal-weight mean fixed-horizon survival contrast of
+independently selected GATE and FIXED populations. Its deterministic
+[bounded mean-survival sensitivity](../lab/stage2_mean_survival_sensitivity.py)
+uses a conditional Hoeffding bound, not a scientific verdict: for eight
+independent [-1,+1] population contrasts the alpha=0.05 radius is ~0.8654.
+Consequently the original seven-of-eight sign rule cannot establish mean
+survival non-inferiority, and the conservative alternative is too imprecise
+for the proposed 5-point margin at realistic effects. Margin, independence,
+sampling distribution, method and power require independent review and owner
+arbitration; do not automatically create larger cohorts. This does not close
+Stage 2.1 scientifically, alter its replay gate, or authorize any World.
+The old 80/81 one-shot permission stays exhausted, P1.3 reference and I3
+unregistered.
+
 ## Stage 2.1 continuation: opt-in funded RANDOM control (software only)
 
 **9 November 2026, prospective engineering branch, no new scientific World.**
