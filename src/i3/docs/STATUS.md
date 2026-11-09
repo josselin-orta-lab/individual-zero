@@ -14,6 +14,21 @@ Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
 
+## Stage 2.1 finite-panel readout candidate (9 November 2026)
+
+**SOFTWARE-ONLY, NO NEW SCIENTIFIC EXPOSURE.** The
+[finite-panel receipt contract](studies/stage2-replay-gate-selected-design/FINITE_PANEL_RECEIPTS.md)
+and `lab/stage2_finite_panel.py` now describe the complete candidate
+1,200-cell validation panel by selected-founder ID, paired F0 world,
+condition, death/censoring, actually paid energy/vigilance and replay
+opportunity. Missing, duplicate or foreign reduced receipts fail
+closed; the readout remains descriptive and cannot attest original
+G/R custody, correctly selected founder ranking, ecological
+independence or a scientific non-inferiority verdict.
+The previous eight-population mean non-inferiority NO_GO and
+unregistered I3 status are unchanged. No World opening or stage
+promotion is authorized.
+
 ## Stage 2.1 selected-gate inferential revision proposed (9 November 2026)
 
 **SOFTWARE-ONLY / NO_GO FOR CURRENT EIGHT-POPULATION MEAN NON-INFERIORITY.**
