@@ -14,6 +14,20 @@ Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
 
+## Stage 2.1 original-custody bridge proposal (9 November 2026)
+
+**SOFTWARE-ONLY / NO NEW SCIENTIFIC OPENING.**
+The [sealed selection-to-validation bridge](studies/stage2-replay-gate-selected-design/SEALED_SELECTION_BRIDGE.md)
+checks complete original selection archives (3,840 expected lives), rebuilds
+the five selected founders per architecture and population using the existing
+persistence-only rank rule, then validates the exact 1,200-cell original
+validation panel before descriptive reduction. It requires caller-supplied
+source/plan/transport/manifest SHA pins, compares original World/genome
+digests and funded cognitive settlement, and fails closed on mismatches.
+It does NOT attest the provenance or pre-exposure authority of those pins,
+grant permission, establish independent population sampling or change the
+eight-population mean non-inferiority NO_GO. It never executes Worlds.
+
 ## Stage 2.1 finite-panel readout candidate (9 November 2026)
 
 **SOFTWARE-ONLY, NO NEW SCIENTIFIC EXPOSURE.** The

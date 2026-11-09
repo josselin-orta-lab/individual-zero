@@ -38,6 +38,12 @@ validates the candidate 1,200-cell F0 layout without constructing
 Worlds or claiming mean survival non-inferiority. It does not
 authenticate originals or grant selection/validation authority.
 
+[Read-only sealed selection/validation preflight](studies/stage2-replay-gate-selected-design/SEALED_SELECTION_BRIDGE.md)
+reconstructs prospective founder ranking from complete original
+selection receipts, then checks validation originals against the selected
+IDs. External digest pins are required; consistency cannot independently
+certify source provenance or authorize a new study.
+
 ## Stage 2.1 engineering custody
 
 - [Hardened 36/36 sealed rehearsal](studies/stage2-replay-gate-development-80-81/HARDENED_REHEARSAL.md): structural PASS under ADR-0019, **not** an ADR-0017 lift.
