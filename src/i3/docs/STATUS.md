@@ -14,6 +14,19 @@ Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
 
+## Stage 2.1 paired-survival harm profile (9 November 2026)
+
+**SOFTWARE ONLY; NO NEW EXPOSURE.** The current v3
+[matched interpretation contract](studies/stage2-replay-gate-selected-design/PAIRED_SURVIVAL_PROFILE.md)
+adds exact 240-block GATE-versus-FIXED and GATE-versus-RANDOM horizon
+survival discordances, lived-step direction and worst adverse delta,
+death on step 400, plus lower paid cognition coexisting with shorter
+life. The same counts remain visible per F0 family and population.
+This prevents a zero mean contrast from hiding opposite deaths in
+different ecologies. The existing sealed-reader gains these finite
+descriptions without any World or Mind change. No statistical inference,
+non-inferiority verdict, source permission or engine promotion follows.
+
 ## Stage 2.1 paid replay exposure audit (9 November 2026)
 
 **SOFTWARE ONLY; NO NEW WORLD.** The [v3 original readout](studies/stage2-replay-gate-selected-design/MECHANISM_FIRST_SEALED_READOUT.md)
