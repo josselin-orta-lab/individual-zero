@@ -9,6 +9,7 @@ on:
       - 'src/i3/engine.json'
       - 'src/i3/ACTIVE_SURFACE.json'
       - 'tests/i3/**'
+      - 'src/i3/docs/studies/stage2-replay-gate-selected-design/ENGINEERING_B1_PLAN.json'
       - 'scripts/check_engine_repository.py'
       - 'tests/test_engine_repository.py'
       - '.github/workflows/i3-proposal-checks.yml'
@@ -52,3 +53,95 @@ jobs:
       - name: Check current navigation
         if: matrix.python-version == '3.11'
         run: python tools/check_repo_navigation.py --scope entrypoints
+
+  b1-engineering:
+    # Keep expensive engineering replay separate from normal I3 software
+    # tests, only for explicitly named B1 survival-development branches.
+    if: startsWith(github.head_ref, 'research/i3-survival-')
+    name: I3 B1 G/R engineering (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    env:
+      PYTHONPATH: src
+      PLAN: src/i3/docs/studies/stage2-replay-gate-selected-design/ENGINEERING_B1_PLAN.json
+    steps:
+      - name: Checkout exact survival candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Verify engineering plan has zero scientific allocation
+        run: |
+          python - <<'PY'
+          import json, os
+          with open(os.environ["PLAN"]) as stream:
+              p = json.load(stream)
+          assert p["protocol_id"] == "I3_SURVIVAL_B1_NON_EVIDENTIARY_ENGINEERING_SMOKE"
+          assert p["scientific"]["indices"] == []
+          assert p["scientific"]["genome_seeds"] == []
+          assert p["engineering"]["cohort"] == "engineering"
+          assert p["arms"] == ["reference", "p13_replay_gate_v1"]
+          assert len(p["engineering"]["indices"]) == 4
+          assert len(p["engineering"]["genome_seeds"]) == 1
+          assert p["no_engineering_outcomes_publish"] is True
+          PY
+      - name: Execute pure synthetic exact paired power campaign
+        run: |
+          python -m unittest discover -s tests/i3 -p 'test_stage2_exact_paired_survival.py' -v
+          python -m i3.lab.stage2_exact_paired_survival > "$RUNNER_TEMP/b1-power-synthetic.json"
+          python - "$RUNNER_TEMP/b1-power-synthetic.json" <<'PY'
+          import json, sys
+          with open(sys.argv[1]) as stream:
+              data = json.load(stream)
+          assert data["conditions"] == "PURE_SYNTHETIC_IID_PAIRED_SURVIVAL_DRAWS"
+          assert data["no_actual_survival_data_read"]
+          assert len(data["simulated_cells"]) == 16
+          assert all(c["scientific_lives"] == 0 and c["worlds_opened"] == 0
+                     and c["scientific_verdict"] == "NOT_ISSUED"
+                     for c in data["simulated_cells"])
+          print("B1_SYNTHETIC_CALIBRATION_16_SCENARIOS_COMPLETE")
+          PY
+      - name: Run sealed G/R against 24 temporary engineering lives
+        run: |
+          python -m i3.lab.stage2_panel rehearse "$PLAN" > "$RUNNER_TEMP/b1-engineering-structure.json"
+          python - "$RUNNER_TEMP/b1-engineering-structure.json" <<'PY'
+          import json, sys
+          with open(sys.argv[1]) as stream:
+              report = json.load(stream)
+          allowed = {
+              "schema", "planned", "phase_G", "generated", "generation_failure",
+              "phase_R", "reduced", "reduction_failure", "invariant_failures",
+              "manifest_sha256", "mean_step_ms", "status", "runner",
+              "protocol_id", "transport_fingerprint", "plan_sha256", "namespace",
+          }
+          assert set(report) <= allowed, "non-structural engineering data cannot leave G/R"
+          # Only preallowed structural fields can appear in CI logs.
+          print(json.dumps(report, sort_keys=True))
+          assert report["status"] == "PASS", "engineering G/R FAIL, not a scientific death"
+          assert report["planned"] == report["generated"] == report["reduced"] == 24
+          assert report["phase_G"] == "GENERATED" and report["phase_R"] == "COMPLETE"
+          assert report["namespace"] == "engineering"
+          assert report["generation_failure"] is None
+          assert report["reduction_failure"] is None
+          assert report["invariant_failures"] and not any(report["invariant_failures"].values())
+          print("B1_ENGINEERING_STRUCTURAL_PASS_24_OF_24_NO_SCIENTIFIC_WORLD")
+          PY
+      - name: Archive allowlisted structural and synthetic data only
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-b1-non-evidentiary-py${{ matrix.python-version }}
+          path: |
+            ${{ runner.temp }}/b1-engineering-structure.json
+            ${{ runner.temp }}/b1-power-synthetic.json
+          if-no-files-found: error
+          retention-days: 30

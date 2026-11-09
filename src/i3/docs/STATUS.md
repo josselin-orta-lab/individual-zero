@@ -14,6 +14,40 @@ Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
 
+## Stage 2.1 B1 engineering motor-audit funding correction (9 November 2026)
+
+**SOURCE REVISION IN REVIEW; NOT A RETROACTIVE EQUIVALENCE CLAIM.**
+The first B1 engineering-only smoke FAIL-closed at 21/24 generated
+lives with `unfunded or unknown motor command` in a GATE case.
+The optional residual-audit cycle could consume the energy already
+reserved by P1.3 Action Control for the chosen motor action.
+The prospective source now skips only that **optional** audit if
+its exact cumulative debit would invalidate the previously admitted
+motor command. GATE formula, chosen action, P1.3 competition,
+cognitive tariffs and body physics remain unchanged, but the number
+of future paid audits can change, requiring a **new** exact-source
+rehearsal and research review. No world from the earlier frozen
+DEVELOPMENT 80/81 pilot was reopened or reinterpreted.
+[Failure and correction](studies/stage2-replay-gate-selected-design/SURVIVAL_B1_LAUNCH.md).
+
+## Stage 2.1 autonomous survival campaign B1 (9 November 2026)
+
+**COMPUTATIONAL SURVIVAL STUDY + LIVE ENGINEERING SMOKE LAUNCHED;
+SCIENTIFIC WORLD AUTHORIZATION BLOCKED.** The
+[autonomous B1 launch contract](studies/stage2-replay-gate-selected-design/SURVIVAL_B1_LAUNCH.md)
+selects a known-F0-only matched newborn G0/world survival target
+and implements a conditional exact Clopper-Pearson/Bonferroni
+**one-sided finite-sample lower risk-difference bound** for iid paired
+units, along with fixed-seed conditional power simulations. A dedicated
+GitHub Actions workflow runs the actual existing G/R transport with
+**24 temporary, non-evidentiary engineering lives** only, on Python
+3.11 and 3.12; the plan has **no scientific indices** and the old
+runner continues to reject every science cohort. The engineering
+structural report publishes no mortality, behavior or cognitive
+outcomes. Passing a smoke test cannot replace the future full-scale
+exact-transport rehearsal, sampling review or owner/source authorization.
+No new scientific lives or Stage-2.2 GO are claimed. I3 remains unregistered.
+
 ## Stage 2.1 confirmatory survival power study initiated (9 November 2026)
 
 **STUDY DESIGN/POWER ANALYSIS ACTIVE; SCIENTIFIC WORLD EXECUTION BLOCKED.**
