@@ -1,204 +1,338 @@
-# I3 — Limites et scénario de généralisation sans règles imposées (vérifié sur main e4eb3e8)
+# I3: Limits and a generalization scenario without imposed rules (verified against main e4eb3e8)
 
-Nov 6, 2026 · @Josselin
+6 November 2026 · @Josselin
 
-## En bref
+> **English translation of an owner-supplied research report.** The original
+> French text is preserved byte-for-byte at
+> `archive/i3/original-language-records-2026-11-09/src/i3/docs/GENERALIZATION_SCENARIO_SOURCE_2026-11-06.md`.
+> The report is a historical snapshot of `main` at `e4eb3e8`, not an
+> assertion about the repository's current stage or adopted mechanisms.
 
-La vérification directe de `main` (commit `e4eb3e8`, issu de la PR #1058, sans commit plus récent) confirme presque tous les chiffres du rapport précédent, ainsi que la description du code. Une conclusion change : **P5e ne montre pas de défaut de la Competition.** Les repas « perdus » s'expliquent surtout par l'absence de faim, par des déficits concurrents ou par d'autres plans alimentaires.
+## Executive summary
 
-- **Ce qui porte la survie en monde neuf :** le modèle d'effets appris (0/288 survivants sans lui, contre 112/288) et le bonus de curiosité (4/288 sans lui, contre 110/288).
-- **Ce qui n'a pas d'effet mesurable :** la valeur TD (117/288), le replay (119/288), la prudence (105/288) et la sélection de lignée (47/144 contre 42/144).
-- **Ce qui empêche de conclure :** avec n=4 populations, aucun test ne peut descendre sous p=0,125, même quand les 4 vont dans le même sens.
-- **Ce qui change dans le scénario :** la « simplification de la Competition » descend au rang d'audit léger. La priorité reste de remplacer la curiosité additive par une valeur d'information exprimée en détresse prédite, puis de laisser l'individu décider combien penser.
+Direct verification of `main` (commit `e4eb3e8`, from PR #1058, with no
+later commit at that time) confirms almost every figure and the code
+description in the previous report. One conclusion changes: **P5e does
+not demonstrate a Competition defect.** Most "lost" meals are explained by
+absence of hunger, competing deficits, or alternative food plans.
 
-## Ce qui a été vérifié et ce qui a été corrigé
+- **What sustains survival in novel Worlds:** the learned-effects model
+  (0/288 survivors when removed, versus 112/288) and the curiosity bonus
+  (4/288 without it, versus 110/288).
+- **What shows no measurable effect:** TD value (117/288), replay (119/288),
+  prudence (105/288), and lineage selection (47/144 versus 42/144).
+- **What prevents firm conclusions:** with n=4 independent populations, the
+  two-sided exact test cannot fall below p=0.125 even if all four agree.
+- **What changes in the development scenario:** "simplify Competition" is
+  demoted to a lightweight audit. The priority remains replacing additive
+  curiosity with information value expressed in predicted distress, then
+  letting the individual decide how much to think.
 
-Cette fois, les fichiers ont été lus directement par Git, et non plus à travers les issues :
+## What was checked and corrected
 
-- **Statut et plan :** `src/i3/docs/STATUS.md`, `DEVELOPMENT_PLAN.md`, `P2_COST_AUDIT_RESULTS.md`.
-- **Résultats d'études :** les `RESULTS.md` de P3 et de P5a, et les analyses post hoc de P5b (`POSTHOC_SCORE_TERMS.md`) et de P5c (`POSTHOC_ACTIVE_MORTALITY.md`).
-- **Code :** `modules/mind.py` et `modules/genome.py`.
-- **Données originales de P5e :** le fichier compressé de 24 vies.
+This time the files were read directly from Git, rather than through issues:
 
-`main` compte 192 commits depuis la physique v2, et aucun après P5e.
+- **Status and plan:** `src/i3/docs/STATUS.md`,
+  `DEVELOPMENT_PLAN.md`, `P2_COST_AUDIT_RESULTS.md`.
+- **Study results:** P3 and P5a `RESULTS.md`, P5b post-hoc
+  `POSTHOC_SCORE_TERMS.md` and P5c `POSTHOC_ACTIVE_MORTALITY.md`.
+- **Code:** `modules/mind.py` and `modules/genome.py`.
+- **P5e originals:** the compressed file containing 24 lives.
 
-| Point du rapport précédent | Statut | Correction |
+At that snapshot, `main` had 192 commits since physical model v2 and none
+after P5e.
+
+| Claim in the earlier report | Status | Correction |
 | --- | --- | --- |
-| Chiffres P2, P3, P4a, P4b, P5a, P5b, P5c | Confirmés | — |
-| Code : détresse D(h), curiosité β\_u × u × pertinence, prudence λ\_r × u × (w\_I·d\_I + κ₀), veto à 10, seuil de Competition 1,5, 30 gènes | Confirmé dans `mind.py` et `genome.py` | — |
-| Réserve P4 1 200 000–1 200 199, validations futures ≥ 120 | Confirmé | — |
-| P5e : « 333 occasions de repas sur 342 perdues ; la Competition renverse le classement » | **Erroné** | Dans 333 cas, une autre option avait déjà un score brut strictement supérieur. Le seuil n'a changé l'issue que 6 fois (3 repas en tête perdus, 3 repas moins bien notés gagnants) |
-| Limite (g) : « seuils de Competition, risque élevé de règle cachée » | **Surévalué** | Écarts rares, 6 sur 342 : risque faible à moyen |
-| Étape « simplifier la Competition » en 3e priorité | **Rétrogradé** | Audit léger, priorité basse |
-| P5c : « 809 attentes contre 383 » | Imprécis | 809 commandes de repos *ou* d'attente (dormir/attendre) contre 383, sur les 12 premiers pas |
-| P5b post hoc : « l'exploration domine le choix » | Imprécis | 650, 4 587 et 837 décrivent les scores qui *changent* quand on aveugle la lecture par action. L'information apprise atteint donc la décision surtout par le terme de curiosité. Cela ne mesure pas la part de la curiosité dans les choix normaux |
-| Replay « 422 400 opérations » | Imprécis | 391 323 replays payés dans le bras normal ; 422 400 dans le bras sans rétention |
-| Accès aux sources | Corrigé | Fichiers lus directement par Git (le rapport précédent ne passait que par les issues et PR) |
+| P2, P3, P4a, P4b, P5a, P5b, P5c figures | Confirmed | None |
+| Code: distress D(h), curiosity β_u × u × relevance, prudence λ_r × u × (w_I · d_I + κ₀), veto at 10, Competition threshold 1.5, 30 genes | Confirmed in `mind.py` and `genome.py` | None |
+| P4 reserve 1,200,000-1,200,199; future validation indices >=120 | Confirmed | None |
+| P5e: "333 of 342 meal opportunities lost; Competition reverses the ranking" | **Incorrect** | In 333 cases another option already had a strictly higher raw score. The threshold changed the outcome only six times: three raw-top meals lost and three lower-scoring meals won |
+| Limitation (g): "Competition thresholds present high hidden-rule risk" | **Overstated** | Only 6/342 deviations; low-to-medium risk |
+| "Simplify Competition" as third priority | **Demoted** | Lightweight, low-priority audit |
+| P5c: "809 waits versus 383" | Imprecise | 809 rest **or** wait actions (`dormir`/`attendre`) versus 383 during the first 12 steps |
+| P5b post hoc: "exploration dominates choice" | Imprecise | 650, 4,587 and 837 describe scores that **change** when action-specific readout is blinded. Learned information thus reaches decisions mainly through the curiosity term; this does not measure curiosity's contribution to normal choices |
+| Replay: "422,400 operations" | Imprecise | 391,323 physically paid replays in the normal arm; 422,400 in the discard-retention arm |
+| Source access | Corrected | Git files read directly, not only issues and PRs |
 
-## Ce que disent les campagnes
+## What the campaigns show
 
-Toutes ces campagnes ont été exécutées le 5 et le 6 novembre. Statut constant : I1 actif, I3 non enregistré, réserve P4 scellée, aucun GO scientifique.
+All campaigns were run on 5-6 November 2026. Constant status: I1 active,
+I3 unregistered, P4 reserve sealed, no scientific GO.
 
-| Campagne | Dispositif | Résultat vérifié | Lecture |
+| Campaign | Design | Verified outcome | Interpretation |
 | --- | --- | --- | --- |
-| Physique v2 (#1004–#1007) | 16 vies de 400 pas, développement | Survie 14/16 → 8/16 | Le coût réel de penser est révélé, sans réajustement |
-| G2e | Génomes sélectionnés, graines réservées | 478/1000 contre 364 ; révision 270/500 contre 163 | Croyances révisables adoptées |
-| P2 | 36 vies sur 12 mondes, 3 écologies | 31 morts ; 3 483 pas inactifs sur 7 729 (45 %) ; aucun pas sur 7 729 au coût exact du tarif fixe ; référence financée 4/12, oracle 12/12 | Les sondes restent descriptives |
-| P3 | 864 vies, 4 populations, 3 générations | G0 34 contre 34 ; G1 37 contre 50 (−13) ; G2 50 contre 45 (+3, +3, −1, 0) ; le bras sélectionné paie plus de cognition (24 817 contre 20 856 en énergie) | Sélection non concluante |
-| P4a | 288 vies, 24 mondes de validation | 47/144 contre 42/144 (−2, +9, −1, −1) | Pas de généralisation évolutive démontrée |
-| P4b | 576 vies | Apprentissage retenu 84/288 contre 0/288 si les calculs payés sont jetés ; 144/144 histoires distinctes à génome égal | L'apprentissage compte, mais coûts et activité diffèrent |
-| P5a | 1 152 vies, mondes 48–71 | Normal 112 ; sans effets 0 ; sans TD 117 ; sans replay 119 ; inactivité 19,80 % contre 72,43 % sans effets | Modèle d'effets vital ; TD et replay sans effet mesurable |
-| P5b | 1 152 vies, mondes 72–95 | Complet 98 ; lecture aveugle aux actions 0 ; a priori global 0 ; sommeil aveugle 90 ; inactivité 19,56 % contre 75,6 % | La lecture par action est indispensable |
-| P5c | 1 152 vies, mondes 96–119 | Normal 110 ; sans curiosité 4 ; sans prudence 105 ; sans les deux 7 ; inactivité 18,65 % contre 1,13 % sans curiosité | La curiosité porte la survie ; la prudence n'a pas d'effet mesurable |
-| P5c post hoc | Données originales | Morts : 178 contre 284, dont 146 contre 239 par soif ; 12 premiers pas : 392 contre 132 commandes ressource, 383 contre 809 repos ou attentes | Sans curiosité, mort *active* par soif, pas par paralysie |
-| P5d | 24 vies de développement | Sans curiosité : 761 attentes contre 134, 193 déplacements contre 627 ; 11 contre 10 unités collectées, 0 contre 7 mangées ; 125/125 pas avec un repas payé proposé, 0 choisi | Cause non identifiée (scores complets non enregistrés) |
-| P5e | 24 vies de développement, Competition enregistrée en entier | Normal : 342 occasions, 9 repas ; seuil décisif 6 fois ; sans curiosité : 0 collecte, 0 repas, 717 attentes, donc aucune occasion observable | La Competition suit les scores bruts ; voir la section suivante |
+| Physical model v2 (#1004-#1007) | 16 development lives, horizon 400 | Survival 14/16 -> 8/16 | Reveals the real cost of thinking without retuning |
+| G2e | Selected genomes, reserved seeds | 478/1,000 vs 364; revision 270/500 vs 163 | Revisable beliefs adopted |
+| P2 | 36 lives, 12 Worlds, three ecologies | 31 deaths; 3,483 inactive steps out of 7,729 (45%); 0/7,729 exact matches with fixed probe tariff; funded reference 4/12, oracle 12/12 | Probes remain descriptive |
+| P3 | 864 lives, four populations, three generations | G0 34 vs 34; G1 37 vs 50 (-13); G2 50 vs 45 (+3,+3,-1,0); selected arm spends more cognition (24,817 vs 20,856 energy) | Selection inconclusive |
+| P4a | 288 lives, 24 validation Worlds | 47/144 vs 42/144 (-2,+9,-1,-1) | Evolutionary generalization not demonstrated |
+| P4b | 576 lives | Retained learning 84/288 vs 0/288 when paid calculations are discarded; 144/144 distinct histories for identical genomes | Learning matters, but spending and activity differ |
+| P5a | 1,152 lives, Worlds 48-71 | Normal 112; no effects 0; no TD 117; no replay 119; inactivity 19.80% vs 72.43% without effects | Effects model is vital; TD/replay show no measurable effect |
+| P5b | 1,152 lives, Worlds 72-95 | Full 98; action-blind readout 0; global prior 0; sleep-blind 90; inactivity 19.56% vs 75.6% | Action-specific readout is essential |
+| P5c | 1,152 lives, Worlds 96-119 | Normal 110; no curiosity 4; no prudence 105; neither 7; inactivity 18.65% vs 1.13% without curiosity | Curiosity sustains survival; prudence has no measurable effect |
+| P5c post hoc | Original data | Deaths 178 vs 284, including thirst 146 vs 239; first 12 steps: resource commands 392 vs 132, rest/wait 383 vs 809 | Without curiosity, active thirst death, not paralysis |
+| P5d | 24 development lives | Without curiosity: 761 waits vs 134, 193 moves vs 627; 11 vs 10 units collected, 0 vs 7 eaten; 125/125 steps with a paid meal offered, 0 chosen | Cause unidentified (complete scores unavailable) |
+| P5e | 24 development lives with complete Competition recording | Normal: 342 opportunities, nine meals; threshold decisive six times; without curiosity: zero collection or meals, 717 waits, hence no observable meal opportunities | Competition follows raw scores; see below |
 
-Réserve générale : n=4 populations indépendantes. Le test exact bilatéral ne peut pas descendre sous p=0,125 (p=0,375 après correction de Holm). Ces effets sont forts en criblage, mais non confirmatoires.
+General statistical limitation: n=4 independent populations. The two-sided
+exact test cannot attain p below 0.125 (p=0.375 after Holm adjustment).
+The screen effects are substantial but not confirmatory.
 
-## Nouvelle lecture de P5e : faim, déficits concurrents, autres plans
+## Revised interpretation of P5e: hunger, competing deficits and other plans
 
-Sur les 342 occasions de manger la nourriture portée, l'individu n'avait faim que dans 63 cas. Dans la plupart de ceux où il n'a pas mangé, il a arbitré en faveur d'un autre besoin ou d'un autre repas. On y voit des arbitrages entre enjeux, pas une Competition défaillante.
+Of 342 opportunities to eat carried food, the individual was hungry in only
+63. In most missed meals it selected another need or another food plan.
+This is tradeoff between stakes, not evidence of defective Competition.
 
-Cette analyse est la mienne. Elle est post hoc et descriptive, faite sur les données originales archivées du bras normal (`p5e-original.json.gz`), sans aucune nouvelle vie. La faim est mesurée par rapport au seuil θ\_F de chaque génome.
+This is the report author's own post-hoc, descriptive analysis of archived
+normal-arm originals (`p5e-original.json.gz`), without generating any new
+life. Hunger is measured against each genome's food threshold θ_F.
 
-| Étape | Nombre | Ce qui l'explique |
+| Step | Count | Explanation |
 | --- | --- | --- |
-| Occasions de repas (nourriture portée, option `manger` payée) | 342 | — |
-| … sans aucune faim (nourriture ≥ θ\_F) | 279 | Manger n'apporte aucun soulagement immédiat. Nourriture médiane 53, θ\_F médian 44 |
-| … avec faim | 63 | — |
-| … avec faim et repas en tête | 5 | — |
-| … avec faim et repas battu | 58 | Gagnant : un autre plan alimentaire 27 fois (aller manger ailleurs 17, collecter puis manger 10), dormir 22, explorer 8, attendre 1 |
+| Meal opportunities (carried food, funded `manger` option) | 342 | None |
+| Without hunger (food >= θ_F) | 279 | Eating gives no immediate relief; median food 53, median θ_F 44 |
+| With hunger | 63 | None |
+| Hungry and meal ranked first | 5 | None |
+| Hungry but meal outranked | 58 | Winner: another food plan 27 times (eat elsewhere 17, collect then eat 10), sleep 22, explore 8, wait 1 |
 
-Parmi ces 58 cas, l'énergie était sous son seuil dans 57, et l'eau dans 44. Le gagnant l'emportait sur la seule détresse prédite dans 43 cas, et grâce au bonus seulement dans 15. Les écarts sont faibles : médiane 0,027 en valeur de base et 0,016 en bonus. La prévision du repas restait correcte, avec un gain de nourriture prévu positif dans 97 % des occasions et une médiane de +10,3.
+Of these 58 cases, energy was below threshold in 57 and water in 44.
+The winner prevailed on predicted distress alone in 43 cases, and due
+to the bonus in only 15. The score margins are small: median 0.027 in
+base value and 0.016 in bonus. Meal forecasting was still accurate:
+positive predicted food gain in 97% of opportunities, median +10.3.
 
-Deux questions restent ouvertes :
+Two questions remain open:
 
-- **P5d.** L'absence totale de repas sans curiosité (0 sur 125 pas avec nourriture portée) n'est pas expliquée. P5e n'a observé aucune nourriture portée dans ce bras.
-- **Repas reportés.** Ce report pourrait coûter plus tard : la projection innée sous-estime-t-elle le risque d'attendre ? Seul un test préenregistré sur des mondes neufs peut le dire.
+- **P5d:** zero meals without curiosity (0/125 steps carrying food) remains
+  unexplained. P5e observed no carried food in that arm.
+- **Deferred meals:** postponement may become costly later. Does innate
+  projection underestimate the risk of waiting? Only a preregistered test
+  on new Worlds could answer.
 
-## Les limites d'I3, preuves à l'appui
+## I3 limitations, supported by evidence
 
-La limite principale est structurelle : ce qui sauve l'individu en monde neuf passe par un terme ajouté par le concepteur (la curiosité), et non par l'évaluation de ses propres enjeux. Le reste de l'apprentissage est tabulaire ou inerte.
+The main limitation is structural: the mechanism that rescues the individual
+in new Worlds is a designer-added term (curiosity), not the individual's own
+assessment of its stakes. Most other learning is tabular or inactive.
 
-1. **Perception.** Une case de rayon plafonne la recherche : le chercheur systématique ne survit que dans environ 72 % des mondes de développement, et sa version financée dans 4/12 en P2. Les bords jamais touchés restent « inconnus » (artefact de bord vu en G2c). Aucune structure cachée n'est inférée.
-2. **Modèle du monde.** Effets tabulaires par couple (action, jeton), avec repli action puis global : aucun transfert entre jetons, lieux ou contextes. Le repli global seul donne 0/288 (P5b). Le changement n'est suivi que par une moyenne mobile : la révision est plus fréquente mais pas plus rapide, environ 130 pas de latence médiane en G2e.
-3. **Valeur et crédit.** Le TD linéaire sur 6 caractéristiques n'a pas d'effet mesurable (117 contre 112). L'auto-projection innée fait l'essentiel du travail. Le crédit différé n'est pas appris.
-4. **Exploration.** La curiosité β\_u × incertitude × pertinence porte la survie (110 contre 4), mais c'est une formule additive conçue à la main, dans une autre unité que la détresse. Sans elle, l'individu se repose ou attend près de ce qu'il connaît et meurt de soif (239 morts par soif sur 288).
-5. **Coût de penser (v2).** Cycles, horizon et mémoire sont des gènes fixes : l'individu ne décide pas combien penser. Inactivité de 19 % en temps normal, 45 % en P2, 72 à 76 % quand ses prédictions sont dégradées. En P3, le bras sélectionné paie plus de cognition sans gagner.
-6. **Mémoire.** Capacité fixe ; croyances de lieu sans incertitude explicite ; replay payé (391 323 opérations en P5a) mais sans effet mesurable (119 contre 112).
-7. **Ce qui ressemble à une règle cachée :**
-   - **curiosité additive :** risque élevé, elle porte la survie ;
-   - **prudence :** risque moyen, sans effet mesurable mais facturée ;
-   - **veto d'intégrité à 10 :** acceptable seulement comme loi physique du corps ;
-   - **seuils de Competition :** risque faible à moyen, 6 écarts sur 342 en P5e ;
-   - **types d'options, BFS et frontière :** procédures générales, mais répertoire figé.
-8. **Méthode.** n=4 populations (p ≥ 0,125) ; lignée de 3 générations ; sondes non appariées en coût (aucun pas sur 7 729) ; effets de l'énergie non isolés (chaque ablation change aussi la dépense) ; environ 1 ms par pas.
-9. **Écologie.** Eau, nourriture, jetons toxiques et trois dynamiques (stable, épuisement, pulsations). Ni danger, ni saisons, ni toxicité différée, ni obstacles, ni concurrents.
+1. **Perception.** One-cell radius limits search: the systematic searcher
+   survives in about 72% of development Worlds and its funded version in
+   only 4/12 P2 Worlds. Unvisited boundary-adjacent cells remain "unknown"
+   (G2c edge artifact). No hidden structure is inferred.
+2. **World model.** Tabular effects per (action, token), falling back to
+   action-level and then global estimates, with no transfer among tokens,
+   locations or contexts. Global fallback alone yields 0/288 (P5b).
+   Change is handled by a moving average: revisions occur more often but
+   not faster, with median latency near 130 steps in G2e.
+3. **Value and credit.** Linear TD over six features has no measurable
+   effect (117 vs 112). Innate self-projection does most of the work.
+   Delayed credit is not learned.
+4. **Exploration.** Curiosity β_u × uncertainty × relevance is essential
+   (110 vs 4), but it is a hand-crafted additive formula in different
+   units from distress. Without it, the individual rests or waits near
+   familiar places and dies of thirst (239/288 thirst deaths).
+5. **Cost of thinking (v2).** Cycles, horizon and memory are fixed genes;
+   the individual cannot choose how much to think. Inactivity is 19%
+   normally, 45% in P2, and 72-76% with impaired predictions.
+   In P3, the selected arm spends more cognition without a gain.
+6. **Memory.** Fixed capacity, no explicit uncertainty over place beliefs;
+   paid replay (391,323 operations in P5a) but no measured effect
+   (119 vs 112).
+7. **Mechanisms resembling hidden rules:**
+   - **additive curiosity:** high risk, because it sustains survival;
+   - **prudence:** medium risk, paid but no measurable effect;
+   - **integrity veto at 10:** acceptable only as a physical body law;
+   - **Competition thresholds:** low-to-medium risk, 6/342 differences;
+   - **option types, BFS and frontier:** general procedures with a
+     fixed repertoire.
+8. **Method.** n=4 populations (p >= 0.125), three-generation lineage,
+   unmatched probe costs (no exact match in 7,729 steps), energetic
+   mediation not isolated (each ablation also changes spending),
+   about 1 ms/step.
+9. **Ecology.** Water, food, toxic tokens and three dynamics (stable,
+   depletion, pulses), but no danger, seasons, delayed toxicity,
+   obstacles or competitors.
 
-## Principe directeur : une seule monnaie, la viabilité prédite
+## Guiding principle: one currency, predicted viability
 
-Chaque mécanisme ajouté doit s'écrire comme une contribution à une seule quantité : la détresse cumulée que l'individu prévoit pour ses propres canaux. Cette prévision inclut le coût en énergie et en vigilance de son propre calcul.
+Every added mechanism must contribute to one quantity: cumulative distress
+the individual predicts for its own channels. The prediction includes the
+energy and vigilance costs of the computation itself.
 
-- **Un mécanisme général** calcule une conséquence prévue sur ses enjeux. Il ne pousse vers aucun comportement : inférence, planification, mémoire, valeur d'information, valeur du calcul.
-- **Une règle cachée** ajoute un terme, un seuil ou un poids qui l'emporte sur cette prévision sans passer par elle. C'est le cas aujourd'hui de la curiosité additive.
-- **Admis en plus :** des paramètres génériques héritables, invariants par renommage (ADR-0014), sélectionnés par la seule persistance.
-- **Exclus :** les comportements scriptés, les termes propres à un monde, le façonnage de récompense et toute information d'oracle.
+- **General mechanism:** estimates consequences for the individual's own
+  stakes without steering toward a prescribed behavior. This includes
+  inference, planning, memory, value of information and value of computation.
+- **Hidden rule:** adds a term, threshold or weight that overrides predicted
+  consequences without deriving from them, as additive curiosity does.
+- **Also admissible:** generic, renaming-invariant heritable parameters
+  (ADR-0014) selected only by individual persistence.
+- **Excluded:** scripted actions, World-specific rewards, reward shaping,
+  and oracle information.
 
-Deux cadres de la littérature valident ce principe. Le RL homéostatique ([Keramati et Gutkin 2014](https://elifesciences.org/articles/04811)) fait de la réduction d'écart aux consignes la récompense ; le r = −D d'I3 en est une variante proche. L'inférence active ([Pezzulo, Rigoli et Friston 2015](https://openaccess.city.ac.uk/id/eprint/16671/)) réunit valeur pragmatique et valeur épistémique dans un même objectif. C'est ce qui manque à I3 : une curiosité qui découle de l'évaluation au lieu de s'y ajouter. On garde le calcul explicite et peu coûteux d'I3 plutôt qu'un formalisme variationnel complet, coûteux sous v2 et difficile à auditer.
+Two research frameworks support this principle. Homeostatic RL
+([Keramati and Gutkin 2014](https://elifesciences.org/articles/04811))
+uses reduced deviation from set points as reward; I3's r=-D is close.
+Active inference
+([Pezzulo, Rigoli and Friston 2015](https://openaccess.city.ac.uk/id/eprint/16671/))
+combines pragmatic and epistemic value under one objective. I3 lacks
+curiosity **derived from** its evaluation instead of added afterward.
+The proposal retains I3's explicit, inexpensive arithmetic rather than a
+full variational formalism, costly under v2 and difficult to audit.
 
-## Scénario de développement par étapes
+## Staged development scenario
 
-Une modification ciblée par porte, préenregistrée avant toute exposition, évaluée sur des mondes neufs (indices ≥ 120, réserve P4 scellée) avec des génomes sélectionnés (ADR-0015). Les résultats négatifs sont conservés, et rien n'est réajusté sur un monde déjà ouvert.
+One targeted change per gate, preregistered before any exposure, tested
+with selected genomes (ADR-0015) on entirely new Worlds (indices >= 120;
+P4 reserve sealed). Negative findings remain intact, and nothing is
+retuned on a World that has already been opened.
 
-1. **Étape 0 — Rendre les tests capables de conclure.**
-   - Porter le nombre de populations génétiques indépendantes à 8 au moins : une unanimité donne alors p ≈ 0,008, contre 0,125 avec 4.
-   - Préenregistrer les effets de l'énergie : dépense réalisée, fraction inactive, durée vécue.
-   - Lancer le test « même génome, histoires différentes, défi commun » (#1026).
-   - Garder l'enregistrement complet de la Competition (P5e) comme instrument standard.
-   - Expliquer l'absence de repas de P5d dans un bras où l'individu porte vraiment de la nourriture.
-2. **Étape 1 — Valeur d'information dans l'unité de l'enjeu.** C'est la réponse de principe à la priorité du dépôt (« expliquer la mort active sans curiosité »).
-   - *Mécanisme :* pour une option exploratoire ou un aliment inconnu, l'individu calcule la réduction attendue de sa détresse prédite grâce à ce qu'il apprendrait. Il fait la moyenne sur les issues que ses croyances jugent possibles, puis replanifie.
-   - *Ce qui disparaît :* β\_u, la pertinence et la prudence. L'urgence découle de la projection, et le risque de la distribution prédite des effets sur l'intégrité ([Behrens et al. 2007](https://www.nature.com/articles/nn1954)).
-   - *Coût :* 2 à 3 branches simulées, facturées.
-   - *Porte :* non-infériorité en survie, supériorité en latence de révision (famille R).
-   - *Ablations :* projection figée (la survie doit chuter) ; valeur d'information sans coût (la dépense doit déraper).
-3. **Étape 2 — Décider combien penser.**
-   - *Mécanisme :* valeur du calcul ([Russell et Wefald 1991](<https://doi.org/10.1016/0004-3702(91)90015-C>) ; [Callaway et al. 2018](https://proceedings.mlr.press/r16/callaway18a.html)). Un cycle de plus n'est fait que si le gain de viabilité attendu dépasse son coût, converti en détresse par D elle-même. Le replay devient un calcul comme un autre.
-   - *Gènes :* `n_base` et `h_max` deviennent des plafonds, plus des consignes.
-   - *Porte :* survie et fraction inactive, contre budget fixe.
-   - *Ablations :* coût mis à zéro ; budget tiré au hasard à moyenne égale.
-4. **Étape 3 — Un modèle du monde qui généralise et voit le changement.** Une porte par mécanisme :
-   - effets factorisés par attributs perçus génériques, avec a priori partagés ;
-   - détection de rupture en ligne ([Adams et MacKay 2007](https://arxiv.org/abs/0710.3742)) ;
-   - causes latentes ([Gershman, Blei et Niv 2010](http://www.cs.columbia.edu/~blei/papers/GershmanBleiNiv2010.pdf)).
+1. **Stage 0: make experiments capable of deciding.**
+   - Increase independent genetic populations to at least eight: unanimous
+     directional results then give p near 0.008 versus 0.125 with four.
+   - Preregister realized energy spending, inactive fraction, lived time.
+   - Run "same genome, different histories, common challenge" (#1026).
+   - Keep full Competition recording (P5e) as standard instrumentation.
+   - Investigate P5d's absence of meals in an arm that actually carries food.
+2. **Stage 1: information value in units of the stake.** This answers the
+   repository's original priority ("explain active death without curiosity").
+   - *Mechanism:* for exploratory options or unknown food, compute the
+     expected reduction in predicted distress from what could be learned,
+     average over outcomes supported by beliefs, then replan.
+   - *Remove:* β_u, relevance and prudence. Urgency follows projection;
+     risk follows predicted integrity-effect uncertainty
+     ([Behrens et al. 2007](https://www.nature.com/articles/nn1954)).
+   - *Cost:* two or three physically billed simulated branches.
+   - *Gate:* survival non-inferiority and faster revision in family R.
+   - *Ablations:* frozen projection (predicted to lower survival);
+     zero-priced information value (predicted to increase spending).
+3. **Stage 2: decide how much to think.**
+   - *Mechanism:* value of computation
+     ([Russell and Wefald 1991](https://doi.org/10.1016/0004-3702(91)90015-C);
+     [Callaway et al. 2018](https://proceedings.mlr.press/r16/callaway18a.html)).
+     Take an extra cycle only when expected viability improvement exceeds
+     its cost, converted to distress by D itself. Replay becomes a
+     computation like any other.
+   - *Genes:* `n_base` and `h_max` become ceilings, not directives.
+   - *Gate:* survival and inactivity fraction compared with fixed budget.
+   - *Ablations:* zero perceived cost; random budget with equal mean.
+4. **Stage 3: a World model that generalizes and detects change.** One
+   gate per mechanism:
+   - factorized effects based on generic perceived attributes, with
+     shared priors;
+   - online change-point detection
+     ([Adams and MacKay 2007](https://arxiv.org/abs/0710.3742));
+   - latent causes
+     ([Gershman, Blei and Niv 2010](http://www.cs.columbia.edu/~blei/papers/GershmanBleiNiv2010.pdf)).
 
-   La probabilité de rupture alimente la valeur d'information de l'étape 1. *Porte :* latence de révision. *Tests :* éviter dès la première rencontre un jeton nouveau qui ressemble à un toxique connu ; ablation par rupture figée.
-5. **Étape 4 — Une valeur réutilisable quand les besoins changent.**
-   - *Mécanisme :* caractéristiques successeurs ([Barreto et al. 2017](https://arxiv.org/abs/1606.05312)) sur les variations prévues des canaux corporels, combinées à la D *actuelle*. Quand la faim dépasse la soif, la réévaluation est immédiate.
-   - *Porte :* refaire l'ablation P5a. La suppression des valeurs apprises doit maintenant coûter des survies.
-   - *Test :* toxicité différée de 20 à 50 pas.
-6. **Étape 5 — Une carte pour les obstacles et les grands mondes.**
-   - *Mécanisme :* un bord ou un mur adjacent est perçu comme infranchissable, ce qui supprime l'artefact de bord. Une carte topologique est apprise pendant la vie ([Behrens et al. 2018](<https://www.cell.com/neuron/fulltext/S0896-6273(18)30856-0>)) et planifiée sous le budget de l'étape 2.
-   - *Porte :* famille F1 tenue à l'écart.
-   - *Ablation :* la frontière actuelle. Rayon de perception inchangé.
-7. **Étape 6 — Une lignée qui sélectionne des façons d'apprendre.**
-   - *Mécanisme :* effet Baldwin ([Hinton et Nowlan 1987](https://www.complex-systems.com/abstracts/v01_i03_a06/) ; [Soltoggio, Stanley et Risi 2018](https://arxiv.org/abs/1703.10371)). La sélection porte sur des paramètres d'apprentissage génériques, sans jamais hériter de poids appris.
-   - *Dispositif :* 8 populations au moins, 10 générations au moins, recombinaison, témoin à parent aléatoire, plusieurs familles.
-   - *Porte :* P4a refait, sélectionné meilleur dans au moins 7 populations sur 8.
-   - *Contrôle :* apprentissage désactivé.
+   Change probability feeds Stage-1 information value.
+   *Gate:* revision latency. *Tests:* avoid a new token resembling a
+   known toxin at first contact; fixed-change ablation.
+5. **Stage 4: reusable value when needs change.**
+   - *Mechanism:* successor features
+     ([Barreto et al. 2017](https://arxiv.org/abs/1606.05312))
+     over predicted bodily-channel changes, combined with **current**
+     D. Reevaluate immediately when hunger overtakes thirst.
+   - *Gate:* repeat P5a ablation; removing learned values should now
+     reduce survival.
+   - *Test:* delayed toxicity after 20-50 steps.
+6. **Stage 5: a map for obstacles and larger Worlds.**
+   - *Mechanism:* perceive adjacent edge/wall as impassable, eliminating
+     the boundary artifact. Learn a topological map during life
+     ([Behrens et al. 2018](https://www.cell.com/neuron/fulltext/S0896-6273(18)30856-0))
+     and plan using the Stage-2 budget.
+   - *Gate:* withheld family F1.
+   - *Ablation:* current frontier. Keep perception radius unchanged.
+7. **Stage 6: a lineage selecting how to learn.**
+   - *Mechanism:* Baldwin effect
+     ([Hinton and Nowlan 1987](https://www.complex-systems.com/abstracts/v01_i03_a06/);
+     [Soltoggio, Stanley and Risi 2018](https://arxiv.org/abs/1703.10371)).
+     Select generic learning parameters, never learned weights.
+   - *Design:* at least eight populations, ten generations,
+     recombination, random-parent control, multiple World families.
+   - *Gate:* repeat P4a; selection wins in at least seven of eight
+     populations.
+   - *Control:* learning disabled.
 
-**Audit léger, transversal : la Competition.** Les seuils n'ont décidé que 6 fois sur 342 en P5e. Il suffit de vérifier, par une porte peu coûteuse, qu'on peut les remplacer par « meilleur gain prédit, et continuité justifiée par un coût de changement prévu » sans perte de survie. On retire aussi la prudence, sans effet mesurable mais facturée. Le veto d'intégrité ne reste que s'il est requalifié en loi physique du corps.
+**Lightweight cross-cutting Competition audit.** Thresholds changed the
+outcome only 6/342 times in P5e. A small gate can test replacing them with
+"highest predicted gain, with continuity justified by predicted switching
+cost" without survival loss. Prudence, paid but not measurably effective,
+should also be removed. The integrity veto remains only if classified as
+a physical body law.
 
-## Progression des familles de mondes et mesure de la généralisation
+## World-family progression and generalization measurement
 
-La complexité vient des mondes, jamais de l'agent. Chaque famille est figée, ses graines comprises, avant toute évaluation. Elle peut être générée de façon progressive, à la manière de [POET](https://arxiv.org/abs/1901.01753), mais jamais retouchée après ouverture.
+Complexity should come from Worlds, never from imposed individual rules.
+Freeze each family and its seeds before evaluation. Families may be
+generated progressively, as in
+[POET](https://arxiv.org/abs/1901.01753), but never retuned after exposure.
 
-| Famille | Nouveauté | Capacité testée |
+| Family | Novelty | Capacity tested |
 | --- | --- | --- |
-| F0 (existant) | Stable, épuisement, pulsations | Base actuelle |
-| F1 | Obstacles, terrains à coût de déplacement, cartes 2 à 4 fois plus grandes | Carte cognitive (étape 5) |
-| F2 | Saisons : sources périodiques | Ruptures et causes latentes (étape 3) |
-| F3 | Toxicité différée et cachée, jetons partageant des attributs | Crédit différé et transfert (étapes 3 et 4) |
-| F4 | Zones de danger mobiles qui dégradent l'intégrité | Arbitrage entre canaux, information risquée |
-| F5 | L'inventaire comme réserve transportable | Planification à long horizon |
-| F6 | Autres individus I3 en concurrence | Modèle d'autrui (hors périmètre actuel) |
+| F0 (existing) | Stable, depletion, pulses | Current baseline |
+| F1 | Obstacles, movement-cost terrain, maps 2-4 times larger | Cognitive map (Stage 5) |
+| F2 | Seasons and periodic sources | Change detection and latent causes (Stage 3) |
+| F3 | Hidden delayed toxicity and tokens sharing attributes | Delayed credit and transfer (Stages 3-4) |
+| F4 | Moving danger regions that damage integrity | Cross-channel tradeoffs, risky information |
+| F5 | Inventory as portable reserve | Long-horizon planning |
+| F6 | Competing I3 individuals | Models of other agents (out of current scope) |
 
-Pour mesurer la généralisation :
+To measure generalization:
 
-- **Familles disjointes :** sélection sur certaines familles, validation sur des familles entières tenues à l'écart.
-- **Comparateurs :** à opportunité initiale égale (doctrine P2), avec la dépense réelle traitée comme un phénotype.
-- **Sondes :** descriptives tant que l'équivalence de coût n'est pas démontrée.
-- **Critères :** survie à horizon fixe comme critère principal ; latence de révision, première boisson et dépense cognitive par pas vécu comme critères secondaires, tous préenregistrés.
+- **Disjoint families:** select on some World families, validate on entire
+  held-out families.
+- **Comparators:** equal initial opportunities (P2 doctrine), with actual
+  spending measured as phenotype.
+- **Probes:** descriptive until cost equivalence is demonstrated.
+- **Criteria:** fixed-horizon survival as primary; revision latency,
+  first drink and cognition per lived step as preregistered secondary
+  measurements.
 
-## Priorités révisées et anti-schémas
+## Revised priorities and failure patterns to avoid
 
-L'ordre change sur un point : l'audit de la Competition passe de la 3e place à la fin, puisque les seuils n'ont décidé que 6 fois sur 342.
+Competition auditing drops from third priority to last, because thresholds
+decided only six of 342 outcomes in P5e.
 
-1. Étape 0 : puissance des tests, effets de l'énergie, individualité, cas P5d.
-2. Étape 1 : valeur d'information en détresse prédite, à la place de la curiosité et de la prudence.
-3. Étape 2 : décider combien penser.
-4. Étape 3 : ruptures et causes latentes, puis effets factorisés.
-5. Étape 4 : caractéristiques successeurs.
-6. Étape 5 avec la famille F1.
-7. Étape 6 : lignée sur plusieurs familles.
-8. Audit léger de la Competition et retrait de la prudence.
+1. Stage 0: statistical power, energetic effects, individuality, P5d.
+2. Stage 1: predicted-distress information value instead of curiosity
+   and prudence.
+3. Stage 2: choosing how much to think.
+4. Stage 3: change detection and latent causes, then factorized effects.
+5. Stage 4: successor features.
+6. Stage 5: family F1.
+7. Stage 6: multi-family lineage.
+8. Lightweight Competition audit and removal of prudence.
 
-Ce qu'il ne faut pas faire :
+Avoid:
 
-- **Façonnage déguisé :** ajouter un bonus, un seuil ou un poids pour « faire boire » ou « faire manger » l'individu. P5e montre en outre que la plupart des repas non pris étaient cohérents avec ses enjeux.
-- **Règles par monde :** des heuristiques ou des options propres à une famille.
-- **Oracle :** l'accès aux stocks réels, aux sources non perçues ou aux changements programmés.
-- **Réajustement :** retoucher tarifs, gènes ou seuils sur des mondes déjà ouverts, ou ouvrir la réserve P4.
-- **Hérédité interdite :** hériter de cartes, de valeurs ou de souvenirs (ADR-0014).
-- **Surinterprétation :** lire p=0,125 avec n=4 comme une confirmation, ou l'oracle comme un plafond à coût égal.
+- **Disguised shaping:** bonus, threshold or weight to "make the individual
+  drink or eat". P5e also shows that most uneaten meals were consistent
+  with the individual's own stakes.
+- **Per-World rules:** heuristics or options specialized to a family.
+- **Oracle:** hidden stock, unseen sources or future scheduled changes.
+- **Retuning:** change tariffs, genes or thresholds after World exposure,
+  or open the sealed P4 reserve.
+- **Forbidden heredity:** inherited maps, learned values or memories
+  (ADR-0014).
+- **Overinterpretation:** treating p=0.125 with n=4 as confirmation, or
+  treating an oracle as an equal-cost upper bound.
 
-## Incertitudes et réserves
+## Uncertainties and caveats
 
-Les chiffres et le code sont maintenant vérifiés à la source. Les incertitudes portent sur l'interprétation et sur l'avenir.
+The report's figures and code have now been verified at the cited snapshot.
+Remaining uncertainty concerns interpretation and future results.
 
-- **Statut de la nouvelle lecture de P5e.** Elle est post hoc, faite sur 12 vies de développement et deux génomes. Elle n'a pas de valeur confirmatoire et n'explique pas P5d.
-- **Gains attendus.** Ceux des étapes 1 à 6 sont des hypothèses issues d'autres cadres que la physique v2. Chaque étape peut échouer, et l'échec sera conservé.
-- **Coût de calcul.** Le coût de la valeur d'information et du métaraisonnement peut annuler leur bénéfice sous v2. C'est précisément ce que les portes doivent trancher.
-- **Individualité.** Des empreintes qui divergent (144/144) ne montrent pas encore des décisions stables et différentes face à un même défi.
-- **Calendrier.** Le scénario suppose 8 populations ou plus. Au rythme d'environ 1 ms par pas, une porte complète prend plusieurs heures de calcul : à prévoir dans le calendrier, sans toucher au comportement.
+- **P5e reinterpretation:** post hoc on 12 development lives and two
+  genomes, not confirmatory, and does not explain P5d.
+- **Expected improvements:** Stages 1-6 are hypotheses from other
+  frameworks applied to v2 physics. Every stage may fail and its adverse
+  result must be kept.
+- **Compute cost:** information value and metareasoning can consume all
+  their benefit under v2. The gates should decide this, not an intuition.
+- **Individuality:** divergent memory digests (144/144) do not yet prove
+  stable behavioral differences under a common challenge.
+- **Schedule:** the scenario assumes eight or more populations. At about
+  1 ms/step, a full gate takes hours of computation; budget the experiment,
+  never change behavior to satisfy the schedule.

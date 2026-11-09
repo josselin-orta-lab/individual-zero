@@ -5,10 +5,10 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from i3.lab import stage1_candidate_g_projection_dependence as D
-from i3.lab import stage1_candidate_g_reference_recurrence_falsifier as G
-from i3.lab import stage1_candidate_h_relevance_fallback as H
-from i3.lab import stage1_shared_first_contact_prior as S
+from i3.archive.stage1.lab import stage1_candidate_g_projection_dependence as D
+from i3.archive.stage1.lab import stage1_candidate_g_reference_recurrence_falsifier as G
+from i3.archive.stage1.lab import stage1_candidate_h_relevance_fallback as H
+from i3.archive.stage1.lab import stage1_shared_first_contact_prior as S
 from i3.modules.body import BodyLaws, CognitiveBudget
 from i3.modules.shared_first_contact_trials import (
     paid_shared_perceived_first_contact)

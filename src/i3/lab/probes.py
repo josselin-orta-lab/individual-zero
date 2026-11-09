@@ -1,7 +1,7 @@
 """Laboratory probes. Never part of an individual, never a source of its beliefs.
 
 ``oracle_survival`` knows the whole world: it only tells whether a world is
-livable at all (spec: 'sonde de faisabilité'). ``reference_survival`` sees
+livable at all (spec: 'feasibility probe'). ``reference_survival`` sees
 exactly what an I3 individual sees (``World.capture``) and pays a fixed small
 cognitive cost; it sweeps space in lanes three cells apart, the systematic
 coverage that one-cell perception allows. It estimates the ceiling of search

@@ -15,8 +15,9 @@ scientific evidence or ADRs. The machine-readable authority is
 
 The corrected R0-R4 software falsifier has executed once and passed. The next
 work is to prepare a **fresh** source-locked Stage-2.1 development transport and
-pass the ADR-0017 exact-SHA sealed engineering rehearsal. No lived World may
-open until an explicit owner lift is recorded.
+pass the ADR-0017 exact-SHA sealed engineering rehearsal. No **scientific** World may open until an explicit owner lift is recorded.
+Owner-accepted ADR-0019 permits an engineering-cohort-only exact rehearsal
+before that lift, with all scientific cohorts failing closed.
 
 ## Active scientific surface
 
@@ -46,14 +47,16 @@ ADR-0017 currently forbids a new lived Stage-2 panel.
 
 ## Compatibility-only Stage 1
 
-Several Stage-1 lab modules remain under `src/i3/lab/` because retained tests,
-runtime compatibility paths or ADR-0017 regression tooling still import them.
+Stage-1 candidate code is archived under `src/i3/archive/stage1/`
+for retained compatibility tests and regression tooling.
 They are listed in `ACTIVE_SURFACE.json`.
 
 Their presence does **not** mean Stage 1 is open. Do not extend them into a new
 candidate or use them as the current scientific handoff.
 
-Historical Stage-1 scientific runners and tests already moved to
+The [Stage-1 historical document catalogue](../archive/stage1/DOCUMENTS.md)
+links to the frozen protocols and results at their unchanged evidence paths.
+Older Stage-1 scientific runners and retired tests already moved to
 `archive/i3/stage1-2026-11-09/`. Evidence under `docs/studies/` stays at its
 stable paths for citation and custody.
 

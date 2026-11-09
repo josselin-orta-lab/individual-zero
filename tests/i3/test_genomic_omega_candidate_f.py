@@ -9,8 +9,8 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from i3.lab import stage1_genomic_omega_candidate_f_wiring as G
-from i3.modules.genomic_omega_candidate_f import GenomicOmegaCandidateFMind
+from i3.archive.stage1.lab import stage1_genomic_omega_candidate_f_wiring as G
+from i3.archive.stage1.modules.genomic_omega_candidate_f import GenomicOmegaCandidateFMind
 from i3.modules.reference_memory_mind import ReferenceBranchMemoryMind
 
 
@@ -77,11 +77,11 @@ class GenomicOmegaCandidateFWiringTests(unittest.TestCase):
         subprocess.run([
             sys.executable, "-c",
             "import sys; sys.path.insert(0, " + repr(str(root)) + "); "
-            "import i3.modules.genomic_omega_candidate_f; "
+            "import i3.archive.stage1.modules.genomic_omega_candidate_f; "
             "assert 'i3.runtime.life' not in sys.modules"
         ], check=True)
         source = (
-            root / "i3/modules/genomic_omega_candidate_f.py").read_text()
+            root / "i3/archive/stage1/modules/genomic_omega_candidate_f.py").read_text()
         self.assertNotIn("from .world import", source)
         self.assertNotIn("import i3.modules.world", source)
         self.assertNotIn("runtime.life", source)

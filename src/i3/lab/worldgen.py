@@ -1,4 +1,4 @@
-"""World families for I3 (spec: 'Monde et générateur de mondes').
+"""World families for I3 (spec: 'World and World-family generator').
 
 A family is a generator plus a seed range. Development uses the 'dev' seeds;
 seeds at or above RESERVED_FROM are never used while developing and serve

@@ -1,6 +1,9 @@
-# I3 - Spécification et versions physiques
+# I3: Specification and physical-model versions
 
-**Décision :** [ADR-0014](../../../docs/decisions/ADR-0014-i3-lignee-enjeu-de-soi.md), accepté le 5 novembre 2026. La version illustrée et commentée de cette spécification vit dans le document partagé « I3 — ADR-0014 et spécification » ; ce fichier fixe ce que le code doit respecter et consigne les écarts d'implémentation.
+**Decision:** [ADR-0014](../../../docs/decisions/ADR-0014-i3-lignee-enjeu-de-soi.md),
+accepted 5 November 2026. The illustrated and annotated version is kept in the
+shared document "I3: ADR-0014 and specification". This file records the
+contracts the code must satisfy and historical implementation deviations.
 
 ## Current executable funding model
 
@@ -11,58 +14,120 @@ bounded before execution, learned updates/replays are prepaid in the same tick,
 and physical exhaustion can produce a null motor command (not tie abstention).
 Do not interpret historical v1 outcomes as observations under v2.
 
-## Objet
+## Purpose
 
-Un individu mortel dont l'enjeu est sa propre organisation, dans une lignée où seule la persistance individuelle sélectionne des paramètres innés génériques. Aucune expérience n'est transmise.
+A mortal individual whose own organization is at stake, in a lineage where
+individual persistence alone selects generic innate parameters. No personal
+experience is inherited.
 
-## Ce que le code doit garantir
+## Required implementation guarantees
 
-| Exigence | Où |
+| Requirement | Location |
 | --- | --- |
-| Monde séparé ; l'individu ne lit que `World.capture()` (corps, inventaire, case courante, 4 voisines) | `modules/world.py` |
-| Physique v4 (nourriture −0,2, eau −0,4 par pas ; morts `zero_food`, `zero_water`, `zero_integrity`) | `modules/body.py` |
-| Cinquième canal **vigilance**, usé par le travail cognitif, restauré par le sommeil | `modules/body.py` |
-| **Monnaie vitale** : cycles, pas simulés, souvenirs et rejeux coûtent énergie et vigilance | `modules/body.py` |
-| **Capacités vulnérables** : énergie → cycles ; vigilance → horizon de simulation et oubli ; intégrité → bruit perceptif | `modules/body.py`, `modules/mind.py` |
-| Génome fermé `i3-genome-v1`, bornes déclarées, aucun champ indexé par le monde | `modules/genome.py` |
-| Jetons renommés par ordre de première perception ; positions relatives à la naissance | `modules/mind.py` |
-| Détresse innée D(h) = Σ w_c · max(0, (θ_c − h_c)/θ_c)^p_c ; récompense r = −D ; aucun surplus pénalisé | `modules/mind.py` |
-| Choix : scores continus, accumulateurs à identité sémantique stable, aucune option privilégiée, jamais d'abstention par défaut | `modules/mind.py` |
-| Rejeu exact : (code, génome, monde, graine de vie) → même vie | `runtime/life.py` |
-| Mort irréversible : aucune action après décès | `modules/world.py` |
+| Separate World; the individual reads only `World.capture()` (body, inventory, current cell and four neighbors) | `modules/world.py` |
+| Physical model v4 (food -0.2, water -0.4 per step; deaths `zero_food`, `zero_water`, `zero_integrity`) | `modules/body.py` |
+| Fifth **vigilance** channel, depleted by cognition and restored by sleep | `modules/body.py` |
+| **Vital currency:** cycles, simulated steps, memories and replays cost energy and vigilance | `modules/body.py` |
+| **Vulnerable capacities:** energy limits cycles; vigilance limits simulation horizon and forgetting; integrity limits perceptual accuracy | `modules/body.py`, `modules/mind.py` |
+| Closed `i3-genome-v1` genome, declared bounds, no World-indexed gene | `modules/genome.py` |
+| Tokens renamed in first-perception order; coordinates relative to birth | `modules/mind.py` |
+| Innate distress `D(h) = Σ w_c * max(0, (θ_c - h_c)/θ_c)^p_c`; reward `r = -D`; no penalty above a threshold | `modules/mind.py` |
+| Continuous choice scores, stable semantic accumulator identity, no privileged action and no default abstention | `modules/mind.py` |
+| Exact replay: (code, genome, World, life seed) produces the same life | `runtime/life.py` |
+| Irreversible death; no action after death | `modules/world.py` |
 
-## Écarts d'implémentation v1 (décidés pendant P1, sur mondes de développement uniquement)
+## Historical v1 implementation deviations (decided during P1 development only)
 
-Le développement s'est fait sur `lab/dev_worlds.py`, jamais sur les mondes du test G2. Cinq défauts d'architecture y sont apparus ; chacun a reçu une correction de principe, sans règle propre à une action ou à un monde.
+Development used `lab/dev_worlds.py`, never the G2 test Worlds. Five architectural
+defects were found there. Each received a general correction, not a rule
+specialized to an action or a World.
 
-1. **Auto-projection innée.** La valeur d'amorçage n'est pas seulement apprise : l'individu projette sa propre dérive passive sur 255 pas (blocs 1, 2, 4… 128) pour les canaux qui dépendent du monde (nourriture, eau, intégrité). Énergie et vigilance restent constantes dans la projection, car le sommeil est toujours disponible au corps. La valeur TD apprend un résidu au-dessus de cette projection. Sans elle, l'individu ne voyait ni la mort lointaine ni l'urgence de chercher.
-2. **Curiosité pertinente pour le besoin.** Le bonus d'exploration lié au besoin ne s'applique qu'aux options qui pourraient y répondre (boire pour la soif, manger pour la faim, explorer pour les deux) ; le reste ne reçoit qu'une curiosité générale κ₀. L'urgence se calcule sur le corps projeté, pondérée par 1 − (croyance qu'une source connue fonctionne).
-3. **Valeur informative de l'exploration.** Explorer une frontière vaut le nombre de cases révélées × le taux de cases à ressource que l'individu a lui-même observé (Laplace).
-4. **Prudence proportionnée à la vulnérabilité.** La pénalité d'incertitude d'un repas inconnu croît avec la détresse d'intégrité, au lieu d'être constante.
-5. **Croyance de présence par lieu.** La carte retient l'historique des observations de chaque case ; un trajet vers une source est évalué par son espérance (source présente ou trajet pour rien). Un trajet est simulé par blocs de pas dont la taille est bornée par l'horizon, lui-même borné par la vigilance.
+1. **Innate self-projection.** The initial value is not solely learned:
+   the individual projects 255 steps of passive bodily drift in blocks of
+   1, 2, 4, ..., 128 for World-dependent channels (food, water, integrity).
+   Energy and vigilance remain constant in this initial projection because
+   sleep is always available to the body. TD learns a residual above this
+   projection. Without it, distant death and the urgency to search were unseen.
+2. **Need-relevant curiosity.** The need-sensitive exploration bonus applies
+   only to options that could address the deficit (drink for thirst, eat for
+   hunger, explore for both). Other options receive only general curiosity
+   `κ₀`. Urgency uses the projected body, weighted by one minus the belief
+   that a known resource source still works.
+3. **Exploration information value.** Exploring an unknown frontier is valued
+   by the number of revealed cells times the personally observed resource-cell
+   frequency (Laplace estimate).
+4. **Prudence scaled by vulnerability.** The uncertainty penalty for an
+   unknown meal increases with integrity distress instead of being constant.
+5. **Per-place presence belief.** The map retains each cell's observation
+   history; a trip to a source is evaluated by expected outcomes (the source
+   remains available or the trip was unnecessary). Trips are simulated in
+   horizon-bounded step blocks, with horizon itself limited by vigilance.
 
-Autres écarts : le gène `v_s` est absorbé par `w.vigilance` (même rôle) ; le tempérament agit par l'exploration (β_u, κ₀), la sensibilité à la menace (λ_r) et la protection du but (inertie) — `reward_sensitivity` et `affiliation` n'ont pas d'effet en v1 ; le réflexe inné se limite à un veto de repas nocif quand l'intégrité est ≤ 10 (aucune action forcée) ; l'échec d'action lié à l'intégrité basse n'est pas encore implémenté ; les modules sont des fichiers de `modules/` plutôt que des dossiers.
+Additional deviations: gene `v_s` is absorbed into `w.vigilance` (equivalent
+role); temperament affects exploration (`β_u`, `κ₀`), threat sensitivity
+(`λ_r`) and goal protection (inertia). `reward_sensitivity` and
+`affiliation` have no v1 effect. The innate reflex is limited to vetoing a
+harmful meal when integrity is at most 10; it never forces an action.
+Low-integrity action failure is not implemented yet. `modules/` consists of
+files rather than subdirectories.
 
-## P1.1 (après la porte G2)
+## P1.1 (after the G2 gate)
 
-**Adopté après la porte G2b** (non inférieur à P1, sans gain mesurable) : dans l'auto-projection, l'énergie et la vigilance ne sont plus figées. Si le sommeil a déjà restauré l'énergie, la projection les ramène à leur seuil de détresse en payant le surcoût alimentaire du sommeil. P1 les figeait, si bien qu'un plan finissant fatigué paraissait coûteux pour toujours (cause probable de la mort du génome 8 dans G2).
+**Adopted after G2b** as non-inferior to P1, without measured gain. Within
+self-projection, energy and vigilance are no longer held fixed. If sleep has
+already restored energy, the projection returns them to their distress
+thresholds while paying the extra food cost of sleeping. P1 had held them
+fixed, making a plan that ended exhausted appear permanently costly (the
+probable cause of genome 8's death in G2).
 
-**Essayé puis rejeté sur les mondes de développement** (30 génomes par monde) :
+**Tried and rejected on development Worlds** (30 genomes per World):
 
-- *Projection d'habitude complète* (ravitaillement supposé aux sources connues) : « maison » 21/30 survivants contre 26/30 pour P1. Trop optimiste, elle fait repousser les trajets jusqu'à ce qu'ils deviennent impossibles.
-- *Frontière qui révèle le plus d'inconnu* : champ ouvert 2/10 qui boivent contre 7/10.
-- *Exploration en spirale depuis l'origine* : champ ouvert 1/30, « maison » 0/30 survivants. Avec une perception d'une case, les cases de bord gardent des voisines jamais observables et restent des frontières, ce qui fait tourner l'individu le long des bords.
+- *Full habitual projection* (assumed replenishment at known sources): home
+  21/30 survivors versus 26/30 with P1. Excessively optimistic; it delays
+  journeys until they become impossible.
+- *Frontier revealing the most unknown cells*: open field 2/10 drinkers
+  versus 7/10.
+- *Spiral exploration from origin*: open field 1/30; home 0/30 survivors.
+  With one-cell perception, edge cells keep neighbors that are never
+  observable, remain frontiers and cause loops along boundaries.
 
-**Défaut ouvert, traité par P1.2** : l'exploration par la frontière la plus proche longe les murs et couvre mal l'espace ; aucune variante essayée ne fait mieux. Le grand champ de développement (eau à 9 cases hors de vue, 100 pas de réserve) reste à 0/30 pour toutes les versions et pourrait être infaisable pour toute stratégie avec cette perception et cette économie d'énergie.
+**Known defect, addressed by P1.2:** nearest-frontier exploration follows walls
+and covers space poorly. None of the tested variants improves it. The large
+development field (water nine cells away and out of sight, 100 steps of
+reserve) remains 0/30 in every version and may be infeasible under this
+perception and energy economy.
 
-## P1.2 (rejeté par la porte G2c, conservé dans la branche `i3/p1.2-variant`)
+## P1.2 (rejected at the G2c gate; retained in branch `i3/p1.2-variant`)
 
-Deux gènes y étaient ajoutés (`i3-genome-v2`), voir [G2C_P12_HELDOUT_PREREG.md](G2C_P12_HELDOUT_PREREG.md) : `belief_rate` (vitesse de révision des croyances de lieu, moyenne mobile) et `reach` (exploration : 0 = frontière la plus proche, ≥ 1 = rayons à identité de cap). Résultat : [RESULTS.md](studies/g2c-p12-heldout/RESULTS.md). La cognition de référence reste P1.1 (génome v1). Outils de laboratoire conservés : générateur de familles (`lab/worldgen.py`, graines réservées ≥ 1 000 000) et sondes (`lab/probes.py` : oracle de vivabilité, chercheur systématique de référence). Sur 100 mondes générés, l'oracle survit partout et le chercheur systématique 72 fois : c'est l'ordre de grandeur du plafond imposé par une perception d'une case.
+Two genes were added to `i3-genome-v2`. See
+[G2C_P12_HELDOUT_PREREG.md](G2C_P12_HELDOUT_PREREG.md):
+`belief_rate` (moving-average rate of belief revision about places) and
+`reach` (exploration: 0 = nearest frontier; >= 1 = heading-consistent rays).
+Result: [G2c](studies/g2c-p12-heldout/RESULTS.md). The reference remains P1.1
+(genome v1). Retained lab tools: World-family generator
+(`lab/worldgen.py`, reserved seeds >= 1,000,000) and probes
+(`lab/probes.py`: viability oracle and systematic reference searcher).
+Across 100 generated Worlds, the oracle survives all and the systematic
+searcher survives 72; this gives an approximate ceiling for one-cell perception.
 
-## P1.3 (adopté sur le substrat v2, porte G2e)
+## P1.3 (adopted on the funded v2 substrate through G2e)
 
-Seul changement cognitif par rapport à P1.1 : les croyances de présence par lieu sont des moyennes mobiles des observations, au rythme du gène `belief_rate` ∈ [0,02 ; 0,5]. Génome `i3-genome-v3` (30 gènes) ; le gène ajouté est tiré en dernier, si bien que les génomes v1 et v3 d'une même graine partagent tous les gènes de v1. La mémoire facturée en v2 compte les cases de la carte, pas l'historique : la révision ne change pas l'économie cognitive. Résultat : [G2e](studies/g2e-p13-v2/RESULTS.md).
+Only one cognitive change from P1.1: per-place presence beliefs become moving
+averages of observations with an inherited `belief_rate` in [0.02, 0.5].
+Genome `i3-genome-v3` contains 30 genes; the added gene is sampled last, so
+genomes v1 and v3 generated from the same seed share every v1 gene.
+Under v2 funding, map memory is charged by occupied cells, not observation
+history, so revision does not alter cognitive economics.
+Result: [G2e](studies/g2e-p13-v2/RESULTS.md).
 
-## Hors v1
+## Outside the historical v1 scope
 
-Générateur de familles de mondes (P2), lignée et registre (P3), étude 2 × 2 et ablations (P4), allostasie (révision des seuils θ_c en cours de vie).
+World-family generator (P2), lineage and registry (P3), 2 x 2 study and
+ablations (P4), allostasis (within-life revision of thresholds `θ_c`).
+
+## Evidence-language custody
+
+This is an English translation of the pre-rationalization French
+specification. The original content is retained byte-for-byte under
+`archive/i3/original-language-records-2026-11-09/src/i3/docs/SPECIFICATION.md`.
+The translation changes no physical, cognitive or scientific contract.

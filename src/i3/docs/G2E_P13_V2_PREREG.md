@@ -1,36 +1,60 @@
-# I3 G2e — Préinscription : P1.3 contre P1.1 sur le substrat v2, sous sélection
+# I3 G2e: P1.3 versus P1.1 on funded v2 under selection (preregistration)
 
-**Déposé avant toute exécution.** Méthode : [ADR-0015](../../../docs/decisions/ADR-0015-i3-portes-sous-selection.md). Plan : [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md), point 1 (P1.3). Code figé : `src/i3/lab/selection_gate_v2.py`. Une seule exécution par bras.
+**Filed before any execution.** Method:
+[ADR-0015](../../../docs/decisions/ADR-0015-i3-portes-sous-selection.md).
+Plan: [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md), item 1 (P1.3).
+Frozen code: `src/i3/lab/selection_gate_v2.py`. One execution per arm.
 
 ## Question
 
-Sur le **même** substrat physique v2 (cognition financée à l'avance, #1004) dans les deux bras, la révision des croyances de lieu (P1.3, un gène `belief_rate`) améliore-t-elle la survie des génomes sélectionnés, en particulier quand une source se tarit ?
+On the **same** v2 physical substrate (cognition paid in advance, #1004)
+in both arms, does revisable place belief (P1.3 with one `belief_rate` gene)
+improve survival among selected genomes, particularly when a source runs dry?
 
-## Bras
+## Arms
 
-| Bras | Commit | Cognition |
+| Arm | Commit | Cognition |
 | --- | --- | --- |
-| Base (P1.1-v2) | commit de cette préinscription (cognition identique à `eb12a0f`, `main`) | Croyances de lieu cumulatives |
-| P1.3-v2 | `474259d` (branche `i3/p1.3-v2`) | Croyances révisées au rythme du gène `belief_rate` (génome `i3-genome-v3`, 30 gènes) |
+| Reference (P1.1-v2) | This preregistration commit (cognition identical to `eb12a0f` on `main`) | Cumulative place-presence beliefs |
+| P1.3-v2 | `474259d` (branch `i3/p1.3-v2`) | Beliefs revised at inherited `belief_rate` (genome `i3-genome-v3`, 30 genes) |
 
-Les gènes communs ont la même valeur dans les deux bras (vérifié pour un génome témoin). Les résultats G2d (physique v1) restent archivés et ne servent à rien ici.
+Common genes retain equal values between arms (checked on one reference
+genome). G2d results on the v1 substrate remain archived and are not used.
 
-## Protocole
+## Protocol
 
-- **Candidats** : `generation_zero(6000)` à `(6039)` ; **sélection** des 5 meilleurs par persistance sur les mondes de développement `dev` 100–129 (horizon 300) et `R` 100–129 (horizon 400).
-- **Évaluation** : graines réservées **neuves** 1 000 200 à 1 000 299 des familles `dev` (horizon 300) et `R` (horizon 400), jamais exécutées, sur aucun substrat. Graine de vie 80000 + k. Statistique : survivants parmi les 5 génomes sélectionnés, par monde.
-- **Latence de révision** (famille R) : du pas où l'individu boit la dernière gorgée de la source proche (première preuve personnelle de son tarissement) à sa première gorgée à la source lointaine ; non révisée si cela n'arrive jamais.
+- **Candidates:** `generation_zero(6000)` through `(6039)`; **select**
+  five highest-persistence genomes on `dev` development Worlds 100-129
+  (horizon 300) and `R` development Worlds 100-129 (horizon 400).
+- **Evaluation:** completely new, never executed reserved seeds
+  **1,000,200-1,000,299** for families `dev` (horizon 300) and `R`
+  (horizon 400), under neither substrate previously. Life seed 80000 + k.
+  Statistic: survivors among five selected genomes per World.
+- **Revision latency (R):** from the step when the individual takes the final
+  drink at the nearby spring (first personal evidence of depletion) to its
+  first drink at the distant spring. No revision if the latter never occurs.
 
-## Règle de décision (code `decide`)
+## Frozen decision rule (`decide`)
 
-P1.3-v2 est adopté si :
+Adopt P1.3-v2 if:
 
-1. son total sélectionné (sur 1 000) dépasse celui de la base, avec un test des signes exact unilatéral par monde p ≤ 0,05 ;
-2. dans chaque famille, il ne perd pas plus de 15 survies sur 500 ;
-3. planchers : dans chaque monde G2 (génomes de génération 0), au plus une vie qui boit de moins que la base ; rejeu exact du meilleur génome ; aucun pas en défaut de financement ; mêmes mondes (empreintes) ; temps moyen ≤ 2 ms par pas, garde-fou d'ingénierie sur cette machine (la v2 tourne vers 1 ms en développement).
+1. selected total (out of 1,000) exceeds reference under a one-sided exact
+   World-level sign test with p <= 0.05;
+2. within either family, the loss is no more than 15 survivors out of 500;
+3. floors: in every G2 World (generation-zero genomes), no more than one
+   fewer drinker than reference; exact replay of the best genome; no unfunded
+   step; identical World digests; mean <= 2 ms/step as an engineering guard
+   for this machine (v2 was about 1 ms/step in development).
 
-Sinon : on garde la base. Un échec garde P1.1 sans interdire la construction du pilote de sélection (plan, point 1).
+Otherwise retain the reference. Failure retains P1.1 but does not bar
+construction of the selection pilot (plan item 1).
 
-## Descriptif, sans critère
+## Descriptive, not a decision criterion
 
-Survie d'un génome aléatoire par monde ; distribution des latences et part des révisions parmi les vies où la source proche a été vidée ; part de pas inactifs faute de financement ; classement des 40 candidats ; sondes de laboratoire (**ni validées ni appariées en coût**, P2) sur les mondes d'évaluation et de sélection.
+Survival of one random genome per World; revision latency distribution and
+revision share among lives that depleted the nearby spring; fraction of
+funding-related inactive steps; ranking of all 40 candidates; lab probes
+(**neither validated nor cost-matched**, P2) on selection/evaluation Worlds.
+
+*English translation. The original preregistration is preserved byte-for-byte
+under `archive/i3/original-language-records-2026-11-09/src/i3/docs/G2E_P13_V2_PREREG.md`.*

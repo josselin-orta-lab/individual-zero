@@ -39,7 +39,9 @@ Do not:
 
 - create Candidate-K or any other Stage-1 continuation;
 - reopen Candidate-J or change its closed J0 verdict;
-- register `p13_replay_gate_v1` in `runtime/life.py`;
+- expose `p13_replay_gate_v1` to any scientific cohort before the explicit
+  ADR-0017 lift; pre-lift engineering-only dispatch is allowed under ADR-0019
+  only if scientific admission fails closed;
 - open a fresh Stage-2 World while ADR-0017 remains active;
 - change the frozen Stage-2.1 replay-gate formula, controls, fixtures,
   thresholds or verdict table after the canonical software result;
@@ -65,8 +67,8 @@ Current engineering/custody files:
 - `lab/stage2_replay_gate_development_pilot.py`
 
 The full classification is authoritative in `ACTIVE_SURFACE.json`.
-Stage-1 files still present under `lab/` are compatibility or regression
-support unless explicitly classified otherwise.
+Stage-1 candidate modules under `archive/stage1/` are compatibility and
+regression support only, never a Stage-2 scientific entrypoint.
 
 ## Evidence discipline
 

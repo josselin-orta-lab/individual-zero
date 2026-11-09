@@ -7,9 +7,9 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from i3.modules.body import CognitiveWork
-from i3.modules.candidate_f_upper_cost_reference_controller import POLICY
+from i3.archive.stage1.modules.candidate_f_upper_cost_reference_controller import POLICY
 from i3.modules.genome import midpoint
-from i3.modules.genomic_omega_frontier_information_mind import (
+from i3.archive.stage1.modules.genomic_omega_frontier_information_mind import (
     GenomicOmegaFrontierInformationMind)
 from i3.modules.world import WorldSpec
 from i3.runtime.life import run_life
@@ -135,7 +135,7 @@ class CandidateFUpperCostRuntimeTests(unittest.TestCase):
 
     def test_reference_runtime_has_no_implicit_upper_cost_controller(self):
         with patch(
-            "i3.modules.candidate_f_upper_cost_reference_controller."
+            "i3.archive.stage1.modules.candidate_f_upper_cost_reference_controller."
             "CandidateFUpperCostReferenceController.__init__",
             side_effect=AssertionError("unexpected upper-cost controller")):
             life = run_life(

@@ -1,15 +1,31 @@
-# I3 — Architecture v1
+# I3: Architecture (historical v1 baseline and current handoff)
 
-Aucun import de I0, I1 ou I2 (ADR-0001). La transition corporelle est recopiée de I2 avec sa provenance (RAI : ADAPT).
+There are no imports from I0, I1 or I2 (ADR-0001). The bodily transition was
+adapted from I2 with recorded provenance (RAI: ADAPT).
 
-| Fichier | Rôle |
+| File | Responsibility |
 | --- | --- |
-| `modules/body.py` | Lois du corps (physique v4), canal de vigilance, monnaie vitale, capacités vulnérables |
-| `modules/world.py` | Monde séparé : positions, stocks, effets cachés, changements programmés, capture locale |
-| `modules/genome.py` | Génome fermé `i3-genome-v1`, génération 0, mutation bornée, contrôle d'admissibilité |
-| `modules/mind.py` | Perception, modèle des effets, carte et croyances de présence, auto-projection, valeurs TD, modèle de soi, Competition, Action Control, apprentissage, rejeu de sommeil |
-| `runtime/life.py` | Une vie déterministe, journal chaîné par hachage |
-| `lab/dev_worlds.py` | Mondes de développement (jamais ceux d'un test préinscrit) |
-| `lab/first_falsifier.py` | Porte G2 préinscrite |
+| `modules/body.py` | Body laws (physical model v4), vigilance channel, vital currency, vulnerable capacities |
+| `modules/world.py` | Separate World: locations, stocks, hidden effects, scheduled changes and local capture |
+| `modules/genome.py` | Closed genome, generation zero, bounded mutation and admissibility |
+| `modules/mind.py` | Perception, learned effects, map and source-presence beliefs, self-projection, TD values, self-model, Competition, Action Control, learning and sleep replay |
+| `runtime/life.py` | Deterministic life with hash-chained original traces |
+| `lab/dev_worlds.py` | Development Worlds, not preregistered test Worlds |
+| `lab/first_falsifier.py` | Historical preregistered G2 gate |
 
-Boucle d'un pas : `World.capture()` → `Mind.decide(capture, allowance)` → `World.step(action, travail cognitif)` → `Mind.observe_outcome()` → `Mind.prepare_learning()` → `World.pay_cognition()` → `Mind.learn_from_outcome()`. La physique v2 paie la décision avant l'action, puis prépaie l'apprentissage et les rejeux abordables dans le même pas. Aucun rejeu n'est reporté après le décès ou la fin d'observation. Voir [COGNITIVE_FUNDING.md](COGNITIVE_FUNDING.md) pour l'ordre causal et les limites du modèle.
+One step follows: `World.capture()` -> `Mind.decide(capture, allowance)`
+-> `World.step(action, cognitive work)` -> `Mind.observe_outcome()`
+-> `Mind.prepare_learning()` -> `World.pay_cognition()` ->
+`Mind.learn_from_outcome()`. Under body laws v2, the decision is paid before
+the motor action, and affordable learning and replay are prepaid in the same
+step. No replay is deferred beyond death or the observation horizon. Refer to
+[COGNITIVE_FUNDING.md](COGNITIVE_FUNDING.md) for causal order and limitations.
+
+**Current architecture boundary:** P1.3 remains the reference. The Stage-2.1
+replay-gate implementation is unadopted and unregistered. ADR-0017 still bars
+fresh scientific Worlds; accepted ADR-0019 allows only engineering-cohort
+pre-lift transport and rehearsal. See [ACTIVE_SURFACE.md](ACTIVE_SURFACE.md).
+
+Closed Stage-1 candidate implementations moved to
+[`archive/stage1/`](../archive/stage1/README.md). Historical opt-in runtime
+paths and retained regression tests import that internal compatibility archive.

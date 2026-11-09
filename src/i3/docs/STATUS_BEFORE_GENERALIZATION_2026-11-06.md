@@ -1,22 +1,30 @@
-# I3 — Statut d'ingénierie
+# I3: Historical engineering status (pre-generalization, 6 November 2026)
 
-**PROPOSITION. NON ENREGISTRÉ. AUCUN POINT D'ENTRÉE. AUCUN GO SCIENTIFIQUE.** I1 reste le seul moteur actif.
+**PROPOSAL. UNREGISTERED. NO ACTIVE ENTRYPOINT. NO SCIENTIFIC GO.**
+I1 remained the only active engine at the time of this record.
 
-Décision : [ADR-0014](../../../docs/decisions/ADR-0014-i3-lignee-enjeu-de-soi.md) (accepté le 5 novembre 2026). Spécification : [SPECIFICATION.md](SPECIFICATION.md).
+Decision: [ADR-0014](../../../docs/decisions/ADR-0014-i3-lignee-enjeu-de-soi.md)
+(accepted 5 November 2026). Specification:
+[SPECIFICATION.md](SPECIFICATION.md).
 
-| Phase | État |
+| Phase | Historical status |
 | --- | --- |
-| P0 Décision | Fait : ADR-0014 accepté, invariant de naissance reformulé |
-| P1 Noyau | Implémenté : monde séparé, corps à cinq canaux, monnaie vitale, capacités vulnérables, génome, cognition, rejeu exact |
-| G2 Porte | **Franchie** le 5 novembre 2026 : 30/30 vies ont bu, rejeu exact, 0,40 ms par pas ([résultat](studies/g2-first-falsifier/RESULTS.md)). Deux défauts relevés pour P1.1 |
-| P1.1 | Adopté (porte G2b, [résultat](studies/g2b-p11-heldout/RESULTS.md)) : non inférieur à P1, sans gain mesurable |
-| P1.2 | **Rejeté** par la porte G2c ([résultat](studies/g2c-p12-heldout/RESULTS.md)) : révision bien meilleure (69 contre 46, p = 0,0007) mais non-infériorité générale manquée d'une vie. Variante conservée dans la branche `i3/p1.2-variant` |
-| P1.3 | **Adopté sur le substrat v2** par la porte G2e sous sélection ([résultat](studies/g2e-p13-v2/RESULTS.md)) : 478 survies sur 1 000 contre 364 (p = 4 × 10⁻⁹) ; révision après tarissement dans 60 % des vies contre 23 %. Cognition de référence : génome `i3-genome-v3` |
-| P2 Mondes | Contrat d'opportunités égales et facturation validé en ingénierie ; **0/7729** correspondances exactes avec le tarif fixe des sondes : elles restent descriptives, sans équivalence de coût démontrée |
-| P3 Lignée | **Pilote de sélection exécuté et archivé** : 864 vies, 614 morts et 250 survivants censurés ; G2 50/144 sélection contre 45/144 aléatoire, contrastes +3,+3,-1,0 selon population. 48 génomes G2 gelés ; aucun GO scientifique ([résultat](studies/p3-mutation-pilot/RESULTS.md)) |
-| P4 Étude | **Deux pilotes prospectifs exécutés et archivés** : P4a 288 vies, G2 sélection 47/144 contre 42/144 aléatoire, population −2,+9,−1,−1 : généralisation non démontrée ([résultat](studies/p4a-g2-heldout/RESULTS.md)). P4b 576 vies : apprentissage des effets/valeurs retenu 84/288 survies contre 0/288 lorsque les calculs payés sont jetés, contrastes +17,+35,+17,+15 ; 144/144 histoires du même génome ont des modèles appris distincts ([résultat](studies/p4b-paid-outcome-learning/RESULTS.md)). Résultat limité au modèle, coûts effectifs différents, **aucun GO scientifique** |
+| P0 decision | Completed: ADR-0014 accepted and birth invariant reformulated |
+| P1 core | Implemented: separate World, five-channel body, vital currency, vulnerable capacities, genome, cognition and exact replay |
+| G2 gate | **Passed** on 5 November 2026: 30/30 lives drank, exact replay, 0.40 ms/step ([result](studies/g2-first-falsifier/RESULTS.md)); two defects identified for P1.1 |
+| P1.1 | Adopted after G2b ([result](studies/g2b-p11-heldout/RESULTS.md)): non-inferior to P1, no measured gain |
+| P1.2 | **Rejected** after G2c ([result](studies/g2c-p12-heldout/RESULTS.md)): revision improved (69 versus 46, p=0.0007) but general non-inferiority missed by one life; historical variant retained on `i3/p1.2-variant` |
+| P1.3 | **Adopted on funded v2** after selected-genome G2e ([result](studies/g2e-p13-v2/RESULTS.md)): 478/1,000 survivors versus 364 (p=4 x 10^-9); successful revision after source depletion in 60% versus 23% of lives. Reference cognition uses `i3-genome-v3` |
+| P2 Worlds | Equal-opportunity and payment contract validated in engineering; **0/7,729** exact matches with the static probe tariff, so probes remain descriptive and not cost-equivalent |
+| P3 lineage | Selection pilot executed and archived: 864 lives, 614 deaths, 250 censored survivors; G2 50/144 selected versus 45/144 random, population differences +3,+3,-1,0. Forty-eight frozen G2 genomes; no scientific GO ([result](studies/p3-mutation-pilot/RESULTS.md)) |
+| P4 study | Two prospective pilots executed and archived: P4a 288 lives, selected G2 47/144 versus random 42/144, population differences -2,+9,-1,-1, no generalization demonstrated ([result](studies/p4a-g2-heldout/RESULTS.md)); P4b 576 lives, learned effects/values retained 84/288 survivors versus 0/288 with paid updates discarded, population differences +17,+35,+17,+15; 144/144 same-genome histories produced distinct learned models ([result](studies/p4b-paid-outcome-learning/RESULTS.md)). Model-specific effect with unequal actual costs, **no scientific GO** |
 
-Tests : `python -m unittest discover -s tests/i3 -p 'test_*.py' -v`. Une suite verte valide le logiciel au SHA exact, pas un comportement adaptatif.
+Tests: `python -m unittest discover -s tests/i3 -p 'test_*.py' -v`.
+A green test suite verifies software at the exact source SHA, not adaptive behavior.
+
+*This is a historical translation. The original French ledger is preserved
+byte-for-byte under
+`archive/i3/original-language-records-2026-11-09/src/i3/docs/STATUS_BEFORE_GENERALIZATION_2026-11-06.md`.*
 
 ## Validated continuation (5 November 2026)
 

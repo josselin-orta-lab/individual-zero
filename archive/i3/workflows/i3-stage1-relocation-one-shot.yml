@@ -1,0 +1,47 @@
+name: I3 Stage-1 archive relocation (one-shot)
+
+on:
+  pull_request:
+    types: [synchronize]
+    branches: [main]
+    paths:
+      - '.github/workflows/i3-stage1-relocation-one-shot.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  relocate:
+    if: github.head_ref == 'refactor/i3-archive-stage1-english' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact PR source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: true
+      - name: Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Apply archival move and import rewrite
+        env:
+          PYTHONPATH: src
+        run: |
+          test ! -e src/i3/archive/stage1/README.md
+          python archive/i3/maintenance/relocate_stage1_2026-11-09.py
+          python -m compileall -q src/i3 tests/i3
+          python -m unittest discover -s tests/i3 -p 'test_candidate_f_*.py' -q
+          python -m unittest discover -s tests/i3 -p 'test_stage1_*.py' -q > /tmp/i3-archive-test-output.log 2>&1 || { tail -n 80 /tmp/i3-archive-test-output.log; exit 1; }
+          tail -n 3 /tmp/i3-archive-test-output.log
+      - name: Commit only the reviewed archive and repointed dependencies
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A src/i3 tests/i3
+          git diff --cached --check
+          git diff --cached --stat
+          git commit -m "refactor(i3): archive closed Stage-1 candidate implementation and repoint compatibility imports"
+          git push origin "HEAD:refs/heads/refactor/i3-archive-stage1-english"

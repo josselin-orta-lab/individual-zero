@@ -1,29 +1,28 @@
-# I3 laboratory surface
+# I3 laboratory: current entrypoints
 
-Use [../docs/ACTIVE_SURFACE.md](../docs/ACTIVE_SURFACE.md) before choosing a
-laboratory entrypoint.
+Read [ACTIVE_SURFACE.md](../docs/ACTIVE_SURFACE.md) before choosing a runner.
+Candidate source from the closed Stage 1 now lives in the internal
+[archive](../archive/stage1/README.md), not in this active laboratory directory.
 
-## Current Stage 2
+## Current Stage 2.1 scientific code
 
-Scientific:
+- `stage2_replay_gate_falsifier.py`: the corrected R0-R4 software falsifier
+  executed exactly once and returned `REPLAY_GATE_CAPACITY_SHOWN`.
+  **Do not rerun it.**
+- `../modules/p13_replay_gate_mind.py`: unadopted opt-in mechanism,
+  not yet approved for scientific lived Worlds.
 
-- `stage2_replay_gate_falsifier.py` — next canonical software execution.
+## ADR-0017 engineering and evidence custody
 
-Engineering / custody:
+- `engineering_cohort.py`: permanently non-evidentiary cohort.
+- `two_phase_panel.py`: generation followed by sealed reduction.
+- `stage2_replay_gate_development_pilot.py`: historical/pending transport
+  support, **not** permission to run a fresh development panel.
 
-- `engineering_cohort.py`
-- `two_phase_panel.py`
-- `stage2_replay_gate_development_pilot.py`
+ADR-0017 remains active. Owner-accepted ADR-0019 allows implementation and
+exact-SHA rehearsal only in the engineering cohort, with development,
+selection, validation and reserve failing closed before an explicit owner lift.
 
-The pilot runner is reproducibility/infrastructure code. ADR-0017 currently
-forbids a new lived Stage-2 panel.
-
-## Stage 1 names still present here
-
-Files beginning with `stage1_` may remain because retained compatibility tests
-or engineering regressions import them. They are **compatibility-only** unless
-`ACTIVE_SURFACE.json` explicitly says otherwise.
-
-Do not infer scientific priority from a filename existing in this directory.
-The current priority is defined by `ACTIVE_SURFACE.json`, `STATUS.md`, and
-the development plan.
+Retained Stage-1 regression tests still live under `tests/i3/` and import
+`i3.archive.stage1.*`. No active scientific module should import the archived
+candidate laboratory helpers.

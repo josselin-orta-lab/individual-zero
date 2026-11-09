@@ -19,8 +19,9 @@ be rerun, rescued post hoc, or extended into a lived path.
 
 ## Source, scope and current reference
 
-The [owner-supplied French report](GENERALIZATION_SCENARIO_SOURCE_2026-11-06.md)
-is preserved byte-for-byte: 22,291 bytes; SHA-256
+The [English translation of the owner-supplied report](GENERALIZATION_SCENARIO_SOURCE_2026-11-06.md)
+refers to the [unchanged original French report](../../../archive/i3/original-language-records-2026-11-09/src/i3/docs/GENERALIZATION_SCENARIO_SOURCE_2026-11-06.md),
+which is preserved byte-for-byte: 22,291 bytes; SHA-256
 `e3a282e839c597cd610682fecb852340dd30f96ea8038874bebd2367b0a8753c`;
 Git blob `934601a9258a8c5373512764a10709aa1859883a`.
 Its baseline is `e4eb3e80c9dc48e131e05383d952909bd86213b7` (PR #1058).
@@ -30,9 +31,10 @@ of its post-hoc analysis or a literature review. Its dated statements about
 `main` are snapshots, not future live branch state.
 
 The [pre-integration plan](DEVELOPMENT_PLAN_BEFORE_GENERALIZATION_2026-11-06.md),
-[status ledger](STATUS_BEFORE_GENERALIZATION_2026-11-06.md) and
-[documentation ledger](README_BEFORE_GENERALIZATION_2026-11-06.md) retain their
-original bytes and original relative links. Their old "next" instructions are
+[translated status ledger](STATUS_BEFORE_GENERALIZATION_2026-11-06.md), and
+[documentation ledger](README_BEFORE_GENERALIZATION_2026-11-06.md) remain
+historical. The French status ledger's original bytes are preserved in the
+[language custody archive](../../../archive/i3/original-language-records-2026-11-09/src/i3/docs/STATUS_BEFORE_GENERALIZATION_2026-11-06.md). Their old "next" instructions are
 historical; use this file for current priorities and [STATUS.md](STATUS.md)
 for implemented/observed status. Original studies and their gates are unchanged.
 
