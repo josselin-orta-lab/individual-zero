@@ -93,6 +93,8 @@ def admit_b1_newworld_engineering(*, family: str, index: int, world_seed: int,
             transport_fingerprint != B1.source_fingerprint()):
         raise PermissionError("B1 engineering source fingerprint mismatch")
     # A spoofed spec is rejected even if its name and world seed look right.
+    if not isinstance(spec, RA.WorldSpec):
+        raise PermissionError("B1 engineering WorldSpec is absent or invalid")
     known_spec = SPECS._construct_f0_spec(family, world_seed)
     if RA.world_sha256(spec) != RA.world_sha256(known_spec):
         raise PermissionError("B1 engineering WorldSpec digest does not match source")
