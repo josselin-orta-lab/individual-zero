@@ -51,6 +51,23 @@ These are **asymptotic sensitivity calculations** that provide no exact type-I e
 
 Methodological analogies (not rules legally governing an artificial individual): FDA's [2016 non-inferiority guidance](https://www.fda.gov/regulatory-information/search-fda-guidance-documents/non-inferiority-clinical-trials) emphasizes margin justification and interpretable comparisons. The [ICH E9(R1) estimand framework](https://www.ema.europa.eu/en/documents/scientific-guideline/ich-e9-r1-addendum-estimands-and-sensitivity-analysis-clinical-trials-guideline-statistical-principles-clinical-trials-step-5_en.pdf) motivates explicit target population, conditions, outcome, intercurrent events and summary measure.
 
+## Follow-up: finite-sample paired bound and live engineering study (9 November 2026)
+
+A separate [autonomous B1 launch](SURVIVAL_B1_LAUNCH.md)
+now implements an **exact one-sided paired risk-difference lower
+confidence bound** using Bonferroni-adjusted Clopper-Pearson marginal
+limits on GATE-only versus FIXED-only horizon survivors. It gives
+finite-sample conservative coverage if the prospective *pairs*
+are genuinely iid; correlation between policies within a pair is
+allowed. The paired numeric power scenarios are **hypothetical** and
+cannot choose a final n or justify World opening by themselves.
+An engineering-only two-version GitHub Actions check uses the existing
+source-locked G/R transport to generate and reduce 24 temporary
+non-evidentiary full-policy lives without publishing their outcomes.
+This is a smoke test, not the required full-scale prospective
+scientific-transport rehearsal. Independent review and new admission
+remain blocked.
+
 ## 3. Why the requested scientific run cannot open Worlds yet
 
 This user-requested study **launches its power-analysis and protocol-review stage now**. It does **not** implicitly reuse an owner lift for DEVELOPMENT 80/81 or grant a new lift under ADR-0017/0019. Before the first new scientific birth, the research owner and an independent method reviewer must settle:
