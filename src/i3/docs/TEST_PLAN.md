@@ -1,4 +1,4 @@
-# I3 — Plan de test
+# I3: Test plan
 
 ## Current Stage 2 checks
 
@@ -15,14 +15,14 @@ Historical suite-size statements below certify their own dated commits only.
 They are not the current I3 test count.
 
 
-| Niveau | Contenu | État |
+| Level | Scope | Status |
 | --- | --- | --- |
-| Contrat logiciel | `tests/i3/test_core.py` : génome fermé, physique v4, monnaie vitale, capacités, capture locale, mort irréversible, nouveau-né vierge, rejeu exact, invariance par renommage, pas d'abstention par défaut, `attendre` non privilégié, budget de temps | Implémenté |
-| Porte G2 | Falsificateur comportemental préinscrit + rejeu + ≤ 1 ms/pas | Préinscrit |
-| P2 | Trois écologies mécanistiquement distinctes, quatre cohortes étanches, réserve scellée, sondes financées en deux phases, contrôle de coût exact et tarif statique calibré en développement | Tests logiciels implémentés ; validation scientifique non établie |
-| P3 | Lignée sans héritage de souvenirs, contrôle random-parent, 72 mondes distincts, 864 vies avec preuves, reconstruction de 48 génomes G2 | Implémenté et exécuté sur sélection uniquement, sans GO scientifique ni validation P4 |
-| P4 | Validation des G2 fixés (P4a), ablation calculée et payée sans rétention des effets/valeurs (P4b), histoires individuelles appariées, 48 nouvelles conditions de monde au total | Deux premières expériences préinscrites et exécutées : P4a 288 vies, P4b 576 vies ; coût cognitif réalisé non égal entre conditions, GO scientifique non établi |
-| P5a | Trois ablations de rétention payées, 48 G2, 24 nouveaux mondes, 4 populations génétiques et témoins complets des coûts par phase | Premier criblage préinscrit exécuté : 1152 vies. Sans effets appris : 0/288 survivent contre 112/288 normaux ; valeurs 117/288, rejeu 119/288 ; n=4 exploratoire et coûts réels divergents. [Résultats](studies/p5a-paid-component-screen/RESULTS.md) |
+| Software contract | `tests/i3/test_core.py` : closed genome, physical model v4, vital currency, capacities, local capture, irreversible death, blank-slate newborn, exact replay, token-renaming invariance, no default abstention, no preferred `attendre` action, time budget | Implemented |
+| G2 gate | Preregistered behavioral falsifier, replay, and <= 1 ms/step | Preregistered |
+| P2 | Three mechanistically distinct ecologies, four disjoint cohorts, sealed reserve, funded two-phase probes, exact cost control and development-calibrated static tariff | Software tests implemented; scientific validation not established |
+| P3 | Lineage without inherited memories, random-parent control, 72 distinct Worlds, 864 evidenced lives and reconstruction of 48 G2 genomes | Implemented and run on selection only; no scientific GO or P4 validation |
+| P4 | Validation of fixed G2 genomes (P4a), computed and paid ablation without retaining effects/values (P4b), paired individual histories and 48 new World conditions in total | Two first preregistered experiments completed: P4a 288 lives, P4b 576 lives; realized cognitive cost differs between conditions; no scientific GO |
+| P5a | Three paid retention ablations, 48 G2 genotypes, 24 new Worlds, four genetic populations and complete phase-cost witnesses | First preregistered screen executed: 1,152 lives. Without learned effects, 0/288 survive versus 112/288 normal; without values 117/288, without replay 119/288. Exploratory n=4 and divergent realized costs. [Results](studies/p5a-paid-component-screen/RESULTS.md) |
 
 ## Foundation controls
 
@@ -55,8 +55,8 @@ motor command also leaves the next bill funded (otherwise the probe sleeps), and
 that an unpayable bill gives null commands with zero work. These checks make the
 probes executable; they do not validate them as comparators (P2).
 
-| Croyances révisables (P1.3) | `tests/i3/test_place_beliefs.py` : révision au rythme hérité, gène tiré en dernier, case visible = observation courante | Implémenté |
-| Porte sous sélection v2 | `lab/selection_gate_v2.py` (ADR-0015) ; G2e : P1.3 adopté | Implémenté |
+| Revisable beliefs (P1.3) | `tests/i3/test_place_beliefs.py`: inherited revision rate, gene sampled last, visible cell equals current observation | Implemented |
+| Selection gate v2 | `lab/selection_gate_v2.py` (ADR-0015); G2e adopted P1.3 | Implemented |
 
 ## P2 controlled engineering validation
 
