@@ -13,6 +13,34 @@ Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
 
+## Stage 2 launched: decide how much to think (#1062)
+
+9 November 2026: [launch document](STAGE2_LAUNCH.md). Reference: P1.3. No World,
+no life, no runtime change. The owner-approved first slice,
+[2.1 replay gate](STAGE2_REPLAY_GATE.md), is now **prospectively frozen before
+implementation**.
+
+Pre-design measurements, disclosed but not scientific results:
+
+- P1.3 spends about 30% of its paid energy and 27% of its vigilance on sleep
+  replay, whose persistent effect showed no measured benefit in P5a;
+- decision cycles take about one third of its vigilance, and simulation about
+  30% of its energy;
+- P1.3's cheap projection selected the same top option as the per-step Decimal
+  oracle in 126/126 probed states, so precision-on-demand is deferred.
+
+Stage 2 proceeds in this order:
+
+1. **2.1 replay gate**: software falsifier first, under the frozen R0-R4 rules;
+2. **2.2 deliberation ceiling**;
+3. **2.3 simulation depth**;
+4. precision-on-demand remains deferred on the current P1.3 evidence.
+
+No lived Stage-2 arm may run while ADR-0017 is active. The parallel engineering
+track remains mandatory: two-phase G/R, disjoint non-evidentiary engineering
+cohort, parameterized runner, exact-SHA sealed rehearsal, then explicit owner
+lift in this status ledger.
+
 ## Stage 1 closed negative: Candidate-J software falsifier DEFECT (ADR-0018)
 
 9 November 2026: the single execution of the frozen
