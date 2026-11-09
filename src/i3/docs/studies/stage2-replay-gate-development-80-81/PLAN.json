@@ -1,0 +1,31 @@
+{
+ "schema": "i3-stage2-panel-plan/v1",
+ "protocol_id": "STAGE2_1_REPLAY_GATE_DEVELOPMENT_80_81",
+ "protocol": "src/i3/docs/STAGE2_REPLAY_GATE.md",
+ "governance": "ADR-0017 active; ADR-0019 engineering-only exact rehearsal before any owner lift",
+ "arms": ["reference", "p13_replay_gate_v1", "p13_replay_gate_zero_perceived_cost_v1"],
+ "families": ["stable", "depletion", "pulse"],
+ "horizon": 400,
+ "scientific": {
+  "cohort": "development",
+  "indices": [80, 81],
+  "genome_seeds": [911, 912],
+  "life_seed_base": 7540000
+ },
+ "engineering": {
+  "cohort": "engineering",
+  "indices": [2, 3],
+  "genome_seeds": [90011, 90012],
+  "life_seed_base": 9010000
+ },
+ "life_seed_rule": "base + 1000 * family_position + 10 * index_position + genome_position",
+ "panel_shape": "3 families x 2 indices x 2 genomes x 3 arms = 36 lives, same-genome blocks",
+ "collision_search": {
+  "development_indices_declared_or_exposed": "0-5, 20-69 (plans, protocols, archived originals, world names)",
+  "excluded_for_caution": [70],
+  "genome_seeds_used_nearby": [901, 902, 909, 910],
+  "life_seed_bases_used_nearby": [7520000]
+ },
+ "continuation": "engineering-only (frozen protocol, lived path step 1); the pilot measures GATE mean replays per sleep step, which then sets RANDOM-EQUAL-MEAN",
+ "never": "no development world may open before an explicit owner ADR-0017 lift recorded in src/i3/docs/STATUS.md for the exact transport fingerprint"
+}
