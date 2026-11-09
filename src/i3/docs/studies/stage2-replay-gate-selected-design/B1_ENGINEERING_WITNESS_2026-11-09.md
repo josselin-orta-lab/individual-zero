@@ -52,7 +52,7 @@ The root GitHub-workflow addition was rejected by the repository's workflow owne
 
 ## Separate statistical computation that actually ran
 
-The same GitHub workflow ran [exact paired survival code](../../../../lab/stage2_exact_paired_survival.py) with 16 **hypothetical iid paired** survival-power scenarios and its exact one-sided Clopper-Pearson/Bonferroni lower risk-difference bound. No World or individual was executed by the statistical code. Its two-sided *paired outcome dependence* is not treated as two independent arms; independent iid **pairs** are still an unverified prerequisite of any future scientific confidence statement. See the [B1 prospective design](SURVIVAL_B1_LAUNCH.md).
+The same GitHub workflow ran [exact paired survival code](../../../lab/stage2_exact_paired_survival.py) with 16 **hypothetical iid paired** survival-power scenarios and its exact one-sided Clopper-Pearson/Bonferroni lower risk-difference bound. No World or individual was executed by the statistical code. Its *within-pair outcome dependence* is not treated as two independent arms; independent iid **pairs** are still an unverified prerequisite of any future scientific confidence statement. See the [B1 prospective design](SURVIVAL_B1_LAUNCH.md).
 
 ## Current decision
 
