@@ -27,6 +27,7 @@
     "tests/i3/test_stage2_execution_pipeline.py"
   ],
   "stage1_compatibility_only": [
+    "src/i3/lab/stage1_affordable_projection_probes.py",
     "src/i3/lab/stage1_branch_decision_settlement_repair.py",
     "src/i3/lab/stage1_candidate_g_no_omega_integration.py",
     "src/i3/lab/stage1_candidate_g_projection_dependence.py",
