@@ -64,6 +64,13 @@ class MechanismFirstOriginals(unittest.TestCase):
         self.assertEqual(report["originals_checked"], 720)
         self.assertEqual(report["paired_blocks"], 240)
         self.assertEqual(report["readout"]["record_count"], 720)
+        profile = report["readout"]["paired_outcome_profile"]
+        self.assertEqual(profile["paired_blocks_per_contrast"], 240)
+        self.assertEqual(profile["overall"]["GATE_minus_RANDOM"]
+                         ["survival_discordance"]["both_survived"], 240)
+        self.assertFalse(profile["survival_noninferiority_certified"])
+        self.assertEqual(profile["causal_replay_selection_advantage"],
+                         "NOT_ESTABLISHED")
         self.assertEqual(report["readout"]["by_family"]["stable"]
                          ["GATE_minus_FIXED"]["survival_at_400"], 0)
         self.assertFalse(report["worlds_opened_by_adapter"])
@@ -83,6 +90,27 @@ class MechanismFirstOriginals(unittest.TestCase):
             self.assertEqual(exposure["by_family"][family]["GATE_G0"]["assigned_lives"], 80)
         for p in range(8):
             self.assertEqual(exposure["by_population"][p]["RANDOM_G0"]["assigned_lives"], 30)
+
+    def test_sealed_readout_preserves_a_single_adverse_gate_death(self):
+        records = list(self.data)
+        idx = next(i for i, (identity, _) in enumerate(records)
+                   if identity["arm"] == "GATE_G0" and identity["family"] == "stable")
+        identity, original = records[idx]
+        life = deepcopy(original)
+        life["terminal"] = "dead"
+        life["death_causes"] = ["synthetic_only"]
+        life["steps_lived"] = 100
+        records[idx] = (identity, life)
+        result = self._reduce(records)
+        profile = result["readout"]["paired_outcome_profile"]
+        paired = profile["overall"]["GATE_minus_FIXED"]
+        self.assertEqual(paired["survival_discordance"]["comparator_only_survived"], 1)
+        self.assertEqual(paired["worst_gate_minus_comparator_lived_steps"], -300)
+        self.assertEqual(profile["by_family"]["stable"]["GATE_minus_FIXED"]
+                         ["survival_discordance"]["comparator_only_survived"], 1)
+        self.assertEqual(profile["by_family"]["pulse"]["GATE_minus_FIXED"]
+                         ["survival_discordance"]["comparator_only_survived"], 0)
+        self.assertEqual(result["scientific_verdict"], "NOT_ISSUED")
 
     def test_missing_duplicate_or_foreign_originals_fail_closed(self):
         for mutation in ("missing", "duplicate", "foreign_seed", "changed_arm",
