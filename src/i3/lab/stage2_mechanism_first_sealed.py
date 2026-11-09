@@ -8,6 +8,7 @@ The external source and World authority remain unverified.
 from __future__ import annotations
 
 from collections.abc import Mapping
+from math import fsum
 
 from . import stage0_design as F0
 from . import stage2_mechanism_first_design as M
@@ -52,6 +53,115 @@ def _random_funding(life: Mapping, sleep: int, replay_count: int) -> None:
         raise ValueError("RANDOM funded, nominal, eligible and paid replay mismatch")
 
 
+def _exposure_row(arm, life, sleep, ca):
+    """Diagnostics of physical exposure, not a causal parity guarantee."""
+    replays = ca["replays_executed"]
+    if type(replays) is not int or replays < 0:
+        raise ValueError("invalid physically executed replay count")
+    if arm == "FIXED_G0":
+        return {
+            "sleep_actions": sleep, "funded_gate_sleep_steps": 0,
+            "decisions_scored": 0, "decisions_audited": 0,
+            "audited_relevant": 0, "replays_paid": replays,
+            "random_funded_draws": 0, "random_nominal": 0,
+            "random_eligible": 0, "actual_lived_steps": life["steps_lived"],
+        }
+    gate = life.get("replay_gate")
+    if not isinstance(gate, Mapping):
+        raise ValueError("gate mechanism receipt missing")
+    keys = ("sleep_steps_seen_by_gate", "decisions_total",
+            "audited_decisions", "relevant_decisions")
+    if any(type(gate.get(k)) is not int for k in keys):
+        raise ValueError("invalid gate exposure counters")
+    gate_sleep = gate["sleep_steps_seen_by_gate"]
+    decisions = gate["decisions_total"]
+    audited = gate["audited_decisions"]
+    relevant = gate["relevant_decisions"]
+    if (not 0 <= gate_sleep <= sleep or
+            not 0 <= relevant <= audited <= decisions <= life["steps_lived"]):
+        raise ValueError("impossible funded gate or decision exposure")
+    if arm == "RANDOM_G0":
+        schedule = gate["random_schedule"]
+        if schedule["draws_funded"] > gate_sleep:
+            raise ValueError("random draws exceed funded gate sleep steps")
+        draws = schedule["draws_funded"]
+        nominal = schedule["nominal_replays_scheduled"]
+        eligible = schedule["eligible_replays_scheduled"]
+    else:
+        draws = nominal = eligible = 0
+    return {
+        "sleep_actions": sleep, "funded_gate_sleep_steps": gate_sleep,
+        "decisions_scored": decisions, "decisions_audited": audited,
+        "audited_relevant": relevant, "replays_paid": replays,
+        "random_funded_draws": draws, "random_nominal": nominal,
+        "random_eligible": eligible, "actual_lived_steps": life["steps_lived"],
+    }
+
+
+def _mechanism_exposure_summary(exposures):
+    """Finite-panel descriptive provenance counts; never a parity pass."""
+    measures = (
+        "sleep_actions", "funded_gate_sleep_steps", "decisions_scored",
+        "decisions_audited", "audited_relevant", "replays_paid",
+        "random_funded_draws", "random_nominal", "random_eligible",
+        "actual_lived_steps",
+    )
+    if not exposures:
+        raise ValueError("no mechanism exposures")
+    def summarize(records):
+        n = len(records)
+        totals = {field: sum(r[field] for r in records) for field in measures}
+        return {
+            "assigned_lives": n,
+            "totals": totals,
+            "per_assigned_life": {k: totals[k] / n for k in measures},
+            "replays_per_lived_step": (
+                totals["replays_paid"] / totals["actual_lived_steps"]),
+        }
+    summaries = {
+        arm: summarize([row for a, _, _, row in exposures if a == arm])
+        for arm in M.ARMS
+    }
+    for arm in M.ARMS:
+        if summaries[arm]["assigned_lives"] != 240:
+            raise ValueError("invalid per-arm exposure denominator")
+    families = {
+        family: {
+            arm: summarize([row for a, f, _, row in exposures
+                            if a == arm and f == family])
+            for arm in M.ARMS
+        }
+        for family in F0.FAMILIES
+    }
+    populations = {
+        p: {
+            arm: summarize([row for a, _, pop, row in exposures
+                            if a == arm and pop == p])
+            for arm in M.ARMS
+        }
+        for p in range(F0.POPULATIONS)
+    }
+    random_paid = summaries["RANDOM_G0"]["totals"]["replays_paid"]
+    gate_paid = summaries["GATE_G0"]["totals"]["replays_paid"]
+    random_scheduled = summaries["RANDOM_G0"]["totals"]["random_nominal"]
+    random_eligible = summaries["RANDOM_G0"]["totals"]["random_eligible"]
+    return {
+        "status": "DESCRIPTIVE_ONLY_NO_POLICY_SUPERIORITY_OR_PARITY_CLAIM",
+        "assigned_lives": len(exposures),
+        "by_arm": summaries,
+        "by_family": families,
+        "by_population": populations,
+        "gate_minus_random_paid_replays_per_assigned_life": (
+            (gate_paid - random_paid) / 240),
+        "random_scheduled_minus_paid_replays": random_scheduled - random_paid,
+        "random_eligible_minus_paid_replays": random_eligible - random_paid,
+        "random_nominal_mean_is_not_actual_paid_parity": True,
+        "realized_replay_parity_proven": False,
+        "scientific_verdict": "NOT_ISSUED",
+        "causal_mechanism_advantage": "NOT_ESTABLISHED",
+    }
+
+
 def from_sealed_originals(archive_dir, plan_path, expected_pins,
                           occupied_world_seeds=()) -> dict:
     """Consume no scientific authorization, return NO_VERDICT description only.
@@ -66,6 +176,7 @@ def from_sealed_originals(archive_dir, plan_path, expected_pins,
                                lock_schema=LOCK_SCHEMA)
     worlds = {row["index"]: row for row in F0.world_rows("validation")}
     rows = []
+    exposures = []
     seen = set()
     genome_digests = {}
     world_digests = {}
@@ -91,6 +202,8 @@ def from_sealed_originals(archive_dir, plan_path, expected_pins,
             _random_funding(life, sleep, ca["replays_executed"])
         elif isinstance(gate, Mapping) and "random_schedule" in gate:
             raise ValueError("non-RANDOM original claims random schedule")
+        exposures.append((arm, identity["family"], p,
+                          _exposure_row(arm, life, sleep, ca)))
         seen.add(key)
         rows.append({
             "arm": arm, "population": p,
@@ -116,4 +229,5 @@ def from_sealed_originals(archive_dir, plan_path, expected_pins,
         "survival_noninferiority": "NOT_TESTED",
         "scientific_verdict": "NOT_ISSUED",
         "readout": readout,
+        "mechanism_exposure": _mechanism_exposure_summary(exposures),
     }
