@@ -112,6 +112,21 @@
     "reduced": 36,
     "invariant_failures": 0,
     "report_sha256": "dc36b2632165e1e7287ef1b068dc2f2463769bb8edd75e19971fa894922d4f23",
-    "owner_lift": false
+    "owner_lift": false,
+    "python_versions": [
+      "3.11",
+      "3.12"
+    ],
+    "python312": {
+      "source_sha": "8b1e0527b6ee5f7f27ede7adf1bce24c85c91ee7",
+      "workflow_run_id": 42629796562,
+      "artifact_id": 13680098108,
+      "status": "PASS",
+      "generated": 36,
+      "reduced": 36,
+      "invariant_failures": 0,
+      "report_sha256": "b6a84169ac58cca106bd4c03f25769c579a81d704d7657fd87c9066461ac08c7",
+      "transport_fingerprint": "dcada9e221f79b9450a4f05fecd20e60ac6595bb306aa871f29e45aefea0b6f1"
+    }
   }
 }

@@ -15,7 +15,7 @@ operational surface below.
 - **ADR-0017:** world-opening moratorium active.
 - **Next action:** review the hardened sealed engineering rehearsal PASS,
   verify its exact merged-source fingerprint and seek the explicit owner
-  ADR-0017 lift. No scientific World/life is authorized yet.
+  ADR-0017 lift. No scientific World/life is authorized yet. Both full-size engineering rehearsals (Python 3.11 and 3.12) passed.
 
 Start here:
 

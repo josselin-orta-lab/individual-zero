@@ -1,0 +1,30 @@
+{
+ "generated": 36,
+ "generation_failure": null,
+ "invariant_failures": {
+  "admission_bound_to_world": 0,
+  "admission_cohort_matches": 0,
+  "admission_fingerprint_matches": 0,
+  "declared_policy": 0,
+  "gate_summary_iff_gate": 0,
+  "no_shortfall": 0,
+  "no_unpaid_energy": 0,
+  "no_unpaid_vigilance": 0,
+  "settled": 0,
+  "within_horizon": 0
+ },
+ "manifest_sha256": "22b09edac4b01aba3e9359c950ad9d2a408bbffaa6dbd73633306d199294b461",
+ "mean_step_ms": 1.2444555555555554,
+ "namespace": "engineering",
+ "phase_G": "GENERATED",
+ "phase_R": "COMPLETE",
+ "plan_sha256": "a28606678d13bb9af18f590c328a63eb9eb82f7130c90656e4f520260d294c92",
+ "planned": 36,
+ "protocol_id": "STAGE2_1_REPLAY_GATE_DEVELOPMENT_80_81",
+ "reduced": 36,
+ "reduction_failure": null,
+ "runner": "i3-stage2-panel-runner/v1",
+ "schema": "i3-two-phase-panel/v1/sealed-rehearsal",
+ "status": "PASS",
+ "transport_fingerprint": "dcada9e221f79b9450a4f05fecd20e60ac6595bb306aa871f29e45aefea0b6f1"
+}

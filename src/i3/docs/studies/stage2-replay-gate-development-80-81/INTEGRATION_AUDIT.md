@@ -23,6 +23,10 @@ historical engineering evidence only and is not the current transport
 certification. The hardened full-scale rehearsal is documented in
 [HARDENED_REHEARSAL.md](HARDENED_REHEARSAL.md), with fingerprint
 `dcada9e221f79b9450a4f05fecd20e60ac6595bb306aa871f29e45aefea0b6f1`.
+A second full-scale engineering rehearsal using Python 3.12 also passed on
+exactly the same content fingerprint, with a separate immutable
+[report](HARDENED_REHEARSAL_PY312.json). Python 3.11 and 3.12 both pass
+36/36 G/R and all structural invariants, without opening any scientific World.
 
 The frozen development plan remains indices 80/81, genomes 911/912,
 life-seed base 7,540,000. No development, selection, validation or reserve

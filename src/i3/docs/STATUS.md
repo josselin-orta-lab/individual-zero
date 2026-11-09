@@ -25,7 +25,9 @@ The hardened full-scale engineering rehearsal on source
 `75a4f325eb5c73c3c14d9f0dcdf313f651061fc0`, fingerprint
 `dcada9e221f79b9450a4f05fecd20e60ac6595bb306aa871f29e45aefea0b6f1`,
 **PASSED**: 36/36 lives generated, 36/36 reduced, 0 failures across 10
-structural invariants and 0.816 ms per step. Source: [hardened rehearsal](studies/stage2-replay-gate-development-80-81/HARDENED_REHEARSAL.md).
+structural invariants and 0.816 ms per step. The same full-size sealed
+engineering matrix **also PASSED on Python 3.12** (Actions `42629796562`):
+36/36 G, 36/36 R, 0 invariant failures, same fingerprint, 1.244 ms per step. Source: [hardened rehearsal](studies/stage2-replay-gate-development-80-81/HARDENED_REHEARSAL.md).
 
 The previous fingerprint `15136d13…d967f9` is superseded, **not** eligible
 for a future lift. Confirm that merged source bytes retain the hardened

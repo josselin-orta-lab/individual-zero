@@ -40,7 +40,18 @@ World definitions, genes, tariffs, arms, horizons, or scientific criteria.
 | GitHub Actions run | `42628475893` |
 | GitHub Actions artifact | `13679561877` (`i3-stage2-1-hardened-rehearsal`) |
 
-The full structural report is preserved in
+The full structural report is preserved inThe **same full-size 36-life sealed engineering rehearsal also PASSED on
+Python 3.12** at source `8b1e0527b6ee5f7f27ede7adf1bce24c85c91ee7`
+(Actions run `42629796562`, artifact `13680098108`). It yielded the same
+exact transport content fingerprint `dcada9e2…f1` and plan SHA-256, with
+36/36 generated, 36/36 reduced and zero invariant failures. Its separate
+[structural report](HARDENED_REHEARSAL_PY312.json) has SHA-256
+`b6a84169ac58cca106bd4c03f25769c579a81d704d7657fd87c9066461ac08c7`,
+sealed manifest SHA-256
+`22b09edac4b01aba3e9359c950ad9d2a408bbffaa6dbd73633306d199294b461`,
+and mean time 1.244456 ms/step.
+
+
 [`HARDENED_REHEARSAL.json`](HARDENED_REHEARSAL.json), also available as the
 immutable workflow artifact. The report contains no survival, death, body,
 resource, action, route, or replay outcomes. The engineering Worlds are
