@@ -6,18 +6,20 @@ The [engine contract](../engine.json) has no active entrypoints; the
 A green software test is not a scientific GO.
 
 
-## Current: Stage 1 closed negative; Stage 2 is next
+## Current: Stage 2 launched on P1.3
 
-On 9 November 2026, the single prospectively frozen
-[Candidate-J software falsifier](studies/stage1-candidate-j-software-falsifier/RESULTS.md)
-returned **`CANDIDATE_J_DEFECT`**. Both declared J0 projectors failed the
-frozen oracle criterion. J1-J4 were therefore not evaluated and first-contact
-capacity remains unobserved.
+Stage 1 remains closed negative under
+[ADR-0018](../../../docs/decisions/ADR-0018-i3-cloture-etape-1.md). P1.3 is the
+reference and no Stage-1 candidate may follow.
 
-Under [ADR-0018](../../../docs/decisions/ADR-0018-i3-cloture-etape-1.md),
-Stage 1 is closed negative: **P1.3 remains the reference**, no Candidate-K or
-other Stage-1 architecture may follow, and Stage 2 is unblocked on P1.3. The
-ADR-0017 world-opening moratorium is unchanged.
+Stage 2 is now launched by [STAGE2_LAUNCH.md](STAGE2_LAUNCH.md). Its first
+owner-approved slice, [Stage 2.1 replay gate](STAGE2_REPLAY_GATE.md), is
+**prospectively frozen before implementation**.
+
+The immediate scientific work is software-only: implement
+`p13_replay_gate_v1`, execute its frozen R0-R4 mechanism falsifier once, and
+record the verdict. No World, life or lived runtime arm is authorized while
+ADR-0017 remains active.
 
 The Stage-1 studies and older candidate handoffs below are retained as
 historical evidence. They are not current next-work instructions.
