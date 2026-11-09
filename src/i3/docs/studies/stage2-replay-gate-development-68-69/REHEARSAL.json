@@ -1,0 +1,25 @@
+{
+  "cohort": "engineering (never evidence)",
+  "executing_commit": "638a632feb67094dce2ed7175a7de6124ec7cba6",
+  "generated": 36,
+  "generation_failure": null,
+  "invariant_failures": {
+    "declared_policy": 0,
+    "gate_summary_iff_gate": 0,
+    "no_shortfall": 0,
+    "no_unpaid_energy": 0,
+    "no_unpaid_vigilance": 0,
+    "settled": 0,
+    "within_horizon": 0
+  },
+  "manifest_sha256": "483d83585af180adec74982681c9088b341b73819982135d6dc63936528b9d38",
+  "mean_step_ms": 0.8915888888888889,
+  "phase_G": "GENERATED",
+  "phase_R": "COMPLETE",
+  "planned": 36,
+  "reduced": 36,
+  "reduction_failure": null,
+  "schema": "i3-two-phase-panel/v1/sealed-rehearsal",
+  "status": "PASS",
+  "custody_note": "supplied package result; preserved as engineering/development evidence only"
+}
