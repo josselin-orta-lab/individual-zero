@@ -14,6 +14,19 @@ Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
 
+## Stage 2.1 mechanism-first v3 sealed original reader (9 November 2026)
+
+**SOFTWARE-ONLY; NO SCIENTIFIC WORLD.** The separate
+[v3 sealed-readout contract](studies/stage2-replay-gate-selected-design/MECHANISM_FIRST_SEALED_READOUT.md)
+matches exactly 720 original FIXED/GATE/RANDOM lives to the 240 paired
+newborn-G0 blocks and F0 validation metadata, with an independently named
+v3 lock schema. It reuses the corrected original run_life checks,
+source/plan/manifest pins, funded cognition, and RANDOM physical replay
+receipts. The original 5,040-life selected-pipeline reader and
+historical 80/81 closure remain unchanged. A caller-supplied SHA is
+NOT independent provenance or owner authority. The result is descriptive
+only, with no survival non-inferiority verdict or World opening.
+
 ## Stage 2.1 exact original-life runtime contract repaired (9 November 2026)
 
 **SOFTWARE-ONLY; NO SCIENTIFIC WORLD.** A follow-up to the sealed
