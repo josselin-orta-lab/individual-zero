@@ -14,6 +14,51 @@ Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
 
+## Owner decision: ADR-0017 LIFTED for the exact Stage-2.1 transport (9 November 2026)
+
+**Explicit owner validation received after the technical audit.** The owner
+accepted both documented governance equivalences: declaring the disjoint,
+permanently non-evidentiary `engineering` cohort beside the immutable
+`P2.COHORTS`, and using the verified byte-for-byte identity of all 42
+transport/plan files across the rehearsals and squash-merged `main`
+as exact-transport continuity despite distinct Git commit SHAs.
+
+ADR-0017 OWNER LIFT: Stage-2.1 transport dcada9e221f79b9450a4f05fecd20e60ac6595bb306aa871f29e45aefea0b6f1
+
+**Four conditions satisfied:**
+
+1. Same source-locked two-phase G/R generation and reduction, tested.
+2. Disjoint `engineering` cohort, with the explicit owner-approved placement
+   exception above; engineering originals never become scientific evidence.
+3. Full-size sealed transport rehearsal PASS on Python 3.11 (run
+   `42628475893`) and Python 3.12 (run `42629796562`): 36/36 generated
+   and reduced on each, zero failures across ten structural invariants,
+   exact fingerprint `dcada9e221f79b9450a4f05fecd20e60ac6595bb306aa871f29e45aefea0b6f1`. All 42 tracked transport/plan
+   Git blobs were identical at merged commit `6d072c1c`.
+4. Explicit owner approval and this canonical STATUS ledger entry.
+
+**Narrow next authorization:** exactly one *prospective* DEVELOPMENT 80/81
+pilot under the already frozen
+[Stage-2.1 protocol](studies/stage2-replay-gate-development-80-81/PROTOCOL.md):
+3 families × 2 indices × 2 genomes × FIXED/GATE/ZERO-PERCEIVED-COST,
+36 planned lives, horizon 400, original archival G followed by R.
+The pilot continues for engineering feasibility only and measures the
+replay rate needed for the prospectively specified RANDOM-EQUAL-MEAN control.
+It is **not** a confirmatory Stage-2.1 gate, not permission to inspect reserve,
+not a general scientific GO, and does not register I3 as the active engine.
+Validation, selection, reserve, other World indices and Stage 2.2 require
+separate prospective authorization. Panels 58/59 through 68/69 remain closed.
+
+At this owner-lift decision, no new scientific World has yet been opened.
+Any transport-code or frozen-plan edit invalidates the rehearsed fingerprint
+and requires renewed custody and owner authorization. Generation failure
+prohibits retry. Reduction defects follow ADR-0017's blind repair rules on
+immutable original bytes, with no partial-result reading.
+
+Older sections below stating that ADR-0017 was still active are **historical
+pre-lift custody**. This new explicit owner decision supersedes them for
+current operations; their evidence remains unchanged.
+
 ## Stage 2.1 hardened exact transport: technical rehearsal PASS, owner lift pending
 
 9 November 2026: PR #1220 imported the prospective 80/81 transport bundle
