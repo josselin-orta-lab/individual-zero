@@ -15,7 +15,9 @@ concurrency:
 
 jobs:
   falsifier:
-    if: github.head_ref == 'research/i3-stage2-replay-gate-canonical-run'
+    # Executed once at e5d10aefea16cf4a5445b40848c2fff48b903e97 (run 42599443436).
+    # Any later synchronization of this PR must skip the scientific job.
+    if: github.head_ref == 'research/i3-stage2-replay-gate-canonical-run' && github.event.pull_request.head.sha == 'e5d10aefea16cf4a5445b40848c2fff48b903e97'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
