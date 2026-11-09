@@ -36,6 +36,13 @@ def originals():
         stub = dict(identity)
         stub["condition"] = COND[arm]
         life = synthetic_life(stub)
+        if arm != "FIXED_G0":
+            life["replay_gate"].update({
+                "sleep_steps_seen_by_gate": 4,
+                "decisions_total": 10,
+                "audited_decisions": 8,
+                "relevant_decisions": 2,
+            })
         if arm == "RANDOM_G0":
             life["replay_gate"]["random_schedule"]["policy"] = (
                 "i3-stage2-1-random-equal-mean-v1")
@@ -64,6 +71,18 @@ class MechanismFirstOriginals(unittest.TestCase):
         self.assertEqual(report["owner_approval"], "NOT_INFERRED")
         self.assertEqual(report["population_independence"], "NOT_ESTABLISHED")
         self.assertEqual(report["survival_noninferiority"], "NOT_TESTED")
+        exposure = report["mechanism_exposure"]
+        self.assertEqual(exposure["assigned_lives"], 720)
+        self.assertFalse(exposure["realized_replay_parity_proven"])
+        self.assertEqual(exposure["by_arm"]["FIXED_G0"]["assigned_lives"], 240)
+        self.assertEqual(exposure["by_arm"]["GATE_G0"]["totals"]["decisions_audited"], 1920)
+        self.assertEqual(exposure["by_arm"]["RANDOM_G0"]["totals"]["random_funded_draws"], 960)
+        self.assertEqual(exposure["by_arm"]["RANDOM_G0"]["totals"]["replays_paid"], 5760)
+        self.assertEqual(exposure["gate_minus_random_paid_replays_per_assigned_life"], -8)
+        for family in ("stable", "depletion", "pulse"):
+            self.assertEqual(exposure["by_family"][family]["GATE_G0"]["assigned_lives"], 80)
+        for p in range(8):
+            self.assertEqual(exposure["by_population"][p]["RANDOM_G0"]["assigned_lives"], 30)
 
     def test_missing_duplicate_or_foreign_originals_fail_closed(self):
         for mutation in ("missing", "duplicate", "foreign_seed", "changed_arm",
@@ -113,6 +132,36 @@ class MechanismFirstOriginals(unittest.TestCase):
             altered["replay_gate"]["random_schedule"][field] = value
             data[index] = (ident, altered)
             with self.subTest(name=name), self.assertRaises(ValueError):
+                self._reduce(data)
+
+    def test_exposure_drift_is_reported_not_promoted(self):
+        data = list(self.data)
+        idx = next(i for i, (ident, _) in enumerate(data) if ident["arm"] == "GATE_G0")
+        ident, life = data[idx]
+        changed = deepcopy(life)
+        changed["cognitive_accounting"]["replays_executed"] = 0
+        data[idx] = (ident, changed)
+        exposure = self._reduce(data)["mechanism_exposure"]
+        self.assertLess(exposure["gate_minus_random_paid_replays_per_assigned_life"], -8)
+        self.assertFalse(exposure["realized_replay_parity_proven"])
+        self.assertEqual(exposure["causal_mechanism_advantage"], "NOT_ESTABLISHED")
+
+    def test_funded_gate_counters_fail_closed(self):
+        for arm, field, value in (
+            ("GATE_G0", "sleep_steps_seen_by_gate", 5),
+            ("GATE_G0", "decisions_total", -1),
+            ("GATE_G0", "audited_decisions", 11),
+            ("GATE_G0", "relevant_decisions", 9),
+            ("RANDOM_G0", "sleep_steps_seen_by_gate", 3),
+            ("RANDOM_G0", "decisions_total", True),
+        ):
+            data = list(self.data)
+            idx = next(i for i, (ident, _) in enumerate(data) if ident["arm"] == arm)
+            ident, life = data[idx]
+            changed = deepcopy(life)
+            changed["replay_gate"][field] = value
+            data[idx] = (ident, changed)
+            with self.subTest(arm=arm, field=field), self.assertRaises(ValueError):
                 self._reduce(data)
 
     def test_nonrandom_schedule_not_accepted(self):
