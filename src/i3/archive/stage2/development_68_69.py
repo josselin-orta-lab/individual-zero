@@ -1,4 +1,4 @@
-"""Stage-2.1 replay gate: DEVELOPMENT pilot 68/69, two-phase, rehearsal first.
+"""ARCHIVED Stage-2.1 supplied DEVELOPMENT pilot 68/69, not a live runner.
 
 Protocol: docs/studies/stage2-replay-gate-development-68-69/PROTOCOL.md,
 committed with this code before the rehearsal and the single execution.
@@ -9,11 +9,11 @@ import json
 from statistics import mean
 import sys
 
-from . import engineering_cohort as ENG
-from . import p2_ecologies as P2
-from . import two_phase_panel as TP
-from ..modules.genome import generation_zero
-from ..runtime.life import run_life
+from i3.lab import engineering_cohort as ENG
+from i3.lab import p2_ecologies as P2
+from i3.lab import two_phase_panel as TP
+from i3.modules.genome import generation_zero
+from i3.runtime.life import run_life
 
 PROTOCOL_ID = "STAGE2_1_REPLAY_GATE_DEVELOPMENT_68_69"
 FAMILIES = ("stable", "depletion", "pulse")

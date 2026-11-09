@@ -14,10 +14,10 @@ import json
 import math
 import sys
 
-from ..modules.body import BodyLaws, CognitiveBudget, E, F, W, I, V
-from ..modules.genome import midpoint
-from ..modules.mind import Mind
-from . import projection_consistency_characterization as P
+from i3.modules.body import BodyLaws, CognitiveBudget, E, F, W, I, V
+from i3.modules.genome import midpoint
+from i3.modules.mind import Mind
+from i3.lab import projection_consistency_characterization as P
 from i3.archive.stage1.lab import stage1_affordable_projection_probes as A
 
 SCHEMA = "i3-stage1-separable-projection-cache/v1"
