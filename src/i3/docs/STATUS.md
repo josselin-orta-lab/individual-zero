@@ -14,6 +14,20 @@ Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
 
+## Stage 2.1 B1 engineering execution witness (9 November 2026)
+
+**24/24 structural PASS on Python 3.11 and 3.12; NO SCIENTIFIC WORLD OPENED.**
+The [read-only engineering witness](studies/stage2-replay-gate-selected-design/B1_ENGINEERING_WITNESS_2026-11-09.md)
+records the first 21/24 fail-closed attempt, the prospective optional
+post-decision audit motor-reserve correction, and the second 24/24 sealed
+G/R PASS using unchanged engineering seeds. Source-content fingerprint
+`5528827040a39135a5e3f788eac139b06e2dbc28a2444dd5a50a47500a1a367f`,
+Actions `42710443746`. Ten engineering invariants have zero failures
+in both Python jobs. Only allowlisted structural receipts and pure synthetic
+power scenarios were published. This is NOT the full-scale rehearsal,
+independent scientific review, new owner-scoped lift or proof of
+survival non-inferiority.
+
 ## Stage 2.1 B1 engineering motor-audit funding correction (9 November 2026)
 
 **SOURCE REVISION IN REVIEW; NOT A RETROACTIVE EQUIVALENCE CLAIM.**
