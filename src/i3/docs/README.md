@@ -13,6 +13,7 @@ operational surface below.
 - **Current stage:** Stage 2.1 replay gate.
 - **Canonical status:** `REPLAY_GATE_CAPACITY_SHOWN`.
 - **ADR-0017:** owner-lifted for exact transport `dcada9e2…f1` and frozen DEVELOPMENT 80/81 only.
+- **Autonomous B1 research execution:** [Exact paired survival study and engineering-only launch](studies/stage2-replay-gate-selected-design/SURVIVAL_B1_LAUNCH.md) runs numerical statistical scenarios and 24 temporary engineering G/R lives; **scientific cohort remains locked**, not a prospective survival verdict.
 - **Survival study launched (statistical phase only):** [Confirmatory survival power and sampling review](studies/stage2-replay-gate-selected-design/CONFIRMATORY_SURVIVAL_POWER_STUDY.md); independent-cluster target, loss margin and World opening remain unapproved.
 - **Current analysis campaign:** [Phase-A historical reanalysis](studies/stage2-replay-gate-selected-design/ANALYSIS_CAMPAIGN_2026-11-09.md) reads all sealed 80/81 originals, exposes survival/cognition/heterogeneity and keeps the old owner lift consumed.
 - **Next action:** obtain independent methodological review of the
