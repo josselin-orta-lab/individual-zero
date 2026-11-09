@@ -49,6 +49,10 @@ proposes a 720-life fixed-newborn-G0 matched policy comparison, avoiding
 selection confounding while giving up evolutionary and ecological
 generalization claims. It is NOT an authorization or a revised frozen protocol.
 
+[Mechanism-first v3 sealed original reader](studies/stage2-replay-gate-selected-design/MECHANISM_FIRST_SEALED_READOUT.md)
+is read-only, checks 720 candidate G0 lives against a separate v3
+source-lock schema, and never executes a World or issues a scientific verdict.
+
 ## Stage 2.1 engineering custody
 
 - [Hardened 36/36 sealed rehearsal](studies/stage2-replay-gate-development-80-81/HARDENED_REHEARSAL.md): structural PASS under ADR-0019, **not** an ADR-0017 lift.
