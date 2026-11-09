@@ -1,30 +1,55 @@
-# I3 G2 — Résultat du premier test falsifiable
+# I3 G2: Result of the first falsifiable test
 
-**Verdict : `G2_PASS_BEHAVIOURAL_AND_TECHNICAL`.** Exécution unique le 5 novembre 2026, sur le code de la préinscription (commit `e25bf63`, [protocole](../../G2_FIRST_FALSIFIER_PREREG.md)). Données complètes : [result.json](result.json). C'est une porte logicielle et un falsificateur comportemental passé, **pas** un résultat scientifique ni une preuve d'apprentissage.
+**Verdict: `G2_PASS_BEHAVIOURAL_AND_TECHNICAL`.** Executed once on
+5 November 2026, on the preregistered code (commit `e25bf63`;
+[protocol](../../G2_FIRST_FALSIFIER_PREREG.md)).
+Full data: [result.json](result.json). This is a passed software gate and
+behavioral falsifier, **not** scientific evidence of learning.
 
-## Critères préinscrits
+## Preregistered criteria
 
-| Monde | Ont bu (requis 8/10) | Vivants à 300 pas | Morts | 1re gorgée (médiane, min–max) | Gorgées / repas (médianes) | Part de sommeil (médiane) |
+| World | Drank (required 8/10) | Alive at 300 steps | Deaths | First drink (median, range) | Drinks / meals (medians) | Sleep share (median) |
 | --- | --- | --- | --- | --- | --- | --- |
-| `g2-i1-foraging-like` | **10/10** | 9 | 1 (soif) | pas 7 (3–13) | 23,5 / 7 | 29 % |
-| `g2-i2-native-A-like` | **10/10** | 10 | 0 | pas 5 (1–9) | 30 / 17 | 27 % |
-| `g2-i2-native-B-like` | **10/10** | 10 | 0 | pas 3 (3–6) | 37,5 / 17 | 26 % |
+| `g2-i1-foraging-like` | **10/10** | 9 | 1 (thirst) | step 7 (3-13) | 23.5 / 7 | 29% |
+| `g2-i2-native-A-like` | **10/10** | 10 | 0 | step 5 (1-9) | 30 / 17 | 27% |
+| `g2-i2-native-B-like` | **10/10** | 10 | 0 | step 3 (3-6) | 37.5 / 17 | 26% |
 
-Technique : 30/30 rejeux identiques ; **0,40 ms par pas** en moyenne (budget 1 ms) ; 7,6 s pour les 66 vies.
+Engineering: 30/30 identical replays; **0.40 ms per step** on average
+(1 ms limit); 7.6 seconds for 66 life executions.
 
-Repères non appariés, issus du diagnostic du 5 novembre : la vie I1 *foraging* (graine 7) est morte de soif au pas 106 en dormant 82 % du temps ; la vie I2 « B » est morte de soif au pas 111, figée au passage.
+Non-paired historical anchors from the 5 November diagnostic: I1
+*foraging* (seed 7) died of thirst at step 106 after sleeping 82% of the
+time; I2 World B died at step 111, stuck at the passage.
 
-## Constats secondaires (descriptifs, sans réglage)
+## Secondary observations (descriptive, without tuning)
 
-**Le génome médian, rapporté à part, meurt de soif au pas 106 sans avoir bu dans `foraging`.** Au premier pas, explorer vers l'est (vers l'eau, invisible) et vers le nord sont à égalité ; le tirage choisit le nord. L'exploration « frontière la plus proche » longe ensuite les bords et s'éloigne de l'eau jusqu'à l'épuisement. C'est un échec légitime sous ignorance, mais il montre que cette stratégie d'exploration ne couvre pas l'espace efficacement.
+**The separately reported midpoint genome dies of thirst in the foraging
+World at step 106 without drinking.** At the first step, exploring east
+(toward hidden water) and north tie. The random draw selects north. Nearest-
+frontier exploration then follows the boundaries, moving away from water
+until exhaustion. Failure under ignorance is legitimate, but the policy
+covers space poorly.
 
-**Le génome 8 meurt de soif au pas 267 après avoir bu deux fois.** Une fois désaltéré, il s'éloigne d'une vingtaine de cases de l'eau connue ; il n'entame le retour qu'avec 10,8 d'eau et 22 d'énergie, trop tard. Hypothèse : la projection innée garde l'énergie à son niveau de fin de trajet, donc un long retour qui finit à basse énergie paraît coûteux pour toujours, et il est repoussé jusqu'à ce que la soif domine.
+**Genome 8 dies of thirst at step 267, after drinking twice.** Once hydrated,
+it moves about twenty cells away from known water. Return begins at water
+10.8 and energy 22, too late. Hypothesis: innate projection holds energy at
+the end-of-trip level, so a long return that ends low-energy looks costly
+forever and is deferred until thirst dominates.
 
-## Limites
+## Limits
 
-Dix génomes de génération 0 et trois mondes figés ne mesurent qu'une capacité d'architecture : sortir de la paralysie et atteindre l'eau. Aucune comparaison appariée avec I1 ou I2 : I3 perçoit le contenu des cases voisines (contrairement à I2), paie sa cognition et n'a ni nuit ni objets inertes. Aucun apprentissage n'est démontré ici.
+Ten generation-zero genomes and three frozen Worlds test only one architecture
+capacity: leaving paralysis and reaching water. There is no paired I1/I2
+comparison: I3 sees neighboring cell contents (unlike I2), pays for cognition,
+and has neither nighttime nor inert objects. No learning is demonstrated.
 
-## Suite
+## Historical next steps
 
-1. **P1.1** — Corriger les deux défauts ci-dessus (projection de l'énergie et de la vigilance vers leur restauration par le sommeil ; exploration qui couvre l'espace), en développement sur `lab/dev_worlds.py` uniquement, puis les tester sur de **nouveaux** mondes réservés. Ces trois mondes ne servent plus à régler quoi que ce soit.
-2. **P2** — Générateur de familles de mondes et sonde de faisabilité, puis porte G3 (familles gelées avant toute évolution).
+1. **P1.1:** correct self-projection of energy/vigilance toward sleep
+   restoration and improve spatial exploration, developing only on
+   `lab/dev_worlds.py`; test on **new** reserved Worlds, never tune on G2.
+2. **P2:** World-family generator and feasibility probe, then G3 gate with
+   families frozen before evolution.
+
+*English translation. Original preserved unchanged at
+`archive/i3/original-language-records-2026-11-09/src/i3/docs/studies/g2-first-falsifier/RESULTS.md`.*
