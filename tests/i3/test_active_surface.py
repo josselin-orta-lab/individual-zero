@@ -68,7 +68,7 @@ class ActiveSurfaceContract(unittest.TestCase):
         runtime = (I3 / "runtime" / "life.py").read_text()
         self.assertIn("p13_replay_gate_v1", runtime)
         self.assertIn("p13_replay_gate_zero_perceived_cost_v1", runtime)
-        self.assertLess(runtime.index("verify_admission(admission, spec.name)"),
+        self.assertLess(runtime.index("verify_admission(admission, spec)"),
                         runtime.index("world = World(spec)"))
         guard = (ROOT / "tests" / "i3" / "test_stage2_exact_transport.py").read_text()
         for name in ("test_every_scientific_cohort_fails_closed_before_any_world",
