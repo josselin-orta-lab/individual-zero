@@ -1,0 +1,60 @@
+{
+  "schema": "i3-active-surface/v1",
+  "updated": "2026-11-09",
+  "reference": "P1.3 funded-v2",
+  "current_stage": "2.1 replay gate",
+  "canonical_status": "CORRECTED_FALSIFIER_PENDING",
+  "next_scientific_action": "execute the corrected Stage-2.1 R0-R4 software falsifier exactly once",
+  "governance": {
+    "i3_registered": false,
+    "stage1": "CLOSED_NEGATIVE_ADR_0018",
+    "adr_0017_world_opening_moratorium": "ACTIVE",
+    "fresh_lived_worlds_allowed": false,
+    "candidate_j_reopen_allowed": false,
+    "candidate_k_allowed": false
+  },
+  "active_science": [
+    "src/i3/modules/p13_replay_gate_mind.py",
+    "src/i3/lab/stage2_replay_gate_falsifier.py",
+    "src/i3/docs/STAGE2_LAUNCH.md",
+    "src/i3/docs/STAGE2_REPLAY_GATE.md",
+    "src/i3/docs/studies/stage2-replay-gate-software/RESULTS.md"
+  ],
+  "active_engineering": [
+    "src/i3/lab/engineering_cohort.py",
+    "src/i3/lab/two_phase_panel.py",
+    "src/i3/lab/stage2_replay_gate_development_pilot.py",
+    "tests/i3/test_stage2_execution_pipeline.py"
+  ],
+  "stage1_compatibility_only": [
+    "src/i3/lab/stage1_branch_decision_settlement_repair.py",
+    "src/i3/lab/stage1_candidate_g_no_omega_integration.py",
+    "src/i3/lab/stage1_candidate_g_projection_dependence.py",
+    "src/i3/lab/stage1_candidate_g_reference_recurrence_falsifier.py",
+    "src/i3/lab/stage1_candidate_h_post_contact_relevance.py",
+    "src/i3/lab/stage1_candidate_h_relevance_fallback.py",
+    "src/i3/lab/stage1_candidate_h_unified_integration.py",
+    "src/i3/lab/stage1_candidate_i_lifecycle_custody_stress.py",
+    "src/i3/lab/stage1_candidate_i_lifecycle_custody_stress_v2.py",
+    "src/i3/lab/stage1_candidate_i_probe_authority_repair.py",
+    "src/i3/lab/stage1_composite_funding_reducer_repair.py",
+    "src/i3/lab/stage1_cost_profile.py",
+    "src/i3/lab/stage1_genomic_omega_candidate_f_wiring.py",
+    "src/i3/lab/stage1_multiphase_processing_reducer_repair.py",
+    "src/i3/lab/stage1_omega_candidate_f_falsifier.py",
+    "src/i3/lab/stage1_omega_falsifier.py",
+    "src/i3/lab/stage1_post_contact_probe_reducer_repair.py",
+    "src/i3/lab/stage1_shared_first_contact_prior.py"
+  ],
+  "historical_roots": [
+    "archive/i3/stage1-2026-11-09/",
+    "src/i3/docs/studies/"
+  ],
+  "rules": [
+    "Stage-2 active science must not import Stage-1 lab helpers.",
+    "p13_replay_gate_v1 must remain unregistered in runtime/life.py until ADR-0017 is explicitly lifted and a later protocol authorizes lived support.",
+    "Supplied 68/69 observations are descriptive development evidence only.",
+    "Do not tune the corrected replay-gate formula from supplied 68/69 or the non-conforming supplied software result.",
+    "A non-capacity corrected software verdict closes slice 2.1 and moves to 2.2; there is no rescue loop."
+  ]
+}
