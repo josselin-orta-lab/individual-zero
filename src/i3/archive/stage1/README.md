@@ -16,6 +16,7 @@ fixtures, action identifiers, and behavior contracts are unchanged.
 - `i3.lab.projection_candidate_e_characterization` -> `i3.archive.stage1.lab.projection_candidate_e_characterization`
 - `i3.lab.projection_candidate_f_characterization` -> `i3.archive.stage1.lab.projection_candidate_f_characterization`
 - `i3.lab.projection_candidate_f_mind_integration` -> `i3.archive.stage1.lab.projection_candidate_f_mind_integration`
+- `i3.lab.projection_separable_cache_characterization` -> `i3.archive.stage1.lab.projection_separable_cache_characterization`
 - `i3.lab.stage1_affordable_projection_probes` -> `i3.archive.stage1.lab.stage1_affordable_projection_probes`
 - `i3.lab.stage1_branch_decision_settlement_repair` -> `i3.archive.stage1.lab.stage1_branch_decision_settlement_repair`
 - `i3.lab.stage1_candidate_g_no_omega_integration` -> `i3.archive.stage1.lab.stage1_candidate_g_no_omega_integration`

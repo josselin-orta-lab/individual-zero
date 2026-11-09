@@ -64,7 +64,9 @@ Current engineering/custody files:
 
 - `lab/engineering_cohort.py`
 - `lab/two_phase_panel.py`
-- `lab/stage2_replay_gate_development_pilot.py`
+The supplied 68/69 runner is closed and archived at
+`archive/stage2/development_68_69.py`; it is **not** active engineering and
+must not be executed again.
 
 The full classification is authoritative in `ACTIVE_SURFACE.json`.
 Stage-1 candidate modules under `archive/stage1/` are compatibility and
