@@ -13,6 +13,18 @@ Stage-0 slices add laboratory metadata/arithmetic and read-only funding/revision
 receipts, not cognition or physics; no validation/reserve world or scientific-study life.
 
 
+## Stage 2.1 transport governance blocker
+
+**Owner decision pending:** [ADR-0019](../../../docs/decisions/ADR-0019-i3-exact-transport-rehearsal-before-lift.md)
+is PROPOSED, not accepted.
+
+ADR-0017 requires an exact-SHA full-scale rehearsal before its lift, while the
+frozen Stage-2.1 protocol says lived-arm runtime support comes only after that
+lift. Implementing either order literally is circular. Until ADR-0019 is
+explicitly accepted or rejected, do **not** add replay-gate runtime dispatch and
+do not open a new World. Existing software capacity and engineering
+infrastructure remain valid.
+
 ## Stage 2.1 canonical software verdict: capacity shown
 
 Canonical status code: **`REPLAY_GATE_CAPACITY_SHOWN`**.
