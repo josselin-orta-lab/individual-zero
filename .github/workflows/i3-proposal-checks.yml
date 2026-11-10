@@ -638,9 +638,9 @@ jobs:
 
 
   stage2-three-arm-exploratory-once:
-    # Only the trusted one-shot main-branch merge of the frozen prospective
-    # marker can open these 64 NEW DEVELOPMENT units. NEVER on PR, no reruns.
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.run_attempt == 1
+    # SOURCE ALREADY CONSUMED: run 42781264127, claim ref and complete evidence
+    # branch published. Historical only: never create a new three-arm life.
+    if: false
     name: I3 three-arm 64-unit exploratory G/R single exposure
     runs-on: ubuntu-latest
     timeout-minutes: 24
