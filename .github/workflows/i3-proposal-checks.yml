@@ -2076,3 +2076,67 @@ jobs:
           path: ${{ runner.temp }}/i3-replay-predictive-control.json
           retention-days: 30
           if-no-files-found: warn
+
+
+  stage2-personal-distress-forecast-shadow:
+    # 48 fixed synthetic no-World/zero-actual-cost replay-sensitive forecast tests.
+    if: startsWith(github.head_ref, 'research/i3-personal-distress-prequential-shadow-')
+    name: I3 replay-sensitive personal distress shadow (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Checkout exact personal shadow source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Unit-test direct observed distress, future seals, nulls and censored windows
+        run: python -m unittest discover -s tests/i3 -p 'test_stage2_personal_distress_forecast_shadow.py' -v
+      - name: Evaluate 48 new shadow-only prequential forecasts, structural-only evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_personal_distress_forecast_shadow rehearse \
+            > "$RUNNER_TEMP/i3-personal-distress-shadow.json"
+          python - "$RUNNER_TEMP/i3-personal-distress-shadow.json" <<'PY'
+          import json,sys
+          from pathlib import Path
+          r=json.loads(Path(sys.argv[1]).read_text())
+          assert r["status"]=="SYNTHETIC_SHADOW_REPLAY_SENSITIVE_PREQUENTIAL_CAPABILITY"
+          assert r["synthetic_cases"]==48
+          assert r["replays_per_detached_head"]==3
+          assert r["different_memory_subsets"]>0
+          assert r["different_frozen_predictions"]>0
+          assert r["scored_heldout_future_observations"]==48
+          assert (r["priority_lower_synthetic_sq_loss"]+
+                  r["random_lower_synthetic_sq_loss"]+
+                  r["tied_synthetic_sq_loss"])==48
+          assert r["all_future_forecasts_sealed_before_outcomes"] is True
+          assert r["no_world_or_live_policy_modification"] is True
+          assert r["no_physical_cognitive_debit"] is True
+          assert r["scientific_lives"]==0
+          assert r["no_independent_iid_ecology"] is True
+          assert r["no_survival_or_predictive_utility_generalization"] is True
+          print(json.dumps(r,sort_keys=True))
+          PY
+      - name: Retain synthetic-only structural forecast witness
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-personal-distress-shadow-py${{ matrix.python-version }}
+          path: ${{ runner.temp }}/i3-personal-distress-shadow.json
+          retention-days: 30
+          if-no-files-found: warn
