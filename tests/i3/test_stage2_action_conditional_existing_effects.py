@@ -109,8 +109,8 @@ class PassiveActionEffectProvenanceTests(unittest.TestCase):
     def test_frozen_selected_action_prevents_future_label_and_seal_forgery(self):
         mind=E._fixture()
         body=E.SYNTHETIC_BODY
-        source=_source_seal(mind)
         mind.last=(body,("dormir",),"dormir",None)
+        source=_source_seal(mind)
         with self.assertRaises(PermissionError):
             E.SyntheticActionPrequentialTicket(
                 mind=mind,capture_body=body,action="attendre",
@@ -122,7 +122,7 @@ class PassiveActionEffectProvenanceTests(unittest.TestCase):
         t=E.SyntheticActionPrequentialTicket(
             mind=mind,capture_body=body,action="dormir",param=None,
             identity="fixed-synthetic-outcome")
-        self.assertEqual(_source_seal(mind),source if False else _source_seal(mind))
+        self.assertEqual(_source_seal(mind),source)
         sha=t.sha256
         with self.assertRaises(RuntimeError):
             t.settle_synthetic(
