@@ -84,6 +84,12 @@ class PrequentialEffectAudit:
             raise PermissionError("duplicate or unresolved pre-outcome forecast")
         before=_body(before_body)
         key=_action_key(actual_action_key)
+        if (priority_mind.effect_readout!="full" or
+                random_mind.effect_readout!="full" or
+                priority_mind.effects.stats!=random_mind.effects.stats or
+                priority_mind.theta!=random_mind.theta or
+                priority_mind.gammas!=random_mind.gammas):
+            raise PermissionError("not two replay-only copies of the same learned model")
         p=_prediction(priority_mind,key)
         r=_prediction(random_mind,key)
         if p!=r:
