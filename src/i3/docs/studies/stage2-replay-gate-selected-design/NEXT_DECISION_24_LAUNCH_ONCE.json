@@ -1,0 +1,20 @@
+{
+  "schema": "i3-next-decision-24-once-marker/v1",
+  "status": "PROSPECTIVE_TRUSTED_MAIN_ONLY",
+  "protocol": "I3_NEXT_DECISION_REPLAY_CONTENT_24_DEVELOPMENT_20261110",
+  "index_range": [
+    560000,
+    560023
+  ],
+  "matched_units": 24,
+  "original_lives": 48,
+  "horizon": 400,
+  "source_witness_sha256": "eeed48c158e29c44fd8d5723b813f1673ae3ddbba719c22e8d9f26a4791f93f4",
+  "source_lock": "exact merged main SHA claimed before first birth",
+  "claim_ref": "custody/i3-next-decision-24-development-20261110-claimed",
+  "evidence_ref": "evidence/i3-next-decision-24-development-20261110-originals",
+  "no_retry": true,
+  "no_scientific_go": true,
+  "no_independent_iid_ecology": true,
+  "no_stage2_2": true
+}
