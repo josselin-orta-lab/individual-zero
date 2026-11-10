@@ -8,6 +8,9 @@ operational surface below.
 
 ## Current
 
+- **New replay-content mechanism result:** [48 matched synthetic Mind snapshots](studies/stage2-replay-gate-selected-design/CONTENT_SELECTION_LOCAL_RESULTS_2026-11-10.md) comparing 3 real P1.3 TD replay updates from prioritized versus genuinely random *memory positions*. Selection differs 48/48, final values 47/48, at identical model costs and no World. No biological viability evidence. Next mechanism-identification design: [issue #1258](https://github.com/josselin-orta-lab/individual-zero/issues/1258).
+
+
 - **Methodological correction and new original-only audit:** [RANDOM EQUAL MEAN randomizes the replay count, not TD-prioritized memory identity](studies/stage2-replay-gate-selected-design/RANDOM_CONTROL_SEMANTICS_AND_NEXT_FALSIFIER_2026-11-10.md). A new read-only SHA-256 audit independently rechecks every archived original and outcome on CI without reopening Worlds. Next study must separate replay content choice from replay quantity, under the individual's unchanged physical budget.
 
 
