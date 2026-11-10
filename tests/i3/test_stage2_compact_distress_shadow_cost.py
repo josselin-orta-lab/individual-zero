@@ -118,6 +118,7 @@ class CompactDistressCostTests(unittest.TestCase):
 
     def test_runtime_measurement_is_exploratory_and_defect_is_falsifiable(self):
         result=AUDIT.audit()
+        print("I3_COMPACT_SHADOW_COST_FALSIFIER="+__import__("json").dumps(result,sort_keys=True))
         self.assertEqual(len(result["rows"]),10)
         self.assertTrue(result["all_compact_predictions_exact_equal"])
         self.assertTrue(result["structural_full_copy_defect_at_12_and_512"])
