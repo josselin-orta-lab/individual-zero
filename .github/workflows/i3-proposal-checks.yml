@@ -1413,3 +1413,72 @@ jobs:
           git commit -m "custody(i3): store all first water-divergence originals and failures, source $SOURCE_SHA"
           git push origin "HEAD:refs/heads/$EVIDENCE_REF"
           echo "I3_WATER_DIVERGENCE_FIRST_ORIGINALS_ARCHIVED"
+
+
+  stage2-water-divergence-24-post-archive-audit:
+    # Audit exact 48 original histories at the preserved evidence SHA.
+    # Read only; no World, replay, individual or re-seeding.
+    if: startsWith(github.head_ref, 'research/i3-water-divergence-24-original-')
+    name: I3 independent water/replay 48 original gzip and first-divergence audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      PYTHONPATH: src
+      EXACT_ORIGINAL_EVIDENCE_SHA: 181940e18d8aaea84dfded2927dab302b2f7185b
+    steps:
+      - name: Checkout proposed pure original-only checker
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Checkout exact original SHA as independent archived data
+        uses: actions/checkout@v4
+        with:
+          repository: josselin-orta-lab/individual-zero
+          ref: 181940e18d8aaea84dfded2927dab302b2f7185b
+          path: original-evidence
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test original-only source, paired temporal and adverse mutation failures
+        run: python -m unittest discover -s tests/i3 -p 'test_stage2_water_divergence_24_original_audit.py' -v
+      - name: Verify all 48 packed/unpacked originals and recompute complete chronology
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_water_divergence_24_original_audit \
+            original-evidence/archive/i3/stage2-water-divergence-2026-11-10 \
+            > "$RUNNER_TEMP/i3-water-24-read-only-audit.json"
+          python - "$RUNNER_TEMP/i3-water-24-read-only-audit.json" <<'PY'
+          import json,sys
+          from pathlib import Path
+          r=json.loads(Path(sys.argv[1]).read_text())
+          assert r["status"]=="READ_ONLY_ALL_ORIGINALS_AND_REDUCTIONS_PASS"
+          assert r["packed_sha_verified"]==r["unpacked_sha_verified"]==48
+          assert r["complete_matched_pairs"]==24
+          assert r["primary_mechanism"]["assigned_pairs"]==24
+          assert r["primary_mechanism"]["pairs_with_same_state_first_replay_difference"]==18
+          assert r["primary_mechanism"]["belief_differences_after_first_replay_choice"]==16
+          assert r["primary_mechanism"]["decision_differences_after_first_replay_choice"]==16
+          assert r["primary"]["both_survive"]==7
+          assert r["primary"]["priority_only_survives"]==1
+          assert r["primary"]["random_content_only_survives"]==3
+          assert r["primary"]["neither_survives"]==13
+          assert r["no_new_World_or_life"] is True
+          assert r["iid_attested"] is False and r["scientific_go"] is False
+          print(json.dumps(r,sort_keys=True))
+          PY
+      - name: Retain aggregate-only read-only source custody receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-water-replay-24-original-read-only-audit
+          path: ${{ runner.temp }}/i3-water-24-read-only-audit.json
+          retention-days: 90
+          if-no-files-found: warn
