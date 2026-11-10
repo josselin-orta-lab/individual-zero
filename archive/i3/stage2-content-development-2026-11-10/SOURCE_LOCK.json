@@ -1,0 +1,14 @@
+{
+  "claim_branch": "custody/i3-content-48-development-20261110-claimed",
+  "confirmatory_science_authorized": false,
+  "evidence_branch": "evidence/i3-content-48-development-20261110-originals",
+  "lives": 96,
+  "no_retry": true,
+  "pairs": 48,
+  "plan_sha256": "7f982390b7a1b9e3b5192971d835f4b3503a1f0add518e3a104eec2712b53b68",
+  "schema": "i3-stage2-1-content-48-development-gr/v1/claim",
+  "source_fingerprint": "b49a6da06184331fad78ffe536ede733d95ee771ce6e393a5a05b63a512ea840",
+  "source_sha": "d7ea5a3be79fc7eb380aa6ce751df42474ab5ed3",
+  "status": "CONSUMED_BEFORE_FIRST_BIRTH",
+  "witness_sha256": "6e7683b24d6c030c6f854c06da3ed825eeba77691e7ff7cef567f9f8d5cd147f"
+}

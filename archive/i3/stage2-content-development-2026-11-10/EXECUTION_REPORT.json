@@ -1,0 +1,172 @@
+{
+  "analysis": {
+    "by_arm": {
+      "p13_replay_gate_random_content_v1": {
+        "assigned": 48,
+        "deaths_at_step_400": 0,
+        "mean_energy_paid": 146.46140416666674,
+        "mean_lived_steps": 275.9583333333333,
+        "mean_replays_paid": 473.8333333333333,
+        "mean_sleep_steps": 92.5,
+        "mean_vigilance_paid": 187.12599999999998,
+        "random_content_distinct_subsets": 2362,
+        "random_content_replay_opportunities": 2364,
+        "survivors": 23
+      },
+      "p13_replay_gate_v1": {
+        "assigned": 48,
+        "deaths_at_step_400": 0,
+        "mean_energy_paid": 131.28290416666667,
+        "mean_lived_steps": 274.3958333333333,
+        "mean_replays_paid": 476.6458333333333,
+        "mean_sleep_steps": 81.35416666666667,
+        "mean_vigilance_paid": 169.06533333333343,
+        "survivors": 17
+      }
+    },
+    "by_family": {
+      "depletion": {
+        "by_arm": {
+          "p13_replay_gate_random_content_v1": {
+            "assigned": 19,
+            "deaths_at_step_400": 0,
+            "mean_energy_paid": 164.66404210526323,
+            "mean_lived_steps": 317.2105263157895,
+            "mean_replays_paid": 567.3157894736842,
+            "mean_sleep_steps": 101.73684210526316,
+            "mean_vigilance_paid": 209.97210526315803,
+            "random_content_distinct_subsets": 1110,
+            "random_content_replay_opportunities": 1110,
+            "survivors": 11
+          },
+          "p13_replay_gate_v1": {
+            "assigned": 19,
+            "deaths_at_step_400": 0,
+            "mean_energy_paid": 150.5694210526315,
+            "mean_lived_steps": 315.6842105263158,
+            "mean_replays_paid": 565.6315789473684,
+            "mean_sleep_steps": 92.47368421052632,
+            "mean_vigilance_paid": 193.24210526315792,
+            "survivors": 7
+          }
+        },
+        "paired": {
+          "assigned_pairs": 19,
+          "both_survive": 7,
+          "mean_lived_step_difference_priority_minus_random": -1.5263157894736843,
+          "neither_survives": 8,
+          "paired_risk_difference_priority_minus_random": -0.21052631578947367,
+          "priority_longer": 2,
+          "priority_only_survives": 0,
+          "random_content_only_survives": 4,
+          "random_longer": 4
+        }
+      },
+      "pulse": {
+        "by_arm": {
+          "p13_replay_gate_random_content_v1": {
+            "assigned": 12,
+            "deaths_at_step_400": 0,
+            "mean_energy_paid": 104.32873333333335,
+            "mean_lived_steps": 238.33333333333334,
+            "mean_replays_paid": 77.41666666666667,
+            "mean_sleep_steps": 74.0,
+            "mean_vigilance_paid": 135.38816666666665,
+            "random_content_distinct_subsets": 183,
+            "random_content_replay_opportunities": 185,
+            "survivors": 4
+          },
+          "p13_replay_gate_v1": {
+            "assigned": 12,
+            "deaths_at_step_400": 0,
+            "mean_energy_paid": 82.31236666666668,
+            "mean_lived_steps": 223.66666666666666,
+            "mean_replays_paid": 108.33333333333333,
+            "mean_sleep_steps": 57.416666666666664,
+            "mean_vigilance_paid": 109.82200000000005,
+            "survivors": 2
+          }
+        },
+        "paired": {
+          "assigned_pairs": 12,
+          "both_survive": 2,
+          "mean_lived_step_difference_priority_minus_random": -14.666666666666666,
+          "neither_survives": 8,
+          "paired_risk_difference_priority_minus_random": -0.16666666666666666,
+          "priority_longer": 0,
+          "priority_only_survives": 0,
+          "random_content_only_survives": 2,
+          "random_longer": 2
+        }
+      },
+      "stable": {
+        "by_arm": {
+          "p13_replay_gate_random_content_v1": {
+            "assigned": 17,
+            "deaths_at_step_400": 0,
+            "mean_energy_paid": 155.85798823529407,
+            "mean_lived_steps": 256.4117647058824,
+            "mean_replays_paid": 649.1764705882352,
+            "mean_sleep_steps": 95.23529411764706,
+            "mean_vigilance_paid": 198.1129411764705,
+            "random_content_distinct_subsets": 1069,
+            "random_content_replay_opportunities": 1069,
+            "survivors": 8
+          },
+          "p13_replay_gate_v1": {
+            "assigned": 17,
+            "deaths_at_step_400": 0,
+            "mean_energy_paid": 144.29482352941176,
+            "mean_lived_steps": 264.05882352941177,
+            "mean_replays_paid": 637.1764705882352,
+            "mean_sleep_steps": 85.82352941176471,
+            "mean_vigilance_paid": 183.86305882352943,
+            "survivors": 8
+          }
+        },
+        "paired": {
+          "assigned_pairs": 17,
+          "both_survive": 7,
+          "mean_lived_step_difference_priority_minus_random": 7.647058823529412,
+          "neither_survives": 8,
+          "paired_risk_difference_priority_minus_random": 0.0,
+          "priority_longer": 1,
+          "priority_only_survives": 1,
+          "random_content_only_survives": 1,
+          "random_longer": 1
+        }
+      }
+    },
+    "causal_fixed_replay_count_claim": false,
+    "independent_iid_ecology_attested": false,
+    "noninferiority_margin_approved": false,
+    "overall": {
+      "assigned_pairs": 48,
+      "both_survive": 16,
+      "mean_lived_step_difference_priority_minus_random": -1.5625,
+      "neither_survives": 24,
+      "paired_risk_difference_priority_minus_random": -0.125,
+      "priority_longer": 3,
+      "priority_only_survives": 1,
+      "random_content_only_survives": 7,
+      "random_longer": 7
+    },
+    "primary": "GATE_TD_PRIORITY_MINUS_GATE_RANDOM_CONTENT_HORIZON400",
+    "scientific_go": false,
+    "scientific_verdict": "NOT_ISSUED",
+    "selection_validation_reserve_executed": false,
+    "status": "COMPLETE_EXPLORATORY_DEVELOPMENT_ONLY"
+  },
+  "generated": 96,
+  "no_retry": true,
+  "phase_G": "GENERATED",
+  "phase_R": "COMPLETE",
+  "plan_sha256": "7f982390b7a1b9e3b5192971d835f4b3503a1f0add518e3a104eec2712b53b68",
+  "planned": 96,
+  "reduced": 96,
+  "schema": "i3-stage2-1-content-48-development-gr/v1",
+  "scientific_verdict": "NOT_ISSUED",
+  "source_fingerprint": "b49a6da06184331fad78ffe536ede733d95ee771ce6e393a5a05b63a512ea840",
+  "source_sha": "d7ea5a3be79fc7eb380aa6ce751df42474ab5ed3",
+  "status": "COMPLETE_EXPLORATORY_DEVELOPMENT_ONLY"
+}
