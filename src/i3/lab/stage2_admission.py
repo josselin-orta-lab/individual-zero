@@ -161,3 +161,36 @@ def admit_three_arm_newworld_engineering(*, case: dict, spec,
     return RA.mint(cohort="engineering", family=case["family"],
                    index=case["index"], world_seed=case["world_seed"],
                    spec=spec, transport_fingerprint=transport_fingerprint)
+
+
+def admit_three_arm_newworld_development(*, case: dict, spec,
+                                          transport_fingerprint: str):
+    """Central, exact-source, NEW three-arm exploratory-development guard.
+
+    New 360000..360063 indices only; never old 80/81, old B1, validation,
+    selection, reserve, or the already consumed PUBLIC engineering units.
+    The trusted-main pre-exposure source claim is separately enforced by
+    stage2_three_arm_development.execute and its single-run workflow.
+    """
+    from . import stage2_three_arm_development as THREE
+    from . import stage2_survival_b1_worldspec_audit as SPECS
+    from . import stage2_survival_b1_engineering as SOURCE
+    if type(case) is not dict or type(case.get("index")) is not int:
+        raise PermissionError("three-arm development requires exact case")
+    if case.get("cohort") != "development":
+        raise PermissionError("only new three-arm development, never reserve/validation")
+    if not (THREE.START <= case["index"] < THREE.START+THREE.UNITS):
+        raise PermissionError("three-arm index not allocated")
+    if case.get("policy") not in THREE.ARMS:
+        raise PermissionError("unauthorized three-arm policy")
+    THREE.match_case(case,transport_fingerprint)
+    if (not isinstance(spec,RA.WorldSpec) or
+            type(transport_fingerprint) is not str or
+            transport_fingerprint != SOURCE.source_fingerprint()):
+        raise PermissionError("invalid developmental source or WorldSpec")
+    expected = SPECS._construct_f0_spec(case["family"],case["world_seed"])
+    if RA.world_sha256(spec)!=RA.world_sha256(expected):
+        raise PermissionError("three-arm WorldSpec altered from prospective source")
+    return RA.mint(cohort="development",family=case["family"],
+                   index=case["index"],world_seed=case["world_seed"],
+                   spec=spec,transport_fingerprint=transport_fingerprint)
