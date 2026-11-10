@@ -340,52 +340,15 @@ def _trusted_source_claim():
 
 
 def execute(destination) -> dict:
-    source = _trusted_source_claim()
-    root = Path(destination).resolve()
-    if root.exists() and any(root.iterdir()):
-        raise PermissionError("local three-arm original archive already consumed")
-    root.mkdir(parents=True, exist_ok=True)
-    frozen = cases()
-    fingerprint = SOURCE.source_fingerprint()
-    claim = {
-        "schema": SCHEMA + "/source-claim",
-        "status":"CONSUMED_BEFORE_FIRST_BIRTH",
-        "source_sha": source,
-        "source_fingerprint": fingerprint,
-        "plan_sha256": sha256(PLAN.read_bytes()).hexdigest(),
-        "claim_branch": CLAIM_BRANCH, "evidence_branch": EVIDENCE_BRANCH,
-        "units": UNITS, "lives": len(frozen), "no_retry": True,
-        "scientific_inference_authorized": False,
-    }
-    (root/"SOURCE_LOCK.json").write_text(json.dumps(claim,sort_keys=True,indent=2)+"\n")
-    originals = root/"originals"
-    g = TP.generate(frozen, _run_case(frozen,fingerprint), originals)
-    report = {
-        "schema": SCHEMA, "status":"GENERATION_INCOMPLETE_NO_RETRY",
-        "phase_G":g["status"],"generated":g["generated"],
-        "planned":len(frozen),"phase_R":None,"reduced":0,
-        "source_sha":source,"source_fingerprint":fingerprint,
-        "plan_sha256":claim["plan_sha256"],
-        "no_retry":True,"scientific_verdict":"NOT_ISSUED",
-    }
-    if g["status"] != "GENERATED":
-        report["failure"] = g["failure"]
-    else:
-        r = TP.reduce(originals,lambda identity,life:
-                      _reduce_row(identity,life,fingerprint))
-        report["phase_R"] = r["status"]
-        if r["status"] != "COMPLETE":
-            report["status"] = "REDUCTION_DEFECT_PENDING_REPAIR"
-            report["failure"] = r.get("failure")
-        else:
-            report["reduced"] = len(r["rows"])
-            report["analysis"] = analyze(frozen,r["rows"])
-            report["status"] = "COMPLETE_EXPLORATORY_DEVELOPMENT_ONLY"
-            (root/"REDUCED_ROWS.json").write_text(
-                json.dumps(r["rows"],sort_keys=True,indent=2)+"\n")
-    (root/"EXECUTION_REPORT.json").write_text(
-        json.dumps(report,sort_keys=True,indent=2)+"\n")
-    return report
+    """Historical cohort 360000..360063 spent once; hard-closed NO_RETRY.
+
+    The original source is pinned at 11879c46a78697aa1d3f664f1a17f489a948667d,
+    Actions run 42781264127 and immutable evidence branch aaff20234b8a4f9d.
+    A new future cohort must have its own prospective source/index/claim.
+    """
+    raise PermissionError(
+        "three-arm 64-unit DEVELOPMENT already executed and archived: "
+        "source consumed; no retry or re-exposure allowed")
 
 
 def main(argv=None):
