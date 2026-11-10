@@ -126,6 +126,8 @@ class SyntheticActionPrequentialTicket:
     """Freeze once before a SYNTHETIC outcome, settle once, fail closed."""
 
     def __init__(self, *, mind: Mind, capture_body, action, param, identity):
+        if type(mind) is not Mind:
+            raise TypeError("reference Mind required for chosen action custody")
         if not isinstance(identity, str) or not identity or len(identity) > 128:
             raise ValueError("fixed source identity required")
         if param is not None and type(param) is not str:
