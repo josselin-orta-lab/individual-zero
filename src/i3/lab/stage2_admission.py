@@ -356,3 +356,23 @@ def admit_realstate_fork_newworld_development(*, case: dict, spec,
     return RA.mint(cohort="development",family=case["family"],
                    index=case["index"],world_seed=case["world_seed"],
                    spec=spec,transport_fingerprint=transport_fingerprint)
+
+
+def admit_next_decision_replay_engineering(*,case:dict,spec,
+                                           transport_fingerprint:str):
+    """New exact-source PUBLIC 184-185 only; NO scientific admissions."""
+    from . import stage2_next_decision_replay_engineering as ENG
+    from . import stage2_survival_b1_worldspec_audit as SPECS
+    from . import stage2_survival_b1_engineering as SOURCE
+    if type(case) is not dict or case.get("cohort")!="engineering":
+        raise PermissionError("next decision observer only in public engineering")
+    ENG.match_case(case,transport_fingerprint)
+    if not isinstance(spec,RA.WorldSpec) or (
+            transport_fingerprint!=SOURCE.source_fingerprint()):
+        raise PermissionError("invalid next decision source or WorldSpec")
+    original=SPECS._construct_f0_spec(case["family"],case["world_seed"])
+    if RA.world_sha256(spec)!=RA.world_sha256(original):
+        raise PermissionError("altered observer engineering World")
+    return RA.mint(cohort="engineering",family=case["family"],
+                   index=case["index"],world_seed=case["world_seed"],
+                   spec=spec,transport_fingerprint=transport_fingerprint)
