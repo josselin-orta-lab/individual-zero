@@ -291,8 +291,8 @@ def analyze(scheduled,rows):
     mechanism={
         "assigned_pairs":PAIRS,"first_fork_captured":len(first),
         "first_fork_absent":PAIRS-len(first),
-        "positive_L1_from_same_actual_pre_replay_state":positives,
-        "zero_L1_after_differing_memory_selection":len(first)-positives,
+        "positive_learned_value_difference":positives,
+        "zero_learned_value_difference":len(first)-positives,
         "primary_fraction_per_assigned_pair":positives/PAIRS,
         "sum_first_fork_L1":sum(x["l1_value_difference_between_detached_updates"]
                                 for x in first),
