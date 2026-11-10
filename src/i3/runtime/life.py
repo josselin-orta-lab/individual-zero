@@ -19,7 +19,8 @@ from i3.modules.world import World, WorldSpec
 
 REPLAY_GATE_POLICIES = {"p13_replay_gate_v1": "gate",
                         "p13_replay_gate_zero_perceived_cost_v1": "zero_perceived_cost",
-                        "p13_replay_gate_random_equal_mean_v1": "random_equal_mean"}
+                        "p13_replay_gate_random_equal_mean_v1": "random_equal_mean",
+                        "p13_replay_gate_random_content_v1": "gate_random_content"}
 
 
 def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
@@ -463,6 +464,17 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
             "final_r_hat": r_hat, "final_m_hat": m_hat, "final_H": horizon_of_use,
             "last_gate": mind.last_gate,
         }
+        if decision_policy == "p13_replay_gate_random_content_v1":
+            out["replay_gate"]["random_content"] = {
+                "policy": "i3-stage2-1-gate-count-random-content-v1",
+                "count_rule": "EXACT_ORIGINAL_GATE",
+                "selection_rule": "LIFE_SEEDED_UNIFORM_HMAC_MEMORY_INDICES",
+                "lived_sleep_ordinals": mind.content_sleep_ordinal,
+                "paid_replay_opportunities": mind.content_replay_opportunities,
+                "selected_replays_paid": mind.content_replays_executed,
+                "distinct_from_priority_subsets":
+                    mind.content_subsets_distinct_from_priority,
+            }
         if decision_policy == "p13_replay_gate_random_equal_mean_v1":
             out["replay_gate"]["random_schedule"] = {
                 "policy": "i3-stage2-1-random-equal-mean-v1",
