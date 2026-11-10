@@ -1,0 +1,24 @@
+{
+  "schema": "i3-stage2-three-arm-development-once-trigger/v1",
+  "status": "PROSPECTIVE_ONE_SHOT_MAIN_PUSH_TRIGGER_NOT_PR_APPROVAL",
+  "protocol": "I3_STAGE2_THREE_ARM_EXPLORATORY_DEVELOPMENT_20261110",
+  "pre_exposure_scope": "64 newly generated known-F0 matched G0 WorldSpecs, each with FIXED/GATE/paid RANDOM",
+  "science_cohort": "development",
+  "index_range": [
+    360000,
+    360063
+  ],
+  "lives": 192,
+  "horizon": 400,
+  "witness_sha256": "307ad43751add854317863eeb2b15ccc91548e24302b409b8c1557cf40890625",
+  "source": "exact merged main commit SHA, not known before trusted main push",
+  "claim_ref": "custody/i3-three-arm-development-64-20261110-claimed",
+  "evidence_ref": "evidence/i3-three-arm-development-64-20261110-originals",
+  "no_retry": true,
+  "no_outcome_replacement": true,
+  "no_validation_or_reserve": true,
+  "scientific_registration": false,
+  "independent_iid_source_attestation": false,
+  "confirmatory_go": false,
+  "human_owner_explicit_confirmation_per_cohort": "delegated operational autonomy in conversation; not substituted for independent research review"
+}

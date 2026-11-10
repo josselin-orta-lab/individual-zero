@@ -1,0 +1,53 @@
+{
+  "schema": "i3-stage2-1-three-arm-exploratory-dev/v1",
+  "status": "PROSPECTIVELY_FROZEN_BEFORE_EXPOSURE",
+  "protocol_id": "I3_STAGE2_THREE_ARM_EXPLORATORY_DEVELOPMENT_20261110",
+  "question": "Does funded GATE differ from funded RANDOM-EQUAL-MEAN full-policy horizon survival on matched unselected G0 newborns in known F0 worlds?",
+  "primary_estimand": "finite_panel_GATE_minus_RANDOM_horizon400_survival_risk_difference",
+  "comparator": "same newborn G0 genome, initial WorldSpec, life seed; FIXED/GATE/RANDOM full policies",
+  "paired_contrasts": [
+    "GATE_MINUS_RANDOM_PRIMARY_DESCRIPTIVE",
+    "GATE_MINUS_FIXED_SECONDARY_DESCRIPTIVE",
+    "RANDOM_MINUS_FIXED_SECONDARY_DESCRIPTIVE"
+  ],
+  "arms": [
+    "reference",
+    "p13_replay_gate_v1",
+    "p13_replay_gate_random_equal_mean_v1"
+  ],
+  "family_sampling": "HMAC-SHA256 equal-probability stable depletion pulse; no forced balancing",
+  "witness": "f289a9d7dcbad1a339843c875330c60037bb9b85c32edc1a243910c7ae5b95c0",
+  "witness_sha256": "307ad43751add854317863eeb2b15ccc91548e24302b409b8c1557cf40890625",
+  "witness_independent_external_attestation": false,
+  "seed_domains": "B1 2^60, 2*2^60, 3*2^60, independently regenerated under never-before-used witness",
+  "index_start": 360000,
+  "cohort": "development",
+  "units": 64,
+  "lives": 192,
+  "horizon": 400,
+  "maximum_world_steps": 76800,
+  "exploratory_owner_delegation": "User delegated autonomous I3 development; no independent methodological signoff is inferred",
+  "scientific_registration": false,
+  "selection_allowed": false,
+  "validation_allowed": false,
+  "reserve_allowed": false,
+  "no_retry": true,
+  "no_outcome_dependent_stopping": true,
+  "no_replacing_failures": true,
+  "missing_originals_policy": "NO_VERDICT_RETENTION_OF_ALL_PARTIAL_ORIGINALS",
+  "all_paid_cognitive_currencies_per_assigned_life": true,
+  "random_schedule_receipts": [
+    "nominal",
+    "eligible",
+    "actual_paid",
+    "draws_funded",
+    "lived_sleep_ordinals"
+  ],
+  "negative_family_results_preserved": true,
+  "original_custody": "full Phase-G originals + verified manifest + Phase-R rows archived on separate evidence Git ref with one-shot prospective claim before first World",
+  "scientific_noninferiority_margin": null,
+  "inferential_independence_validated": false,
+  "scientific_go": false,
+  "global_scientific_promotion": false,
+  "scope": "EXPLORATORY_DEVELOPMENT_ONLY_KNOWN_F0_P1_3_UNCHANGED"
+}
