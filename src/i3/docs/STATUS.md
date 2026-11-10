@@ -1,5 +1,12 @@
 # I3: current research and engineering status
 
+## B1 new-world 96-pair exploratory DEVELOPMENT completed and closed (10 November 2026)
+
+**192/192 real developmental lives generated, sealed, reduced on GitHub Actions #42735037051; the spent B1 runner is now closed NO_RETRY.** The [source-bound results](studies/stage2-replay-gate-selected-design/B1_EXPLORATORY_DEVELOPMENT_RESULTS_2026-11-10.md) show 38/96 horizon survivors under GATE versus 30/96 FIXED, 13 GATE-only versus five FIXED-only, observed +8.3333 percentage-point paired survival difference and +27.2396 mean lived steps. Paid energy per assigned life was 133.1013 GATE versus 137.4370 FIXED; paid vigilance was **higher** with GATE (171.6070 versus 167.5939). Adverse family-specific and historical 80/81 results remain visible.
+
+This is **development-only exploratory evidence**: no independent external iid source witness, no approved survival-loss margin, no confirmatory inference, no held-out selection/validation or reserve, and no I3 activation. Original sealed histories are currently in [Actions artifact #13725454291](https://github.com/josselin-orta-lab/individual-zero/actions/runs/42735037051/artifacts/13725454291), which expires **8 February 2027**: permanent original custody is the next urgent research task. The exact execution head was `713d4621d28ed668bf5f5a37f2d105a38d19fb57`; the closed runner must never regenerate these 96 pairs. This result does not change the historical `REPLAY_GATE_CAPACITY_SHOWN` stage status or authorize Stage 2.2.
+
+
 **PROPOSAL. UNREGISTERED. NO ACTIVE ENGINE ENTRYPOINT. NO GENERAL SCIENTIFIC GO.**
 I1 remains the active engine. Authority: [engine contract](../engine.json),
 [registry](../../../config/engine-registry.json),
