@@ -654,7 +654,7 @@ jobs:
       SOURCE_SHA: ${{ github.sha }}
       I3_THREE_ARM_CLAIM_BRANCH: custody/i3-three-arm-development-64-20261110-claimed
       EVIDENCE_BRANCH: evidence/i3-three-arm-development-64-20261110-originals
-      ARCHIVE_SOURCE: ${{ runner.temp }}/i3-three-arm-development-64-originals
+      ARCHIVE_SOURCE: /tmp/i3-three-arm-development-64-originals
       EVIDENCE_DIR: archive/i3/stage2-three-arm-development-2026-11-10
       PLAN: src/i3/docs/studies/stage2-replay-gate-selected-design/THREE_ARM_EXPLORATORY_DEV_PLAN.json
     steps:
