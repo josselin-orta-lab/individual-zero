@@ -895,3 +895,64 @@ jobs:
           path: ${{ runner.temp }}/THREE_ARM_READ_ONLY_AUDIT.json
           retention-days: 90
           if-no-files-found: warn
+
+  stage2-replay-content-local-falsifier:
+    # New software-only priority-vs-random *memory identity* falsifier.
+    # Creates no World, steps no life, publishes no survival outcome.
+    if: startsWith(github.head_ref, 'research/i3-replay-content-local-')
+    name: I3 detached content-selection local probe (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Checkout exact software-only protocol source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Test matching physical tariff and detached memory identities
+        run: python -m unittest discover -s tests/i3 -p 'test_stage2_replay_content_local.py' -v
+      - name: Run all 48 fixed synthetic Mind snapshots without World
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_replay_content_local \
+            > "$RUNNER_TEMP/i3-content-local.json"
+          python - "$RUNNER_TEMP/i3-content-local.json" <<'PY'
+          import json,sys
+          from pathlib import Path
+          report=json.loads(Path(sys.argv[1]).read_text())
+          assert report["status"]=="COMPLETE_SYNTHETIC_MECHANISM_ONLY"
+          assert report["trial_count"]==48
+          assert report["equal_actual_replays_per_arm"]==3
+          assert len(report["observations"])==48
+          assert report["identical_replay_work_and_projected_physical_tariff"] is True
+          assert report["differing_memory_subsets"]>0
+          assert report["no_source_mutation"] is True
+          assert report["no_world_or_full_life_executed"] is True
+          assert report["physical_debit_applied_by_world"] is False
+          assert report["scientific_survival_verdict"]=="NOT_ISSUED"
+          assert report["family_or_ecology_generalization"] is False
+          print(json.dumps({k:v for k,v in report.items()
+                            if k!="observations"},sort_keys=True))
+          PY
+      - name: Retain complete synthetic-only local results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-replay-content-local-py${{ matrix.python-version }}
+          path: ${{ runner.temp }}/i3-content-local.json
+          retention-days: 30
+          if-no-files-found: warn
