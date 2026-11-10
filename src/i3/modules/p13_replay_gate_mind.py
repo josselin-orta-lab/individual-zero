@@ -25,7 +25,8 @@ from .mind import (F, I, Mind, REPLAYS_PER_SLEEP, W)
 from .stage2_random_equal_mean import scheduled_replays
 
 POLICY = "p13_replay_gate_v1"
-MODES = ("gate", "zero_perceived_cost", "forced_open", "random_equal_mean")
+MODES = ("gate", "zero_perceived_cost", "forced_open", "random_equal_mean",
+         "gate_random_content")
 TOP_MARGIN = 1e-12
 E_INDEX, V_INDEX = 0, 4
 
@@ -93,6 +94,11 @@ class P13ReplayGateMind(Mind):
         self.random_schedule_draws = 0
         self.random_nominal_replays = 0
         self.random_eligible_replays = 0
+        # Opt-in full-life replay *content* ablation only; never changes GATE k.
+        self.content_sleep_ordinal = 0
+        self.content_replay_opportunities = 0
+        self.content_replays_executed = 0
+        self.content_subsets_distinct_from_priority = 0
 
     def simulate(self, body, plan, horizon, budget):
         if self.simulation_mode != "reference":
@@ -336,6 +342,8 @@ class P13ReplayGateMind(Mind):
         # counter never changes the already-frozen GATE H formula.
         if self.replay_gate_mode == "random_equal_mean" and self.last[2] == "dormir":
             self._random_sleep_ordinal += 1
+        if self.replay_gate_mode == "gate_random_content" and self.last[2] == "dormir":
+            self.content_sleep_ordinal += 1
         base = CognitiveWork(cycles=2, simulated_steps=2 * len(self.proj_chunks),
                              memory_items=len(self.buffer) + len(self.effects.stats) + 1)
         if not budget.try_spend(base):
@@ -353,3 +361,33 @@ class P13ReplayGateMind(Mind):
                     break
                 replays += 1
         return replays
+
+    def learn_from_outcome(self, result, *, replay_limit=0, replay_retention=True):
+        """Experiment-only content choice; full historical GATE count unchanged.
+
+        Baseline policies still delegate with replay_selector=None, preserving
+        the original TD-priority replay rule byte-for-byte inside Mind.
+        """
+        if self.replay_gate_mode != "gate_random_content":
+            return super().learn_from_outcome(
+                result, replay_limit=replay_limit,
+                replay_retention=replay_retention)
+        from .stage2_replay_content_selection import random_content_indices
+
+        def choose(buffer, count):
+            selected = random_content_indices(
+                eligible=len(buffer), count=count,
+                life_seed=self._random_life_seed,
+                sleep_ordinal=self.content_sleep_ordinal)
+            priority = tuple(sorted(range(len(buffer)),
+                                    key=lambda i: -buffer[i][0])[:count])
+            if count:
+                self.content_replay_opportunities += 1
+                self.content_replays_executed += count
+                self.content_subsets_distinct_from_priority += (
+                    set(selected) != set(priority))
+            return selected
+
+        return super().learn_from_outcome(
+            result, replay_limit=replay_limit,
+            replay_retention=replay_retention, replay_selector=choose)
