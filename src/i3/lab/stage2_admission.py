@@ -101,3 +101,30 @@ def admit_b1_newworld_engineering(*, family: str, index: int, world_seed: int,
     return RA.mint(cohort="engineering", family=family, index=index,
                    world_seed=world_seed, spec=spec,
                    transport_fingerprint=transport_fingerprint)
+
+
+def admit_b1_newworld_development(*, case: dict, spec,
+                                  transport_fingerprint: str):
+    """New B1 DEVELOPMENT-only ticket; never old 80/81 or selection/reserve.
+
+    The exact new prospective allocation and executable source are checked
+    before minting; a ticket is not a replacement for independent scientific
+    design review, external provenance or a global one-shot source claim.
+    """
+    from . import stage2_b1_development as B1
+    from . import stage2_survival_b1_worldspec_audit as SPECS
+    if not isinstance(case, dict):
+        raise PermissionError("B1 new-development allocation requires an exact case")
+    B1.match_case(case, transport_fingerprint)
+    if case["cohort"] != "development":
+        raise PermissionError("only new B1 DEVELOPMENT is admissible")
+    if not isinstance(spec, RA.WorldSpec):
+        raise PermissionError("B1 new-development source requires WorldSpec")
+    expected = SPECS._construct_f0_spec(case["family"], case["world_seed"])
+    if RA.world_sha256(spec) != RA.world_sha256(expected):
+        raise PermissionError("B1 DEVELOPMENT must use the exact generated WorldSpec")
+    return RA.mint(
+        cohort="development", family=case["family"], index=case["index"],
+        world_seed=case["world_seed"], spec=spec,
+        transport_fingerprint=transport_fingerprint,
+    )
