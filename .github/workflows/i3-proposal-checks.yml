@@ -1482,3 +1482,65 @@ jobs:
           path: ${{ runner.temp }}/i3-water-24-read-only-audit.json
           retention-days: 90
           if-no-files-found: warn
+
+
+  stage2-realstate-replay-fork-engineering:
+    # Exactly two fresh PUBLIC technical units 182..183, observer ON/OFF.
+    # No biological result output and no new scientific source authority.
+    if: startsWith(github.head_ref, 'research/i3-realstate-content-fork-')
+    name: I3 realstate replay fork neutrality (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Checkout exact proposed observer and source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Python version
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Validate detached replay copy and strict engineering source guard
+        run: python -m unittest discover -s tests/i3 -p 'test_stage2_realstate_content_fork.py' -v
+      - name: Run exactly four on/off technical lives, publish structural only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_realstate_content_fork_engineering rehearse \
+            > "$RUNNER_TEMP/i3-realstate-content-fork.json"
+          python - "$RUNNER_TEMP/i3-realstate-content-fork.json" <<'PY'
+          import json,sys
+          from pathlib import Path
+          r=json.loads(Path(sys.argv[1]).read_text())
+          assert r["status"]=="OBSERVER_PHYSICAL_NEUTRALITY_PASS"
+          assert r["pairs"]==2 and r["observed_lives"]==2
+          assert r["real_full_life_executions"]==4
+          assert 0 <= r["first_fork_captures"] <= 2
+          assert r["physical_and_decision_trace_identical_on_off"] is True
+          assert r["prepaid_replay_count_unchanged"] is True
+          assert r["no_second_world"] is True
+          assert r["biological_outcomes_published"] is False
+          assert r["scientific_lives"]==0
+          assert r["scientific_verdict"]=="NOT_ISSUED"
+          assert all(x not in r for x in
+                     ("survivors","deaths","terminal","histories","water","actions"))
+          print(json.dumps(r,sort_keys=True))
+          PY
+      - name: Retain structural-only observer-neutrality receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-realstate-content-fork-py${{ matrix.python-version }}
+          path: ${{ runner.temp }}/i3-realstate-content-fork.json
+          retention-days: 30
+          if-no-files-found: warn
