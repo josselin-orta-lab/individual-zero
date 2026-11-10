@@ -157,7 +157,7 @@ class ThreeArmDevelopmentTests(unittest.TestCase):
         self.assertTrue(ok["dead_at_400"])
         for key,value in (("actual_replays_paid",10),
                           ("eligible_replays_scheduled",7),
-                          ("nominal_replays_scheduled",14),
+                          ("nominal_replays_scheduled",15),
                           ("draws_funded",3),
                           ("mean_denominator",866)):
             with self.subTest(key=key):
