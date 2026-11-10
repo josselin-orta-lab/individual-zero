@@ -766,3 +766,66 @@ jobs:
           git commit -m "custody(i3): retain all first-run three-arm original lives and failures; source $SOURCE_SHA"
           git push origin "HEAD:refs/heads/$EVIDENCE_BRANCH"
           echo "I3_THREE_ARM_SCIENTIFIC_ORIGINALS_PUBLISHED=$EVIDENCE_BRANCH"
+
+
+  stage2-three-arm-readonly-originals:
+    # Recompute existing 192 already archived original lives; no World is run,
+    # no ticket minted and no new science exposure or claim is possible.
+    if: startsWith(github.head_ref, 'research/i3-three-arm-64-results-')
+    name: I3 read-only archived 192 three-arm originals (Python 3.11)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      PYTHONPATH: src
+      ARCHIVE_REF: evidence/i3-three-arm-development-64-20261110-originals
+    steps:
+      - name: Checkout exact post-exposure reanalysis source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run regression-only archive integrity tests
+        run: python -m unittest discover -s tests/i3 -p 'test_stage2_three_arm_original_reanalysis.py' -v
+      - name: Materialize only original committed scientific evidence in detached worktree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "refs/heads/$ARCHIVE_REF:refs/remotes/origin/$ARCHIVE_REF"
+          git worktree add --detach "$RUNNER_TEMP/i3-three-arm-evidence" "refs/remotes/origin/$ARCHIVE_REF"
+          test "$(git -C "$RUNNER_TEMP/i3-three-arm-evidence" rev-parse HEAD)" = "aaff20234b8a4f9d11595d6eb852371d0ce00f97"
+      - name: Reverify 192 packed/unpacked original hashes and reproduce all finite contrasts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_three_arm_original_reanalysis "$RUNNER_TEMP/i3-three-arm-evidence/archive/i3/stage2-three-arm-development-2026-11-10" > "$RUNNER_TEMP/i3-three-arm-original-reanalysis.json"
+          python - "$RUNNER_TEMP/i3-three-arm-original-reanalysis.json" <<'PY'
+          import json,sys
+          from pathlib import Path
+          r=json.loads(Path(sys.argv[1]).read_text())
+          assert r["status"]=="ORIGINAL_192_OF_192_REVERIFIED_READ_ONLY"
+          assert r["originals_checked"]==192 and r["matched_units"]==64
+          assert r["gate_only_survivors"]==r["random_only_survivors"]==4
+          assert r["both_survive"]==23 and r["neither_survive"]==33
+          assert r["observed_primary_paired_risk_difference"]==0.0
+          assert r["source_sha"]=="11879c46a78697aa1d3f664f1a17f489a948667d"
+          assert r["manifest_sha256"]=="f493a30598c3dd82f56ab84653537286487bea61414cfc2226785209c724a50f"
+          assert r["scientific_verdict"]=="NOT_ISSUED"
+          assert r["lives_executed_by_verifier"]==r["worlds_executed_by_verifier"]==0
+          assert r["independent_iid_verified"] is False
+          print(json.dumps(r,sort_keys=True))
+          PY
+      - name: Retain only independent structural audit receipt
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-three-arm-originals-readonly-audit
+          path: ${{ runner.temp }}/i3-three-arm-original-reanalysis.json
+          if-no-files-found: error
+          retention-days: 30
