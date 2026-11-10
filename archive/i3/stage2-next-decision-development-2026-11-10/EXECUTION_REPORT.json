@@ -1,0 +1,211 @@
+{
+  "analysis": {
+    "by_arm": {
+      "p13_replay_gate_random_content_v1": {
+        "assigned": 24,
+        "deaths_at_step_400": 0,
+        "mean_energy_paid": 173.91710833333335,
+        "mean_lived_steps": 316.4166666666667,
+        "mean_replays_paid": 570.5,
+        "mean_sleep_steps": 113.0,
+        "mean_vigilance_paid": 220.27150000000003,
+        "random_content_distinct_subsets": 1442,
+        "random_content_replay_opportunities": 1447,
+        "survivors": 13
+      },
+      "p13_replay_gate_v1": {
+        "assigned": 24,
+        "deaths_at_step_400": 0,
+        "mean_energy_paid": 151.55873333333327,
+        "mean_lived_steps": 307.0,
+        "mean_replays_paid": 680.2916666666666,
+        "mean_sleep_steps": 93.41666666666667,
+        "mean_vigilance_paid": 195.4776666666667,
+        "survivors": 12
+      }
+    },
+    "by_family": {
+      "depletion": {
+        "by_arm": {
+          "p13_replay_gate_random_content_v1": {
+            "assigned": 10,
+            "deaths_at_step_400": 0,
+            "mean_energy_paid": 178.76989999999992,
+            "mean_lived_steps": 342.5,
+            "mean_replays_paid": 753.2,
+            "mean_sleep_steps": 113.8,
+            "mean_vigilance_paid": 222.38699999999986,
+            "random_content_distinct_subsets": 676,
+            "random_content_replay_opportunities": 677,
+            "survivors": 6
+          },
+          "p13_replay_gate_v1": {
+            "assigned": 10,
+            "deaths_at_step_400": 0,
+            "mean_energy_paid": 134.33186,
+            "mean_lived_steps": 333.3,
+            "mean_replays_paid": 479.4,
+            "mean_sleep_steps": 85.4,
+            "mean_vigilance_paid": 172.22139999999996,
+            "survivors": 5
+          }
+        },
+        "paired": {
+          "assigned_pairs": 10,
+          "both_survive": 5,
+          "mean_lived_step_difference_priority_minus_random": -9.2,
+          "neither_survives": 4,
+          "paired_risk_difference_priority_minus_random": -0.1,
+          "priority_longer": 0,
+          "priority_only_survives": 0,
+          "random_content_only_survives": 1,
+          "random_longer": 1
+        }
+      },
+      "pulse": {
+        "by_arm": {
+          "p13_replay_gate_random_content_v1": {
+            "assigned": 6,
+            "deaths_at_step_400": 0,
+            "mean_energy_paid": 216.9675000000001,
+            "mean_lived_steps": 368.5,
+            "mean_replays_paid": 719.5,
+            "mean_sleep_steps": 144.0,
+            "mean_vigilance_paid": 275.1553333333335,
+            "random_content_distinct_subsets": 548,
+            "random_content_replay_opportunities": 550,
+            "survivors": 4
+          },
+          "p13_replay_gate_v1": {
+            "assigned": 6,
+            "deaths_at_step_400": 0,
+            "mean_energy_paid": 192.95149999999998,
+            "mean_lived_steps": 360.3333333333333,
+            "mean_replays_paid": 975.6666666666666,
+            "mean_sleep_steps": 120.33333333333333,
+            "mean_vigilance_paid": 249.2893333333334,
+            "survivors": 4
+          }
+        },
+        "paired": {
+          "assigned_pairs": 6,
+          "both_survive": 3,
+          "mean_lived_step_difference_priority_minus_random": -8.166666666666666,
+          "neither_survives": 1,
+          "paired_risk_difference_priority_minus_random": 0.0,
+          "priority_longer": 1,
+          "priority_only_survives": 1,
+          "random_content_only_survives": 1,
+          "random_longer": 2
+        }
+      },
+      "stable": {
+        "by_arm": {
+          "p13_replay_gate_random_content_v1": {
+            "assigned": 8,
+            "deaths_at_step_400": 0,
+            "mean_energy_paid": 135.563325,
+            "mean_lived_steps": 244.75,
+            "mean_replays_paid": 230.375,
+            "mean_sleep_steps": 88.75,
+            "mean_vigilance_paid": 176.46425000000002,
+            "random_content_distinct_subsets": 218,
+            "random_content_replay_opportunities": 220,
+            "survivors": 3
+          },
+          "p13_replay_gate_v1": {
+            "assigned": 8,
+            "deaths_at_step_400": 0,
+            "mean_energy_paid": 142.04774999999987,
+            "mean_lived_steps": 234.125,
+            "mean_replays_paid": 709.875,
+            "mean_sleep_steps": 83.25,
+            "mean_vigilance_paid": 184.18925000000002,
+            "survivors": 3
+          }
+        },
+        "paired": {
+          "assigned_pairs": 8,
+          "both_survive": 2,
+          "mean_lived_step_difference_priority_minus_random": -10.625,
+          "neither_survives": 4,
+          "paired_risk_difference_priority_minus_random": 0.0,
+          "priority_longer": 2,
+          "priority_only_survives": 1,
+          "random_content_only_survives": 1,
+          "random_longer": 1
+        }
+      }
+    },
+    "causal_fixed_replay_count_claim": false,
+    "independent_iid_ecology_attested": false,
+    "mechanism": {
+      "all_assigned_included": true,
+      "assigned_pairs": 24,
+      "by_family": {
+        "depletion": {
+          "assigned": 10,
+          "changed_action": 0,
+          "fork": 7,
+          "with_next": 7
+        },
+        "pulse": {
+          "assigned": 6,
+          "changed_action": 0,
+          "fork": 6,
+          "with_next": 6
+        },
+        "stable": {
+          "assigned": 8,
+          "changed_action": 1,
+          "fork": 7,
+          "with_next": 7
+        }
+      },
+      "calibrated_predictive_accuracy": false,
+      "causal_biological_survival_mediation": false,
+      "different_next_admitted_action_or_param": 1,
+      "different_next_option": 1,
+      "first_different_funded_memory_fork": 20,
+      "first_fork_with_next_common_perception": 20,
+      "first_fork_without_following_real_decision": 0,
+      "no_different_funded_memory_fork": 4,
+      "no_second_world": true,
+      "observer_external_only": true,
+      "primary_fraction_of_all_assigned": 0.041666666666666664,
+      "same_next_admitted_action_and_param": 19,
+      "shared_action_nonterminal_bootstrapped_TD_receipts": 19,
+      "sum_priority_shared_action_TD_residual": 0.2543946581229227,
+      "sum_random_shared_action_TD_residual": 0.24348612116424376
+    },
+    "noninferiority_margin_approved": false,
+    "overall": {
+      "assigned_pairs": 24,
+      "both_survive": 10,
+      "mean_lived_step_difference_priority_minus_random": -9.416666666666666,
+      "neither_survives": 9,
+      "paired_risk_difference_priority_minus_random": -0.041666666666666664,
+      "priority_longer": 3,
+      "priority_only_survives": 2,
+      "random_content_only_survives": 3,
+      "random_longer": 4
+    },
+    "primary": "FIRST_SAME_NEXT_PERCEPTION_DIFFERENT_HYPOTHETICAL_ACTION_PER_24_ASSIGNED",
+    "scientific_go": false,
+    "scientific_verdict": "NOT_ISSUED",
+    "selection_validation_reserve_executed": false,
+    "status": "COMPLETE_EXPLORATORY_DEVELOPMENT_ONLY"
+  },
+  "generated": 48,
+  "no_retry": true,
+  "phase_G": "GENERATED",
+  "phase_R": "COMPLETE",
+  "plan_sha256": "8b7533a27699684b8d6a00b41f48f00862e1e0a453cc031aedfb9baaf479bd49",
+  "planned": 48,
+  "reduced": 48,
+  "schema": "i3-stage2-1-next-decision-24-development-gr/v1",
+  "scientific_verdict": "NOT_ISSUED",
+  "source_fingerprint": "469367d11a7866d715e4a4781b69d815f1f069ed88f2d03b8d457b4beb4852a9",
+  "source_sha": "d86474d4eea47e8066169988c152f24c40f8efb6",
+  "status": "COMPLETE_EXPLORATORY_DEVELOPMENT_ONLY"
+}

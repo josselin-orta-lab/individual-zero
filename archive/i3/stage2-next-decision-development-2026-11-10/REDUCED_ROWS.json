@@ -1,0 +1,2423 @@
+[
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [],
+    "family": "depletion",
+    "genome_seed": 2661186059121154895,
+    "genome_sha256": "5fa27861ab966ee593f0e6322eacb0a61b04a00f67dfae9f1de66afc8b30a5cf",
+    "index": 560000,
+    "life_seed": 3653606992009308752,
+    "next_decision_receipt": null,
+    "paid_energy": 261.79139999999995,
+    "paid_vigilance": 350.26599999999934,
+    "pair_id": "next-decision-000000",
+    "policy": "p13_replay_gate_v1",
+    "random_content_receipt": null,
+    "replays_paid": 1949,
+    "sleep_steps": 144,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 400,
+    "terminal": "censored",
+    "world_seed": 2168420209766526616,
+    "world_sha256": "7e690f89daba600af640e3668434e9a95e226087b002003060cb3e5af72fa446"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [],
+    "family": "depletion",
+    "genome_seed": 2661186059121154895,
+    "genome_sha256": "5fa27861ab966ee593f0e6322eacb0a61b04a00f67dfae9f1de66afc8b30a5cf",
+    "index": 560000,
+    "life_seed": 3653606992009308752,
+    "next_decision_receipt": {
+      "different_opportunities": 128,
+      "first_fork": {
+        "different_learned_values": true,
+        "first_different_replay_ordinal": 19,
+        "next_decision": {
+          "observer_extra_physical_cost": false,
+          "priority_action": "se_deplacer",
+          "priority_option": "goto-boire:11,1",
+          "priority_param": "S",
+          "priority_work": {
+            "cycles": 5,
+            "memory_items": 191,
+            "replays": 0,
+            "simulated_steps": 91
+          },
+          "random_action": "se_deplacer",
+          "random_branch_matches_actual_live_decision_and_work": true,
+          "random_option": "goto-boire:11,1",
+          "random_param": "S",
+          "random_work": {
+            "cycles": 5,
+            "memory_items": 191,
+            "replays": 0,
+            "simulated_steps": 91
+          },
+          "same_admitted_action_and_param": true,
+          "same_decision_option": true
+        },
+        "post_priority_values_sha256": "981e3a299bc709d05de34707f1a5e15d156595c51c4f1d59340b5a1b0c3ccd70",
+        "post_random_values_sha256": "5f67d8ff5770b988f6dd0eed9f2bb373c5ae9742bec67e23cccce9d41c53473d",
+        "priority_memory_indices": [
+          22
+        ],
+        "random_memory_indices": [
+          23
+        ],
+        "replays_in_each_detached_copy": 1,
+        "same_pre_replay_state_sha256": "45fe44c039dd354f2ba8017f80a012f0f4e2bf806b622d5adf3710ba66992ade",
+        "shared_actual_transition_td_residual": {
+          "bootstrapped_not_calibrated_prediction": true,
+          "priority": 0.0040103499372774265,
+          "random": 0.003585236662949053,
+          "same_actual_transition": true
+        }
+      },
+      "funded_opportunities": 128,
+      "status": "FIRST_FORK_AND_NEXT_DECISION_CAPTURED"
+    },
+    "paid_energy": 261.6335999999992,
+    "paid_vigilance": 349.31999999999914,
+    "pair_id": "next-decision-000000",
+    "policy": "p13_replay_gate_random_content_v1",
+    "random_content_receipt": {
+      "distinct_from_priority_subsets": 128,
+      "lived_sleep_ordinals": 146,
+      "paid_replay_opportunities": 128,
+      "selected_replays_paid": 1928
+    },
+    "replays_paid": 1928,
+    "sleep_steps": 146,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 400,
+    "terminal": "censored",
+    "world_seed": 2168420209766526616,
+    "world_sha256": "7e690f89daba600af640e3668434e9a95e226087b002003060cb3e5af72fa446"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [],
+    "family": "pulse",
+    "genome_seed": 2746218901149961411,
+    "genome_sha256": "d69d43839b12546605fd00b11cf5fb75ebe8b3ea7382b9dece4d903e2829f998",
+    "index": 560001,
+    "life_seed": 4598152423084713853,
+    "next_decision_receipt": null,
+    "paid_energy": 238.58660000000012,
+    "paid_vigilance": 314.5920000000003,
+    "pair_id": "next-decision-000001",
+    "policy": "p13_replay_gate_v1",
+    "random_content_receipt": null,
+    "replays_paid": 649,
+    "sleep_steps": 156,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 400,
+    "terminal": "censored",
+    "world_seed": 2176644722741349370,
+    "world_sha256": "63aa7f2bb199236d8025813d475a3dbfcc61fbe5c4b06aa05a8be1ef037328cf"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [],
+    "family": "pulse",
+    "genome_seed": 2746218901149961411,
+    "genome_sha256": "d69d43839b12546605fd00b11cf5fb75ebe8b3ea7382b9dece4d903e2829f998",
+    "index": 560001,
+    "life_seed": 4598152423084713853,
+    "next_decision_receipt": {
+      "different_opportunities": 49,
+      "first_fork": {
+        "different_learned_values": true,
+        "first_different_replay_ordinal": 49,
+        "next_decision": {
+          "observer_extra_physical_cost": false,
+          "priority_action": "collecter",
+          "priority_option": "collecter:tok0",
+          "priority_param": "syderi",
+          "priority_work": {
+            "cycles": 7,
+            "memory_items": 280,
+            "replays": 0,
+            "simulated_steps": 130
+          },
+          "random_action": "collecter",
+          "random_branch_matches_actual_live_decision_and_work": true,
+          "random_option": "collecter:tok0",
+          "random_param": "syderi",
+          "random_work": {
+            "cycles": 7,
+            "memory_items": 280,
+            "replays": 0,
+            "simulated_steps": 130
+          },
+          "same_admitted_action_and_param": true,
+          "same_decision_option": true
+        },
+        "post_priority_values_sha256": "406482cf54b86a322f3dbbd901020ee715ff51bf5635057c0dad1dc555cbb6bd",
+        "post_random_values_sha256": "f884694ed5ca84656dc61146328acf28ad2e781bc556881fa374e721b986518a",
+        "priority_memory_indices": [
+          29,
+          26,
+          20,
+          27,
+          23,
+          21,
+          24,
+          45,
+          22,
+          19,
+          17,
+          31
+        ],
+        "random_memory_indices": [
+          26,
+          83,
+          23,
+          9,
+          11,
+          46,
+          70,
+          3,
+          84,
+          5,
+          76,
+          72
+        ],
+        "replays_in_each_detached_copy": 12,
+        "same_pre_replay_state_sha256": "52eb0fd3b00318bf7cfa0c1617dd2eec63efb21281fff3b58708d45c401eaaf1",
+        "shared_actual_transition_td_residual": {
+          "bootstrapped_not_calibrated_prediction": true,
+          "priority": 0.012136144435585467,
+          "random": 0.006542539444827261,
+          "same_actual_transition": true
+        }
+      },
+      "funded_opportunities": 49,
+      "status": "FIRST_FORK_AND_NEXT_DECISION_CAPTURED"
+    },
+    "paid_energy": 238.1048000000001,
+    "paid_vigilance": 312.2260000000007,
+    "pair_id": "next-decision-000001",
+    "policy": "p13_replay_gate_random_content_v1",
+    "random_content_receipt": {
+      "distinct_from_priority_subsets": 49,
+      "lived_sleep_ordinals": 150,
+      "paid_replay_opportunities": 49,
+      "selected_replays_paid": 231
+    },
+    "replays_paid": 231,
+    "sleep_steps": 150,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 400,
+    "terminal": "censored",
+    "world_seed": 2176644722741349370,
+    "world_sha256": "63aa7f2bb199236d8025813d475a3dbfcc61fbe5c4b06aa05a8be1ef037328cf"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [],
+    "family": "stable",
+    "genome_seed": 3036079256765598461,
+    "genome_sha256": "5965874f7d54b66df77193738885592db737be56daafa726a8439c14e192f31f",
+    "index": 560002,
+    "life_seed": 4429101037057464194,
+    "next_decision_receipt": null,
+    "paid_energy": 289.28979999999956,
+    "paid_vigilance": 369.04800000000023,
+    "pair_id": "next-decision-000002",
+    "policy": "p13_replay_gate_v1",
+    "random_content_receipt": null,
+    "replays_paid": 2083,
+    "sleep_steps": 148,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 400,
+    "terminal": "censored",
+    "world_seed": 1949693524063357169,
+    "world_sha256": "67c280400a9d9080d043e2147b8e1ca78d71431a858bf8c7fa17e64aa5c739e1"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [],
+    "family": "stable",
+    "genome_seed": 3036079256765598461,
+    "genome_sha256": "5965874f7d54b66df77193738885592db737be56daafa726a8439c14e192f31f",
+    "index": 560002,
+    "life_seed": 4429101037057464194,
+    "next_decision_receipt": {
+      "different_opportunities": 95,
+      "first_fork": {
+        "different_learned_values": true,
+        "first_different_replay_ordinal": 16,
+        "next_decision": {
+          "observer_extra_physical_cost": false,
+          "priority_action": "manger",
+          "priority_option": "manger:tok0",
+          "priority_param": "wazywa",
+          "priority_work": {
+            "cycles": 6,
+            "memory_items": 215,
+            "replays": 0,
+            "simulated_steps": 119
+          },
+          "random_action": "collecter",
+          "random_branch_matches_actual_live_decision_and_work": true,
+          "random_option": "collecter+manger:tok0",
+          "random_param": "wazywa",
+          "random_work": {
+            "cycles": 6,
+            "memory_items": 215,
+            "replays": 0,
+            "simulated_steps": 119
+          },
+          "same_admitted_action_and_param": false,
+          "same_decision_option": false
+        },
+        "post_priority_values_sha256": "748db60f423b09d09f33e673ca606c90f3bed6a6562f82d997f683d027b2c144",
+        "post_random_values_sha256": "0598e867d0ed0355427675f17c5c04245b8538ae5d4b7ae386cec820a7760404",
+        "priority_memory_indices": [
+          17
+        ],
+        "random_memory_indices": [
+          1
+        ],
+        "replays_in_each_detached_copy": 1,
+        "same_pre_replay_state_sha256": "601f941cc447c3c92a3705efd3a4500904e78265d2128805edb6b2784741e008",
+        "shared_actual_transition_td_residual": null
+      },
+      "funded_opportunities": 95,
+      "status": "FIRST_FORK_AND_NEXT_DECISION_CAPTURED"
+    },
+    "paid_energy": 242.75519999999972,
+    "paid_vigilance": 321.4960000000004,
+    "pair_id": "next-decision-000002",
+    "policy": "p13_replay_gate_random_content_v1",
+    "random_content_receipt": {
+      "distinct_from_priority_subsets": 95,
+      "lived_sleep_ordinals": 147,
+      "paid_replay_opportunities": 95,
+      "selected_replays_paid": 829
+    },
+    "replays_paid": 829,
+    "sleep_steps": 147,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 400,
+    "terminal": "censored",
+    "world_seed": 1949693524063357169,
+    "world_sha256": "67c280400a9d9080d043e2147b8e1ca78d71431a858bf8c7fa17e64aa5c739e1"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [],
+    "family": "stable",
+    "genome_seed": 2666842775037740827,
+    "genome_sha256": "72157346da93093f5453de80422635a6cd513d598899419140290e602f0d4dff",
+    "index": 560003,
+    "life_seed": 3715464795612186831,
+    "next_decision_receipt": null,
+    "paid_energy": 279.13360000000023,
+    "paid_vigilance": 336.5899999999998,
+    "pair_id": "next-decision-000003",
+    "policy": "p13_replay_gate_v1",
+    "random_content_receipt": null,
+    "replays_paid": 1498,
+    "sleep_steps": 154,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 400,
+    "terminal": "censored",
+    "world_seed": 1515785771023754651,
+    "world_sha256": "65e6e0a1726d32cb1b62a4200b159875a27c65cc41f8d5f3c024e6fef1234248"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [],
+    "family": "stable",
+    "genome_seed": 2666842775037740827,
+    "genome_sha256": "72157346da93093f5453de80422635a6cd513d598899419140290e602f0d4dff",
+    "index": 560003,
+    "life_seed": 3715464795612186831,
+    "next_decision_receipt": {
+      "different_opportunities": 34,
+      "first_fork": {
+        "different_learned_values": true,
+        "first_different_replay_ordinal": 2,
+        "next_decision": {
+          "observer_extra_physical_cost": false,
+          "priority_action": "attendre",
+          "priority_option": "attendre",
+          "priority_param": null,
+          "priority_work": {
+            "cycles": 6,
+            "memory_items": 133,
+            "replays": 0,
+            "simulated_steps": 73
+          },
+          "random_action": "attendre",
+          "random_branch_matches_actual_live_decision_and_work": true,
+          "random_option": "attendre",
+          "random_param": null,
+          "random_work": {
+            "cycles": 6,
+            "memory_items": 133,
+            "replays": 0,
+            "simulated_steps": 73
+          },
+          "same_admitted_action_and_param": true,
+          "same_decision_option": true
+        },
+        "post_priority_values_sha256": "cf7682feb4d415cd35981b7dc6ca3d993e8d8e84c33e6f85e6e73aa84f134eeb",
+        "post_random_values_sha256": "74336f1d56043785129fc57b43eb896fbf8580c2753e543b2d994761bb9e2ef3",
+        "priority_memory_indices": [
+          10,
+          8,
+          14,
+          9,
+          6,
+          7,
+          0,
+          1,
+          5,
+          2,
+          3,
+          4,
+          13,
+          11,
+          12,
+          21
+        ],
+        "random_memory_indices": [
+          2,
+          13,
+          18,
+          5,
+          15,
+          17,
+          16,
+          12,
+          7,
+          21,
+          3,
+          14,
+          19,
+          11,
+          6,
+          4
+        ],
+        "replays_in_each_detached_copy": 16,
+        "same_pre_replay_state_sha256": "2aff1c3f9d996e921840ad275e71548f2a40039b95c7b2901080d6117ef4f032",
+        "shared_actual_transition_td_residual": {
+          "bootstrapped_not_calibrated_prediction": true,
+          "priority": 0.0036802726810051464,
+          "random": 0.003318390810021723,
+          "same_actual_transition": true
+        }
+      },
+      "funded_opportunities": 34,
+      "status": "FIRST_FORK_AND_NEXT_DECISION_CAPTURED"
+    },
+    "paid_energy": 239.0874,
+    "paid_vigilance": 294.8699999999997,
+    "pair_id": "next-decision-000003",
+    "policy": "p13_replay_gate_random_content_v1",
+    "random_content_receipt": {
+      "distinct_from_priority_subsets": 34,
+      "lived_sleep_ordinals": 142,
+      "paid_replay_opportunities": 34,
+      "selected_replays_paid": 347
+    },
+    "replays_paid": 347,
+    "sleep_steps": 142,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 400,
+    "terminal": "censored",
+    "world_seed": 1515785771023754651,
+    "world_sha256": "65e6e0a1726d32cb1b62a4200b159875a27c65cc41f8d5f3c024e6fef1234248"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [],
+    "family": "depletion",
+    "genome_seed": 3271424672590239583,
+    "genome_sha256": "60929fbecb56abb93e5df97d6e5acbaabf8f71d8b1aacbca6e420573c85a1115",
+    "index": 560004,
+    "life_seed": 4591880213661479765,
+    "next_decision_receipt": null,
+    "paid_energy": 238.9138,
+    "paid_vigilance": 298.8599999999999,
+    "pair_id": "next-decision-000004",
+    "policy": "p13_replay_gate_v1",
+    "random_content_receipt": null,
+    "replays_paid": 343,
+    "sleep_steps": 150,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 400,
+    "terminal": "censored",
+    "world_seed": 1212618672490948219,
+    "world_sha256": "68f7dc0489b06ea28c2cddc0e111d7f5069b54a133f15e1650eb28de711bca36"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [],
+    "family": "depletion",
+    "genome_seed": 3271424672590239583,
+    "genome_sha256": "60929fbecb56abb93e5df97d6e5acbaabf8f71d8b1aacbca6e420573c85a1115",
+    "index": 560004,
+    "life_seed": 4591880213661479765,
+    "next_decision_receipt": {
+      "different_opportunities": 34,
+      "first_fork": {
+        "different_learned_values": true,
+        "first_different_replay_ordinal": 79,
+        "next_decision": {
+          "observer_extra_physical_cost": false,
+          "priority_action": "se_deplacer",
+          "priority_option": "goto-manger:tok0:1,-9",
+          "priority_param": "S",
+          "priority_work": {
+            "cycles": 7,
+            "memory_items": 378,
+            "replays": 0,
+            "simulated_steps": 132
+          },
+          "random_action": "se_deplacer",
+          "random_branch_matches_actual_live_decision_and_work": true,
+          "random_option": "goto-manger:tok0:1,-9",
+          "random_param": "S",
+          "random_work": {
+            "cycles": 7,
+            "memory_items": 378,
+            "replays": 0,
+            "simulated_steps": 132
+          },
+          "same_admitted_action_and_param": true,
+          "same_decision_option": true
+        },
+        "post_priority_values_sha256": "67bb5c682ec9a828e2bc7f0f9977c6863edfcd9c85c9b24619be4beeacbd7729",
+        "post_random_values_sha256": "c48b35d2df1d4b829a6afd36a23584b511b83d55e382636eb4f694b52156183b",
+        "priority_memory_indices": [
+          61
+        ],
+        "random_memory_indices": [
+          84
+        ],
+        "replays_in_each_detached_copy": 1,
+        "same_pre_replay_state_sha256": "f3734c8d2ce0957b19481dd3fe46ed1cadd7cd7e4fc5ca74845b1c15b2f75bf5",
+        "shared_actual_transition_td_residual": {
+          "bootstrapped_not_calibrated_prediction": true,
+          "priority": 0.004895906449247614,
+          "random": 0.005244711335482645,
+          "same_actual_transition": true
+        }
+      },
+      "funded_opportunities": 34,
+      "status": "FIRST_FORK_AND_NEXT_DECISION_CAPTURED"
+    },
+    "paid_energy": 230.85540000000006,
+    "paid_vigilance": 289.598,
+    "pair_id": "next-decision-000004",
+    "policy": "p13_replay_gate_random_content_v1",
+    "random_content_receipt": {
+      "distinct_from_priority_subsets": 34,
+      "lived_sleep_ordinals": 144,
+      "paid_replay_opportunities": 34,
+      "selected_replays_paid": 82
+    },
+    "replays_paid": 82,
+    "sleep_steps": 144,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 400,
+    "terminal": "censored",
+    "world_seed": 1212618672490948219,
+    "world_sha256": "68f7dc0489b06ea28c2cddc0e111d7f5069b54a133f15e1650eb28de711bca36"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [],
+    "family": "pulse",
+    "genome_seed": 3356360453521748891,
+    "genome_sha256": "9c9b579cc30df0287148655bbb161ec03b8fb8d571925680057ca510824619c1",
+    "index": 560005,
+    "life_seed": 3696194392494381244,
+    "next_decision_receipt": null,
+    "paid_energy": 296.6245999999999,
+    "paid_vigilance": 372.5300000000003,
+    "pair_id": "next-decision-000005",
+    "policy": "p13_replay_gate_v1",
+    "random_content_receipt": null,
+    "replays_paid": 1921,
+    "sleep_steps": 173,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 400,
+    "terminal": "censored",
+    "world_seed": 1497790474041649391,
+    "world_sha256": "fa42919eef9b929b94b1649b65e6f9472b708eda7a7fd7e7618ce3941993e373"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [
+      "zero_water"
+    ],
+    "family": "pulse",
+    "genome_seed": 3356360453521748891,
+    "genome_sha256": "9c9b579cc30df0287148655bbb161ec03b8fb8d571925680057ca510824619c1",
+    "index": 560005,
+    "life_seed": 3696194392494381244,
+    "next_decision_receipt": {
+      "different_opportunities": 89,
+      "first_fork": {
+        "different_learned_values": true,
+        "first_different_replay_ordinal": 13,
+        "next_decision": {
+          "observer_extra_physical_cost": false,
+          "priority_action": "se_deplacer",
+          "priority_option": "explorer:0,-8",
+          "priority_param": "N",
+          "priority_work": {
+            "cycles": 5,
+            "memory_items": 123,
+            "replays": 0,
+            "simulated_steps": 72
+          },
+          "random_action": "se_deplacer",
+          "random_branch_matches_actual_live_decision_and_work": true,
+          "random_option": "explorer:0,-8",
+          "random_param": "N",
+          "random_work": {
+            "cycles": 5,
+            "memory_items": 123,
+            "replays": 0,
+            "simulated_steps": 72
+          },
+          "same_admitted_action_and_param": true,
+          "same_decision_option": true
+        },
+        "post_priority_values_sha256": "0093ce2f1c6bb10c2c715f5bbeff5b519835252c289bab2ccb099236d07eab50",
+        "post_random_values_sha256": "6be262b5898d69a4086468250a4c07e106b60d388e16dd634561e8ccd930fb80",
+        "priority_memory_indices": [
+          4,
+          3,
+          2,
+          1,
+          0,
+          13,
+          6,
+          7,
+          5,
+          17,
+          25,
+          23,
+          16,
+          22,
+          19,
+          10
+        ],
+        "random_memory_indices": [
+          17,
+          10,
+          22,
+          26,
+          6,
+          21,
+          20,
+          8,
+          23,
+          24,
+          4,
+          12,
+          25,
+          2,
+          19,
+          14
+        ],
+        "replays_in_each_detached_copy": 16,
+        "same_pre_replay_state_sha256": "35759895a7857be05dfb3706f76e6711bde29766136821aecb0ef99d531474df",
+        "shared_actual_transition_td_residual": {
+          "bootstrapped_not_calibrated_prediction": true,
+          "priority": 0.005922492081205421,
+          "random": 0.00616265772320029,
+          "same_actual_transition": true
+        }
+      },
+      "funded_opportunities": 89,
+      "status": "FIRST_FORK_AND_NEXT_DECISION_CAPTURED"
+    },
+    "paid_energy": 164.67460000000003,
+    "paid_vigilance": 211.45200000000023,
+    "pair_id": "next-decision-000005",
+    "policy": "p13_replay_gate_random_content_v1",
+    "random_content_receipt": {
+      "distinct_from_priority_subsets": 89,
+      "lived_sleep_ordinals": 104,
+      "paid_replay_opportunities": 89,
+      "selected_replays_paid": 1412
+    },
+    "replays_paid": 1412,
+    "sleep_steps": 104,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 258,
+    "terminal": "dead",
+    "world_seed": 1497790474041649391,
+    "world_sha256": "fa42919eef9b929b94b1649b65e6f9472b708eda7a7fd7e7618ce3941993e373"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [],
+    "family": "depletion",
+    "genome_seed": 2730968132003468974,
+    "genome_sha256": "13354aef6880627936264e978bac53b2624ac3815839ceb8603008f614bb3307",
+    "index": 560006,
+    "life_seed": 3616037801081463859,
+    "next_decision_receipt": null,
+    "paid_energy": 256.7858,
+    "paid_vigilance": 309.59799999999933,
+    "pair_id": "next-decision-000006",
+    "policy": "p13_replay_gate_v1",
+    "random_content_receipt": null,
+    "replays_paid": 1093,
+    "sleep_steps": 191,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 400,
+    "terminal": "censored",
+    "world_seed": 2102378516810859569,
+    "world_sha256": "8db72b0ab389c25aa7a72c9cd92b012ca7bb532bc6a462b9bae4d40882e86d8d"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [],
+    "family": "depletion",
+    "genome_seed": 2730968132003468974,
+    "genome_sha256": "13354aef6880627936264e978bac53b2624ac3815839ceb8603008f614bb3307",
+    "index": 560006,
+    "life_seed": 3616037801081463859,
+    "next_decision_receipt": {
+      "different_opportunities": 182,
+      "first_fork": {
+        "different_learned_values": true,
+        "first_different_replay_ordinal": 17,
+        "next_decision": {
+          "observer_extra_physical_cost": false,
+          "priority_action": "dormir",
+          "priority_option": "dormir",
+          "priority_param": null,
+          "priority_work": {
+            "cycles": 6,
+            "memory_items": 266,
+            "replays": 0,
+            "simulated_steps": 102
+          },
+          "random_action": "dormir",
+          "random_branch_matches_actual_live_decision_and_work": true,
+          "random_option": "dormir",
+          "random_param": null,
+          "random_work": {
+            "cycles": 6,
+            "memory_items": 266,
+            "replays": 0,
+            "simulated_steps": 102
+          },
+          "same_admitted_action_and_param": true,
+          "same_decision_option": true
+        },
+        "post_priority_values_sha256": "fee0f36069633102a3a8448833663865510b8c6d247350a8b572a92d751a521e",
+        "post_random_values_sha256": "831f61f654535faf18e61a12d839be7635366065d70067c7b9a01f5fc728e220",
+        "priority_memory_indices": [
+          9
+        ],
+        "random_memory_indices": [
+          28
+        ],
+        "replays_in_each_detached_copy": 1,
+        "same_pre_replay_state_sha256": "a9690f9093060f552265c174beeec689cfbf7a50600e2b963e49d531df088944",
+        "shared_actual_transition_td_residual": {
+          "bootstrapped_not_calibrated_prediction": true,
+          "priority": 0.004454088214240291,
+          "random": 0.004553640355222047,
+          "same_actual_transition": true
+        }
+      },
+      "funded_opportunities": 182,
+      "status": "FIRST_FORK_AND_NEXT_DECISION_CAPTURED"
+    },
+    "paid_energy": 309.3257999999999,
+    "paid_vigilance": 370.29599999999965,
+    "pair_id": "next-decision-000006",
+    "policy": "p13_replay_gate_random_content_v1",
+    "random_content_receipt": {
+      "distinct_from_priority_subsets": 182,
+      "lived_sleep_ordinals": 198,
+      "paid_replay_opportunities": 182,
+      "selected_replays_paid": 2545
+    },
+    "replays_paid": 2545,
+    "sleep_steps": 198,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 400,
+    "terminal": "censored",
+    "world_seed": 2102378516810859569,
+    "world_sha256": "8db72b0ab389c25aa7a72c9cd92b012ca7bb532bc6a462b9bae4d40882e86d8d"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [
+      "zero_water"
+    ],
+    "family": "depletion",
+    "genome_seed": 2456441118365976524,
+    "genome_sha256": "77865b56a8780f4c64fe83589f5b6e6e6d4d5d0f1fc74fdd2ba258e6f750d196",
+    "index": 560007,
+    "life_seed": 4241557419282043617,
+    "next_decision_receipt": null,
+    "paid_energy": 14.509600000000004,
+    "paid_vigilance": 22.114000000000008,
+    "pair_id": "next-decision-000007",
+    "policy": "p13_replay_gate_v1",
+    "random_content_receipt": null,
+    "replays_paid": 0,
+    "sleep_steps": 0,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 207,
+    "terminal": "dead",
+    "world_seed": 1272916478790089881,
+    "world_sha256": "7908f79914f3838b8a17bc7ac861d9910e2c4e1ea1c938df1da0bd16643f6493"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [
+      "zero_water"
+    ],
+    "family": "depletion",
+    "genome_seed": 2456441118365976524,
+    "genome_sha256": "77865b56a8780f4c64fe83589f5b6e6e6d4d5d0f1fc74fdd2ba258e6f750d196",
+    "index": 560007,
+    "life_seed": 4241557419282043617,
+    "next_decision_receipt": {
+      "different_opportunities": 0,
+      "first_fork": null,
+      "funded_opportunities": 0,
+      "status": "NO_DIFFERENT_FUNDED_REPLAY"
+    },
+    "paid_energy": 14.509600000000004,
+    "paid_vigilance": 22.114000000000008,
+    "pair_id": "next-decision-000007",
+    "policy": "p13_replay_gate_random_content_v1",
+    "random_content_receipt": {
+      "distinct_from_priority_subsets": 0,
+      "lived_sleep_ordinals": 0,
+      "paid_replay_opportunities": 0,
+      "selected_replays_paid": 0
+    },
+    "replays_paid": 0,
+    "sleep_steps": 0,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 207,
+    "terminal": "dead",
+    "world_seed": 1272916478790089881,
+    "world_sha256": "7908f79914f3838b8a17bc7ac861d9910e2c4e1ea1c938df1da0bd16643f6493"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [],
+    "family": "depletion",
+    "genome_seed": 2380129758852105316,
+    "genome_sha256": "c97541d2fa5a4fea6a742310ac42fcb5753efc3a965c8e11f1089705e72c417b",
+    "index": 560008,
+    "life_seed": 4238875164625629864,
+    "next_decision_receipt": null,
+    "paid_energy": 195.86380000000017,
+    "paid_vigilance": 239.07000000000014,
+    "pair_id": "next-decision-000008",
+    "policy": "p13_replay_gate_v1",
+    "random_content_receipt": null,
+    "replays_paid": 546,
+    "sleep_steps": 126,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 400,
+    "terminal": "censored",
+    "world_seed": 1502444636890847207,
+    "world_sha256": "e138f04bc56e4dbcf5a3ef838e465d58901fbfc52e0428efa937a7b658a713f3"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [],
+    "family": "depletion",
+    "genome_seed": 2380129758852105316,
+    "genome_sha256": "c97541d2fa5a4fea6a742310ac42fcb5753efc3a965c8e11f1089705e72c417b",
+    "index": 560008,
+    "life_seed": 4238875164625629864,
+    "next_decision_receipt": {
+      "different_opportunities": 64,
+      "first_fork": {
+        "different_learned_values": true,
+        "first_different_replay_ordinal": 82,
+        "next_decision": {
+          "observer_extra_physical_cost": false,
+          "priority_action": "collecter",
+          "priority_option": "collecter+manger:tok0",
+          "priority_param": "maxosi",
+          "priority_work": {
+            "cycles": 6,
+            "memory_items": 575,
+            "replays": 0,
+            "simulated_steps": 91
+          },
+          "random_action": "collecter",
+          "random_branch_matches_actual_live_decision_and_work": true,
+          "random_option": "collecter+manger:tok0",
+          "random_param": "maxosi",
+          "random_work": {
+            "cycles": 6,
+            "memory_items": 575,
+            "replays": 0,
+            "simulated_steps": 91
+          },
+          "same_admitted_action_and_param": true,
+          "same_decision_option": true
+        },
+        "post_priority_values_sha256": "556740c134b08d469a73620e66054df6f2406e2a2c3a7b476540c0bacd085489",
+        "post_random_values_sha256": "8e662e3d18bce17bdaf912b6888518ff89242f241ccd239e58b31b1740b024eb",
+        "priority_memory_indices": [
+          150
+        ],
+        "random_memory_indices": [
+          22
+        ],
+        "replays_in_each_detached_copy": 1,
+        "same_pre_replay_state_sha256": "0b178ed192aa1f67f57ebd3e4408fea116d2571d592e0c76d570c6d0f902f9de",
+        "shared_actual_transition_td_residual": {
+          "bootstrapped_not_calibrated_prediction": true,
+          "priority": 0.0035322799920143454,
+          "random": 0.00433730206225814,
+          "same_actual_transition": true
+        }
+      },
+      "funded_opportunities": 64,
+      "status": "FIRST_FORK_AND_NEXT_DECISION_CAPTURED"
+    },
+    "paid_energy": 248.735,
+    "paid_vigilance": 298.2420000000007,
+    "pair_id": "next-decision-000008",
+    "policy": "p13_replay_gate_random_content_v1",
+    "random_content_receipt": {
+      "distinct_from_priority_subsets": 64,
+      "lived_sleep_ordinals": 180,
+      "paid_replay_opportunities": 64,
+      "selected_replays_paid": 616
+    },
+    "replays_paid": 616,
+    "sleep_steps": 180,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 400,
+    "terminal": "censored",
+    "world_seed": 1502444636890847207,
+    "world_sha256": "e138f04bc56e4dbcf5a3ef838e465d58901fbfc52e0428efa937a7b658a713f3"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [
+      "zero_water"
+    ],
+    "family": "depletion",
+    "genome_seed": 3411545002986713154,
+    "genome_sha256": "455f3c9c9f8b9d6f770833d4635b654e365b17237694f8a1d2014433969ba388",
+    "index": 560009,
+    "life_seed": 3779416611892585015,
+    "next_decision_receipt": null,
+    "paid_energy": 23.6968,
+    "paid_vigilance": 34.60600000000001,
+    "pair_id": "next-decision-000009",
+    "policy": "p13_replay_gate_v1",
+    "random_content_receipt": null,
+    "replays_paid": 0,
+    "sleep_steps": 8,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 275,
+    "terminal": "dead",
+    "world_seed": 1287355125171341152,
+    "world_sha256": "dd2e10916c69b8494c0f5892f526849adff51591f6fcbdf3af71207ff7b89e16"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [
+      "zero_water"
+    ],
+    "family": "depletion",
+    "genome_seed": 3411545002986713154,
+    "genome_sha256": "455f3c9c9f8b9d6f770833d4635b654e365b17237694f8a1d2014433969ba388",
+    "index": 560009,
+    "life_seed": 3779416611892585015,
+    "next_decision_receipt": {
+      "different_opportunities": 0,
+      "first_fork": null,
+      "funded_opportunities": 0,
+      "status": "NO_DIFFERENT_FUNDED_REPLAY"
+    },
+    "paid_energy": 23.6968,
+    "paid_vigilance": 34.60600000000001,
+    "pair_id": "next-decision-000009",
+    "policy": "p13_replay_gate_random_content_v1",
+    "random_content_receipt": {
+      "distinct_from_priority_subsets": 0,
+      "lived_sleep_ordinals": 8,
+      "paid_replay_opportunities": 0,
+      "selected_replays_paid": 0
+    },
+    "replays_paid": 0,
+    "sleep_steps": 8,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 275,
+    "terminal": "dead",
+    "world_seed": 1287355125171341152,
+    "world_sha256": "dd2e10916c69b8494c0f5892f526849adff51591f6fcbdf3af71207ff7b89e16"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [
+      "zero_water"
+    ],
+    "family": "stable",
+    "genome_seed": 2392251165796580584,
+    "genome_sha256": "80612fe32fe7ca7758d03028dd241c30c9f90c305c5def004fd70af2a4e8c542",
+    "index": 560010,
+    "life_seed": 4309794791609051006,
+    "next_decision_receipt": null,
+    "paid_energy": 12.7108,
+    "paid_vigilance": 19.74799999999999,
+    "pair_id": "next-decision-000010",
+    "policy": "p13_replay_gate_v1",
+    "random_content_receipt": null,
+    "replays_paid": 0,
+    "sleep_steps": 0,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 93,
+    "terminal": "dead",
+    "world_seed": 1834122453791893131,
+    "world_sha256": "2ffe4e12b99491345de3f25fee82179ac3313aabb3a6cc18d676ec0de4386459"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [
+      "zero_water"
+    ],
+    "family": "stable",
+    "genome_seed": 2392251165796580584,
+    "genome_sha256": "80612fe32fe7ca7758d03028dd241c30c9f90c305c5def004fd70af2a4e8c542",
+    "index": 560010,
+    "life_seed": 4309794791609051006,
+    "next_decision_receipt": {
+      "different_opportunities": 0,
+      "first_fork": null,
+      "funded_opportunities": 0,
+      "status": "NO_DIFFERENT_FUNDED_REPLAY"
+    },
+    "paid_energy": 12.7108,
+    "paid_vigilance": 19.74799999999999,
+    "pair_id": "next-decision-000010",
+    "policy": "p13_replay_gate_random_content_v1",
+    "random_content_receipt": {
+      "distinct_from_priority_subsets": 0,
+      "lived_sleep_ordinals": 0,
+      "paid_replay_opportunities": 0,
+      "selected_replays_paid": 0
+    },
+    "replays_paid": 0,
+    "sleep_steps": 0,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 93,
+    "terminal": "dead",
+    "world_seed": 1834122453791893131,
+    "world_sha256": "2ffe4e12b99491345de3f25fee82179ac3313aabb3a6cc18d676ec0de4386459"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [
+      "zero_food"
+    ],
+    "family": "stable",
+    "genome_seed": 3452835961184072403,
+    "genome_sha256": "ca53154f551476eb8f0ffceb5a64c3621881c303ee5a02c396f062a4e453ddec",
+    "index": 560011,
+    "life_seed": 3560839249254030990,
+    "next_decision_receipt": null,
+    "paid_energy": 102.21139999999997,
+    "paid_vigilance": 136.23600000000005,
+    "pair_id": "next-decision-000011",
+    "policy": "p13_replay_gate_v1",
+    "random_content_receipt": null,
+    "replays_paid": 216,
+    "sleep_steps": 80,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 200,
+    "terminal": "dead",
+    "world_seed": 1552337076403742212,
+    "world_sha256": "285b2acd770025bad8f34e1b54c07d6203095132fe9a5e1f25bbef5c21a710bc"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [],
+    "family": "stable",
+    "genome_seed": 3452835961184072403,
+    "genome_sha256": "ca53154f551476eb8f0ffceb5a64c3621881c303ee5a02c396f062a4e453ddec",
+    "index": 560011,
+    "life_seed": 3560839249254030990,
+    "next_decision_receipt": {
+      "different_opportunities": 33,
+      "first_fork": {
+        "different_learned_values": true,
+        "first_different_replay_ordinal": 1,
+        "next_decision": {
+          "observer_extra_physical_cost": false,
+          "priority_action": "dormir",
+          "priority_option": "dormir",
+          "priority_param": null,
+          "priority_work": {
+            "cycles": 5,
+            "memory_items": 199,
+            "replays": 0,
+            "simulated_steps": 72
+          },
+          "random_action": "dormir",
+          "random_branch_matches_actual_live_decision_and_work": true,
+          "random_option": "dormir",
+          "random_param": null,
+          "random_work": {
+            "cycles": 5,
+            "memory_items": 199,
+            "replays": 0,
+            "simulated_steps": 72
+          },
+          "same_admitted_action_and_param": true,
+          "same_decision_option": true
+        },
+        "post_priority_values_sha256": "e6ba7ac8a53f8c93ab7075c90d4c9a75a9321a607ea47fa1b4020deaa169f8c9",
+        "post_random_values_sha256": "14db9e55cf0d885f94bf2e3be3ae6c681d78b35b160e97c18898475a5919c80f",
+        "priority_memory_indices": [
+          28,
+          27,
+          26
+        ],
+        "random_memory_indices": [
+          27,
+          5,
+          21
+        ],
+        "replays_in_each_detached_copy": 3,
+        "same_pre_replay_state_sha256": "fec96372f0336d53286ecd4b417ee368e132078909f881f61df69d198207262c",
+        "shared_actual_transition_td_residual": {
+          "bootstrapped_not_calibrated_prediction": true,
+          "priority": 0.019673619105333436,
+          "random": 0.017819526194805046,
+          "same_actual_transition": true
+        }
+      },
+      "funded_opportunities": 35,
+      "status": "FIRST_FORK_AND_NEXT_DECISION_CAPTURED"
+    },
+    "paid_energy": 245.2470000000001,
+    "paid_vigilance": 297.8020000000001,
+    "pair_id": "next-decision-000011",
+    "policy": "p13_replay_gate_random_content_v1",
+    "random_content_receipt": {
+      "distinct_from_priority_subsets": 33,
+      "lived_sleep_ordinals": 181,
+      "paid_replay_opportunities": 35,
+      "selected_replays_paid": 142
+    },
+    "replays_paid": 142,
+    "sleep_steps": 181,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 400,
+    "terminal": "censored",
+    "world_seed": 1552337076403742212,
+    "world_sha256": "285b2acd770025bad8f34e1b54c07d6203095132fe9a5e1f25bbef5c21a710bc"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [
+      "zero_water"
+    ],
+    "family": "depletion",
+    "genome_seed": 2586546599426830630,
+    "genome_sha256": "4a9f5b322e1691320b793e61a88218ed5a1b3676cdec20f1f148ce63bde991a1",
+    "index": 560012,
+    "life_seed": 3849280423184288506,
+    "next_decision_receipt": null,
+    "paid_energy": 62.37479999999999,
+    "paid_vigilance": 86.12800000000011,
+    "pair_id": "next-decision-000012",
+    "policy": "p13_replay_gate_v1",
+    "random_content_receipt": null,
+    "replays_paid": 138,
+    "sleep_steps": 33,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 308,
+    "terminal": "dead",
+    "world_seed": 1635488889367077965,
+    "world_sha256": "dccd5a3a3530e2968f844157301d5e39a4f3dbc3786d375597a1a80463e6c42e"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [],
+    "family": "depletion",
+    "genome_seed": 2586546599426830630,
+    "genome_sha256": "4a9f5b322e1691320b793e61a88218ed5a1b3676cdec20f1f148ce63bde991a1",
+    "index": 560012,
+    "life_seed": 3849280423184288506,
+    "next_decision_receipt": {
+      "different_opportunities": 93,
+      "first_fork": {
+        "different_learned_values": true,
+        "first_different_replay_ordinal": 16,
+        "next_decision": {
+          "observer_extra_physical_cost": false,
+          "priority_action": "se_deplacer",
+          "priority_option": "goto-manger:tok0:0,11",
+          "priority_param": "E",
+          "priority_work": {
+            "cycles": 6,
+            "memory_items": 245,
+            "replays": 0,
+            "simulated_steps": 102
+          },
+          "random_action": "se_deplacer",
+          "random_branch_matches_actual_live_decision_and_work": true,
+          "random_option": "goto-manger:tok0:0,11",
+          "random_param": "E",
+          "random_work": {
+            "cycles": 6,
+            "memory_items": 245,
+            "replays": 0,
+            "simulated_steps": 102
+          },
+          "same_admitted_action_and_param": true,
+          "same_decision_option": true
+        },
+        "post_priority_values_sha256": "5e422a85657fb61def5b6ded9e764fb12f55959a860b7c21afdd6e5e7cbe7886",
+        "post_random_values_sha256": "9359621dd50cbc196632f46a9b8e92343432300f503963fa31f7f21ea6170f45",
+        "priority_memory_indices": [
+          27
+        ],
+        "random_memory_indices": [
+          60
+        ],
+        "replays_in_each_detached_copy": 1,
+        "same_pre_replay_state_sha256": "321987ddb5defc9b5a72a3f858ed5e2270ee9f771ac3aaccd8e100fa1c55f51e",
+        "shared_actual_transition_td_residual": {
+          "bootstrapped_not_calibrated_prediction": true,
+          "priority": 0.012733969596842773,
+          "random": 0.012072103507961951,
+          "same_actual_transition": true
+        }
+      },
+      "funded_opportunities": 94,
+      "status": "FIRST_FORK_AND_NEXT_DECISION_CAPTURED"
+    },
+    "paid_energy": 217.18920000000006,
+    "paid_vigilance": 256.1200000000001,
+    "pair_id": "next-decision-000012",
+    "policy": "p13_replay_gate_random_content_v1",
+    "random_content_receipt": {
+      "distinct_from_priority_subsets": 93,
+      "lived_sleep_ordinals": 148,
+      "paid_replay_opportunities": 94,
+      "selected_replays_paid": 106
+    },
+    "replays_paid": 106,
+    "sleep_steps": 148,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 400,
+    "terminal": "censored",
+    "world_seed": 1635488889367077965,
+    "world_sha256": "dccd5a3a3530e2968f844157301d5e39a4f3dbc3786d375597a1a80463e6c42e"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [
+      "zero_water"
+    ],
+    "family": "depletion",
+    "genome_seed": 3099660731609147585,
+    "genome_sha256": "65864eda3d31f878bd97f17a2d4103306282ab1ff661730faf7c3f8ee81847fe",
+    "index": 560013,
+    "life_seed": 4600190783972892862,
+    "next_decision_receipt": null,
+    "paid_energy": 163.0655999999999,
+    "paid_vigilance": 214.93200000000044,
+    "pair_id": "next-decision-000013",
+    "policy": "p13_replay_gate_v1",
+    "random_content_receipt": null,
+    "replays_paid": 260,
+    "sleep_steps": 133,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 327,
+    "terminal": "dead",
+    "world_seed": 2220572273882665041,
+    "world_sha256": "e0addc58453189a2e253eb564eaa97ba84656be379b3679cbc71f8225245d010"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [
+      "zero_water"
+    ],
+    "family": "depletion",
+    "genome_seed": 3099660731609147585,
+    "genome_sha256": "65864eda3d31f878bd97f17a2d4103306282ab1ff661730faf7c3f8ee81847fe",
+    "index": 560013,
+    "life_seed": 4600190783972892862,
+    "next_decision_receipt": {
+      "different_opportunities": 34,
+      "first_fork": {
+        "different_learned_values": true,
+        "first_different_replay_ordinal": 30,
+        "next_decision": {
+          "observer_extra_physical_cost": false,
+          "priority_action": "se_deplacer",
+          "priority_option": "goto-manger:tok0:0,1",
+          "priority_param": "S",
+          "priority_work": {
+            "cycles": 5,
+            "memory_items": 198,
+            "replays": 0,
+            "simulated_steps": 101
+          },
+          "random_action": "se_deplacer",
+          "random_branch_matches_actual_live_decision_and_work": true,
+          "random_option": "goto-manger:tok0:0,1",
+          "random_param": "S",
+          "random_work": {
+            "cycles": 5,
+            "memory_items": 198,
+            "replays": 0,
+            "simulated_steps": 101
+          },
+          "same_admitted_action_and_param": true,
+          "same_decision_option": true
+        },
+        "post_priority_values_sha256": "aa6424278235079ba7ab105800143d2ca299418248ad8c4650d47ea48645ba75",
+        "post_random_values_sha256": "42c5befed2b538fae2f8a6bef26bd064c9b1ad5ac8050a0928c1388d69ec4bbd",
+        "priority_memory_indices": [
+          27
+        ],
+        "random_memory_indices": [
+          28
+        ],
+        "replays_in_each_detached_copy": 1,
+        "same_pre_replay_state_sha256": "74ee0d1ae5e5741826e9a30f25c6a5c14a64347a7fbb7360b793a1a3b02f4712",
+        "shared_actual_transition_td_residual": {
+          "bootstrapped_not_calibrated_prediction": true,
+          "priority": 0.002959921125681128,
+          "random": 0.0029086985999772336,
+          "same_actual_transition": true
+        }
+      },
+      "funded_opportunities": 34,
+      "status": "FIRST_FORK_AND_NEXT_DECISION_CAPTURED"
+    },
+    "paid_energy": 167.98140000000012,
+    "paid_vigilance": 225.4479999999996,
+    "pair_id": "next-decision-000013",
+    "policy": "p13_replay_gate_random_content_v1",
+    "random_content_receipt": {
+      "distinct_from_priority_subsets": 34,
+      "lived_sleep_ordinals": 139,
+      "paid_replay_opportunities": 34,
+      "selected_replays_paid": 144
+    },
+    "replays_paid": 144,
+    "sleep_steps": 139,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 327,
+    "terminal": "dead",
+    "world_seed": 2220572273882665041,
+    "world_sha256": "e0addc58453189a2e253eb564eaa97ba84656be379b3679cbc71f8225245d010"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [
+      "zero_water"
+    ],
+    "family": "depletion",
+    "genome_seed": 2845544746843843146,
+    "genome_sha256": "198490387b25789ab19493c823844e1d41f30d33ffa2a3ed7892405918f3ffa5",
+    "index": 560014,
+    "life_seed": 3784996756028350637,
+    "next_decision_receipt": null,
+    "paid_energy": 22.677799999999998,
+    "paid_vigilance": 33.959999999999994,
+    "pair_id": "next-decision-000014",
+    "policy": "p13_replay_gate_v1",
+    "random_content_receipt": null,
+    "replays_paid": 0,
+    "sleep_steps": 11,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 216,
+    "terminal": "dead",
+    "world_seed": 2078649771560978208,
+    "world_sha256": "072147f7883eb2ad4b1e7fb2354c44cfe6f35de2e448493f7df8a8fda2318fcb"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [
+      "zero_water"
+    ],
+    "family": "depletion",
+    "genome_seed": 2845544746843843146,
+    "genome_sha256": "198490387b25789ab19493c823844e1d41f30d33ffa2a3ed7892405918f3ffa5",
+    "index": 560014,
+    "life_seed": 3784996756028350637,
+    "next_decision_receipt": {
+      "different_opportunities": 0,
+      "first_fork": null,
+      "funded_opportunities": 0,
+      "status": "NO_DIFFERENT_FUNDED_REPLAY"
+    },
+    "paid_energy": 22.677799999999998,
+    "paid_vigilance": 33.959999999999994,
+    "pair_id": "next-decision-000014",
+    "policy": "p13_replay_gate_random_content_v1",
+    "random_content_receipt": {
+      "distinct_from_priority_subsets": 0,
+      "lived_sleep_ordinals": 11,
+      "paid_replay_opportunities": 0,
+      "selected_replays_paid": 0
+    },
+    "replays_paid": 0,
+    "sleep_steps": 11,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 216,
+    "terminal": "dead",
+    "world_seed": 2078649771560978208,
+    "world_sha256": "072147f7883eb2ad4b1e7fb2354c44cfe6f35de2e448493f7df8a8fda2318fcb"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [
+      "zero_water"
+    ],
+    "family": "pulse",
+    "genome_seed": 2538797764607466896,
+    "genome_sha256": "79c593fdded7908dcfad41633e46ea4968f46cc3e615d530d508a848bea2df56",
+    "index": 560015,
+    "life_seed": 4578934761446580574,
+    "next_decision_receipt": null,
+    "paid_energy": 117.00000000000007,
+    "paid_vigilance": 165.58000000000004,
+    "pair_id": "next-decision-000015",
+    "policy": "p13_replay_gate_v1",
+    "random_content_receipt": null,
+    "replays_paid": 45,
+    "sleep_steps": 98,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 260,
+    "terminal": "dead",
+    "world_seed": 2112464157422213331,
+    "world_sha256": "71b465e7b4a7522e177e7c6fa2582d7610b996c2ad5d5762955d66a9fe9bff6e"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [],
+    "family": "pulse",
+    "genome_seed": 2538797764607466896,
+    "genome_sha256": "79c593fdded7908dcfad41633e46ea4968f46cc3e615d530d508a848bea2df56",
+    "index": 560015,
+    "life_seed": 4578934761446580574,
+    "next_decision_receipt": {
+      "different_opportunities": 79,
+      "first_fork": {
+        "different_learned_values": true,
+        "first_different_replay_ordinal": 57,
+        "next_decision": {
+          "observer_extra_physical_cost": false,
+          "priority_action": "se_deplacer",
+          "priority_option": "goto-manger:tok0:12,1",
+          "priority_param": "E",
+          "priority_work": {
+            "cycles": 6,
+            "memory_items": 379,
+            "replays": 0,
+            "simulated_steps": 83
+          },
+          "random_action": "se_deplacer",
+          "random_branch_matches_actual_live_decision_and_work": true,
+          "random_option": "goto-manger:tok0:12,1",
+          "random_param": "E",
+          "random_work": {
+            "cycles": 6,
+            "memory_items": 379,
+            "replays": 0,
+            "simulated_steps": 83
+          },
+          "same_admitted_action_and_param": true,
+          "same_decision_option": true
+        },
+        "post_priority_values_sha256": "582473e4edbe157b5260649e971bc6ee948e5a781639a40449e2c6a77dd22ea1",
+        "post_random_values_sha256": "f6473f9d204ab6ab01f331be0a5a8edb2d7916159b720068285ca1242b9f1111",
+        "priority_memory_indices": [
+          17
+        ],
+        "random_memory_indices": [
+          6
+        ],
+        "replays_in_each_detached_copy": 1,
+        "same_pre_replay_state_sha256": "3d156253b253a0b0004138f8ab92576da4b9ae825fc50e77b12e24604cdce48f",
+        "shared_actual_transition_td_residual": {
+          "bootstrapped_not_calibrated_prediction": true,
+          "priority": 0.004844854945866278,
+          "random": 0.004394016577055647,
+          "same_actual_transition": true
+        }
+      },
+      "funded_opportunities": 80,
+      "status": "FIRST_FORK_AND_NEXT_DECISION_CAPTURED"
+    },
+    "paid_energy": 210.11440000000016,
+    "paid_vigilance": 287.6120000000005,
+    "pair_id": "next-decision-000015",
+    "policy": "p13_replay_gate_random_content_v1",
+    "random_content_receipt": {
+      "distinct_from_priority_subsets": 79,
+      "lived_sleep_ordinals": 154,
+      "paid_replay_opportunities": 80,
+      "selected_replays_paid": 599
+    },
+    "replays_paid": 599,
+    "sleep_steps": 154,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 400,
+    "terminal": "censored",
+    "world_seed": 2112464157422213331,
+    "world_sha256": "71b465e7b4a7522e177e7c6fa2582d7610b996c2ad5d5762955d66a9fe9bff6e"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [],
+    "family": "pulse",
+    "genome_seed": 2325389128393035094,
+    "genome_sha256": "7b07dec77546410fed6621afc119b2abc44169eecd8dff382439ecb6be5c5e53",
+    "index": 560016,
+    "life_seed": 4501050414266481912,
+    "next_decision_receipt": null,
+    "paid_energy": 168.9856,
+    "paid_vigilance": 211.02200000000016,
+    "pair_id": "next-decision-000016",
+    "policy": "p13_replay_gate_v1",
+    "random_content_receipt": null,
+    "replays_paid": 1215,
+    "sleep_steps": 96,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 400,
+    "terminal": "censored",
+    "world_seed": 1257194647348430284,
+    "world_sha256": "e1d33f5351fb06b3321edeafc5da5a0d8d79c26e34d76864c85296cf2cb0f110"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [],
+    "family": "pulse",
+    "genome_seed": 2325389128393035094,
+    "genome_sha256": "7b07dec77546410fed6621afc119b2abc44169eecd8dff382439ecb6be5c5e53",
+    "index": 560016,
+    "life_seed": 4501050414266481912,
+    "next_decision_receipt": {
+      "different_opportunities": 146,
+      "first_fork": {
+        "different_learned_values": true,
+        "first_different_replay_ordinal": 7,
+        "next_decision": {
+          "observer_extra_physical_cost": false,
+          "priority_action": "attendre",
+          "priority_option": "attendre",
+          "priority_param": null,
+          "priority_work": {
+            "cycles": 6,
+            "memory_items": 136,
+            "replays": 0,
+            "simulated_steps": 63
+          },
+          "random_action": "attendre",
+          "random_branch_matches_actual_live_decision_and_work": true,
+          "random_option": "attendre",
+          "random_param": null,
+          "random_work": {
+            "cycles": 6,
+            "memory_items": 136,
+            "replays": 0,
+            "simulated_steps": 63
+          },
+          "same_admitted_action_and_param": true,
+          "same_decision_option": true
+        },
+        "post_priority_values_sha256": "e9a4245acb9f7608360aaf6a30e0f424c741cabbfab999c72776f123ddc974ad",
+        "post_random_values_sha256": "84d0b241694f5dbc1da4cf6b969a6fad012638b2183aaaec1b3fefb98ebac7e9",
+        "priority_memory_indices": [
+          10,
+          6,
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          12,
+          8,
+          11,
+          9,
+          14,
+          15,
+          13,
+          17
+        ],
+        "random_memory_indices": [
+          11,
+          6,
+          16,
+          24,
+          7,
+          28,
+          22,
+          15,
+          29,
+          27,
+          9,
+          23,
+          18,
+          21,
+          19,
+          2
+        ],
+        "replays_in_each_detached_copy": 16,
+        "same_pre_replay_state_sha256": "3518639ce255b3148a3c895fd5cf7a7809bcb3579ed83eb0761aa7f61176f1a8",
+        "shared_actual_transition_td_residual": {
+          "bootstrapped_not_calibrated_prediction": true,
+          "priority": 0.004822559578552415,
+          "random": 0.004432865789851295,
+          "same_actual_transition": true
+        }
+      },
+      "funded_opportunities": 146,
+      "status": "FIRST_FORK_AND_NEXT_DECISION_CAPTURED"
+    },
+    "paid_energy": 252.16480000000024,
+    "paid_vigilance": 302.7919999999999,
+    "pair_id": "next-decision-000016",
+    "policy": "p13_replay_gate_random_content_v1",
+    "random_content_receipt": {
+      "distinct_from_priority_subsets": 146,
+      "lived_sleep_ordinals": 154,
+      "paid_replay_opportunities": 146,
+      "selected_replays_paid": 1439
+    },
+    "replays_paid": 1439,
+    "sleep_steps": 154,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 400,
+    "terminal": "censored",
+    "world_seed": 1257194647348430284,
+    "world_sha256": "e1d33f5351fb06b3321edeafc5da5a0d8d79c26e34d76864c85296cf2cb0f110"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [],
+    "family": "stable",
+    "genome_seed": 2792437225718243381,
+    "genome_sha256": "2e52e11dc56715f6aaa2de2a493b3571e6b23d211b65e5c3b82b62b6d4cd7820",
+    "index": 560017,
+    "life_seed": 4037412583549770077,
+    "next_decision_receipt": null,
+    "paid_energy": 271.42799999999914,
+    "paid_vigilance": 357.6,
+    "pair_id": "next-decision-000017",
+    "policy": "p13_replay_gate_v1",
+    "random_content_receipt": null,
+    "replays_paid": 1514,
+    "sleep_steps": 158,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 400,
+    "terminal": "censored",
+    "world_seed": 1844189678084504587,
+    "world_sha256": "d858ca3bb4da97dddb6bb86c47fcf90c3c9696dcafe9585c4d39b11b1d40ce7c"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [
+      "zero_water"
+    ],
+    "family": "stable",
+    "genome_seed": 2792437225718243381,
+    "genome_sha256": "2e52e11dc56715f6aaa2de2a493b3571e6b23d211b65e5c3b82b62b6d4cd7820",
+    "index": 560017,
+    "life_seed": 4037412583549770077,
+    "next_decision_receipt": {
+      "different_opportunities": 14,
+      "first_fork": {
+        "different_learned_values": true,
+        "first_different_replay_ordinal": 11,
+        "next_decision": {
+          "observer_extra_physical_cost": false,
+          "priority_action": "se_deplacer",
+          "priority_option": "goto-manger:tok0:1,4",
+          "priority_param": "E",
+          "priority_work": {
+            "cycles": 5,
+            "memory_items": 133,
+            "replays": 0,
+            "simulated_steps": 121
+          },
+          "random_action": "se_deplacer",
+          "random_branch_matches_actual_live_decision_and_work": true,
+          "random_option": "goto-manger:tok0:1,4",
+          "random_param": "E",
+          "random_work": {
+            "cycles": 5,
+            "memory_items": 133,
+            "replays": 0,
+            "simulated_steps": 121
+          },
+          "same_admitted_action_and_param": true,
+          "same_decision_option": true
+        },
+        "post_priority_values_sha256": "0ef5176a3837184e6cbc23c5b889f0f03c62da9a3f257f340ab5e743785b59bd",
+        "post_random_values_sha256": "ab7dc3828b44dc0e6e514e95cb0f7ffbf77389fece8ffcf7d9bb9f8a7291fbd8",
+        "priority_memory_indices": [
+          18
+        ],
+        "random_memory_indices": [
+          24
+        ],
+        "replays_in_each_detached_copy": 1,
+        "same_pre_replay_state_sha256": "796c9c767e9e7d1ad93c3ac695bb092252e73855b9d20a5fbc568d9c2753b07b",
+        "shared_actual_transition_td_residual": {
+          "bootstrapped_not_calibrated_prediction": true,
+          "priority": 0.00608446265324445,
+          "random": 0.006139388865942515,
+          "same_actual_transition": true
+        }
+      },
+      "funded_opportunities": 14,
+      "status": "FIRST_FORK_AND_NEXT_DECISION_CAPTURED"
+    },
+    "paid_energy": 157.51020000000014,
+    "paid_vigilance": 214.23000000000013,
+    "pair_id": "next-decision-000017",
+    "policy": "p13_replay_gate_random_content_v1",
+    "random_content_receipt": {
+      "distinct_from_priority_subsets": 14,
+      "lived_sleep_ordinals": 106,
+      "paid_replay_opportunities": 14,
+      "selected_replays_paid": 32
+    },
+    "replays_paid": 32,
+    "sleep_steps": 106,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 286,
+    "terminal": "dead",
+    "world_seed": 1844189678084504587,
+    "world_sha256": "d858ca3bb4da97dddb6bb86c47fcf90c3c9696dcafe9585c4d39b11b1d40ce7c"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [],
+    "family": "pulse",
+    "genome_seed": 3380750314365229964,
+    "genome_sha256": "82fb3b25269e0b37726b411e7604405d2e34a20ade0f04eb024890d6cee91572",
+    "index": 560018,
+    "life_seed": 4209343618434907981,
+    "next_decision_receipt": null,
+    "paid_energy": 276.42659999999995,
+    "paid_vigilance": 350.5499999999995,
+    "pair_id": "next-decision-000018",
+    "policy": "p13_replay_gate_v1",
+    "random_content_receipt": null,
+    "replays_paid": 1917,
+    "sleep_steps": 161,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 400,
+    "terminal": "censored",
+    "world_seed": 2129049845020529515,
+    "world_sha256": "1aedab0bed35382a68128149e6660658e12e4251610236aa31a5faaabe05a1c5"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [],
+    "family": "pulse",
+    "genome_seed": 3380750314365229964,
+    "genome_sha256": "82fb3b25269e0b37726b411e7604405d2e34a20ade0f04eb024890d6cee91572",
+    "index": 560018,
+    "life_seed": 4209343618434907981,
+    "next_decision_receipt": {
+      "different_opportunities": 54,
+      "first_fork": {
+        "different_learned_values": true,
+        "first_different_replay_ordinal": 39,
+        "next_decision": {
+          "observer_extra_physical_cost": false,
+          "priority_action": "se_deplacer",
+          "priority_option": "goto-manger:tok0:-6,5",
+          "priority_param": "W",
+          "priority_work": {
+            "cycles": 6,
+            "memory_items": 293,
+            "replays": 0,
+            "simulated_steps": 92
+          },
+          "random_action": "se_deplacer",
+          "random_branch_matches_actual_live_decision_and_work": true,
+          "random_option": "goto-manger:tok0:-6,5",
+          "random_param": "W",
+          "random_work": {
+            "cycles": 6,
+            "memory_items": 293,
+            "replays": 0,
+            "simulated_steps": 92
+          },
+          "same_admitted_action_and_param": true,
+          "same_decision_option": true
+        },
+        "post_priority_values_sha256": "7c562773d78467f183766438b638a4a383cbc7481c5a2d1a83d84596ec9a77fa",
+        "post_random_values_sha256": "fa268120840e503176319f443aee3ebd149f34878062c517e67f859d5257acd7",
+        "priority_memory_indices": [
+          77,
+          30,
+          68,
+          78,
+          81,
+          79,
+          76,
+          75,
+          74,
+          31,
+          73,
+          83,
+          0,
+          1,
+          3,
+          2
+        ],
+        "random_memory_indices": [
+          30,
+          37,
+          70,
+          71,
+          40,
+          86,
+          69,
+          53,
+          57,
+          89,
+          45,
+          91,
+          85,
+          97,
+          108,
+          21
+        ],
+        "replays_in_each_detached_copy": 16,
+        "same_pre_replay_state_sha256": "bd0bba23b4c580ed6b97a2baf43377283093178124c95372ceafb55f9b20ae67",
+        "shared_actual_transition_td_residual": {
+          "bootstrapped_not_calibrated_prediction": true,
+          "priority": 0.0028789116332580476,
+          "random": 0.001914671565767082,
+          "same_actual_transition": true
+        }
+      },
+      "funded_opportunities": 54,
+      "status": "FIRST_FORK_AND_NEXT_DECISION_CAPTURED"
+    },
+    "paid_energy": 221.4810000000001,
+    "paid_vigilance": 279.2119999999998,
+    "pair_id": "next-decision-000018",
+    "policy": "p13_replay_gate_random_content_v1",
+    "random_content_receipt": {
+      "distinct_from_priority_subsets": 54,
+      "lived_sleep_ordinals": 153,
+      "paid_replay_opportunities": 54,
+      "selected_replays_paid": 325
+    },
+    "replays_paid": 325,
+    "sleep_steps": 153,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 400,
+    "terminal": "censored",
+    "world_seed": 2129049845020529515,
+    "world_sha256": "1aedab0bed35382a68128149e6660658e12e4251610236aa31a5faaabe05a1c5"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [],
+    "family": "depletion",
+    "genome_seed": 2926077006081391800,
+    "genome_sha256": "8d0724028adf9b9336ce0f7591f9ab1f9fb42fe713c411ef35de8e26aa2fc30a",
+    "index": 560019,
+    "life_seed": 3476047472738979542,
+    "next_decision_receipt": null,
+    "paid_energy": 103.6392,
+    "paid_vigilance": 132.68000000000006,
+    "pair_id": "next-decision-000019",
+    "policy": "p13_replay_gate_v1",
+    "random_content_receipt": null,
+    "replays_paid": 465,
+    "sleep_steps": 58,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 400,
+    "terminal": "censored",
+    "world_seed": 1289144419818375145,
+    "world_sha256": "9ec9633d8dbb735d021294ca7282048f8ef07ddabcaf06a4d7e3aba172693c57"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [],
+    "family": "depletion",
+    "genome_seed": 2926077006081391800,
+    "genome_sha256": "8d0724028adf9b9336ce0f7591f9ab1f9fb42fe713c411ef35de8e26aa2fc30a",
+    "index": 560019,
+    "life_seed": 3476047472738979542,
+    "next_decision_receipt": {
+      "different_opportunities": 141,
+      "first_fork": {
+        "different_learned_values": true,
+        "first_different_replay_ordinal": 24,
+        "next_decision": {
+          "observer_extra_physical_cost": false,
+          "priority_action": "boire",
+          "priority_option": "boire",
+          "priority_param": null,
+          "priority_work": {
+            "cycles": 5,
+            "memory_items": 367,
+            "replays": 0,
+            "simulated_steps": 92
+          },
+          "random_action": "boire",
+          "random_branch_matches_actual_live_decision_and_work": true,
+          "random_option": "boire",
+          "random_param": null,
+          "random_work": {
+            "cycles": 5,
+            "memory_items": 367,
+            "replays": 0,
+            "simulated_steps": 92
+          },
+          "same_admitted_action_and_param": true,
+          "same_decision_option": true
+        },
+        "post_priority_values_sha256": "67321b37e954a809e3d3bd72eea376e488e09487ddad8254e8152b0a925d367a",
+        "post_random_values_sha256": "a82cbca3bddd84b511c306bce1c8719629a3f20e2b15f6eb6fdcf45299a5defe",
+        "priority_memory_indices": [
+          49
+        ],
+        "random_memory_indices": [
+          75
+        ],
+        "replays_in_each_detached_copy": 1,
+        "same_pre_replay_state_sha256": "0a0ae0fdb019ca9759f664c102f35dff82aa3c8f81d88ecaa2f64f03c091e6dd",
+        "shared_actual_transition_td_residual": {
+          "bootstrapped_not_calibrated_prediction": true,
+          "priority": 0.015113940450681275,
+          "random": 0.014598556365349772,
+          "same_actual_transition": true
+        }
+      },
+      "funded_opportunities": 141,
+      "status": "FIRST_FORK_AND_NEXT_DECISION_CAPTURED"
+    },
+    "paid_energy": 291.0943999999999,
+    "paid_vigilance": 344.1659999999994,
+    "pair_id": "next-decision-000019",
+    "policy": "p13_replay_gate_random_content_v1",
+    "random_content_receipt": {
+      "distinct_from_priority_subsets": 141,
+      "lived_sleep_ordinals": 164,
+      "paid_replay_opportunities": 141,
+      "selected_replays_paid": 2111
+    },
+    "replays_paid": 2111,
+    "sleep_steps": 164,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 400,
+    "terminal": "censored",
+    "world_seed": 1289144419818375145,
+    "world_sha256": "9ec9633d8dbb735d021294ca7282048f8ef07ddabcaf06a4d7e3aba172693c57"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [
+      "zero_food"
+    ],
+    "family": "stable",
+    "genome_seed": 3033978063807995367,
+    "genome_sha256": "d5dbae3a7cabcd472fc072e250cc681aacf603e7c7dceabe311b0170aa289bf9",
+    "index": 560020,
+    "life_seed": 3995678955556132077,
+    "next_decision_receipt": null,
+    "paid_energy": 78.17299999999996,
+    "paid_vigilance": 107.94000000000001,
+    "pair_id": "next-decision-000020",
+    "policy": "p13_replay_gate_v1",
+    "random_content_receipt": null,
+    "replays_paid": 2,
+    "sleep_steps": 55,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 168,
+    "terminal": "dead",
+    "world_seed": 2138420949135402660,
+    "world_sha256": "a678c33e5b3be1b028a70ef55f11c3d74a3b5b4a4b878285690a795987ff885d"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [
+      "zero_food"
+    ],
+    "family": "stable",
+    "genome_seed": 3033978063807995367,
+    "genome_sha256": "d5dbae3a7cabcd472fc072e250cc681aacf603e7c7dceabe311b0170aa289bf9",
+    "index": 560020,
+    "life_seed": 3995678955556132077,
+    "next_decision_receipt": {
+      "different_opportunities": 2,
+      "first_fork": {
+        "different_learned_values": true,
+        "first_different_replay_ordinal": 5,
+        "next_decision": {
+          "observer_extra_physical_cost": false,
+          "priority_action": "se_deplacer",
+          "priority_option": "explorer:8,3",
+          "priority_param": "S",
+          "priority_work": {
+            "cycles": 5,
+            "memory_items": 183,
+            "replays": 0,
+            "simulated_steps": 82
+          },
+          "random_action": "se_deplacer",
+          "random_branch_matches_actual_live_decision_and_work": true,
+          "random_option": "explorer:8,3",
+          "random_param": "S",
+          "random_work": {
+            "cycles": 5,
+            "memory_items": 183,
+            "replays": 0,
+            "simulated_steps": 82
+          },
+          "same_admitted_action_and_param": true,
+          "same_decision_option": true
+        },
+        "post_priority_values_sha256": "57f33110c7329f68401668984b4f4bc58ae85a4db1158d87a3b38481a8d3b3a0",
+        "post_random_values_sha256": "67b36208166c4f280ba02b749ecc921c8dde1110ebc4d13754bc7f7e6a772d79",
+        "priority_memory_indices": [
+          17
+        ],
+        "random_memory_indices": [
+          5
+        ],
+        "replays_in_each_detached_copy": 1,
+        "same_pre_replay_state_sha256": "6c7513e689a4d5f5bc88a328715865e5dcccd0f327e0a4c299cbb95de6192b70",
+        "shared_actual_transition_td_residual": {
+          "bootstrapped_not_calibrated_prediction": true,
+          "priority": 0.005258441816950332,
+          "random": 0.005348886696691056,
+          "same_actual_transition": true
+        }
+      },
+      "funded_opportunities": 2,
+      "status": "FIRST_FORK_AND_NEXT_DECISION_CAPTURED"
+    },
+    "paid_energy": 77.61519999999999,
+    "paid_vigilance": 107.28,
+    "pair_id": "next-decision-000020",
+    "policy": "p13_replay_gate_random_content_v1",
+    "random_content_receipt": {
+      "distinct_from_priority_subsets": 2,
+      "lived_sleep_ordinals": 56,
+      "paid_replay_opportunities": 2,
+      "selected_replays_paid": 2
+    },
+    "replays_paid": 2,
+    "sleep_steps": 56,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 167,
+    "terminal": "dead",
+    "world_seed": 2138420949135402660,
+    "world_sha256": "a678c33e5b3be1b028a70ef55f11c3d74a3b5b4a4b878285690a795987ff885d"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [
+      "zero_water"
+    ],
+    "family": "stable",
+    "genome_seed": 3049987210176004436,
+    "genome_sha256": "ddcf8f799b0c5b596db9a8cfafaab3e28714676b5312c4da3bb3189c365640a4",
+    "index": 560021,
+    "life_seed": 3751171625762356724,
+    "next_decision_receipt": null,
+    "paid_energy": 40.333200000000005,
+    "paid_vigilance": 58.215999999999994,
+    "pair_id": "next-decision-000021",
+    "policy": "p13_replay_gate_v1",
+    "random_content_receipt": null,
+    "replays_paid": 33,
+    "sleep_steps": 27,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 96,
+    "terminal": "dead",
+    "world_seed": 2008580111174388510,
+    "world_sha256": "92317e8d466575e371a9815a7f8c85ffd9e3b561f6cfa0383f5e6584c8f9176c"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [
+      "zero_water"
+    ],
+    "family": "stable",
+    "genome_seed": 3049987210176004436,
+    "genome_sha256": "ddcf8f799b0c5b596db9a8cfafaab3e28714676b5312c4da3bb3189c365640a4",
+    "index": 560021,
+    "life_seed": 3751171625762356724,
+    "next_decision_receipt": {
+      "different_opportunities": 3,
+      "first_fork": {
+        "different_learned_values": true,
+        "first_different_replay_ordinal": 23,
+        "next_decision": {
+          "observer_extra_physical_cost": false,
+          "priority_action": "dormir",
+          "priority_option": "dormir",
+          "priority_param": null,
+          "priority_work": {
+            "cycles": 6,
+            "memory_items": 299,
+            "replays": 0,
+            "simulated_steps": 81
+          },
+          "random_action": "dormir",
+          "random_branch_matches_actual_live_decision_and_work": true,
+          "random_option": "dormir",
+          "random_param": null,
+          "random_work": {
+            "cycles": 6,
+            "memory_items": 299,
+            "replays": 0,
+            "simulated_steps": 81
+          },
+          "same_admitted_action_and_param": true,
+          "same_decision_option": true
+        },
+        "post_priority_values_sha256": "66420ccfa397204eefd0f72b4ed5825ce3727872ec943fc2c3b866f9fb6fab56",
+        "post_random_values_sha256": "062d2243f12864d7abb8748fba9d4f1e603e297fc8c69f3782dfed3abdd08716",
+        "priority_memory_indices": [
+          64
+        ],
+        "random_memory_indices": [
+          25
+        ],
+        "replays_in_each_detached_copy": 1,
+        "same_pre_replay_state_sha256": "eaad94500cc378329d2d48bf7591f36704a0aa5297b0f44be3c0733168fce76d",
+        "shared_actual_transition_td_residual": {
+          "bootstrapped_not_calibrated_prediction": true,
+          "priority": 0.11245834283858701,
+          "random": 0.112367234560243,
+          "same_actual_transition": true
+        }
+      },
+      "funded_opportunities": 3,
+      "status": "FIRST_FORK_AND_NEXT_DECISION_CAPTURED"
+    },
+    "paid_energy": 40.333200000000005,
+    "paid_vigilance": 58.215999999999994,
+    "pair_id": "next-decision-000021",
+    "policy": "p13_replay_gate_random_content_v1",
+    "random_content_receipt": {
+      "distinct_from_priority_subsets": 3,
+      "lived_sleep_ordinals": 27,
+      "paid_replay_opportunities": 3,
+      "selected_replays_paid": 33
+    },
+    "replays_paid": 33,
+    "sleep_steps": 27,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 96,
+    "terminal": "dead",
+    "world_seed": 2008580111174388510,
+    "world_sha256": "92317e8d466575e371a9815a7f8c85ffd9e3b561f6cfa0383f5e6584c8f9176c"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [
+      "zero_water"
+    ],
+    "family": "stable",
+    "genome_seed": 2463422675552506238,
+    "genome_sha256": "8f851aa6a38df0889ccc7980886976f04244efdf0b2989049e2dcfdd3012cf7c",
+    "index": 560022,
+    "life_seed": 4079831044702952044,
+    "next_decision_receipt": null,
+    "paid_energy": 63.10220000000001,
+    "paid_vigilance": 88.13599999999997,
+    "pair_id": "next-decision-000022",
+    "policy": "p13_replay_gate_v1",
+    "random_content_receipt": null,
+    "replays_paid": 333,
+    "sleep_steps": 44,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 116,
+    "terminal": "dead",
+    "world_seed": 2298590365598587183,
+    "world_sha256": "66d784799562fcf024bdd02355e430cd7fd93bc9cfc0fdc5579ca73fef06b6cd"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [
+      "zero_water"
+    ],
+    "family": "stable",
+    "genome_seed": 2463422675552506238,
+    "genome_sha256": "8f851aa6a38df0889ccc7980886976f04244efdf0b2989049e2dcfdd3012cf7c",
+    "index": 560022,
+    "life_seed": 4079831044702952044,
+    "next_decision_receipt": {
+      "different_opportunities": 37,
+      "first_fork": {
+        "different_learned_values": true,
+        "first_different_replay_ordinal": 15,
+        "next_decision": {
+          "observer_extra_physical_cost": false,
+          "priority_action": "se_deplacer",
+          "priority_option": "explorer:9,7",
+          "priority_param": "E",
+          "priority_work": {
+            "cycles": 6,
+            "memory_items": 187,
+            "replays": 0,
+            "simulated_steps": 83
+          },
+          "random_action": "se_deplacer",
+          "random_branch_matches_actual_live_decision_and_work": true,
+          "random_option": "explorer:9,7",
+          "random_param": "E",
+          "random_work": {
+            "cycles": 6,
+            "memory_items": 187,
+            "replays": 0,
+            "simulated_steps": 83
+          },
+          "same_admitted_action_and_param": true,
+          "same_decision_option": true
+        },
+        "post_priority_values_sha256": "59531daf8e73af07ac359c4fa1c5d51124eb0e35a346acd3eb3b1312baf272ce",
+        "post_random_values_sha256": "c51c06f721a1c2ac0a53ec357d6c81685d0d3b988e5d7ff72bad3e9f147700f7",
+        "priority_memory_indices": [
+          8,
+          7,
+          10,
+          11,
+          6,
+          13,
+          15,
+          17,
+          19,
+          9,
+          22,
+          14,
+          18,
+          24,
+          27,
+          16
+        ],
+        "random_memory_indices": [
+          7,
+          15,
+          26,
+          23,
+          19,
+          2,
+          6,
+          12,
+          25,
+          10,
+          4,
+          29,
+          1,
+          28,
+          30,
+          31
+        ],
+        "replays_in_each_detached_copy": 16,
+        "same_pre_replay_state_sha256": "4fce6afca63b9556cb1439077a8d5000092b5f3a7b9d0ebe7a8d13d9ee80b564",
+        "shared_actual_transition_td_residual": {
+          "bootstrapped_not_calibrated_prediction": true,
+          "priority": 0.01279735165743178,
+          "random": 0.011909275164976507,
+          "same_actual_transition": true
+        }
+      },
+      "funded_opportunities": 37,
+      "status": "FIRST_FORK_AND_NEXT_DECISION_CAPTURED"
+    },
+    "paid_energy": 69.24760000000002,
+    "paid_vigilance": 98.07200000000003,
+    "pair_id": "next-decision-000022",
+    "policy": "p13_replay_gate_random_content_v1",
+    "random_content_receipt": {
+      "distinct_from_priority_subsets": 37,
+      "lived_sleep_ordinals": 51,
+      "paid_replay_opportunities": 37,
+      "selected_replays_paid": 458
+    },
+    "replays_paid": 458,
+    "sleep_steps": 51,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 116,
+    "terminal": "dead",
+    "world_seed": 2298590365598587183,
+    "world_sha256": "66d784799562fcf024bdd02355e430cd7fd93bc9cfc0fdc5579ca73fef06b6cd"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [
+      "zero_food"
+    ],
+    "family": "pulse",
+    "genome_seed": 2371565419502501406,
+    "genome_sha256": "54ea4bd51d10002b669e6a9c61b73445e0e803facb77f47174876bbd99d81a77",
+    "index": 560023,
+    "life_seed": 3545948718641499530,
+    "next_decision_receipt": null,
+    "paid_energy": 60.08559999999999,
+    "paid_vigilance": 81.462,
+    "pair_id": "next-decision-000023",
+    "policy": "p13_replay_gate_v1",
+    "random_content_receipt": null,
+    "replays_paid": 107,
+    "sleep_steps": 38,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 302,
+    "terminal": "dead",
+    "world_seed": 2109872995138380829,
+    "world_sha256": "553ec3231b9d2e50b9638fd2db599bc18b70a76e72702dbbeb2ff97dac9cbf8a"
+  },
+  {
+    "cohort": "development",
+    "dead_at_horizon": false,
+    "death_causes": [
+      "zero_water"
+    ],
+    "family": "pulse",
+    "genome_seed": 2371565419502501406,
+    "genome_sha256": "54ea4bd51d10002b669e6a9c61b73445e0e803facb77f47174876bbd99d81a77",
+    "index": 560023,
+    "life_seed": 3545948718641499530,
+    "next_decision_receipt": {
+      "different_opportunities": 131,
+      "first_fork": {
+        "different_learned_values": true,
+        "first_different_replay_ordinal": 9,
+        "next_decision": {
+          "observer_extra_physical_cost": false,
+          "priority_action": "attendre",
+          "priority_option": "attendre",
+          "priority_param": null,
+          "priority_work": {
+            "cycles": 6,
+            "memory_items": 293,
+            "replays": 0,
+            "simulated_steps": 83
+          },
+          "random_action": "attendre",
+          "random_branch_matches_actual_live_decision_and_work": true,
+          "random_option": "attendre",
+          "random_param": null,
+          "random_work": {
+            "cycles": 6,
+            "memory_items": 293,
+            "replays": 0,
+            "simulated_steps": 83
+          },
+          "same_admitted_action_and_param": true,
+          "same_decision_option": true
+        },
+        "post_priority_values_sha256": "e83cf826c1b7c2c6d2e7d7040f7d66ad609fd9c965c319c67ab46bf1940d44db",
+        "post_random_values_sha256": "2e7ae26a85e1bb7c363fb244cf83a352c1a25f6fe6be80c28980f090cf6ff867",
+        "priority_memory_indices": [
+          3
+        ],
+        "random_memory_indices": [
+          20
+        ],
+        "replays_in_each_detached_copy": 1,
+        "same_pre_replay_state_sha256": "ea4761544b974486cedf4793ab693a9567e384cbc4e6986f8aec9a4c683a111b",
+        "shared_actual_transition_td_residual": {
+          "bootstrapped_not_calibrated_prediction": true,
+          "priority": 0.016136748929918066,
+          "random": 0.015836418881661516,
+          "same_actual_transition": true
+        }
+      },
+      "funded_opportunities": 132,
+      "status": "FIRST_FORK_AND_NEXT_DECISION_CAPTURED"
+    },
+    "paid_energy": 215.26540000000003,
+    "paid_vigilance": 257.6379999999999,
+    "pair_id": "next-decision-000023",
+    "policy": "p13_replay_gate_random_content_v1",
+    "random_content_receipt": {
+      "distinct_from_priority_subsets": 131,
+      "lived_sleep_ordinals": 148,
+      "paid_replay_opportunities": 132,
+      "selected_replays_paid": 311
+    },
+    "replays_paid": 311,
+    "sleep_steps": 149,
+    "source_sha256": "45fc514e9e27db8c3e1576bb747dd7a0397a6fea57eb0bafc531e5f062f768fb",
+    "steps_lived": 353,
+    "terminal": "dead",
+    "world_seed": 2109872995138380829,
+    "world_sha256": "553ec3231b9d2e50b9638fd2db599bc18b70a76e72702dbbeb2ff97dac9cbf8a"
+  }
+]
