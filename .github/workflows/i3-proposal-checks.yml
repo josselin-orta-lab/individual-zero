@@ -555,3 +555,81 @@ jobs:
           git commit -m "custody(i3): permanently preserve exactly 192 sealed B1 original lives"
           git push origin "HEAD:refs/heads/$ARCHIVE_BRANCH"
           echo "B1_ORIGINAL_EVIDENCE_BRANCH=$ARCHIVE_BRANCH"
+
+
+  stage2-three-arm-engineering:
+    # FIXED/GATE/paid-RANDOM on 24 NEW synthetic engineering units 96..119.
+    # 72 temporary, non-evidentiary real lives; no scientific admissions or
+    # original outcome publication. Does not touch the consumed B1 study.
+    if: startsWith(github.head_ref, 'research/i3-mechanism-three')
+    name: I3 3-arm funded replay G/R (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Checkout exact proposed three-arm engineering source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Test source, physical tickets, random receipts and closed scientific paths
+        run: python -m unittest discover -s tests/i3 -p 'test_stage2_three_arm_engineering.py' -v
+      - name: Execute 72 full-policy engineering lives, seal Phase G and reduce Phase R
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_three_arm_engineering rehearse > "$RUNNER_TEMP/three-arm-structure.json"
+          python - "$RUNNER_TEMP/three-arm-structure.json" <<'PY'
+          import json, sys
+          from pathlib import Path
+          report=json.loads(Path(sys.argv[1]).read_text())
+          allowed={
+            "schema","planned","phase_G","generated","generation_failure",
+            "phase_R","reduced","reduction_failure","invariant_failures",
+            "manifest_sha256","mean_step_ms","status","runner",
+            "protocol_id","cohort","source_fingerprint","pair_count",
+            "arms_per_pair","expected_worlds","public_synthetic_source",
+            "scientific_lives","survival_outcomes_disclosed",
+            "scientific_admission","scientific_verdict",
+          }
+          assert set(report) <= allowed, "unexpected biological field in structural public report"
+          print(json.dumps(report,sort_keys=True))
+          assert report["status"]=="PASS"
+          assert report["planned"]==report["generated"]==report["reduced"]==72
+          assert report["pair_count"]==report["expected_worlds"]==24
+          assert report["arms_per_pair"]==3
+          assert report["cohort"]=="engineering"
+          assert report["phase_G"]=="GENERATED" and report["phase_R"]=="COMPLETE"
+          assert report["generation_failure"] is None and report["reduction_failure"] is None
+          assert report["scientific_lives"]==0
+          assert report["public_synthetic_source"] is True
+          assert report["survival_outcomes_disclosed"] is False
+          assert report["scientific_admission"]=="CLOSED"
+          assert report["scientific_verdict"]=="NOT_ISSUED"
+          assert all(n==0 for n in report["invariant_failures"].values())
+          for category in ("random_receipt_present","random_count_bounds",
+                           "random_nominal_eligible_paid",
+                           "random_paid_equals_physical_replays",
+                           "random_draw_not_reached_unfunded_sleep",
+                           "random_declared_original_mean"):
+            assert category in report["invariant_failures"]
+          print("I3_THREE_ARM_ENGINEERING_G_R_PASS_NO_BIOLOGICAL_CLAIM")
+          PY
+      - name: Retain structural-only engineering G/R report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-three-arm-engineering-py${{ matrix.python-version }}
+          path: ${{ runner.temp }}/three-arm-structure.json
+          if-no-files-found: warn
+          retention-days: 30
