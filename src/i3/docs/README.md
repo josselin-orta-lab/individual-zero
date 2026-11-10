@@ -8,6 +8,8 @@ operational surface below.
 
 ## Current
 
+- **New completed B1 DEVELOPMENT 96-pair cohort (10 November):** [192/192 original G/R results and limitations](studies/stage2-replay-gate-selected-design/B1_EXPLORATORY_DEVELOPMENT_RESULTS_2026-11-10.md) with 38 GATE versus 30 FIXED survivors, conditional *unattested* statistics and full adverse cost/ecology reporting. Original artifact expires February 2027; immediate priority is permanent archival. Exhausted runner is now closed.
+
 - **Reference:** P1.3 on funded v2.
 - **Stage 1:** closed negative under ADR-0018.
 - **Current stage:** Stage 2.1 replay gate.
