@@ -248,7 +248,10 @@ def analyze(scheduled: list, rows: list) -> dict:
 
 
 def execute(destination) -> dict:
-    """One deliberate G then R attempt; permanently retain originals in dir."""
+    """Historical B1 cohort exhausted; no post-result reenactment permitted."""
+    raise PermissionError(
+        "B1 DEVELOPMENT 96-pair source executed once at Actions run 42735037051; "
+        "cohort CLOSED_NO_RETRY, archive originals instead of generating again")
     if os.getenv("GITHUB_RUN_ATTEMPT", "1") != "1":
         raise PermissionError("attempted Actions retry: no repeat scientific cohort")
     root = Path(destination).resolve()
