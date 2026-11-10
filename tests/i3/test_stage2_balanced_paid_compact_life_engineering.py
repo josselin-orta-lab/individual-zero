@@ -138,7 +138,11 @@ class BalancedPaidCompactLifeTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             witness.after_world(Laws(),"boire",None,budget.work,factual)
         self.assertIsNotNone(witness.pending)
-        with self.assertRaises(RuntimeError):
+        # The inherited observer increments its step counter on every mocked
+        # World-return attempt; restore ONLY this synthetic test spy counter
+        # so the next exception checks the native bill rather than step order.
+        witness.steps = 0
+        with self.assertRaisesRegex(RuntimeError, "World did not fully debit"):
             shortfall={
                 "body":factual["body"],"dead":(),
                 "cognitive_accounting":{
@@ -146,6 +150,7 @@ class BalancedPaidCompactLifeTests(unittest.TestCase):
                     "vigilance":{"paid":v,"requested":v,"unpaid":0.}}}
             witness.after_world(Laws(),"attendre",None,budget.work,shortfall)
         self.assertIsNotNone(witness.pending)
+        witness.steps = 0
         payload,_,_=witness.pending
         payload["forecast"]=999.
         with self.assertRaises(RuntimeError):
