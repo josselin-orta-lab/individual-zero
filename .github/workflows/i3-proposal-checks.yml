@@ -1222,3 +1222,64 @@ jobs:
           path: ${{ runner.temp }}/i3-content-48-original-audit.json
           retention-days: 90
           if-no-files-found: warn
+
+
+  stage2-water-replay-observer-engineering:
+    # UNUSED public-synthetic F0 indices 180..181. Technical observer
+    # neutral on/off pairs ONLY, no scientific source or survival output.
+    if: startsWith(github.head_ref, 'research/i3-water-replay-causal-observer-')
+    name: I3 passive water replay observer engineering (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Checkout exact proposed source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Fail-closed exact source and replay-memory witness unit tests
+        run: python -m unittest discover -s tests/i3 -p 'test_stage2_water_replay_observer.py' -v
+      - name: Execute 8 technical lives; same policy observer-on and observer-off MUST match
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_water_replay_observer_engineering rehearse \
+            > "$RUNNER_TEMP/i3-water-replay-observer-engineering.json"
+          python - "$RUNNER_TEMP/i3-water-replay-observer-engineering.json" <<'PY'
+          import json,sys
+          from pathlib import Path
+          r=json.loads(Path(sys.argv[1]).read_text())
+          assert r["status"]=="OBSERVER_NEUTRALITY_PASS"
+          assert r["pairs"]==2 and r["physical_life_executions"]==8
+          assert r["identical_trace_and_funding_observer_on_off"] is True
+          assert r["observer_passive"] is True
+          assert r["zero_unpaid_replays"] is True
+          assert r["scientific_lives"]==0 and r["scientific_go"] is False
+          assert r["biological_outcomes_published"] is False
+          assert r["first_divergence_report_kept_out_of_public_engineering_receipt"] is True
+          forbidden=("survivors","death_causes","steps_lived","trace","first_differences",
+                     "water_uptake","first_water_divergence")
+          assert all(x not in r for x in forbidden)
+          print(json.dumps(r,sort_keys=True))
+          PY
+      - name: Retain structural-only observer-neutrality receipt, never full technical lives
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-water-replay-neutrality-py${{ matrix.python-version }}
+          path: ${{ runner.temp }}/i3-water-replay-observer-engineering.json
+          retention-days: 30
+          if-no-files-found: warn
