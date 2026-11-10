@@ -2013,3 +2013,66 @@ jobs:
           path: ${{ runner.temp }}/i3-next-decision-original-audit.json
           retention-days: 90
           if-no-files-found: warn
+
+
+  stage2-replay-predictive-negative-control:
+    # Software-only 48 synthetic pretrained-effect copies, NO World/life.
+    if: startsWith(github.head_ref, 'research/i3-replay-predictive-negative-control-')
+    name: I3 replay-effects negative control (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Checkout exact TD and effect-model negative-control source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Verify no-leak prequential lifecycle and actual TD negative control
+        run: python -m unittest discover -s tests/i3 -p 'test_stage2_replay_predictive_negative_control.py' -v
+      - name: Evaluate 48 synthetic contrasts and structural receipt only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_replay_predictive_negative_control rehearse \
+            > "$RUNNER_TEMP/i3-replay-predictive-control.json"
+          python - "$RUNNER_TEMP/i3-replay-predictive-control.json" <<'PY'
+          import json,sys
+          from pathlib import Path
+          r=json.loads(Path(sys.argv[1]).read_text())
+          assert r["status"]=="NEGATIVE_CONTROL_EFFECT_PREDICTION_NOT_REPLAY_SENSITIVE"
+          assert r["synthetic_cases"]==48
+          assert r["detached_td_replays_per_arm"]==3
+          assert r["different_memory_subset_cases"]>0
+          assert r["different_learned_value_cases"]>0
+          assert r["different_value_residual_readout_cases"]>0
+          assert r["different_one_step_effect_forecast_cases"]==0
+          assert r["effects_model_unchanged_in_every_case"] is True
+          assert r["original_mind_unchanged_in_every_case"] is True
+          assert r["no_world_or_life_executed"] is True
+          assert r["observer_cpu_is_external"] is True
+          assert r["scientific_lives"]==0
+          assert r["survival_claim"] is False
+          assert r["prospective_calibrated_predictive_utility"] is False
+          print(json.dumps(r,sort_keys=True))
+          PY
+      - name: Retain synthetic-only mechanism receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-replay-effects-negative-control-py${{ matrix.python-version }}
+          path: ${{ runner.temp }}/i3-replay-predictive-control.json
+          retention-days: 30
+          if-no-files-found: warn
