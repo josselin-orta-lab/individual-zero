@@ -19,7 +19,7 @@ def work_envelope(n: int, k: int = 3) -> CognitiveWork:
     """Conservative DECLARED operator categories, NOT measured host CPU cost."""
     if (type(n) is not int or type(k) is not int
             or not 0 <= k <= min(n, REPLAYS_PER_SLEEP)
-            or not k <= n <= MAX_SNAPSHOT):
+            or not 6 <= n <= MAX_SNAPSHOT):
         raise ValueError("bounded eligible personal memory and replay count required")
     return CognitiveWork(cycles=7, memory_items=4*n+2*k, replays=k)
 
