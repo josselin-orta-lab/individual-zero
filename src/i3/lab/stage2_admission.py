@@ -329,3 +329,30 @@ def admit_realstate_content_fork_engineering(*, case: dict, spec,
     return RA.mint(cohort="engineering",family=case["family"],
                    index=case["index"],world_seed=case["world_seed"],
                    spec=spec,transport_fingerprint=transport_fingerprint)
+
+
+def admit_realstate_fork_newworld_development(*, case: dict, spec,
+                                               transport_fingerprint: str):
+    """Only 24 new exact-source matched realstate fork DEVELOPMENT units.
+
+    No historic 80/81, B1, 48-content, 24-water, selected, validation or
+    reserve World is admitted; the separate one-shot trusted-main source
+    claim must precede first birth.
+    """
+    from . import stage2_realstate_fork_24_development as FORK
+    from . import stage2_survival_b1_worldspec_audit as SPECS
+    from . import stage2_survival_b1_engineering as SOURCE
+    if type(case) is not dict or case.get("cohort") != "development":
+        raise PermissionError("fork DEVELOPMENT requires exact new allocation")
+    FORK.match_case(case,transport_fingerprint)
+    if type(transport_fingerprint) is not str or (
+            transport_fingerprint != SOURCE.source_fingerprint()):
+        raise PermissionError("new realstate source fingerprint mismatch")
+    if not isinstance(spec,RA.WorldSpec):
+        raise PermissionError("realstate WorldSpec is not valid")
+    expected=SPECS._construct_f0_spec(case["family"],case["world_seed"])
+    if RA.world_sha256(spec)!=RA.world_sha256(expected):
+        raise PermissionError("World not exact from frozen F0 source")
+    return RA.mint(cohort="development",family=case["family"],
+                   index=case["index"],world_seed=case["world_seed"],
+                   spec=spec,transport_fingerprint=transport_fingerprint)
