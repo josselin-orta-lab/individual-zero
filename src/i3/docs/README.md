@@ -8,6 +8,9 @@ operational surface below.
 
 ## Current
 
+- **Methodological correction and new original-only audit:** [RANDOM EQUAL MEAN randomizes the replay count, not TD-prioritized memory identity](studies/stage2-replay-gate-selected-design/RANDOM_CONTROL_SEMANTICS_AND_NEXT_FALSIFIER_2026-11-10.md). A new read-only SHA-256 audit independently rechecks every archived original and outcome on CI without reopening Worlds. Next study must separate replay content choice from replay quantity, under the individual's unchanged physical budget.
+
+
 - **New completed three-arm 64-unit DEVELOPMENT original evidence (10 November):** [FIXED/GATE/paid-RANDOM 192-life source-bound results](studies/stage2-replay-gate-selected-design/THREE_ARM_EXPLORATORY_RESULTS_2026-11-10.md). Primary GATE−RANDOM horizon survival 0/64 (4 GATE-only vs 4 RANDOM-only); GATE lives longer on average but pays more cognitive energy/vigilance than RANDOM. All 192 originals and 64 triplets are permanently archived on [independent evidence ref](https://github.com/josselin-orta-lab/individual-zero/tree/evidence/i3-three-arm-development-64-20261110-originals/archive/i3/stage2-three-arm-development-2026-11-10). Cohort and original runner **CLOSED_NO_RETRY**; no confirmatory GO.
 
 
