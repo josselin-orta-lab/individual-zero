@@ -1,0 +1,43 @@
+{
+  "schema": "i3-stage2-1-replay-content-local-falsifier/v1",
+  "date": "2026-11-10",
+  "status": "FROZEN_BEFORE_LOCAL_SOFTWARE_EXECUTION",
+  "question": "At fixed identical prepaid replay count and identical synthetic learned-state snapshot, does TD-prioritized memory choice produce a distinguishable learned-state update compared with independently seeded random memory identity selection?",
+  "independent_units": "48 deterministic synthetic newborn genome and learned-memory snapshots, not independent ecosystems or biological individuals",
+  "snapshot_count": 48,
+  "genome_seed_start": 9200000,
+  "local_mind_seed_start": 9900000,
+  "replay_count_per_arm": 3,
+  "eligible_synthetic_memories": 12,
+  "arms": [
+    "priority_td_absolute_error",
+    "uniform_hash_rank_random_subset_without_replacement"
+  ],
+  "replay_selector_random_domain": "i3-stage2.1/random-replay-content-local/v1",
+  "same_snapshot": true,
+  "same_model_count": true,
+  "cognitive_work_per_arm": "CognitiveWork(cycles=1, simulated_steps=2*len(proj_chunks)*3, replays=3) prepaid using current BodyLaws; no World debits",
+  "initial_body": [
+    80,
+    65,
+    65,
+    90,
+    80
+  ],
+  "primary_outcome": "number of 48 synthetic snapshots where independently updated value vectors differ (L1 != 0)",
+  "secondary_outcomes": [
+    "actual replay identity overlap",
+    "absolute TD update magnitude per arm",
+    "complete identical model-level energy and vigilance bills",
+    "no original state or global RNG mutation"
+  ],
+  "sampling_independence_attested": false,
+  "statistical_threshold": null,
+  "scientific_births": 0,
+  "worlds_opened": 0,
+  "allowed_scope": "SOFTWARE_ONLY_LOCAL_MECHANISTIC_PROBE",
+  "scientific_go": false,
+  "source_claim_scope": "software-only first execution fixed PR SHA and fixed synthetic seeds; NOT a source authority for lives",
+  "no_promotion": true,
+  "notes": "Value-of-selected-memory and survival effects remain untested; one fixed synthetic panel is not a powered biological study."
+}
