@@ -1326,7 +1326,7 @@ class Mind:
             self.pos = (self.pos[0] + dx, self.pos[1] + dy)
 
     def learn_from_outcome(self, result, *, replay_limit=0, replay_retention=True,
-                           replay_selector=None):
+                           replay_selector=None, replay_observer=None):
         """Prepaid learned updates only; controls must retain orientation.
 
         P5a replay_retention=False genuinely computes replay on a detached
@@ -1339,6 +1339,8 @@ class Mind:
             raise TypeError("replay_retention must be a boolean")
         if replay_selector is not None and not callable(replay_selector):
             raise TypeError("opt-in replay selector must be callable")
+        if replay_observer is not None and not callable(replay_observer):
+            raise TypeError("external replay witness must be callable")
         if result["dead"] or self.last is None:
             return 0
         before, key, action, param = self.last
@@ -1371,6 +1373,15 @@ class Mind:
                         any(type(i) is not int or
                             not 0 <= i < len(replay_mind.buffer) for i in best)):
                     raise ValueError("unfunded or invalid replay-memory indices")
+            if replay_observer is not None:
+                # External laboratory receipt, before any replay TD update.
+                # Only immutable scalar/index copies. The return value is
+                # ignored and cannot change scoring, memory or motor control.
+                priority = tuple(sorted(range(len(replay_mind.buffer)),
+                                        key=lambda i: -replay_mind.buffer[i][0]))
+                priorities = tuple(float(replay_mind.buffer[i][0])
+                                   for i in range(len(replay_mind.buffer)))
+                replay_observer(tuple(best), priority, priorities)
             for i in best:
                 _, a, b, d = replay_mind.buffer[i]
                 replay_mind.buffer[i] = (
