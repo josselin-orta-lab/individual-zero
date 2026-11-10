@@ -16,5 +16,13 @@
   "no_retry": true,
   "no_scientific_go": true,
   "no_independent_iid_ecology": true,
-  "no_stage2_2": true
+  "no_stage2_2": true,
+  "activation": {
+    "kind": "TRUSTED_MAIN_SOURCE_ACTIVATION_AFTER_MERGED_PR",
+    "reason": "merged source  d86474d4eea47e8066169988c152f24c40f8efb6 had zero GitHub Actions runs; no source claim or World birth existed at activation",
+    "protocol_unchanged": true,
+    "witness_unchanged": true,
+    "assigned_units_unchanged": true,
+    "one_shot_no_retry": true
+  }
 }
