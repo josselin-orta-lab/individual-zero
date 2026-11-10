@@ -26,13 +26,16 @@ SCHEMA = "i3-stage2.1-compact-distress-operator-cost-audit/v1"
 SIZES = (6, 12, 32, 128, 512)
 EXTRA_STATES = (0, 256)
 REPEATS = 3
+MAX_MEMORY_CAPACITY = 512
 BODY = (70., 60., 50., 90., 80.)
 
 
 def fixture(n: int, extras: int):
     if n not in SIZES or extras not in EXTRA_STATES:
         raise ValueError("only declared structural audit fixtures")
-    source = Mind(midpoint(), 8780 + n)
+    genome = midpoint()
+    genome["genes"]["m_max"] = float(MAX_MEMORY_CAPACITY)
+    source = Mind(genome, 8780 + n)
     # A deterministic first-person-format history with valid bodily bounds.
     source.buffer = deque(
         (float(1 + i % 9),
