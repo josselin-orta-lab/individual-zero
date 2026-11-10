@@ -222,3 +222,31 @@ def admit_replay_content_newworld_engineering(*, case: dict, spec,
     return RA.mint(cohort="engineering",family=case["family"],
                    index=case["index"],world_seed=case["world_seed"],
                    spec=spec,transport_fingerprint=transport_fingerprint)
+
+
+def admit_replay_content_newworld_development(*, case: dict, spec,
+                                               transport_fingerprint: str):
+    """Exactly allocated NEW 48-pair replay-memory content DEVELOPMENT only.
+
+    No previously used B1, three-arm, selection, validation, reserve or
+    technical-engineering source can mint this ticket. One-shot trusted-main
+    remote source custody is separately required by the experiment runner.
+    """
+    from . import stage2_content_48_development as CONTENT
+    from . import stage2_survival_b1_worldspec_audit as SPECS
+    from . import stage2_survival_b1_engineering as SOURCE
+    if type(case) is not dict or type(case.get("index")) is not int:
+        raise PermissionError("replay-content DEVELOPMENT requires exact assigned case")
+    if case.get("cohort")!="development":
+        raise PermissionError("selection, validation and reserve never opened")
+    CONTENT.match_case(case,transport_fingerprint)
+    if (not isinstance(spec,RA.WorldSpec) or
+            type(transport_fingerprint) is not str or
+            transport_fingerprint!=SOURCE.source_fingerprint()):
+        raise PermissionError("wrong replay-content developmental source")
+    expected=SPECS._construct_f0_spec(case["family"],case["world_seed"])
+    if RA.world_sha256(spec)!=RA.world_sha256(expected):
+        raise PermissionError("content WorldSpec is not exact frozen generator output")
+    return RA.mint(cohort="development",family=case["family"],
+                   index=case["index"],world_seed=case["world_seed"],
+                   spec=spec,transport_fingerprint=transport_fingerprint)
