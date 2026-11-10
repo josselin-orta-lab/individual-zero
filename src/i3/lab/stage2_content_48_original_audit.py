@@ -265,7 +265,7 @@ def audit(path):
              published["noninferiority_margin_approved"] is False and
              published["selection_validation_reserve_executed"] is False,
              "posthoc claim invented")
-    _same_tree(observed,published if False else
+    _same_tree(observed,
                {k:published[k] for k in ("overall","by_arm","by_family")})
     _require(observed["overall"]["both_survive"]==16 and
              observed["overall"]["priority_only_survives"]==1 and
