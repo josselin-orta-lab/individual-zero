@@ -362,7 +362,8 @@ class P13ReplayGateMind(Mind):
                 replays += 1
         return replays
 
-    def learn_from_outcome(self, result, *, replay_limit=0, replay_retention=True):
+    def learn_from_outcome(self, result, *, replay_limit=0, replay_retention=True,
+                           replay_observer=None):
         """Experiment-only content choice; full historical GATE count unchanged.
 
         Baseline policies still delegate with replay_selector=None, preserving
@@ -371,7 +372,8 @@ class P13ReplayGateMind(Mind):
         if self.replay_gate_mode != "gate_random_content":
             return super().learn_from_outcome(
                 result, replay_limit=replay_limit,
-                replay_retention=replay_retention)
+                replay_retention=replay_retention,
+                replay_observer=replay_observer)
         from .stage2_replay_content_selection import random_content_indices
 
         def choose(buffer, count):
@@ -390,4 +392,5 @@ class P13ReplayGateMind(Mind):
 
         return super().learn_from_outcome(
             result, replay_limit=replay_limit,
-            replay_retention=replay_retention, replay_selector=choose)
+            replay_retention=replay_retention, replay_selector=choose,
+            replay_observer=replay_observer)

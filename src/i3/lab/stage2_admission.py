@@ -250,3 +250,30 @@ def admit_replay_content_newworld_development(*, case: dict, spec,
     return RA.mint(cohort="development",family=case["family"],
                    index=case["index"],world_seed=case["world_seed"],
                    spec=spec,transport_fingerprint=transport_fingerprint)
+
+
+def admit_water_replay_observer_engineering(*, case: dict, spec,
+                                            transport_fingerprint: str):
+    """Two UNEXPOSED PUBLIC-synthetic technical indices for observer neutrality.
+
+    The only minting route for the observer GATE-vs-random-content engineering
+    preflight. No scientific development, validation or reserve authority.
+    """
+    from . import stage2_water_replay_observer_engineering as OBS
+    from . import stage2_survival_b1_worldspec_audit as SPECS
+    from . import stage2_survival_b1_engineering as SOURCE
+    if type(case) is not dict or type(case.get("index")) is not int:
+        raise PermissionError("exact observer engineering case required")
+    if case.get("cohort") != "engineering":
+        raise PermissionError("no scientific observer cohort admitted")
+    OBS.match_case(case, transport_fingerprint)
+    if (not isinstance(spec, RA.WorldSpec) or
+            type(transport_fingerprint) is not str or
+            transport_fingerprint != SOURCE.source_fingerprint()):
+        raise PermissionError("observer engineering source changed")
+    expected = SPECS._construct_f0_spec(case["family"], case["world_seed"])
+    if RA.world_sha256(spec) != RA.world_sha256(expected):
+        raise PermissionError("observer WorldSpec is not the exact generated F0 source")
+    return RA.mint(cohort="engineering", family=case["family"],
+                   index=case["index"], world_seed=case["world_seed"],
+                   spec=spec, transport_fingerprint=transport_fingerprint)
