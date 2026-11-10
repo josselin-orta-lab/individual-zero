@@ -956,3 +956,72 @@ jobs:
           path: ${{ runner.temp }}/i3-content-local.json
           retention-days: 30
           if-no-files-found: warn
+
+
+  stage2-replay-content-full-life-engineering:
+    # 12 new public-synthetic matched F0 pairs, 24 real funded technical lives.
+    # Never a scientific survival cohort, selection or reserve; structural only.
+    if: startsWith(github.head_ref, 'research/i3-replay-content-full-life-')
+    name: I3 replay memory identity G/R (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Checkout exact experimental source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Test physically funded count, real TD selection and central admission
+        run: python -m unittest discover -s tests/i3 -p 'test_stage2_replay_content_full_life.py' -v
+      - name: Generate 24 actual technical lives, verify original G and reduce structural R
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_replay_content_engineering rehearse \
+            > "$RUNNER_TEMP/i3-content-full-life-engineering.json"
+          python - "$RUNNER_TEMP/i3-content-full-life-engineering.json" <<'PY'
+          import json,sys
+          from pathlib import Path
+          r=json.loads(Path(sys.argv[1]).read_text())
+          assert r["status"]=="PASS",r
+          assert r["planned"]==r["generated"]==r["reduced"]==24
+          assert r["phase_G"]=="GENERATED" and r["phase_R"]=="COMPLETE"
+          assert r["pair_count"]==12 and r["scientific_lives"]==0
+          assert r["cohort"]=="engineering"
+          assert r["scientific_verdict"]=="NOT_ISSUED"
+          assert r["no_world_outcomes_published"] is True
+          assert r["originals_temporary_only"] is True
+          assert r["scientific_registration"] is False
+          assert all(v==0 for v in r["invariant_failures"].values())
+          for key in ("random_content_receipt",
+                      "actual_content_replays_paid",
+                      "content_subset_bounds",
+                      "content_payment_bounded",
+                      "historical_gate_count_preserved"):
+              assert key in r["invariant_failures"]
+          forbidden=("analysis","survival","survivors","deaths","rows","lives")
+          assert all(key not in r for key in forbidden)
+          print(json.dumps(r,sort_keys=True))
+          print("I3_CONTENT_FULL_LIFE_G_R_ENGINEERING_PASS_NO_BIOLOGICAL_CLAIM")
+          PY
+      - name: Store structural receipts only; never temporary life histories
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-replay-content-engineering-py${{ matrix.python-version }}
+          path: ${{ runner.temp }}/i3-content-full-life-engineering.json
+          retention-days: 30
+          if-no-files-found: warn

@@ -1325,7 +1325,8 @@ class Mind:
             dx, dy = {n: (a, b) for n, a, b in DIRS}[param]
             self.pos = (self.pos[0] + dx, self.pos[1] + dy)
 
-    def learn_from_outcome(self, result, *, replay_limit=0, replay_retention=True):
+    def learn_from_outcome(self, result, *, replay_limit=0, replay_retention=True,
+                           replay_selector=None):
         """Prepaid learned updates only; controls must retain orientation.
 
         P5a replay_retention=False genuinely computes replay on a detached
@@ -1336,6 +1337,8 @@ class Mind:
             raise ValueError("invalid prepaid replay count")
         if type(replay_retention) is not bool:
             raise TypeError("replay_retention must be a boolean")
+        if replay_selector is not None and not callable(replay_selector):
+            raise TypeError("opt-in replay selector must be callable")
         if result["dead"] or self.last is None:
             return 0
         before, key, action, param = self.last
@@ -1357,9 +1360,18 @@ class Mind:
                 replay_mind = deepcopy(self)
             else:
                 replay_mind = self
-            best = sorted(range(len(replay_mind.buffer)),
-                          key=lambda i: -replay_mind.buffer[i][0])
-            for i in best[:replay_limit]:
+            if replay_selector is None:
+                # Exact historical P1.3 selection, unchanged in old policies.
+                best = sorted(range(len(replay_mind.buffer)),
+                              key=lambda i: -replay_mind.buffer[i][0])[:replay_limit]
+            else:
+                best = tuple(replay_selector(replay_mind.buffer, replay_limit))
+                if (len(best) != replay_limit or
+                        len(set(best)) != len(best) or
+                        any(type(i) is not int or
+                            not 0 <= i < len(replay_mind.buffer) for i in best)):
+                    raise ValueError("unfunded or invalid replay-memory indices")
+            for i in best:
                 _, a, b, d = replay_mind.buffer[i]
                 replay_mind.buffer[i] = (
                     abs(replay_mind._td(a, b, d)), a, b, d)
