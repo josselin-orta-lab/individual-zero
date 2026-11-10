@@ -343,3 +343,53 @@ jobs:
           path: ${{ runner.temp }}/b1-newworld-gr-structural.json
           if-no-files-found: warn
           retention-days: 30
+
+
+  b1-exploratory-development:
+    # New, outcome-retaining DEVELOPMENT experiment ONLY. Never validation,
+    # selection, reserve or the exhausted 80/81. Single GitHub run attempt.
+    if: startsWith(github.head_ref, 'research/i3-b1-development-')
+    name: I3 B1 96-pair prospective exploratory DEVELOPMENT (Python 3.11)
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Checkout exact new B1 source with no credentials
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Reject reruns and verify prospective allocation, guarded tickets and analysis
+        run: |
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          python -m unittest discover -s tests/i3 -p 'test_stage2_b1_development.py' -v
+      - name: Execute first and only B1 96-pair DEVELOPMENT original G then R
+        run: |
+          mkdir -p "$RUNNER_TEMP/b1-development-archive"
+          python -m i3.lab.stage2_b1_development execute "$RUNNER_TEMP/b1-development-archive" > "$RUNNER_TEMP/b1-development-console.json"
+          python - "$RUNNER_TEMP/b1-development-archive/B1_EXECUTION_REPORT.json" <<'PY'
+          import json, sys
+          with open(sys.argv[1]) as stream:
+              report = json.load(stream)
+          assert report["status"] == "COMPLETE_EXPLORATORY_DEVELOPMENT"
+          assert report["planned"] == report["generated"] == report["reduced"] == 192
+          assert report["scientific_verdict"] == "NOT_ISSUED"
+          assert report["analysis"]["scientific_decision"] == "EXPLORATORY_ONLY_NOT_CONFIRMATORY"
+          print(json.dumps(report["analysis"], sort_keys=True))
+          PY
+      - name: Retain original sealed lives and non-favorable failures, even if G/R fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-b1-development-originals-${{ github.event.pull_request.head.sha }}
+          path: |
+            ${{ runner.temp }}/b1-development-archive/
+            ${{ runner.temp }}/b1-development-console.json
+          if-no-files-found: warn
+          retention-days: 90
