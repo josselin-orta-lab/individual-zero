@@ -1,5 +1,12 @@
 # I3: current research and engineering status
 
+## B1 original evidence permanently archived and independently recounted (10 November 2026)
+
+The already executed **192/192 B1 DEVELOPMENT original lives** are now preserved on independent GitHub evidence ref `evidence/i3-b1-96pair-development-20261110-originals`, exact commit `50380d16b0b6e7ac1e91702060be83784ba85cc7`, with unchanged ZIP SHA-256 `2aff70fff077be04042379355cda8c798ed9ec81745413563bc88e4320615361`, source/plan/manifest pins and original verification receipt (Actions run [#42775154043](https://github.com/josselin-orta-lab/individual-zero/actions/runs/42775154043), archival job PASS). See [archival plan](studies/stage2-replay-gate-selected-design/B1_ORIGINAL_ARCHIVE_CUSTODY.md) and [finite post-hoc survival-cost decomposition](studies/stage2-replay-gate-selected-design/B1_POSTHOC_SURVIVAL_COST_DECOMPOSITION_2026-11-10.md). The GitHub Actions 90-day artifact is no longer the only copy; the evidence branch must remain protected from deletion. All B1 scientific source permissions remain **spent, NO_RETRY**.
+
+Post-hoc original-only analysis shows that total GATE physical vigilance paid per life *increased* despite fewer executed replays and modestly lower energy per life. One GATE death occurred at step 400, not a horizon survivor. This is **not** a causal replay selection finding, an iid sampling attestation, or a biological NI GO. Next Stage-2.1 choice: prospectively freeze a 3-arm FIXED/GATE/paid-RANDOM mechanism-first matched design with independent study review and new unspent indices before any new World. I3 remains an unregistered proposal; Stage-2.2, selection/validation/reserve remain blocked.
+
+
 ## B1 new-world 96-pair exploratory DEVELOPMENT completed and closed (10 November 2026)
 
 **192/192 real developmental lives generated, sealed, reduced on GitHub Actions #42735037051; the spent B1 runner is now closed NO_RETRY.** The [source-bound results](studies/stage2-replay-gate-selected-design/B1_EXPLORATORY_DEVELOPMENT_RESULTS_2026-11-10.md) show 38/96 horizon survivors under GATE versus 30/96 FIXED, 13 GATE-only versus five FIXED-only, observed +8.3333 percentage-point paired survival difference and +27.2396 mean lived steps. Paid energy per assigned life was 133.1013 GATE versus 137.4370 FIXED; paid vigilance was **higher** with GATE (171.6070 versus 167.5939). Adverse family-specific and historical 80/81 results remain visible.
