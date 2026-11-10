@@ -10,7 +10,7 @@ Trusted first exact main exposure source `d86474d4eea47e8066169988c152f24c40f8ef
 
 GitHub displayed the first main push run only after a separate activation was pushed to `main`; that second event [#42838124872](https://github.com/josselin-orta-lab/individual-zero/actions/runs/42838124872) **failed at the prebirth source-claim guard**. It never executed a World, never claimed an alternative source and never replaced any of the 48 originals. Only first run #42837992463 is the scientific record. The second failed status is an **expected NO_RETRY safety success**, not a second study or a test failure of the first cohort.
 
-The corresponding audit-closure PR independently rechecks all 48 original packed and unpacked gzip SHA-256s, original source/World/genome/paid-cognition identities, all 24 paired null and adverse records, complete next shadow-decision receipt and all original-to-reduced results. It must pass CI before claiming post-archive independent verification.
+The **independent read-only post-archive audit PASSED**, merged [PR #1275](https://github.com/josselin-orta-lab/individual-zero/pull/1275), [Actions #42839406230](https://github.com/josselin-orta-lab/individual-zero/actions/runs/42839406230). It verified **48/48 original compressed SHA-256 plus 48/48 original uncompressed SHA-256s**, all source/World/G0/claim/paid-cognition identities, original-to-reduced records, all 24 paired null and adverse categories, exact next shadow-decision receipts and every ecological family with **zero new World executions**. Full Python 3.11 and 3.12 regressions passed. Both the consumed 24-unit runner and the main-push launcher are now hard-disabled CLOSED_NO_RETRY in `main`.
 
 ## Frozen primary: next admitted action on identical perception
 
