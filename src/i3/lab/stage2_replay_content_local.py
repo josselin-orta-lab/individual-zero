@@ -152,7 +152,7 @@ def probe():
         if (a["prepaid_work"]!=b["prepaid_work"] or
             a["would_debit_energy"]!=b["would_debit_energy"] or
             a["would_debit_vigilance"]!=b["would_debit_vigilance"] or
-            a["replays_executed"]!=b["replays_executed"]!=COUNT):
+            not (a["replays_executed"]==b["replays_executed"]==COUNT)):
             raise ValueError("memory selection confounded by different model work")
         if (a["unpaid_energy"]!=0 or b["unpaid_energy"]!=0 or
             a["unpaid_vigilance"]!=0 or b["unpaid_vigilance"]!=0):
