@@ -1031,9 +1031,9 @@ jobs:
 
 
   stage2-content-48-exploratory-once:
-    # 48 wholly NEW G0/world/life units. Only on trusted marker merge to main.
-    # Do not run on PR, re-run Actions, old B1, old three-arm or reserve.
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.run_attempt == 1
+    # Permanently CLOSED after source-claimed run 42794047107 and evidence
+    # commit 459d0d9f90ea8edae95881d4e3110b91a24f85f5. NEVER rerun.
+    if: false
     name: I3 content priority-vs-random 48-pair original-only DEVELOPMENT once
     runs-on: ubuntu-latest
     timeout-minutes: 24
