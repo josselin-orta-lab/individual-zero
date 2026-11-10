@@ -14,6 +14,12 @@ on:
       - 'tests/test_engine_repository.py'
       - '.github/workflows/i3-proposal-checks.yml'
 
+  push:
+    branches: [main]
+    # The single frozen archival trigger is deliberately never modified again.
+    paths:
+      - 'src/i3/docs/studies/stage2-replay-gate-selected-design/B1_ARCHIVE_ONCE.json'
+
 permissions:
   contents: read
 
@@ -23,6 +29,7 @@ concurrency:
 
 jobs:
   software:
+    if: github.event_name == 'pull_request'
     name: I3 software (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -393,3 +400,158 @@ jobs:
             ${{ runner.temp }}/b1-development-console.json
           if-no-files-found: warn
           retention-days: 90
+
+
+  b1-original-custody:
+    # Run only on trusted merged main, never on untrusted PR code or a rerun.
+    # Do NOT replay any life; retrieve the immutable existing Actions original.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.run_attempt == 1
+    name: Archive sealed B1 originals once, without World exposure
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      ARCHIVE_BRANCH: evidence/i3-b1-96pair-development-20261110-originals
+      ZIP_SHA256: 2aff70fff077be04042379355cda8c798ed9ec81745413563bc88e4320615361
+      MANIFEST_SHA256: 5a173d1ad2a7ea3980cb27f79fada44d4e9f7855af63d08a21d118acce21da9a
+      EXECUTION_SHA: 713d4621d28ed668bf5f5a37f2d105a38d19fb57
+      ORIGINAL_FINGERPRINT: 3a533ebcf8657716bcd759aaa0c0ec1c694aed82862abeb1eb175b593cd8ede3
+      PLAN_SHA: 37bee5deeb75e7e4ab481f3019b63c54b9d6f8bdabba6f7bb1de135e62f021dc
+      EVIDENCE_DIR: archive/i3/stage2-b1-development-2026-11-10
+    steps:
+      - name: Checkout trusted merged main without experimental execution
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Fail closed if custody was already attempted on a branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          test "$GITHUB_REF" = "refs/heads/main"
+          if git ls-remote --heads origin "$ARCHIVE_BRANCH" | grep -q .; then
+            echo "B1 evidence branch already exists; no overwriting or replacement."
+            exit 2
+          fi
+          test ! -e "$EVIDENCE_DIR"
+      - name: Download exactly the existing original artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/b1-evidence"
+          curl -fLSs --retry 2 --retry-delay 2 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/josselin-orta-lab/individual-zero/actions/artifacts/13725454291/zip" \
+            --output "$RUNNER_TEMP/b1-evidence/original.zip"
+          printf "%s  %s\n" "$ZIP_SHA256" "$RUNNER_TEMP/b1-evidence/original.zip" | sha256sum --check --status
+      - name: Verify all original gzip bytes, identities, terminal events and complete pairs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from collections import Counter
+          from hashlib import sha256
+          from pathlib import Path
+          import gzip, json, os
+          from zipfile import ZipFile
+          root=Path(os.environ["RUNNER_TEMP"])/"b1-evidence"
+          artifact=root/"original.zip"
+          prefix="b1-development-archive/"
+          def digest(b): return sha256(b).hexdigest()
+          with ZipFile(artifact) as z:
+              names=z.namelist()
+              files={prefix+"originals/life-%03d.json.gz"%i for i in range(192)}
+              other={prefix+x for x in ("ATTEMPT_CLAIM.json",
+                      "B1_EXECUTION_REPORT.json","REDUCED_ROWS.json",
+                      "originals/MANIFEST.json","originals/MANIFEST.sha256")}
+              other.add("b1-development-console.json")
+              assert len(names)==198 and set(names)==files|other
+              raw=z.read(prefix+"originals/MANIFEST.json")
+              assert digest(raw)==os.environ["MANIFEST_SHA256"]
+              assert z.read(prefix+"originals/MANIFEST.sha256").decode().strip()==digest(raw)
+              manifest=json.loads(raw)
+              assert manifest["status"]=="GENERATED" and manifest["planned"]==manifest["generated"]==192
+              assert manifest["failure"] is None and len(manifest["files"])==192
+              claim=json.loads(z.read(prefix+"ATTEMPT_CLAIM.json"))
+              report=json.loads(z.read(prefix+"B1_EXECUTION_REPORT.json"))
+              rows=json.loads(z.read(prefix+"REDUCED_ROWS.json"))
+              assert claim["status"]=="CONSUMED_BEFORE_FIRST_BIRTH" and claim["no_retry"] is True
+              assert claim["source_fingerprint"]==report["source_fingerprint"]==os.environ["ORIGINAL_FINGERPRINT"]
+              assert claim["plan_sha256"]==report["plan_sha256"]==os.environ["PLAN_SHA"]
+              assert report["status"]=="COMPLETE_EXPLORATORY_DEVELOPMENT"
+              assert report["generated"]==report["reduced"]==192 and len(rows)==192
+              original=[]
+              for i,entry in enumerate(manifest["files"]):
+                  assert entry["file"]=="life-%03d.json.gz"%i
+                  packed=z.read(prefix+"originals/"+entry["file"])
+                  assert digest(packed)==entry["sha256"]
+                  unpacked=gzip.decompress(packed)
+                  assert digest(unpacked)==entry["uncompressed_sha256"]
+                  life=json.loads(unpacked)
+                  assert life["identity"]==entry["identity"]
+                  m=life["life"]["manifest"]
+                  assert m["source"]["git_head"]==os.environ["EXECUTION_SHA"]
+                  assert m["source"]["working_tree_dirty"] is False
+                  assert m["world_sha256"]==life["life"]["admission_receipt"]["world_sha256"]
+                  assert life["life"]["admission_receipt"]["transport_fingerprint"]==os.environ["ORIGINAL_FINGERPRINT"]
+                  ca=life["life"]["cognitive_accounting"]
+                  assert ca["shortfall_steps"]==0 and ca["status"]=="SETTLED_FOR_DECLARED_WORK"
+                  for currency in ("energy","vigilance"): assert ca["totals"][currency]["unpaid"]<=1e-12
+                  assert life["life"]["terminal"] in ("dead","censored")
+                  assert life["life"]["terminal"]!="censored" or life["life"]["steps_lived"]==400
+                  r=rows[i]
+                  assert all(r[k]==life["identity"][k] for k in ("index","pair_id","policy","family","genome_seed","world_seed","life_seed","cohort"))
+                  assert r["terminal"]==life["life"]["terminal"] and r["steps_lived"]==life["life"]["steps_lived"]
+                  assert abs(r["paid_energy"]-ca["totals"]["energy"]["paid"])<1e-9
+                  assert abs(r["paid_vigilance"]-ca["totals"]["vigilance"]["paid"])<1e-9
+                  original.append(life)
+              pairs=Counter()
+              families=Counter()
+              for i in range(96):
+                  f,g=original[2*i:2*i+2]
+                  x,y=f["identity"],g["identity"]
+                  assert x["policy"]=="reference" and y["policy"]=="p13_replay_gate_v1"
+                  assert x["index"]==y["index"]==240000+i and x["cohort"]==y["cohort"]=="development"
+                  assert all(x[k]==y[k] for k in ("pair_id","family","world_seed","genome_seed","life_seed"))
+                  assert f["life"]["manifest"]["world_sha256"]==g["life"]["manifest"]["world_sha256"]
+                  families[x["family"]]+=1
+                  pairs[(f["life"]["terminal"]=="censored",g["life"]["terminal"]=="censored")]+=1
+              assert dict(families)=={"depletion":31,"stable":35,"pulse":30}
+              assert dict(pairs)=={(True,True):25,(True,False):5,(False,True):13,(False,False):53}
+          receipt={"schema":"i3-b1-evidence-archive/v1",
+                   "status":"ORIGINAL_192_OF_192_VERIFIED_NO_REEXECUTION",
+                   "source_commit":os.environ["EXECUTION_SHA"],
+                   "source_fingerprint":os.environ["ORIGINAL_FINGERPRINT"],
+                   "plan_sha256":os.environ["PLAN_SHA"],
+                   "original_artifact_id":13725454291,"actions_run_id":42735037051,
+                   "zip_sha256":os.environ["ZIP_SHA256"],
+                   "manifest_sha256":os.environ["MANIFEST_SHA256"],
+                   "originals_verified":192,"matched_pairs":96,
+                   "both_survive":25,"fixed_only":5,"gate_only":13,"neither":53,
+                   "independence_witnessed":False,"confirmatory_go":False}
+          (root/"VERIFICATION.json").write_text(json.dumps(receipt,sort_keys=True,indent=2)+"\n")
+          print(json.dumps(receipt,sort_keys=True))
+          PY
+      - name: Permanently preserve exact original ZIP on separate evidence branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Individual Zero scientific custody"
+          git config user.email "334698467+josselin-orta-lab@users.noreply.github.com"
+          git switch --create "$ARCHIVE_BRANCH"
+          mkdir -p "$EVIDENCE_DIR"
+          cp "$RUNNER_TEMP/b1-evidence/original.zip" "$EVIDENCE_DIR/b1-96-pairs-originals.zip"
+          cp "$RUNNER_TEMP/b1-evidence/VERIFICATION.json" "$EVIDENCE_DIR/VERIFICATION.json"
+          printf "%s  %s\n" "$ZIP_SHA256" "b1-96-pairs-originals.zip" > "$EVIDENCE_DIR/SHA256SUMS"
+          git add "$EVIDENCE_DIR"
+          git diff --cached --check
+          git diff --cached --stat
+          git commit -m "custody(i3): permanently preserve exactly 192 sealed B1 original lives"
+          git push origin "HEAD:refs/heads/$ARCHIVE_BRANCH"
+          echo "B1_ORIGINAL_EVIDENCE_BRANCH=$ARCHIVE_BRANCH"

@@ -1,0 +1,16 @@
+{
+  "schema": "i3-b1-one-shot-permanent-originals-archive-trigger/v1",
+  "status": "FROZEN_ARCHIVAL_INTENT_NO_NEW_LIVES",
+  "original_execution_sha": "713d4621d28ed668bf5f5a37f2d105a38d19fb57",
+  "original_actions_run": 42735037051,
+  "original_actions_artifact": 13725454291,
+  "original_zip_sha256": "2aff70fff077be04042379355cda8c798ed9ec81745413563bc88e4320615361",
+  "original_manifest_sha256": "5a173d1ad2a7ea3980cb27f79fada44d4e9f7855af63d08a21d118acce21da9a",
+  "original_plan_sha256": "37bee5deeb75e7e4ab481f3019b63c54b9d6f8bdabba6f7bb1de135e62f021dc",
+  "proposed_evidence_ref": "evidence/i3-b1-96pair-development-20261110-originals",
+  "confirmed_independence": false,
+  "scientific_promotion": false,
+  "source_world_execution_allowed": false,
+  "additional_cohort_allowed": false,
+  "trigger_policy": "one main-branch push; no workflow rerun; fail if evidence ref exists"
+}
