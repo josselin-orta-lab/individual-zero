@@ -22,6 +22,7 @@ on:
       - 'src/i3/docs/studies/stage2-replay-gate-selected-design/THREE_ARM_LAUNCH_ONCE.json'
       - 'src/i3/docs/studies/stage2-replay-gate-selected-design/CONTENT_48_LAUNCH_ONCE.json'
       - 'src/i3/docs/studies/stage2-replay-gate-selected-design/WATER_DIVERGENCE_24_LAUNCH_ONCE.json'
+      - 'src/i3/docs/studies/stage2-replay-gate-selected-design/REALSTATE_FORK_24_LAUNCH_ONCE.json'
 
 permissions:
   contents: read
@@ -1544,3 +1545,133 @@ jobs:
           path: ${{ runner.temp }}/i3-realstate-content-fork.json
           retention-days: 30
           if-no-files-found: warn
+
+  stage2-realstate-fork-24-exploratory-once:
+    # NEW 24 matched F0 units; 48 originals. One trusted main push only.
+    # Claim source before birth and preserve complete/partial originals.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.run_attempt == 1
+    name: I3 realstate first-content-fork 24-pair original-only DEVELOPMENT once
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    permissions:
+      contents: write
+    concurrency:
+      group: i3-realstate-fork-24-scientific-source-one-shot
+      cancel-in-progress: false
+    env:
+      PYTHONPATH: src
+      SOURCE_SHA: ${{ github.sha }}
+      CLAIM_REF: custody/i3-realstate-fork-24-development-20261110-claimed
+      EVIDENCE_REF: evidence/i3-realstate-fork-24-development-20261110-originals
+      I3_REALSTATE_FORK_CLAIM_BRANCH: custody/i3-realstate-fork-24-development-20261110-claimed
+      ARCHIVE_SOURCE: /tmp/i3-realstate-fork-24-originals
+      EVIDENCE_DIR: archive/i3/stage2-realstate-fork-development-2026-11-10
+    steps:
+      - name: Checkout exact merged trusted main source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: PRE-BIRTH source/schedule/guards and no prior claim
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          test -z "$(git status --porcelain)"
+          if git ls-remote --heads origin "$CLAIM_REF" | grep -q .; then
+            echo "24-pair source already consumed: NO_RETRY"
+            exit 3
+          fi
+          if git ls-remote --heads origin "$EVIDENCE_REF" | grep -q .; then
+            echo "24-pair originals already published: NO_RETRY"
+            exit 4
+          fi
+          python -m unittest discover -s tests/i3 -p 'test_stage2_realstate_fork_24_development.py' -v
+          python - <<'PY'
+          import json,os
+          from i3.lab import stage2_realstate_fork_24_development as D
+          p=D.plan()
+          rows=D.cases()
+          assert len(rows)==48 and D.PAIRS==24
+          assert [rows[i]["index"] for i in range(0,48,2)]==list(range(540000,540024))
+          assert {r["cohort"] for r in rows}=={"development"}
+          assert {r["policy"] for r in rows}==set(D.POLICIES)
+          assert p["independent_iid_ecology_attested"] is False
+          assert p["scientific_registration"] is False
+          assert p["scientific_go"] is False
+          print("REALSTATE_FORK_24_PRE_BIRTH_FROZEN source="+os.environ["SOURCE_SHA"]+
+                " source_fingerprint="+D.SOURCE.source_fingerprint()+
+                " plan_sha="+D._sha(D.PLAN.read_bytes())+
+                " expected_lives=48 confirmatory=NO")
+          PY
+      - name: Irreversibly claim exact realstate fork source and all 24 units BEFORE first birth
+        id: claim
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Individual Zero scientific custody"
+          git config user.email "334698467+josselin-orta-lab@users.noreply.github.com"
+          git switch --create "$CLAIM_REF" "$SOURCE_SHA"
+          git commit --allow-empty -m "custody(i3): consume realstate-fork-24 source $SOURCE_SHA run $GITHUB_RUN_ID NO_RETRY"
+          git push origin "HEAD:refs/heads/$CLAIM_REF"
+          git checkout --detach "$SOURCE_SHA"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          test -z "$(git status --porcelain)"
+          echo "REALSTATE_FORK_24_SOURCE_EXHAUSTED_BEFORE_BIRTH"
+      - name: Execute 48 original lives once, G then verified R, no replacement
+        id: births
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_realstate_fork_24_development execute "$ARCHIVE_SOURCE" \
+            > "$RUNNER_TEMP/i3-realstate-fork-24-console.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          r=json.loads((Path(os.environ["ARCHIVE_SOURCE"])/"EXECUTION_REPORT.json").read_text())
+          assert r["status"]=="COMPLETE_EXPLORATORY_DEVELOPMENT_ONLY"
+          assert r["planned"]==r["generated"]==r["reduced"]==48
+          assert r["phase_G"]=="GENERATED" and r["phase_R"]=="COMPLETE"
+          assert r["scientific_verdict"]=="NOT_ISSUED"
+          assert r["analysis"]["scientific_verdict"]=="NOT_ISSUED"
+          assert r["analysis"]["independent_iid_ecology_attested"] is False
+          assert r["analysis"]["scientific_go"] is False
+          print("REALSTATE_FORK_24_G_R_48_OF_48_EXPLORATORY_ONLY")
+          PY
+      - name: Preserve ALL originals and partial failures on separate permanent evidence ref
+        if: always() && steps.claim.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-remote --heads origin "$EVIDENCE_REF" | grep -q .; then
+            echo "Existing realstate original evidence must NEVER be overwritten"
+            exit 4
+          fi
+          git config user.name "Individual Zero scientific custody"
+          git config user.email "334698467+josselin-orta-lab@users.noreply.github.com"
+          git switch --create "$EVIDENCE_REF" "$SOURCE_SHA"
+          mkdir -p "$EVIDENCE_DIR"
+          if [ -d "$ARCHIVE_SOURCE" ]; then
+            cp -a "$ARCHIVE_SOURCE"/. "$EVIDENCE_DIR"/
+          fi
+          if [ -f "$RUNNER_TEMP/i3-realstate-fork-24-console.json" ]; then
+            cp "$RUNNER_TEMP/i3-realstate-fork-24-console.json" "$EVIDENCE_DIR/CONSOLE_REPORT.json"
+          fi
+          if [ ! -e "$EVIDENCE_DIR/EXECUTION_REPORT.json" ]; then
+            printf '{"status":"RUNNER_EXCEPTION_PRESERVED","no_retry":true,"scientific_verdict":"NOT_ISSUED"}\n' > "$EVIDENCE_DIR/EXECUTION_FAILURE.json"
+          fi
+          git add "$EVIDENCE_DIR"
+          git diff --cached --check
+          git diff --cached --stat
+          git commit -m "custody(i3): retain all realstate-fork-24 original lives, source $SOURCE_SHA, failures if any"
+          git push origin "HEAD:refs/heads/$EVIDENCE_REF"
+          echo "REALSTATE_FORK_24_ORIGINAL_EVIDENCE_STORED_ON=$EVIDENCE_REF"
+
+
