@@ -68,7 +68,7 @@ class PaidDistressShadowEngineeringTests(unittest.TestCase):
 
     def test_action_reservation_must_survive_paid_head(self):
         mind=NEG.synthetic_personal_mind(3)
-        initial=(2.12,60.,60.,80.,60.)
+        initial=(2.10,60.,60.,80.,60.)
         budget=CognitiveBudget(initial,BodyLaws())
         spy=ENG.PaidDistressWitness("random",930043)
         spy.after_choice_before_world(mind,{"body":initial},budget,
