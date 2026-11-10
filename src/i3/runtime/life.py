@@ -35,6 +35,7 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
              observer_full_competition: bool = False,
              observer_replay_water: bool = False,
              observer_realstate_content_fork: bool = False,
+             observer_next_decision_replay: bool = False,
              decision_policy: str = "reference",
              admission=None) -> dict:
     started = time.perf_counter()
@@ -79,6 +80,14 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
         raise TypeError("observer_replay_water must be bool")
     if type(observer_realstate_content_fork) is not bool:
         raise TypeError("observer_realstate_content_fork must be bool")
+    if type(observer_next_decision_replay) is not bool:
+        raise TypeError("observer_next_decision_replay must be bool")
+    if observer_next_decision_replay and (
+            decision_policy!="p13_replay_gate_random_content_v1"
+            or learning_mode!="normal" or effect_readout!="full"
+            or score_addend_mode!="normal" or observer_replay_water
+            or observer_realstate_content_fork):
+        raise PermissionError("next-decision replay observer requires isolated random-content GATE")
     if observer_realstate_content_fork and (
             decision_policy != "p13_replay_gate_random_content_v1"
             or learning_mode != "normal"
@@ -328,6 +337,11 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
         from i3.runtime.realstate_content_fork_observer import (
             RealStateContentForkObserver)
         realstate_fork_observer = RealStateContentForkObserver(mind)
+    next_decision_observer = None
+    if observer_next_decision_replay:
+        from i3.runtime.next_decision_replay_observer import (
+            NextDecisionReplayObserver)
+        next_decision_observer = NextDecisionReplayObserver(mind)
     head = sha256(json.dumps([genome_digest(genome), spec.name, life_seed, horizon],
                              separators=(",", ":")).encode()).hexdigest()
     trace = []
@@ -350,7 +364,11 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
         t0 = time.perf_counter()
         allowance = CognitiveBudget(world.body, world.laws)
         capture = world.capture()
+        if next_decision_observer is not None:
+            next_decision_observer.before_decision(capture,world.laws)
         action, param, work, info = mind.decide(capture, allowance)
+        if next_decision_observer is not None:
+            next_decision_observer.after_decision(action,param,work,info)
         if competition_trace is not None:
             from i3.runtime.competition_observer import capture_competition
             competition_trace.append(capture_competition(
@@ -373,6 +391,8 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
         if work != allowance.work:
             raise ValueError("declared decision bill does not match consumed allowance")
         result = world.step(action, param, work)
+        if next_decision_observer is not None:
+            next_decision_observer.after_outcome(result)
         before_learning = result["body"]
         learning = CognitiveBudget(before_learning, world.laws)
         replay_limit = None
@@ -409,13 +429,15 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
                     result, replay_limit=replay_limit,
                     replay_retention=True,
                     replay_observer=replay_water_observer.replay)
-            elif realstate_fork_observer is not None:
-                # Explicit opt-in only. Legacy specialized Minds do not
-                # accept replay_observer and must retain their old call ABI.
+            elif realstate_fork_observer is not None or next_decision_observer is not None:
+                # Explicit opt-in only. Legacy Minds keep the old call ABI.
+                callback=(realstate_fork_observer.replay
+                          if realstate_fork_observer is not None
+                          else next_decision_observer.replay)
                 replays = target.learn_from_outcome(
                     result, replay_limit=replay_limit,
                     replay_retention=True,
-                    replay_observer=realstate_fork_observer.replay)
+                    replay_observer=callback)
             else:
                 replays = target.learn_from_outcome(
                     result, replay_limit=replay_limit,
@@ -426,6 +448,8 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
                 mind.values = preserved
             if replays != replay_limit:
                 raise RuntimeError("executed replay count differs from prepaid count")
+            if next_decision_observer is not None:
+                next_decision_observer.after_learning()
             learning_updates += 1
             replays_done += replays
         else:
@@ -747,6 +771,9 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
     if realstate_fork_observer is not None:
         out["observer_realstate_content_fork"] = (
             realstate_fork_observer.report())
+    if next_decision_observer is not None:
+        out["observer_next_decision_replay"] = (
+            next_decision_observer.report())
     if competition_trace is not None:
         out["observer_full_competition"] = {
             "schema": "i3-p5e-full-paid-competition/v1",
