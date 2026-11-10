@@ -1,0 +1,14 @@
+{
+  "claim_branch": "custody/i3-water-divergence-24-20261110-claimed",
+  "confirmatory_science_authorized": false,
+  "evidence_branch": "evidence/i3-water-divergence-24-20261110-originals",
+  "lives": 48,
+  "no_retry": true,
+  "pairs": 24,
+  "plan_sha256": "4b1b62047634be0fd6fe0898b81b7a7ec52274bd7acd46971a28680c44aed815",
+  "schema": "i3-stage2-1-water-divergence-24-development-gr/v1/claim",
+  "source_fingerprint": "34d3eb7e55274d4f281c61086c5d6abdb028932e12ce9952852307d0f98d480f",
+  "source_sha": "2117ad76e5274d8d67b78a20200843af846febe4",
+  "status": "CONSUMED_BEFORE_FIRST_BIRTH",
+  "witness_sha256": "ddf66df33a2008d23939d595c2824624dbcabeb6404a465726efdb9e97c6acc7"
+}
