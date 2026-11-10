@@ -1,5 +1,10 @@
 # I3: current research and engineering status
 
+## Stage 2.1 three-arm funded engineering completed (10 November 2026)
+
+**144 real technical lives, 72 per Python version, 24 unused PUBLIC-synthetic F0 matched world/genome/life units, FIXED/GATE/paid-RANDOM.** [Exact source-bound G/R witness](studies/stage2-replay-gate-selected-design/THREE_ARM_ENGINEERING_WITNESS_2026-11-10.md): Actions #42779253162, PR #1251 merged as `6000ff97a974ba9fa18c062c56b1b0f18f50f2f6`, G/R **72/72 + 72/72 PASS**, zero failures across 22 structural invariant categories. Physical RANDOM nominal/eligible/paid replay counts were verified for funding, not assumed equal to GATE. Original technical lives were temporary and never disclosed for survival inference. This is **engineering only**, not scientific GO. Next: prospective exact-source three-policy matched DEVELOPMENT on new units, with preserved full original evidence, standalone no-retry claim and source authorization; iid, non-inferiority and I3 promotion remain blocked.
+
+
 ## B1 original evidence permanently archived and independently recounted (10 November 2026)
 
 The already executed **192/192 B1 DEVELOPMENT original lives** are now preserved on independent GitHub evidence ref `evidence/i3-b1-96pair-development-20261110-originals`, exact commit `50380d16b0b6e7ac1e91702060be83784ba85cc7`, with unchanged ZIP SHA-256 `2aff70fff077be04042379355cda8c798ed9ec81745413563bc88e4320615361`, source/plan/manifest pins and original verification receipt (Actions run [#42775154043](https://github.com/josselin-orta-lab/individual-zero/actions/runs/42775154043), archival job PASS). See [archival plan](studies/stage2-replay-gate-selected-design/B1_ORIGINAL_ARCHIVE_CUSTODY.md) and [finite post-hoc survival-cost decomposition](studies/stage2-replay-gate-selected-design/B1_POSTHOC_SURVIVAL_COST_DECOMPOSITION_2026-11-10.md). The GitHub Actions 90-day artifact is no longer the only copy; the evidence branch must remain protected from deletion. All B1 scientific source permissions remain **spent, NO_RETRY**.
