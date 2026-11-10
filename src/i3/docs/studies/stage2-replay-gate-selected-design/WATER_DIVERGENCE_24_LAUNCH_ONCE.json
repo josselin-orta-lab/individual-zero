@@ -1,0 +1,25 @@
+{
+  "schema": "i3-water-replay-divergence-24-development-first-exposure/v1",
+  "status": "PROSPECTIVE_ONE_SHOT_FROZEN_BEFORE_FIRST_WORLD",
+  "source": "EXACT_PR_MERGED_TRUSTED_MAIN_SHA",
+  "protocol": "I3_FIRST_REPLAY_WATER_DIVERGENCE_24_DEVELOPMENT_20261110",
+  "cohort": "development",
+  "unit_index_range": [
+    510000,
+    510023
+  ],
+  "matched_pairs": 24,
+  "original_lives": 48,
+  "life_horizon": 400,
+  "witness_sha256": "ddf66df33a2008d23939d595c2824624dbcabeb6404a465726efdb9e97c6acc7",
+  "claim_ref": "custody/i3-water-divergence-24-20261110-claimed",
+  "evidence_ref": "evidence/i3-water-divergence-24-20261110-originals",
+  "claim_before_World": true,
+  "no_retry": true,
+  "first_divergence_primary": "first different chosen memory identities at same pre-replay state and paid count",
+  "independent_ecology_sampling_attested": false,
+  "confirmatory_science": false,
+  "owner_scope": "delegated exploratory DEVELOPMENT",
+  "scientific_go": false,
+  "stage2_2": false
+}
