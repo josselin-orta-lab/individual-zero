@@ -413,7 +413,7 @@ def execute(destination):
         "pairs":PAIRS,"lives":2*PAIRS,"no_retry":True,
         "scientific_go":False}
     (root/"SOURCE_LOCK.json").write_text(
-        json.dumps(lock,sort_keys=True,indent=2)+"\\n")
+        json.dumps(lock,sort_keys=True,indent=2)+"\n")
     g=TP.generate(scheduled,_run_case(scheduled,fingerprint),root/"originals")
     report={
         "schema":SCHEMA,"status":"GENERATION_INCOMPLETE_NO_RETRY",
@@ -436,9 +436,9 @@ def execute(destination):
             report["analysis"]=analyze(scheduled,r["rows"])
             report["status"]="COMPLETE_EXPLORATORY_DEVELOPMENT_ONLY"
             (root/"REDUCED_ROWS.json").write_text(
-                json.dumps(r["rows"],sort_keys=True,indent=2)+"\\n")
+                json.dumps(r["rows"],sort_keys=True,indent=2)+"\n")
     (root/"EXECUTION_REPORT.json").write_text(
-        json.dumps(report,sort_keys=True,indent=2)+"\\n")
+        json.dumps(report,sort_keys=True,indent=2)+"\n")
     return report
 
 
