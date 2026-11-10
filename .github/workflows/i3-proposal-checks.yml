@@ -829,3 +829,69 @@ jobs:
           path: ${{ runner.temp }}/i3-three-arm-original-reanalysis.json
           if-no-files-found: error
           retention-days: 30
+
+
+  stage2-three-arm-original-audit:
+    # Re-read the ORIGINAL 192 gzip histories on immutable evidence SHA.
+    # This is a read-only post-archive verification, never World execution.
+    if: startsWith(github.head_ref, 'research/i3-three-arm-original-audit-')
+    name: I3 read-only 192/192 source-pinned original audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      PYTHONPATH: src
+      EVIDENCE_SOURCE: aaff20234b8a4f9d11595d6eb852371d0ce00f97
+    steps:
+      - name: Checkout exact proposed audit script, not a study executor
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Checkout immutable original-only archive as reference data
+        uses: actions/checkout@v4
+        with:
+          repository: josselin-orta-lab/individual-zero
+          ref: aaff20234b8a4f9d11595d6eb852371d0ce00f97
+          path: evidence
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup read-only Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test audit failure modes without opening any World
+        run: python -m unittest discover -s tests/i3 -p 'test_stage2_three_arm_original_audit.py' -v
+      - name: Read and verify every ORIGINAL gzip and independently recount
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_three_arm_original_audit \
+            evidence/archive/i3/stage2-three-arm-development-2026-11-10 \
+            > "$RUNNER_TEMP/THREE_ARM_READ_ONLY_AUDIT.json"
+          python - "$RUNNER_TEMP/THREE_ARM_READ_ONLY_AUDIT.json" <<'PY'
+          import json,sys
+          from pathlib import Path
+          r=json.loads(Path(sys.argv[1]).read_text())
+          assert r["status"]=="READ_ONLY_ORIGINAL_REANALYSIS_PASS"
+          assert r["originals_compressed_verified"]==192
+          assert r["originals_uncompressed_verified"]==192
+          assert r["matched_triplets"]==64
+          assert r["scientific_go"] is False
+          assert r["iid_or_mechanism_identification_claimed"] is False
+          assert r["no_world_or_life_executed"] is True
+          assert r["gate_minus_random"]["target_only_survives"]==4
+          assert r["gate_minus_random"]["comparator_only_survives"]==4
+          assert r["gate_minus_random"]["paired_risk_difference"]==0
+          print(json.dumps(r,sort_keys=True))
+          PY
+      - name: Retain aggregate read-only attestation, never original copies
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-three-arm-post-archive-original-read-only-check
+          path: ${{ runner.temp }}/THREE_ARM_READ_ONLY_AUDIT.json
+          retention-days: 90
+          if-no-files-found: warn
