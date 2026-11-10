@@ -1,0 +1,23 @@
+{
+  "schema": "i3-realstate-fork-24-once-marker/v1",
+  "status": "FROZEN_PROSPECTIVE_MAIN_ONLY",
+  "protocol": "I3_REALSTATE_FIRST_REPLAY_CONTENT_FORK_24_DEVELOPMENT_20261110",
+  "index_range": [
+    540000,
+    540023
+  ],
+  "matched_units": 24,
+  "planned_original_lives": 48,
+  "horizon": 400,
+  "witness_sha256": "669af6b56e4dd055bad08d8c38f58de90d8e51a33a7cb8d6a861e078b1df21dd",
+  "source": "exact merged trusted main SHA",
+  "claim_before_first_World": true,
+  "claim_ref": "custody/i3-realstate-fork-24-development-20261110-claimed",
+  "evidence_ref": "evidence/i3-realstate-fork-24-development-20261110-originals",
+  "no_retry": true,
+  "scientific_cohort": "development",
+  "iid_attestation": false,
+  "independent_confirmatory_signoff": false,
+  "scientific_go": false,
+  "stage2_2": false
+}
