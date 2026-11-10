@@ -1,4 +1,5 @@
 """Engineering-only live first-person scoring, source and decision isolation."""
+import json
 import unittest
 from unittest.mock import patch
 
@@ -34,6 +35,7 @@ class LivedShadowEngineeringTests(unittest.TestCase):
 
     def test_two_matched_actual_engineering_lives_are_neutral(self):
         report = ENG.rehearse()
+        print("I3_LIVED_SHADOW_FIRST_PERSON_ENGINEERING_RESULT="+json.dumps(report,sort_keys=True))
         self.assertEqual(report["engineering_matched_on_off_pairs"], 2)
         self.assertEqual(report["physical_and_decision_parity_pairs"], 2)
         self.assertEqual(report["scientific_lives"], 0)
