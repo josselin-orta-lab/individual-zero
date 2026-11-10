@@ -102,8 +102,24 @@ class ReplayWaterObserver:
         # exact state equality without exposing an oracle or changing it.
         if self._mind is None:
             raise RuntimeError("original Mind reference missing")
+        # Replay-relevant learned state also includes the learned effects
+        # used by drift/projection, and personal first-person belief state.
+        # Never compare values+buffer alone as if the whole learning state
+        # were identical when experienced outcomes may have diverged.
+        m = self._mind
         self._pending["pre_replay_state_sha256"] = _digest({
-            "values": self._mind.values, "buffer": list(self._mind.buffer)})
+            "values": m.values,
+            "buffer": list(m.buffer),
+            "effects": [[list(k), v] for k, v in
+                        sorted(m.effects.stats.items(),
+                               key=lambda item: repr(item[0]))],
+            "hist": [[list(p), v] for p,v in sorted(m.hist.items())],
+            "map": [[list(p),v] for p,v in sorted(m.map.items())],
+            "position": list(m.pos),
+            "inventory_beliefs": sorted(m.acc.items()),
+            "rng": repr(m.rng.getstate()),
+            "budget_rng": repr(m._budget_rng.getstate()),
+        })
 
     def commit(self, *, mind, world, result, replay_limit, post_audit):
         if self._pending is None:
