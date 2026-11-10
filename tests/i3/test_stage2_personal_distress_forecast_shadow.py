@@ -147,10 +147,26 @@ class ShadowPersonalDistressTests(unittest.TestCase):
                            random_head=LAB.PersonalDistressHead(other),
                            before_body=LAB._heldout_before(7))
         self.assertEqual(monitor.report()["frozen_predictions"],0)
-        self.r.fit_replayed_personal_memory(self.buffer[6])
+        self.r.apply(self.buffer,(6,))
         with self.assertRaises(PermissionError):
             monitor.freeze(identity="unequal-count",priority_head=self.p,
                            random_head=self.r,before_body=LAB._heldout_before(7))
+
+    def test_future_outcome_leakage_cannot_enter_old_personal_memory_set(self):
+        future=(1.0,LAB._heldout_before(7),LAB._heldout_after(7),False)
+        forged=self.buffer+(future,)
+        with self.assertRaises(PermissionError):
+            self.p.apply(forged,(len(self.buffer),))
+        replaced=list(self.buffer)
+        replaced[0]=future
+        with self.assertRaises(PermissionError):
+            self.p.apply(tuple(replaced),(0,))
+        self.p.apply(self.buffer,(0,1,2))
+        self.assertEqual(self.p.training_updates,3)
+        self.assertEqual(self.p.trained_indices,(0,1,2))
+        with self.assertRaises(ValueError):
+            self.p.apply(self.buffer,(2,))
+        self.assertEqual(NEG._mind_seal(self.source),self.initial)
 
     def test_wrong_indices_malformed_bodies_and_tampered_seal_fail(self):
         for indices in ((-1,), (99,), (True,), (0,0),
