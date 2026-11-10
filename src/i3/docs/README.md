@@ -8,6 +8,8 @@ operational surface below.
 
 ## Current
 
+- **Permanent B1 original evidence now on an independent [Git evidence branch](https://github.com/josselin-orta-lab/individual-zero/tree/evidence/i3-b1-96pair-development-20261110-originals/archive/i3/stage2-b1-development-2026-11-10)**, SHA-pinned and verified 192/192 in [Actions #42775154043](https://github.com/josselin-orta-lab/individual-zero/actions/runs/42775154043). See [original-only post-hoc survival/cognition decomposition](studies/stage2-replay-gate-selected-design/B1_POSTHOC_SURVIVAL_COST_DECOMPOSITION_2026-11-10.md). No repeat births, confirmatory claim or engine activation.
+
 - **New completed B1 DEVELOPMENT 96-pair cohort (10 November):** [192/192 original G/R results and limitations](studies/stage2-replay-gate-selected-design/B1_EXPLORATORY_DEVELOPMENT_RESULTS_2026-11-10.md) with 38 GATE versus 30 FIXED survivors, conditional *unattested* statistics and full adverse cost/ecology reporting. Original artifact expires February 2027; immediate priority is permanent archival. Exhausted runner is now closed.
 
 - **Reference:** P1.3 on funded v2.
