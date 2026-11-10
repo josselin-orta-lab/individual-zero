@@ -8,6 +8,9 @@ operational surface below.
 
 ## Current
 
+- **New 48-pair replay memory-*content* developmental finding:** [96 full lives, original custody and complete F0 observations](studies/stage2-replay-gate-selected-design/CONTENT_48_EXPLORATORY_RESULTS_2026-11-10.md). TD-prioritized GATE survived 17/48 vs genuinely randomized memory identities 23/48, with 1 vs 7 exclusive survivors; priority−random −12.5pp finite panel. Full original evidence archived and one-shot source closed; not an externally confirmed general survival effect. Next read-only original SHA audit and independent mechanism isolation design [#1258](https://github.com/josselin-orta-lab/individual-zero/issues/1258).
+
+
 - **New replay-content mechanism result:** [48 matched synthetic Mind snapshots](studies/stage2-replay-gate-selected-design/CONTENT_SELECTION_LOCAL_RESULTS_2026-11-10.md) comparing 3 real P1.3 TD replay updates from prioritized versus genuinely random *memory positions*. Selection differs 48/48, final values 47/48, at identical model costs and no World. No biological viability evidence. Next mechanism-identification design: [issue #1258](https://github.com/josselin-orta-lab/individual-zero/issues/1258).
 
 
