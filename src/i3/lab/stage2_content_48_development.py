@@ -283,49 +283,15 @@ def _claim_trusted_main():
 
 
 def execute(destination):
-    sha=_claim_trusted_main()
-    root=Path(destination).resolve()
-    if root.exists() and any(root.iterdir()):
-        raise PermissionError("original destination already occupied, no retry")
-    root.mkdir(parents=True,exist_ok=True)
-    scheduled=cases()
-    fingerprint=SOURCE.source_fingerprint()
-    lock={
-        "schema":SCHEMA+"/claim","status":"CONSUMED_BEFORE_FIRST_BIRTH",
-        "source_sha":sha,"source_fingerprint":fingerprint,
-        "plan_sha256":_sha(PLAN.read_bytes()),"witness_sha256":WITNESS_SHA,
-        "claim_branch":CLAIM_BRANCH,"evidence_branch":EVIDENCE_BRANCH,
-        "pairs":PAIRS,"lives":2*PAIRS,"no_retry":True,
-        "confirmatory_science_authorized":False}
-    (root/"SOURCE_LOCK.json").write_text(
-        json.dumps(lock,sort_keys=True,indent=2)+"\n")
-    g=TP.generate(scheduled,_run_case(scheduled,fingerprint),root/"originals")
-    report={
-        "schema":SCHEMA,
-        "status":"GENERATION_INCOMPLETE_NO_RETRY",
-        "planned":2*PAIRS,"generated":g["generated"],"reduced":0,
-        "phase_G":g["status"],"phase_R":None,
-        "source_sha":sha,"source_fingerprint":fingerprint,
-        "plan_sha256":lock["plan_sha256"],
-        "scientific_verdict":"NOT_ISSUED","no_retry":True}
-    if g["status"]!="GENERATED":
-        report["failure"]=g["failure"]
-    else:
-        r=TP.reduce(root/"originals",
-                    lambda case,life:_reduce(case,life,fingerprint))
-        report["phase_R"]=r["status"]
-        if r["status"]!="COMPLETE":
-            report["status"]="REDUCTION_DEFECT_PENDING_REPAIR"
-            report["failure"]=r.get("failure")
-        else:
-            report["reduced"]=len(r["rows"])
-            report["analysis"]=analyze(scheduled,r["rows"])
-            report["status"]="COMPLETE_EXPLORATORY_DEVELOPMENT_ONLY"
-            (root/"REDUCED_ROWS.json").write_text(
-                json.dumps(r["rows"],sort_keys=True,indent=2)+"\n")
-    (root/"EXECUTION_REPORT.json").write_text(
-        json.dumps(report,sort_keys=True,indent=2)+"\n")
-    return report
+    """Historical 48-pair CONTENT DEVELOPMENT spent, closed permanently.
+
+    Source: d7ea5a3be79fc7eb380aa6ce751df42474ab5ed3.
+    Executed once in Actions 42794047107; originals at evidence branch
+    commit 459d0d9f90ea8edae95881d4e3110b91a24f85f5.
+    """
+    raise PermissionError(
+        "CONTENT 48-pair DEVELOPMENT 480000..480047 was executed once and "
+        "archived; source CLOSED_NO_RETRY. Never generate again.")
 
 
 def main(argv=None):
