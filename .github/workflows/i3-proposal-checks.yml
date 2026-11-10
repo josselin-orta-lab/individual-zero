@@ -1157,3 +1157,68 @@ jobs:
           git commit -m "custody(i3): retain all content-48 original lives, source $SOURCE_SHA, failures if any"
           git push origin "HEAD:refs/heads/$EVIDENCE_REF"
           echo "CONTENT_48_ORIGINAL_EVIDENCE_STORED_ON=$EVIDENCE_REF"
+
+
+  stage2-content-48-post-archive-audit:
+    # Original-only read, exact evidence commit. No World and no new life.
+    if: startsWith(github.head_ref, 'research/i3-content-48-results-original-')
+    name: I3 content 96 original gzip read-only independent audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      PYTHONPATH: src
+      ORIGINAL_EVIDENCE_SHA: 459d0d9f90ea8edae95881d4e3110b91a24f85f5
+    steps:
+      - name: Checkout exact proposed read-only checker
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Checkout original unchanged evidence commit, never regeneration
+        uses: actions/checkout@v4
+        with:
+          repository: josselin-orta-lab/individual-zero
+          ref: 459d0d9f90ea8edae95881d4e3110b91a24f85f5
+          path: source-originals
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test fail-closed audit logic without a World
+        run: python -m unittest discover -s tests/i3 -p 'test_stage2_content_48_original_audit.py' -v
+      - name: Verify all 96 original compressed/uncompressed SHA and recompute all outcomes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_content_48_original_audit \
+            source-originals/archive/i3/stage2-content-development-2026-11-10 \
+            > "$RUNNER_TEMP/i3-content-48-original-audit.json"
+          python - "$RUNNER_TEMP/i3-content-48-original-audit.json" <<'PY'
+          import json,sys
+          from pathlib import Path
+          x=json.loads(Path(sys.argv[1]).read_text())
+          assert x["status"]=="READ_ONLY_ALL_ORIGINALS_AND_REDUCTIONS_PASS"
+          assert x["packed_sha_verified"]==x["unpacked_sha_verified"]==96
+          assert x["complete_matched_pairs"]==48
+          assert x["primary"]["both_survive"]==16
+          assert x["primary"]["priority_only_survives"]==1
+          assert x["primary"]["random_content_only_survives"]==7
+          assert x["primary"]["neither_survives"]==24
+          assert x["primary"]["paired_risk_difference_priority_minus_random"]==-0.125
+          assert x["no_new_World_or_life"] is True
+          assert x["iid_attested"] is False and x["scientific_go"] is False
+          print(json.dumps(x,sort_keys=True))
+          PY
+      - name: Retain read-only aggregate audit without duplicating original lives
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-content-48-post-archive-original-audit
+          path: ${{ runner.temp }}/i3-content-48-original-audit.json
+          retention-days: 90
+          if-no-files-found: warn
