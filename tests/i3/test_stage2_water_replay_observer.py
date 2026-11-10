@@ -78,6 +78,11 @@ class WaterReplayObserverTests(unittest.TestCase):
 
     def test_first_divergence_distinguishes_channels_and_shorter_life(self):
         row={"step":1,"replay_memory_indices":[1,2],
+             "pre_replay_state_sha256":"same_pre_td_state",
+             "predecision_learned_values_sha256":"same_values",
+             "predecision_personal_buffer_sha256":"same_buffer",
+             "postlearning_values_sha256":"same_post_values",
+             "personally_learned_drink_effect":None,
              "personal_water_belief_sha256":"a",
              "decision_option":"boire","action":"boire","param":None,
              "capture_water_before_decision":48}
@@ -89,7 +94,12 @@ class WaterReplayObserverTests(unittest.TestCase):
         x=first_divergences(a,b)
         self.assertEqual(x["first_differences"],{
             "replay_memory_indices":2,"personal_water_belief":2,
-            "decision":2,"body_water":2})
+            "decision":2,"body_water":2,
+            "pre_replay_learned_state":None,
+            "predecision_learned_values":None,
+            "predecision_memory_buffer":None,
+            "postlearning_values":None,
+            "learned_drink_effect":None})
         self.assertFalse(x["fixed_count_causal_mediation_claim"])
         short={"schema":SCHEMA,"steps":[row]}
         self.assertEqual(first_divergences(short,b)["common_observed_steps"],1)
