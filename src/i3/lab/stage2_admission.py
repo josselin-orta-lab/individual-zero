@@ -128,3 +128,36 @@ def admit_b1_newworld_development(*, case: dict, spec,
         world_seed=case["world_seed"], spec=spec,
         transport_fingerprint=transport_fingerprint,
     )
+
+
+def admit_three_arm_newworld_engineering(*, case: dict, spec,
+                                          transport_fingerprint: str):
+    """Central guard for new public-synthetic three-arm engineering ONLY.
+
+    This ticket may fund FIXED/GATE/RANDOM technical lives, never scientific
+    selection, validation, reserve, retired development, or a new B1 owner lift.
+    """
+    from . import stage2_survival_b1_sampling as SAMPLE
+    from . import stage2_survival_b1_worldspec_audit as SPECS
+    from . import stage2_three_arm_engineering as THREE
+    from . import stage2_survival_b1_engineering as B1
+    if type(case) is not dict or type(case.get("index")) is not int:
+        raise PermissionError("three-arm engineering requires exact immutable case")
+    if case.get("cohort") != "engineering":
+        raise PermissionError("three-arm scientific and reserve cohorts closed")
+    offset = case["index"] - THREE.START
+    if not 0 <= offset < THREE.PAIRS or case.get("policy") not in THREE.ARMS:
+        raise PermissionError("outside new three-arm PUBLIC engineering allocation")
+    if case != THREE.cases()[3 * offset + THREE.ARMS.index(case["policy"])]:
+        raise PermissionError("three-arm case not in frozen exact allocation")
+    if (type(transport_fingerprint) is not str or
+            transport_fingerprint != B1.source_fingerprint()):
+        raise PermissionError("three-arm source fingerprint mismatch")
+    if not isinstance(spec, RA.WorldSpec):
+        raise PermissionError("three-arm spec invalid")
+    if RA.world_sha256(spec) != RA.world_sha256(
+            SPECS._construct_f0_spec(case["family"], case["world_seed"])):
+        raise PermissionError("three-arm spec is not source-generated exact WorldSpec")
+    return RA.mint(cohort="engineering", family=case["family"],
+                   index=case["index"], world_seed=case["world_seed"],
+                   spec=spec, transport_fingerprint=transport_fingerprint)
