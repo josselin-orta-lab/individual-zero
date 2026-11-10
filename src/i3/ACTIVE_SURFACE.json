@@ -1,10 +1,10 @@
 {
   "schema": "i3-active-surface/v1",
-  "updated": "2026-11-09",
+  "updated": "2026-11-10",
   "reference": "P1.3 funded-v2",
   "current_stage": "2.1 replay gate",
   "canonical_status": "REPLAY_GATE_CAPACITY_SHOWN",
-  "next_scientific_action": "review funded RANDOM-EQUAL-MEAN control, independently assess selected >=8-population gate power/margins, and design a NEW index-scoped exact-transport claim; legacy 80/81 scientific runner permanently closed, no World authorized",
+  "next_scientific_action": "read-only original SHA reanalysis of completed 64-unit FIXED/GATE/paid-RANDOM DEVELOPMENT; independently assess actual replay/cognition parity and ecological replication design before any new World; three-arm 360000-360063 and B1 96 consumed, no scientific GO",
   "governance": {
     "i3_registered": false,
     "stage1": "CLOSED_NEGATIVE_ADR_0018",
@@ -22,7 +22,13 @@
     "other_world_indices_authorized": false,
     "stage2_owner_lift_transport_fingerprint": "dcada9e221f79b9450a4f05fecd20e60ac6595bb306aa871f29e45aefea0b6f1",
     "development_80_81": "CLOSED_COMPLETE_NO_RETRY",
-    "next_scientific_cohort_authorized": false
+    "next_scientific_cohort_authorized": false,
+    "three_arm_development_64": "CLOSED_COMPLETE_NO_RETRY",
+    "three_arm_development_source_sha": "11879c46a78697aa1d3f664f1a17f489a948667d",
+    "three_arm_development_evidence_commit": "aaff20234b8a4f9d11595d6eb852371d0ce00f97",
+    "three_arm_primary_gate_minus_random": "OBSERVED_ZERO_4_VS_4_DISCORDANT_EXPLORATORY_NO_CONFIRMATORY_INFERENCE",
+    "b1_development_96": "CLOSED_COMPLETE_NO_RETRY",
+    "all_new_worlds_currently_authorized": false
   },
   "active_science": [
     "src/i3/modules/p13_replay_gate_mind.py",
@@ -49,7 +55,9 @@
     "src/i3/lab/stage2_random_equal_mean.py",
     "src/i3/lab/stage2_gate_design.py",
     "tests/i3/test_stage2_random_equal_mean.py",
-    "tests/i3/test_stage2_gate_design.py"
+    "tests/i3/test_stage2_gate_design.py",
+    "src/i3/lab/stage2_three_arm_original_reanalysis.py",
+    "tests/i3/test_stage2_three_arm_original_reanalysis.py"
   ],
   "stage1_compatibility_only": [
     "src/i3/archive/stage1/lab/projection_candidate_e_characterization.py",
@@ -91,6 +99,7 @@
     "src/i3/docs/studies/"
   ],
   "rules": [
+    "The new 64-unit FIXED/GATE/RANDOM DEVELOPMENT index scope 360000..360063 was consumed exactly once on source 11879c46 and is CLOSED_NO_RETRY; original evidence lives on an independent SHA-pinned Git branch; no future scientific World authorized by that spent exposure.",
     "The legacy Stage-2.1 80/81 scientific runner and admission are hard-closed after the consumed owner lift; only engineering cohort may be rehearsed. Future science requires a new explicit prospective index-scoped authorization and runner.",
     "The owner's narrow 80/81 opening was consumed once and is CLOSED; no additional science World may open without a newly frozen protocol and separate authorization.",
     "Stage-2 active science must not import Stage-1 lab helpers.",
