@@ -194,3 +194,31 @@ def admit_three_arm_newworld_development(*, case: dict, spec,
     return RA.mint(cohort="development",family=case["family"],
                    index=case["index"],world_seed=case["world_seed"],
                    spec=spec,transport_fingerprint=transport_fingerprint)
+
+
+def admit_replay_content_newworld_engineering(*, case: dict, spec,
+                                               transport_fingerprint: str):
+    """New replay-content pair gate for 12 UNUSED PUBLIC engineering units.
+
+    Separate from every spent DEVELOPMENT, SELECTION, VALIDATION or reserve
+    allocation. Exact seed, policy, source fingerprint and WorldSpec required.
+    """
+    from . import stage2_replay_content_engineering as CONTENT
+    from . import stage2_survival_b1_worldspec_audit as SPECS
+    from . import stage2_survival_b1_engineering as SOURCE
+    if type(case) is not dict or type(case.get("index")) is not int:
+        raise PermissionError("full-life content engineering requires exact case")
+    if case.get("cohort") != "engineering":
+        raise PermissionError("replay-content scientific World is NOT admitted")
+    CONTENT.match_case(case,transport_fingerprint)
+    if (type(transport_fingerprint) is not str or
+            transport_fingerprint != SOURCE.source_fingerprint()):
+        raise PermissionError("unknown replay-content source")
+    if not isinstance(spec,RA.WorldSpec):
+        raise PermissionError("invalid replay-content WorldSpec")
+    expected=SPECS._construct_f0_spec(case["family"],case["world_seed"])
+    if RA.world_sha256(spec)!=RA.world_sha256(expected):
+        raise PermissionError("replay-content WorldSpec not source-generated")
+    return RA.mint(cohort="engineering",family=case["family"],
+                   index=case["index"],world_seed=case["world_seed"],
+                   spec=spec,transport_fingerprint=transport_fingerprint)
