@@ -304,3 +304,28 @@ def admit_water_divergence_newworld_development(*, case: dict, spec,
     return RA.mint(cohort="development",family=case["family"],
                    index=case["index"],world_seed=case["world_seed"],
                    spec=spec,transport_fingerprint=transport_fingerprint)
+
+
+def admit_realstate_content_fork_engineering(*, case: dict, spec,
+                                              transport_fingerprint: str):
+    """Only fixed unused PUBLIC 182..183 observer-neutrality engineering.
+
+    Never an independent scientific source, selection, validation, or reserve.
+    Verify identity, full generated WorldSpec, source and original physics.
+    """
+    from . import stage2_realstate_content_fork_engineering as FORK
+    from . import stage2_survival_b1_worldspec_audit as SPECS
+    from . import stage2_survival_b1_engineering as SOURCE
+    if type(case) is not dict or case.get("cohort") != "engineering":
+        raise PermissionError("only new synthetic engineering allowed")
+    FORK.match_case(case,transport_fingerprint)
+    if not isinstance(spec,RA.WorldSpec):
+        raise PermissionError("invalid WorldSpec for observer test")
+    if transport_fingerprint != SOURCE.source_fingerprint():
+        raise PermissionError("source changed")
+    expected=SPECS._construct_f0_spec(case["family"],case["world_seed"])
+    if RA.world_sha256(spec)!=RA.world_sha256(expected):
+        raise PermissionError("noncanonical engineering WorldSpec")
+    return RA.mint(cohort="engineering",family=case["family"],
+                   index=case["index"],world_seed=case["world_seed"],
+                   spec=spec,transport_fingerprint=transport_fingerprint)

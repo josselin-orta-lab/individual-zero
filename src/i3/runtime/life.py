@@ -34,6 +34,7 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
              observer_resource_acquisition: bool = False,
              observer_full_competition: bool = False,
              observer_replay_water: bool = False,
+             observer_realstate_content_fork: bool = False,
              decision_policy: str = "reference",
              admission=None) -> dict:
     started = time.perf_counter()
@@ -76,6 +77,15 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
         raise TypeError("observer_full_competition must be bool")
     if type(observer_replay_water) is not bool:
         raise TypeError("observer_replay_water must be bool")
+    if type(observer_realstate_content_fork) is not bool:
+        raise TypeError("observer_realstate_content_fork must be bool")
+    if observer_realstate_content_fork and (
+            decision_policy != "p13_replay_gate_random_content_v1"
+            or learning_mode != "normal"
+            or effect_readout != "full"
+            or score_addend_mode != "normal"
+            or observer_replay_water):
+        raise PermissionError("realstate fork requires isolated random-content GATE")
     if observer_replay_water and decision_policy not in (
             "p13_replay_gate_v1", "p13_replay_gate_random_content_v1"):
         raise PermissionError("replay-water observer only on matched GATE content policies")
@@ -313,6 +323,11 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
                 observer_full_competition=observer_full_competition,
                 score_addend_mode=score_addend_mode,
                 **mind_kwargs)
+    realstate_fork_observer = None
+    if observer_realstate_content_fork:
+        from i3.runtime.realstate_content_fork_observer import (
+            RealStateContentForkObserver)
+        realstate_fork_observer = RealStateContentForkObserver(mind)
     head = sha256(json.dumps([genome_digest(genome), spec.name, life_seed, horizon],
                              separators=(",", ":")).encode()).hexdigest()
     trace = []
@@ -389,15 +404,22 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
                 preserved = [v[:] for v in mind.values]
             else:
                 preserved = None
-            if replay_water_observer is None:
-                replays = target.learn_from_outcome(
-                    result, replay_limit=replay_limit,
-                    replay_retention=(learning_mode != "discard_replay"))
-            else:
+            if replay_water_observer is not None:
                 replays = target.learn_from_outcome(
                     result, replay_limit=replay_limit,
                     replay_retention=True,
                     replay_observer=replay_water_observer.replay)
+            elif realstate_fork_observer is not None:
+                # Explicit opt-in only. Legacy specialized Minds do not
+                # accept replay_observer and must retain their old call ABI.
+                replays = target.learn_from_outcome(
+                    result, replay_limit=replay_limit,
+                    replay_retention=True,
+                    replay_observer=realstate_fork_observer.replay)
+            else:
+                replays = target.learn_from_outcome(
+                    result, replay_limit=replay_limit,
+                    replay_retention=(learning_mode != "discard_replay"))
             if learning_mode == "discard_effects":
                 mind.effects = preserved
             elif learning_mode == "discard_values":
@@ -722,6 +744,9 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
         out["observer_resource_acquisition"] = resource_observer.report()
     if replay_water_observer is not None:
         out["observer_replay_water"] = replay_water_observer.report()
+    if realstate_fork_observer is not None:
+        out["observer_realstate_content_fork"] = (
+            realstate_fork_observer.report())
     if competition_trace is not None:
         out["observer_full_competition"] = {
             "schema": "i3-p5e-full-paid-competition/v1",
