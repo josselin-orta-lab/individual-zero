@@ -1547,9 +1547,10 @@ jobs:
           if-no-files-found: warn
 
   stage2-realstate-fork-24-exploratory-once:
-    # NEW 24 matched F0 units; 48 originals. One trusted main push only.
-    # Claim source before birth and preserve complete/partial originals.
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.run_attempt == 1
+    # SOURCE CONSUMED: run 42819947791, claim 92cd0964c49a99b1d00c97a77f5af72cf0b0aada.
+    # Original archive e28211865fd1d1e17173a115e81772702fb8cef1.
+    # Never open a scientific World from this closed source again.
+    if: false
     name: I3 realstate first-content-fork 24-pair original-only DEVELOPMENT once
     runs-on: ubuntu-latest
     timeout-minutes: 24
@@ -1675,3 +1676,73 @@ jobs:
           echo "REALSTATE_FORK_24_ORIGINAL_EVIDENCE_STORED_ON=$EVIDENCE_REF"
 
 
+
+
+  stage2-realstate-fork-24-postarchive-audit:
+    # Independent read of all 48 historical original compressed/uncompressed
+    # payloads. Immutable source SHA only; never instantiate World or Mind.
+    if: startsWith(github.head_ref, 'research/i3-realstate-fork-24-audit-')
+    name: I3 first realstate fork 48 original gzip independent audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Checkout exact proposed read-only audit script
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Checkout immutable original evidence commit without any rerun
+        uses: actions/checkout@v4
+        with:
+          repository: josselin-orta-lab/individual-zero
+          ref: e28211865fd1d1e17173a115e81772702fb8cef1
+          path: source-originals
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Prove archived-original audit fails closed on missing and altered cases
+        run: python -m unittest discover -s tests/i3 -p 'test_stage2_realstate_fork_24_original_audit.py' -v
+      - name: Read and verify all 48 gzip originals and the finite-panel TD fork report
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_realstate_fork_24_original_audit \
+            source-originals/archive/i3/stage2-realstate-fork-development-2026-11-10 \
+            > "$RUNNER_TEMP/i3-realstate-fork-24-independent-original-audit.json"
+          python - "$RUNNER_TEMP/i3-realstate-fork-24-independent-original-audit.json" <<'PY'
+          import json,sys
+          from pathlib import Path
+          r=json.loads(Path(sys.argv[1]).read_text())
+          assert r["status"]=="READ_ONLY_ALL_ORIGINALS_AND_REDUCTIONS_PASS"
+          assert r["packed_sha_verified"]==r["unpacked_sha_verified"]==48
+          assert r["complete_matched_pairs"]==24
+          assert r["primary"]["assigned_pairs"]==24
+          assert r["primary"]["first_fork_captured"]==17
+          assert r["primary"]["first_fork_absent"]==7
+          assert r["primary"]["positive_learned_value_difference"]==17
+          assert r["primary"]["zero_learned_value_difference"]==0
+          assert r["secondary_survival"]["both_survive"]==8
+          assert r["secondary_survival"]["priority_only_survives"]==0
+          assert r["secondary_survival"]["random_content_only_survives"]==2
+          assert r["secondary_survival"]["neither_survives"]==14
+          assert r["no_new_World_or_life"] is True
+          assert r["iid_attested"] is False
+          assert r["scientific_go"] is False
+          print(json.dumps(r,sort_keys=True))
+          PY
+      - name: Retain aggregate-only source-pinned postarchive attestation
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-realstate-fork-24-48-original-audit
+          path: ${{ runner.temp }}/i3-realstate-fork-24-independent-original-audit.json
+          retention-days: 90
+          if-no-files-found: warn
