@@ -20,13 +20,16 @@ on:
     paths:
       - 'src/i3/docs/studies/stage2-replay-gate-selected-design/B1_ARCHIVE_ONCE.json'
       - 'src/i3/docs/studies/stage2-replay-gate-selected-design/THREE_ARM_LAUNCH_ONCE.json'
+      - 'src/i3/docs/studies/stage2-replay-gate-selected-design/CONTENT_48_LAUNCH_ONCE.json'
 
 permissions:
   contents: read
 
 concurrency:
-  group: i3-proposal-checks-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  # Never cancel an irreversible source-claimed scientific main push because
+  # a separate push or PR arrived while its original lives were running.
+  group: i3-proposal-checks-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   software:
@@ -1025,3 +1028,132 @@ jobs:
           path: ${{ runner.temp }}/i3-content-full-life-engineering.json
           retention-days: 30
           if-no-files-found: warn
+
+
+  stage2-content-48-exploratory-once:
+    # 48 wholly NEW G0/world/life units. Only on trusted marker merge to main.
+    # Do not run on PR, re-run Actions, old B1, old three-arm or reserve.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.run_attempt == 1
+    name: I3 content priority-vs-random 48-pair original-only DEVELOPMENT once
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    permissions:
+      contents: write
+    concurrency:
+      group: i3-content-48-scientific-source-one-shot
+      cancel-in-progress: false
+    env:
+      PYTHONPATH: src
+      SOURCE_SHA: ${{ github.sha }}
+      CLAIM_REF: custody/i3-content-48-development-20261110-claimed
+      EVIDENCE_REF: evidence/i3-content-48-development-20261110-originals
+      I3_CONTENT_CLAIM_BRANCH: custody/i3-content-48-development-20261110-claimed
+      ARCHIVE_SOURCE: /tmp/i3-content-48-development-originals
+      EVIDENCE_DIR: archive/i3/stage2-content-development-2026-11-10
+    steps:
+      - name: Checkout exact merged trusted main source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: PRE-BIRTH source/schedule/guards and no prior claim
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          test -z "$(git status --porcelain)"
+          if git ls-remote --heads origin "$CLAIM_REF" | grep -q .; then
+            echo "48-pair source already consumed: NO_RETRY"
+            exit 3
+          fi
+          if git ls-remote --heads origin "$EVIDENCE_REF" | grep -q .; then
+            echo "48-pair originals already published: NO_RETRY"
+            exit 4
+          fi
+          python -m unittest discover -s tests/i3 -p 'test_stage2_content_48_development.py' -v
+          python - <<'PY'
+          import json,os
+          from i3.lab import stage2_content_48_development as D
+          p=D.plan()
+          rows=D.cases()
+          assert len(rows)==96 and D.PAIRS==48
+          assert [rows[i]["index"] for i in range(0,96,2)]==list(range(480000,480048))
+          assert {r["cohort"] for r in rows}=={"development"}
+          assert {r["policy"] for r in rows}==set(D.POLICIES)
+          assert p["entropy_independently_attested"] is False
+          assert p["scientific_registration"] is False
+          assert p["scientific_go"] is False
+          print("CONTENT_48_PRE_BIRTH_FROZEN source="+os.environ["SOURCE_SHA"]+
+                " source_fingerprint="+D.SOURCE.source_fingerprint()+
+                " plan_sha="+D._sha(D.PLAN.read_bytes())+
+                " expected_lives=96 confirmatory=NO")
+          PY
+      - name: Irreversibly claim exact content source and all 48 units BEFORE first birth
+        id: claim
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Individual Zero scientific custody"
+          git config user.email "334698467+josselin-orta-lab@users.noreply.github.com"
+          git switch --create "$CLAIM_REF" "$SOURCE_SHA"
+          git commit --allow-empty -m "custody(i3): consume content-48 source $SOURCE_SHA run $GITHUB_RUN_ID NO_RETRY"
+          git push origin "HEAD:refs/heads/$CLAIM_REF"
+          git checkout --detach "$SOURCE_SHA"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          test -z "$(git status --porcelain)"
+          echo "CONTENT_48_SOURCE_EXHAUSTED_BEFORE_BIRTH"
+      - name: Execute 96 original lives once, G then verified R, no replacement
+        id: births
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_content_48_development execute "$ARCHIVE_SOURCE" \
+            > "$RUNNER_TEMP/i3-content-48-console.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          r=json.loads((Path(os.environ["ARCHIVE_SOURCE"])/"EXECUTION_REPORT.json").read_text())
+          assert r["status"]=="COMPLETE_EXPLORATORY_DEVELOPMENT_ONLY"
+          assert r["planned"]==r["generated"]==r["reduced"]==96
+          assert r["phase_G"]=="GENERATED" and r["phase_R"]=="COMPLETE"
+          assert r["scientific_verdict"]=="NOT_ISSUED"
+          assert r["analysis"]["scientific_verdict"]=="NOT_ISSUED"
+          assert r["analysis"]["independent_iid_ecology_attested"] is False
+          assert r["analysis"]["scientific_go"] is False
+          print("CONTENT_48_G_R_96_OF_96_EXPLORATORY_ONLY")
+          PY
+      - name: Preserve ALL originals and partial failures on separate permanent evidence ref
+        if: always() && steps.claim.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-remote --heads origin "$EVIDENCE_REF" | grep -q .; then
+            echo "Existing content original evidence must NEVER be overwritten"
+            exit 4
+          fi
+          git config user.name "Individual Zero scientific custody"
+          git config user.email "334698467+josselin-orta-lab@users.noreply.github.com"
+          git switch --create "$EVIDENCE_REF" "$SOURCE_SHA"
+          mkdir -p "$EVIDENCE_DIR"
+          if [ -d "$ARCHIVE_SOURCE" ]; then
+            cp -a "$ARCHIVE_SOURCE"/. "$EVIDENCE_DIR"/
+          fi
+          if [ -f "$RUNNER_TEMP/i3-content-48-console.json" ]; then
+            cp "$RUNNER_TEMP/i3-content-48-console.json" "$EVIDENCE_DIR/CONSOLE_REPORT.json"
+          fi
+          if [ ! -e "$EVIDENCE_DIR/EXECUTION_REPORT.json" ]; then
+            printf '{"status":"RUNNER_EXCEPTION_PRESERVED","no_retry":true,"scientific_verdict":"NOT_ISSUED"}\n' > "$EVIDENCE_DIR/EXECUTION_FAILURE.json"
+          fi
+          git add "$EVIDENCE_DIR"
+          git diff --cached --check
+          git diff --cached --stat
+          git commit -m "custody(i3): retain all content-48 original lives, source $SOURCE_SHA, failures if any"
+          git push origin "HEAD:refs/heads/$EVIDENCE_REF"
+          echo "CONTENT_48_ORIGINAL_EVIDENCE_STORED_ON=$EVIDENCE_REF"
