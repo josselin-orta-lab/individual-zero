@@ -1,9 +1,8 @@
-"""Original-only G/R 48 matched new-F0 CONTENT DEVELOPMENT, one execution.
+"""Original-only G/R first replay/water divergence, 24 new matched F0 units.
 
-Both policies use the historical paid GATE count rule, comparing the TD
-priority vs independently HMAC-random memory identities. A full-policy effect
-is descriptive; it does not fix realized replay count or certify ecological
-iid. This source must be permanently closed after its first original archive.
+Both policies share funded GATE count; their replay *memory identity* differs.
+Observer stores original water belief/decision/selected-memory chronology.
+This cohort is exploratory and must close immediately after its first G/R.
 """
 from __future__ import annotations
 
