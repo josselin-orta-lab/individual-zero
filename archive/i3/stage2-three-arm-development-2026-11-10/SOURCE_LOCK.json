@@ -1,0 +1,13 @@
+{
+  "claim_branch": "custody/i3-three-arm-development-64-20261110-claimed",
+  "evidence_branch": "evidence/i3-three-arm-development-64-20261110-originals",
+  "lives": 192,
+  "no_retry": true,
+  "plan_sha256": "585dd83dff80bcfc9b0014db929113f84f8c8d41938749fea39f4052a61e43ae",
+  "schema": "i3-stage2-1-three-arm-exploratory-development-gr/v1/source-claim",
+  "scientific_inference_authorized": false,
+  "source_fingerprint": "37989805cadf6502e105e500e25a656e7898e4873a21f4d51b283c42c6754327",
+  "source_sha": "11879c46a78697aa1d3f664f1a17f489a948667d",
+  "status": "CONSUMED_BEFORE_FIRST_BIRTH",
+  "units": 64
+}

@@ -1,0 +1,329 @@
+{
+  "analysis": {
+    "by_arm": {
+      "p13_replay_gate_random_equal_mean_v1": {
+        "deaths_at_horizon": 0,
+        "horizon_survivors": 27,
+        "mean_energy_paid_per_assigned_life": 130.59171875,
+        "mean_lived_steps": 278.53125,
+        "mean_replays_paid_per_assigned_life": 501.875,
+        "mean_sleep_steps_per_assigned_life": 78.875,
+        "mean_vigilance_paid_per_assigned_life": 170.07428124999996,
+        "random_schedule_per_assigned_life": {
+          "actual_replays_paid": 501.875,
+          "draws_funded": 78.84375,
+          "eligible_replays_scheduled": 501.875,
+          "lived_sleep_ordinals": 78.859375,
+          "nominal_replays_scheduled": 502.28125
+        },
+        "units": 64
+      },
+      "p13_replay_gate_v1": {
+        "deaths_at_horizon": 0,
+        "horizon_survivors": 27,
+        "mean_energy_paid_per_assigned_life": 137.71484999999998,
+        "mean_lived_steps": 290.0625,
+        "mean_replays_paid_per_assigned_life": 515.140625,
+        "mean_sleep_steps_per_assigned_life": 83.296875,
+        "mean_vigilance_paid_per_assigned_life": 178.13034374999992,
+        "units": 64
+      },
+      "reference": {
+        "deaths_at_horizon": 0,
+        "horizon_survivors": 26,
+        "mean_energy_paid_per_assigned_life": 149.133253125,
+        "mean_lived_steps": 273.265625,
+        "mean_replays_paid_per_assigned_life": 1295.453125,
+        "mean_sleep_steps_per_assigned_life": 81.28125,
+        "mean_vigilance_paid_per_assigned_life": 182.51709375,
+        "units": 64
+      }
+    },
+    "by_family": {
+      "depletion": {
+        "by_arm": {
+          "p13_replay_gate_random_equal_mean_v1": {
+            "deaths_at_horizon": 0,
+            "horizon_survivors": 9,
+            "mean_energy_paid_per_assigned_life": 186.061975,
+            "mean_lived_steps": 332.625,
+            "mean_replays_paid_per_assigned_life": 744.875,
+            "mean_sleep_steps_per_assigned_life": 117.3125,
+            "mean_vigilance_paid_per_assigned_life": 241.54362499999996,
+            "random_schedule_per_assigned_life": {
+              "actual_replays_paid": 744.875,
+              "draws_funded": 117.25,
+              "eligible_replays_scheduled": 744.875,
+              "lived_sleep_ordinals": 117.3125,
+              "nominal_replays_scheduled": 745.6875
+            },
+            "units": 16
+          },
+          "p13_replay_gate_v1": {
+            "deaths_at_horizon": 0,
+            "horizon_survivors": 7,
+            "mean_energy_paid_per_assigned_life": 158.73084999999992,
+            "mean_lived_steps": 317.375,
+            "mean_replays_paid_per_assigned_life": 601.1875,
+            "mean_sleep_steps_per_assigned_life": 100.125,
+            "mean_vigilance_paid_per_assigned_life": 209.4132499999999,
+            "units": 16
+          },
+          "reference": {
+            "deaths_at_horizon": 0,
+            "horizon_survivors": 9,
+            "mean_energy_paid_per_assigned_life": 189.36918750000007,
+            "mean_lived_steps": 330.375,
+            "mean_replays_paid_per_assigned_life": 1695.9375,
+            "mean_sleep_steps_per_assigned_life": 106.625,
+            "mean_vigilance_paid_per_assigned_life": 233.010875,
+            "units": 16
+          }
+        },
+        "contrasts": {
+          "GATE_MINUS_FIXED": {
+            "both_survive": 6,
+            "comparator_only_survives": 3,
+            "mean_lived_step_difference": -13.0,
+            "neither_survives": 6,
+            "paired_risk_difference": -0.125,
+            "target_longer_lived": 2,
+            "target_only_survives": 1,
+            "target_shorter_lived": 5,
+            "units": 16
+          },
+          "GATE_MINUS_RANDOM": {
+            "both_survive": 6,
+            "comparator_only_survives": 3,
+            "mean_lived_step_difference": -15.25,
+            "neither_survives": 6,
+            "paired_risk_difference": -0.125,
+            "target_longer_lived": 1,
+            "target_only_survives": 1,
+            "target_shorter_lived": 5,
+            "units": 16
+          },
+          "RANDOM_MINUS_FIXED": {
+            "both_survive": 7,
+            "comparator_only_survives": 2,
+            "mean_lived_step_difference": 2.25,
+            "neither_survives": 5,
+            "paired_risk_difference": 0.0,
+            "target_longer_lived": 4,
+            "target_only_survives": 2,
+            "target_shorter_lived": 3,
+            "units": 16
+          }
+        }
+      },
+      "pulse": {
+        "by_arm": {
+          "p13_replay_gate_random_equal_mean_v1": {
+            "deaths_at_horizon": 0,
+            "horizon_survivors": 2,
+            "mean_energy_paid_per_assigned_life": 73.13612941176468,
+            "mean_lived_steps": 177.94117647058823,
+            "mean_replays_paid_per_assigned_life": 305.2352941176471,
+            "mean_sleep_steps_per_assigned_life": 47.8235294117647,
+            "mean_vigilance_paid_per_assigned_life": 95.6217647058824,
+            "random_schedule_per_assigned_life": {
+              "actual_replays_paid": 305.2352941176471,
+              "draws_funded": 47.8235294117647,
+              "eligible_replays_scheduled": 305.2352941176471,
+              "lived_sleep_ordinals": 47.8235294117647,
+              "nominal_replays_scheduled": 305.3529411764706
+            },
+            "units": 17
+          },
+          "p13_replay_gate_v1": {
+            "deaths_at_horizon": 0,
+            "horizon_survivors": 3,
+            "mean_energy_paid_per_assigned_life": 83.19288235294123,
+            "mean_lived_steps": 202.64705882352942,
+            "mean_replays_paid_per_assigned_life": 262.3529411764706,
+            "mean_sleep_steps_per_assigned_life": 53.94117647058823,
+            "mean_vigilance_paid_per_assigned_life": 105.56658823529419,
+            "units": 17
+          },
+          "reference": {
+            "deaths_at_horizon": 0,
+            "horizon_survivors": 2,
+            "mean_energy_paid_per_assigned_life": 89.70467058823532,
+            "mean_lived_steps": 180.88235294117646,
+            "mean_replays_paid_per_assigned_life": 812.4117647058823,
+            "mean_sleep_steps_per_assigned_life": 50.88235294117647,
+            "mean_vigilance_paid_per_assigned_life": 108.82835294117648,
+            "units": 17
+          }
+        },
+        "contrasts": {
+          "GATE_MINUS_FIXED": {
+            "both_survive": 2,
+            "comparator_only_survives": 0,
+            "mean_lived_step_difference": 21.764705882352942,
+            "neither_survives": 14,
+            "paired_risk_difference": 0.058823529411764705,
+            "target_longer_lived": 4,
+            "target_only_survives": 1,
+            "target_shorter_lived": 1,
+            "units": 17
+          },
+          "GATE_MINUS_RANDOM": {
+            "both_survive": 2,
+            "comparator_only_survives": 0,
+            "mean_lived_step_difference": 24.705882352941178,
+            "neither_survives": 14,
+            "paired_risk_difference": 0.058823529411764705,
+            "target_longer_lived": 5,
+            "target_only_survives": 1,
+            "target_shorter_lived": 1,
+            "units": 17
+          },
+          "RANDOM_MINUS_FIXED": {
+            "both_survive": 2,
+            "comparator_only_survives": 0,
+            "mean_lived_step_difference": -2.9411764705882355,
+            "neither_survives": 15,
+            "paired_risk_difference": 0.0,
+            "target_longer_lived": 3,
+            "target_only_survives": 0,
+            "target_shorter_lived": 2,
+            "units": 17
+          }
+        }
+      },
+      "stable": {
+        "by_arm": {
+          "p13_replay_gate_random_equal_mean_v1": {
+            "deaths_at_horizon": 0,
+            "horizon_survivors": 16,
+            "mean_energy_paid_per_assigned_life": 133.4698129032258,
+            "mean_lived_steps": 305.7741935483871,
+            "mean_replays_paid_per_assigned_life": 484.2903225806452,
+            "mean_sleep_steps_per_assigned_life": 76.06451612903226,
+            "mean_vigilance_paid_per_assigned_life": 174.01567741935486,
+            "random_schedule_per_assigned_life": {
+              "actual_replays_paid": 484.2903225806452,
+              "draws_funded": 76.03225806451613,
+              "eligible_replays_scheduled": 484.2903225806452,
+              "lived_sleep_ordinals": 76.03225806451613,
+              "nominal_replays_scheduled": 484.64516129032256
+            },
+            "units": 31
+          },
+          "p13_replay_gate_v1": {
+            "deaths_at_horizon": 0,
+            "horizon_survivors": 17,
+            "mean_energy_paid_per_assigned_life": 156.76702580645156,
+            "mean_lived_steps": 323.9032258064516,
+            "mean_replays_paid_per_assigned_life": 609.3548387096774,
+            "mean_sleep_steps_per_assigned_life": 90.70967741935483,
+            "mean_vigilance_paid_per_assigned_life": 201.77735483870964,
+            "units": 31
+          },
+          "reference": {
+            "deaths_at_horizon": 0,
+            "horizon_survivors": 15,
+            "mean_energy_paid_per_assigned_life": 160.9561870967742,
+            "mean_lived_steps": 294.4516129032258,
+            "mean_replays_paid_per_assigned_life": 1353.6451612903227,
+            "mean_sleep_steps_per_assigned_life": 84.87096774193549,
+            "mean_vigilance_paid_per_assigned_life": 196.86574193548387,
+            "units": 31
+          }
+        },
+        "contrasts": {
+          "GATE_MINUS_FIXED": {
+            "both_survive": 15,
+            "comparator_only_survives": 0,
+            "mean_lived_step_difference": 29.451612903225808,
+            "neither_survives": 14,
+            "paired_risk_difference": 0.06451612903225806,
+            "target_longer_lived": 9,
+            "target_only_survives": 2,
+            "target_shorter_lived": 1,
+            "units": 31
+          },
+          "GATE_MINUS_RANDOM": {
+            "both_survive": 15,
+            "comparator_only_survives": 1,
+            "mean_lived_step_difference": 18.129032258064516,
+            "neither_survives": 13,
+            "paired_risk_difference": 0.03225806451612903,
+            "target_longer_lived": 8,
+            "target_only_survives": 2,
+            "target_shorter_lived": 2,
+            "units": 31
+          },
+          "RANDOM_MINUS_FIXED": {
+            "both_survive": 14,
+            "comparator_only_survives": 1,
+            "mean_lived_step_difference": 11.32258064516129,
+            "neither_survives": 14,
+            "paired_risk_difference": 0.03225806451612903,
+            "target_longer_lived": 6,
+            "target_only_survives": 2,
+            "target_shorter_lived": 3,
+            "units": 31
+          }
+        }
+      }
+    },
+    "conditional_iid_primary_lower_bound_unattested": -0.13507344604164295,
+    "external_iid_or_ecological_sampling_attestation": false,
+    "no_transfer_beyond_known_F0": true,
+    "overall_contrasts": {
+      "GATE_MINUS_FIXED": {
+        "both_survive": 23,
+        "comparator_only_survives": 3,
+        "mean_lived_step_difference": 16.796875,
+        "neither_survives": 34,
+        "paired_risk_difference": 0.015625,
+        "target_longer_lived": 15,
+        "target_only_survives": 4,
+        "target_shorter_lived": 7,
+        "units": 64
+      },
+      "GATE_MINUS_RANDOM": {
+        "both_survive": 23,
+        "comparator_only_survives": 4,
+        "mean_lived_step_difference": 11.53125,
+        "neither_survives": 33,
+        "paired_risk_difference": 0.0,
+        "target_longer_lived": 14,
+        "target_only_survives": 4,
+        "target_shorter_lived": 8,
+        "units": 64
+      },
+      "RANDOM_MINUS_FIXED": {
+        "both_survive": 23,
+        "comparator_only_survives": 3,
+        "mean_lived_step_difference": 5.265625,
+        "neither_survives": 34,
+        "paired_risk_difference": 0.015625,
+        "target_longer_lived": 13,
+        "target_only_survives": 4,
+        "target_shorter_lived": 8,
+        "units": 64
+      }
+    },
+    "primary": "GATE_MINUS_RANDOM",
+    "schema": "i3-stage2-1-three-arm-exploratory-development-gr/v1",
+    "scientific_noninferiority_margin_approved": false,
+    "scientific_verdict": "NOT_ISSUED",
+    "selection_validation_reserve_executed": false,
+    "status": "COMPLETE_EXPLORATORY_DEVELOPMENT_ONLY"
+  },
+  "generated": 192,
+  "no_retry": true,
+  "phase_G": "GENERATED",
+  "phase_R": "COMPLETE",
+  "plan_sha256": "585dd83dff80bcfc9b0014db929113f84f8c8d41938749fea39f4052a61e43ae",
+  "planned": 192,
+  "reduced": 192,
+  "schema": "i3-stage2-1-three-arm-exploratory-development-gr/v1",
+  "scientific_verdict": "NOT_ISSUED",
+  "source_fingerprint": "37989805cadf6502e105e500e25a656e7898e4873a21f4d51b283c42c6754327",
+  "source_sha": "11879c46a78697aa1d3f664f1a17f489a948667d",
+  "status": "COMPLETE_EXPLORATORY_DEVELOPMENT_ONLY"
+}
