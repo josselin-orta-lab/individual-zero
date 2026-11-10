@@ -1,5 +1,10 @@
 # I3: current research and engineering status
 
+## Three-arm original audit and actual RANDOM-count semantics (10 November 2026)
+
+The completed 64-triplet panel remains **CLOSED_NO_RETRY** with GATE versus RANDOM 27/64 versus 27/64 survivors (4 versus 4 exclusive). New [read-only original SHA audit and random-control methodological note](studies/stage2-replay-gate-selected-design/RANDOM_CONTROL_SEMANTICS_AND_NEXT_FALSIFIER_2026-11-10.md): RANDOM-EQUAL-MEAN changes the **nominal replay count (6 or 7)**, not the **TD-prioritized selection of which memories are replayed**. The existing `Mind.learn_from_outcome` still selects the highest-magnitude TD errors for GATE and RANDOM. This full-life comparison therefore **cannot** falsify whether TD-prioritized memory *content* selection is superior to randomized content selection. It also does not guarantee realized paid replay equality. A separate pure [post-archive 192-original auditor](../lab/stage2_three_arm_original_audit.py) and PR-only CI are the next custody check; no World, life or source authority is reopened. Next falsifier is a local same-state, same-count, physically paid prioritized-vs-random-*content* update probe, followed by a separately designed prospective full-life study only if justified. Stage 2.1 remains unregistered, exploratory, without NI/causal GO.
+
+
 ## Stage 2.1 three-arm 64-unit exploratory DEVELOPMENT complete, original source exhausted (10 November 2026)
 
 **192/192 real FIXED/GATE/paid-RANDOM lives generated, original SHA-verified and reduced. PRIMARY GATE−RANDOM horizon survival difference = 0/64, not superiority or equivalence.** The [prospectively frozen, source-bound results](studies/stage2-replay-gate-selected-design/THREE_ARM_EXPLORATORY_RESULTS_2026-11-10.md) show FIXED 26/64, GATE 27/64, RANDOM 27/64 horizon survivors; GATE-only versus RANDOM-only **4 versus 4**, with longer average GATE life (+11.53125 steps) but higher mean energy and vigilance actually paid per assigned life than RANDOM. Depletion shows an adverse GATE−RANDOM survival sign (−2/16) that must not be excluded.
