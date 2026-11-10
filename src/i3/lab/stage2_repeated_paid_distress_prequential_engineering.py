@@ -269,8 +269,6 @@ def rehearse():
                     raise RuntimeError("missing matched factual prequential outcome")
                 if len({s["result"]["target"] for s in slots}) != 1:
                     raise RuntimeError("matched paid arms saw differing outcomes")
-            if len({tuple(s["selected_indices"] or ()) for s in slots}) < 1:
-                raise RuntimeError("unmatched selected history")
         first = controls[0]["slots"]
         initial_choice_matches = True
         if first:
