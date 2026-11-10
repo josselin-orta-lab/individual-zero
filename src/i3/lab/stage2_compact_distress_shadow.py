@@ -57,7 +57,7 @@ class CompactPersonalDistressHead:
             raise ValueError("nonfinite inherited personal distress parameters")
         if len(self.theta) != 5 or len(self.p) != 5 or len(self.w) != 5:
             raise ValueError("five-channel inherited readout required")
-        if not (0 <= len(source.buffer) <= MAX_SNAPSHOT):
+        if not (0 <= len(source.buffer) <= source.m_max <= MAX_SNAPSHOT):
             raise ValueError("memory capacity exceeded")
         # Records are frozen copies from the pre-fork, personally lived buffer.
         self._eligible_records = tuple(deepcopy(tuple(source.buffer)))
