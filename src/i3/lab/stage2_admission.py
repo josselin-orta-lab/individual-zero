@@ -376,3 +376,28 @@ def admit_next_decision_replay_engineering(*,case:dict,spec,
     return RA.mint(cohort="engineering",family=case["family"],
                    index=case["index"],world_seed=case["world_seed"],
                    spec=spec,transport_fingerprint=transport_fingerprint)
+
+
+def admit_next_decision_newworld_development(*,case:dict,spec,
+                                              transport_fingerprint:str):
+    """Exactly new 24 matched source-bound next-decision DEVELOPMENT units.
+
+    No consumed previous source, no privileged selection/validation/reserve,
+    and no public preview or engineering World can be admitted.
+    """
+    from . import stage2_next_decision_24_development as STUDY
+    from . import stage2_survival_b1_worldspec_audit as SPECS
+    from . import stage2_survival_b1_engineering as SOURCE
+    if type(case) is not dict or case.get("cohort")!="development":
+        raise PermissionError("next-decision observation DEVELOPMENT only")
+    STUDY.match_case(case,transport_fingerprint)
+    if not isinstance(spec,RA.WorldSpec) or (
+            type(transport_fingerprint) is not str or
+            transport_fingerprint!=SOURCE.source_fingerprint()):
+        raise PermissionError("invalid next-decision scientific source")
+    expected=SPECS._construct_f0_spec(case["family"],case["world_seed"])
+    if RA.world_sha256(spec)!=RA.world_sha256(expected):
+        raise PermissionError("altered F0 World from new source")
+    return RA.mint(cohort="development",family=case["family"],
+                   index=case["index"],world_seed=case["world_seed"],
+                   spec=spec,transport_fingerprint=transport_fingerprint)
