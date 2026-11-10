@@ -54,6 +54,10 @@ class PersonalDistressHead:
         if not isinstance(personal_mind,Mind):
             raise TypeError("actual first-person I3 Mind required")
         self._mind=deepcopy(personal_mind)
+        # Immutable-by-protocol list of memories genuinely present at the
+        # PRE-FORK source boundary. Future outcome injection is inadmissible.
+        self._eligible_records=tuple(deepcopy(list(self._mind.buffer)))
+        self.trained_indices=()
         self.source_identity=_sha({
             "genes":(self._mind.theta,self._mind.p,self._mind.w,
                      self._mind.alpha,self._mind.gammas),
@@ -82,10 +86,10 @@ class PersonalDistressHead:
         # Same innate distress semantics as Mind._td's actual learned reward.
         return -self._mind.d_max if dead else -self._mind.distress(after)
 
-    def fit_replayed_personal_memory(self,record):
-        if type(record) not in (tuple,list) or len(record)!=4:
-            raise ValueError("actual recorded personal memory tuple required")
-        magnitude,before,after,dead=record
+    def _fit_record(self,index):
+        # Training can read ONLY the fixed pre-fork personal memory snapshot;
+        # no arbitrary target or future Body can enter the learning path.
+        magnitude,before,after,dead=self._eligible_records[index]
         if type(magnitude) not in (int,float) or not isfinite(magnitude):
             raise ValueError("invalid replay memory provenance")
         phi=self._features(before)
@@ -104,14 +108,20 @@ class PersonalDistressHead:
         self.training_updates+=1
 
     def apply(self,original_buffer,indices):
-        if type(indices) not in (tuple,list) or len(indices)>REPLAYS_PER_SLEEP:
-            raise ValueError("invalid replay identity allocation")
+        if type(original_buffer) not in (tuple,list) or (
+                tuple(original_buffer)!=self._eligible_records):
+            raise PermissionError("unrecorded or future outcome cannot train the shadow head")
+        if (type(indices) not in (tuple,list) or
+                len(indices)+self.training_updates>REPLAYS_PER_SLEEP):
+            raise ValueError("invalid replay count or exceeded one-fork physical cap")
         if (len(set(indices))!=len(indices) or
-                any(type(i) is not int or not 0<=i<len(original_buffer)
-                    for i in indices)):
-            raise ValueError("replayed memories must be unique and eligible")
+                any(type(i) is not int or
+                    not 0<=i<len(self._eligible_records) or
+                    i in self.trained_indices for i in indices)):
+            raise ValueError("replay indices must be unique eligible past memories")
         for i in indices:
-            self.fit_replayed_personal_memory(original_buffer[i])
+            self._fit_record(i)
+        self.trained_indices+=tuple(indices)
 
 
 class PrequentialDistressAudit:
@@ -133,8 +143,11 @@ class PrequentialDistressAudit:
                 type(random_head) is not PersonalDistressHead or
                 priority_head.source_identity!=random_head.source_identity or
                 priority_head.source_identity!=self._reference.source_identity or
-                priority_head.training_updates!=random_head.training_updates):
-            raise PermissionError("not identical initial individual or replay count")
+                priority_head.training_updates!=random_head.training_updates or
+                priority_head.training_updates>REPLAYS_PER_SLEEP or
+                priority_head.training_updates!=len(priority_head.trained_indices) or
+                random_head.training_updates!=len(random_head.trained_indices)):
+            raise PermissionError("not identical initial individual or bounded replay count")
         p=priority_head.predict(before)
         r=random_head.predict(before)
         receipt={
