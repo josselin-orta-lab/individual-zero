@@ -1,0 +1,19 @@
+{
+  "actions_run_id": 42735037051,
+  "both_survive": 25,
+  "confirmatory_go": false,
+  "fixed_only": 5,
+  "gate_only": 13,
+  "independence_witnessed": false,
+  "manifest_sha256": "5a173d1ad2a7ea3980cb27f79fada44d4e9f7855af63d08a21d118acce21da9a",
+  "matched_pairs": 96,
+  "neither": 53,
+  "original_artifact_id": 13725454291,
+  "originals_verified": 192,
+  "plan_sha256": "37bee5deeb75e7e4ab481f3019b63c54b9d6f8bdabba6f7bb1de135e62f021dc",
+  "schema": "i3-b1-evidence-archive/v1",
+  "source_commit": "713d4621d28ed668bf5f5a37f2d105a38d19fb57",
+  "source_fingerprint": "3a533ebcf8657716bcd759aaa0c0ec1c694aed82862abeb1eb175b593cd8ede3",
+  "status": "ORIGINAL_192_OF_192_VERIFIED_NO_REEXECUTION",
+  "zip_sha256": "2aff70fff077be04042379355cda8c798ed9ec81745413563bc88e4320615361"
+}
