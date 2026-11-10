@@ -1287,9 +1287,9 @@ jobs:
 
 
   stage2-water-divergence-24-once:
-    # Only trusted main SHA and source-scoped one-shot 24-unit study.
-    # PR runs software only; old 48/64/96 cohorts remain irrevocably closed.
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.run_attempt == 1
+    # Source CONSUMED exactly once in run 42808996045 and originals archived.
+    # Never reopen these 24 matched World/G0/life units or main-push job.
+    if: false
     name: I3 first replay/water divergence 24-pair DEVELOPMENT once
     runs-on: ubuntu-latest
     timeout-minutes: 24
