@@ -1807,9 +1807,11 @@ jobs:
           if-no-files-found: warn
 
   stage2-next-decision-24-exploratory-once:
-    # New exact source/24 new DEVELOPMENT pairs, one trusted main push only.
-    # Irrevocably claim BEFORE World; always preserve originals/failures.
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.run_attempt == 1
+    # Source consumed first run 42837992463, original evidence commit
+    # 20ca7efbf7797fa7b1f12983ce68906b754b312c. Attempt
+    # 42838124872 correctly failed PRE-BIRTH against already claimed source.
+    # Permanently closed: no World may be born from these indices again.
+    if: false
     name: I3 next-first-person decision 24-pair original-only DEVELOPMENT once
     runs-on: ubuntu-latest
     timeout-minutes: 24
@@ -1937,3 +1939,77 @@ jobs:
 
 
 
+
+
+  stage2-next-decision-24-original-independent-audit:
+    # Only read original 48 gzip files, no Mind/World generation.
+    if: startsWith(github.head_ref, 'research/i3-next-decision-24-original-audit-')
+    name: I3 next decision 48 original gzip independent audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Checkout exact independent read-only proposed checker
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Checkout exact already archived original lives commit
+        uses: actions/checkout@v4
+        with:
+          repository: josselin-orta-lab/individual-zero
+          ref: 20ca7efbf7797fa7b1f12983ce68906b754b312c
+          path: source-originals
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test original-only missing-case and null/adverse checks
+        run: python -m unittest discover -s tests/i3 -p 'test_stage2_next_decision_24_original_audit.py' -v
+      - name: Independently audit 48 packed/unpacked original SHA and next actual decision forks
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_next_decision_24_original_audit \
+            source-originals/archive/i3/stage2-next-decision-development-2026-11-10 \
+            > "$RUNNER_TEMP/i3-next-decision-original-audit.json"
+          python - "$RUNNER_TEMP/i3-next-decision-original-audit.json" <<'PY'
+          import json,sys
+          from pathlib import Path
+          r=json.loads(Path(sys.argv[1]).read_text())
+          assert r["status"]=="READ_ONLY_ALL_ORIGINALS_AND_REDUCTIONS_PASS"
+          assert r["packed_sha_verified"]==r["unpacked_sha_verified"]==48
+          assert r["complete_matched_pairs"]==24
+          m=r["primary"]
+          assert m["assigned_pairs"]==24
+          assert m["first_different_funded_memory_fork"]==20
+          assert m["no_different_funded_memory_fork"]==4
+          assert m["first_fork_with_next_common_perception"]==20
+          assert m["different_next_admitted_action_or_param"]==1
+          assert m["same_next_admitted_action_and_param"]==19
+          assert m["shared_action_nonterminal_bootstrapped_TD_receipts"]==19
+          assert m["calibrated_predictive_accuracy"] is False
+          assert r["secondary_survival"]["both_survive"]==10
+          assert r["secondary_survival"]["priority_only_survives"]==2
+          assert r["secondary_survival"]["random_content_only_survives"]==3
+          assert r["secondary_survival"]["neither_survives"]==9
+          assert r["per_assigned_life"]["p13_replay_gate_v1"]["survivors"]==12
+          assert r["per_assigned_life"]["p13_replay_gate_random_content_v1"]["survivors"]==13
+          assert r["no_new_World_or_life"] is True
+          assert r["scientific_go"] is False
+          print(json.dumps(r,sort_keys=True))
+          PY
+      - name: Retain aggregate-only original audit attestation
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-next-decision-24-original-audit
+          path: ${{ runner.temp }}/i3-next-decision-original-audit.json
+          retention-days: 90
+          if-no-files-found: warn
