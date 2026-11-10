@@ -19,6 +19,7 @@ on:
     # The single frozen archival trigger is deliberately never modified again.
     paths:
       - 'src/i3/docs/studies/stage2-replay-gate-selected-design/B1_ARCHIVE_ONCE.json'
+      - 'src/i3/docs/studies/stage2-replay-gate-selected-design/THREE_ARM_LAUNCH_ONCE.json'
 
 permissions:
   contents: read
@@ -405,7 +406,8 @@ jobs:
   b1-original-custody:
     # Run only on trusted merged main, never on untrusted PR code or a rerun.
     # Do NOT replay any life; retrieve the immutable existing Actions original.
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.run_attempt == 1
+    # B1 original archive completed in run #42775154043; NEVER rerun.
+    if: false
     name: Archive sealed B1 originals once, without World exposure
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -633,3 +635,134 @@ jobs:
           path: ${{ runner.temp }}/three-arm-structure.json
           if-no-files-found: warn
           retention-days: 30
+
+
+  stage2-three-arm-exploratory-once:
+    # Only the trusted one-shot main-branch merge of the frozen prospective
+    # marker can open these 64 NEW DEVELOPMENT units. NEVER on PR, no reruns.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.run_attempt == 1
+    name: I3 three-arm 64-unit exploratory G/R single exposure
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    permissions:
+      contents: write
+    concurrency:
+      group: i3-three-arm-dev-64-single-exposure
+      cancel-in-progress: false
+    env:
+      PYTHONPATH: src
+      SOURCE_SHA: ${{ github.sha }}
+      I3_THREE_ARM_CLAIM_BRANCH: custody/i3-three-arm-development-64-20261110-claimed
+      EVIDENCE_BRANCH: evidence/i3-three-arm-development-64-20261110-originals
+      ARCHIVE_SOURCE: ${{ runner.temp }}/i3-three-arm-development-64-originals
+      EVIDENCE_DIR: archive/i3/stage2-three-arm-development-2026-11-10
+      PLAN: src/i3/docs/studies/stage2-replay-gate-selected-design/THREE_ARM_EXPLORATORY_DEV_PLAN.json
+    steps:
+      - name: Checkout exact merged main source with immutable history
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Python 3.11 for exploratory original custody
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: PRE-BIRTH closed-world scope, seed, source and claim preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          test -z "$(git status --porcelain)"
+          if git ls-remote --heads origin "$I3_THREE_ARM_CLAIM_BRANCH" | grep -q .; then
+            echo "Three-arm development already claimed. No retry or replacement."
+            exit 3
+          fi
+          if git ls-remote --heads origin "$EVIDENCE_BRANCH" | grep -q .; then
+            echo "Three-arm originals already archived. No new births."
+            exit 4
+          fi
+          python -m unittest discover -s tests/i3 -p 'test_stage2_three_arm_development.py' -v
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          from i3.lab import stage2_three_arm_development as D
+          p=Path(os.environ["PLAN"])
+          plan=D.load_plan()
+          cases=D.cases()
+          assert len(cases)==192
+          assert {r["cohort"] for r in cases}=={"development"}
+          assert {r["index"] for r in cases}==set(range(360000,360064))
+          assert plan["scientific_registration"] is False
+          assert plan["witness_independent_external_attestation"] is False
+          assert plan["scientific_go"] is False
+          assert set(r["policy"] for r in cases)==set(D.ARMS)
+          assert D.EVIDENCE_BRANCH==os.environ["EVIDENCE_BRANCH"]
+          assert D.CLAIM_BRANCH==os.environ["I3_THREE_ARM_CLAIM_BRANCH"]
+          print("THREE_ARM_EXPLORATORY_PRE_BIRTH_PASS source="+os.environ["SOURCE_SHA"]+
+                " plan="+hashlib.sha256(p.read_bytes()).hexdigest()+
+                " fingerprint="+D.SOURCE.source_fingerprint()+
+                " lives=192 scientific_confirmation=NO")
+          PY
+      - name: Claim unique prospective 64-unit source BEFORE first World
+        id: claim
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Individual Zero scientific custody"
+          git config user.email "334698467+josselin-orta-lab@users.noreply.github.com"
+          git switch --create "$I3_THREE_ARM_CLAIM_BRANCH" "$SOURCE_SHA"
+          git commit --allow-empty -m "custody(i3): consume three-arm 64-unit source $SOURCE_SHA run $GITHUB_RUN_ID; NO RETRY"
+          git push origin "HEAD:refs/heads/$I3_THREE_ARM_CLAIM_BRANCH"
+          git checkout --detach "$SOURCE_SHA"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          test -z "$(git status --porcelain)"
+          echo "THREE_ARM_EXPLORATORY_SOURCE_CLAIM_CONSUMED_BEFORE_FIRST_WORLD"
+      - name: Execute fixed 192-life G/R; preserve errors without reseeding or retry
+        id: original_run
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_three_arm_development execute "$ARCHIVE_SOURCE" > "$RUNNER_TEMP/i3-three-arm-development-console.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          root=Path(os.environ["ARCHIVE_SOURCE"])
+          report=json.loads((root/"EXECUTION_REPORT.json").read_text())
+          assert report["status"]=="COMPLETE_EXPLORATORY_DEVELOPMENT_ONLY"
+          assert report["planned"]==report["generated"]==report["reduced"]==192
+          assert report["phase_G"]=="GENERATED" and report["phase_R"]=="COMPLETE"
+          assert report["scientific_verdict"]=="NOT_ISSUED"
+          assert report["analysis"]["scientific_verdict"]=="NOT_ISSUED"
+          print("THREE_ARM_DEVELOPMENT_192_OF_192_G_R_COMPLETE_NO_CONFIRMATORY_CLAIM")
+          PY
+      - name: Preserve ALL original and partial results on immutable evidence ref
+        if: always() && steps.claim.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-remote --heads origin "$EVIDENCE_BRANCH" | grep -q .; then
+            echo "Scientific evidence ref already exists. Never overwrite."
+            exit 2
+          fi
+          git config user.name "Individual Zero scientific custody"
+          git config user.email "334698467+josselin-orta-lab@users.noreply.github.com"
+          git switch --create "$EVIDENCE_BRANCH" "$SOURCE_SHA"
+          mkdir -p "$EVIDENCE_DIR"
+          if [ -d "$ARCHIVE_SOURCE" ]; then
+            cp -a "$ARCHIVE_SOURCE"/. "$EVIDENCE_DIR"/
+          fi
+          if [ -f "$RUNNER_TEMP/i3-three-arm-development-console.json" ]; then
+            cp "$RUNNER_TEMP/i3-three-arm-development-console.json" "$EVIDENCE_DIR/CONSOLE_REPORT.json"
+          fi
+          if [ ! -e "$EVIDENCE_DIR/EXECUTION_REPORT.json" ]; then
+            printf '{"status":"RUNNER_EXCEPTION_PRESERVED","scientific_verdict":"NOT_ISSUED","no_retry":true}\n' > "$EVIDENCE_DIR/EXECUTION_FAILURE.json"
+          fi
+          git add "$EVIDENCE_DIR"
+          git diff --cached --check
+          git diff --cached --stat
+          git commit -m "custody(i3): retain all first-run three-arm original lives and failures; source $SOURCE_SHA"
+          git push origin "HEAD:refs/heads/$EVIDENCE_BRANCH"
+          echo "I3_THREE_ARM_SCIENTIFIC_ORIGINALS_PUBLISHED=$EVIDENCE_BRANCH"
