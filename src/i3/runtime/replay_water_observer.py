@@ -110,6 +110,14 @@ class ReplayWaterObserver:
             set(event["replay_priority_indices"]))
         event["world_step_after_paid_learning"] = world.t
         event["body_water_after_physics_and_learning"] = world.body[W]
+        # Water uptake is measured against passive metabolic decay, using
+        # only the realized World transaction, never hidden water stocks.
+        uptake = (world.body[W] -
+                  max(0.0, event["capture_water_before_decision"] -
+                      world.laws.water_decay)
+                  if event["action"] == "boire" else None)
+        event["water_uptake_above_decay"] = uptake
+        event["positive_water_uptake"] = uptake is not None and uptake > 1e-9
         event["dead"] = bool(result["dead"])
         event["death_causes"] = list(result["dead"])
         event["paid_learning_energy"] = post_audit["energy"]["paid"]
