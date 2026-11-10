@@ -41,6 +41,13 @@ Now that the owner lift is recorded, the frozen DEVELOPMENT 80/81 pilot may
 use that same G/R path, runner and cognition; there is no clone or post-hoc
 transport modification.
 
+## Latest Stage-2.1 post-B1 three-arm handoff (10 November 2026)
+
+- The new *exploratory* three-arm FIXED/GATE/paid-RANDOM DEVELOPMENT 64-unit cohort executed **once** at exact main SHA `11879c46a78697aa1d3f664f1a17f489a948667d` in Actions #42781264127. It is **CLOSED_NO_RETRY**. Preserve claim `custody/i3-three-arm-development-64-20261110-claimed` and complete original evidence commit `aaff20234b8a4f9d11595d6eb852371d0ce00f97` on `evidence/i3-three-arm-development-64-20261110-originals`. The retained `stage2_three_arm_development.execute` and its launch job are hard-closed.
+- The primary full-policy GATE−RANDOM horizon survival difference was **0/64**, with four GATE-only and four RANDOM-only survivors. Observed GATE lived longer on average but paid **more** energy and vigilance per assigned life than RANDOM. In depletion, GATE had fewer survivors. See [exact original result](docs/studies/stage2-replay-gate-selected-design/THREE_ARM_EXPLORATORY_RESULTS_2026-11-10.md). Preserve null/adverse results, and do not reinterpret nominal RANDOM-EQUAL-MEAN as realized cost or replay-count equality.
+- The old 80/81 and B1 96-unit DEVELOPMENT cohorts remain permanently closed, alongside all scientific selection, validation and reserve routes. Positive technical G/R does not establish an independent ecological source, NI, causal replay selection, genetic evolution, Stage 2.2 or I3 engine activation.
+- Next scope is source-bound **read-only** original verification and independent design of a more discriminating paid-mechanism comparison. Neither a new World opening nor arbitrary survival margin is implied by the user's delegated operational autonomy.
+
 ## Hard boundaries
 
 Do not:
