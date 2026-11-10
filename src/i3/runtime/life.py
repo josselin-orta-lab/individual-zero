@@ -404,17 +404,22 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
                 preserved = [v[:] for v in mind.values]
             else:
                 preserved = None
-            if replay_water_observer is None:
-                replays = target.learn_from_outcome(
-                    result, replay_limit=replay_limit,
-                    replay_retention=(learning_mode != "discard_replay"),
-                    replay_observer=(None if realstate_fork_observer is None
-                                     else realstate_fork_observer.replay))
-            else:
+            if replay_water_observer is not None:
                 replays = target.learn_from_outcome(
                     result, replay_limit=replay_limit,
                     replay_retention=True,
                     replay_observer=replay_water_observer.replay)
+            elif realstate_fork_observer is not None:
+                # Explicit opt-in only. Legacy specialized Minds do not
+                # accept replay_observer and must retain their old call ABI.
+                replays = target.learn_from_outcome(
+                    result, replay_limit=replay_limit,
+                    replay_retention=True,
+                    replay_observer=realstate_fork_observer.replay)
+            else:
+                replays = target.learn_from_outcome(
+                    result, replay_limit=replay_limit,
+                    replay_retention=(learning_mode != "discard_replay"))
             if learning_mode == "discard_effects":
                 mind.effects = preserved
             elif learning_mode == "discard_values":
