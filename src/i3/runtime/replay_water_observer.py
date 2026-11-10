@@ -39,12 +39,14 @@ class ReplayWaterObserver:
     def __init__(self):
         self.steps = []
         self._pending = None
+        self._mind = None
 
     def prepare(self, *, mind, cap, info, action, param):
         if self._pending is not None:
             raise RuntimeError("replay-water witness cannot skip a commit")
         if not isinstance(cap, dict) or not isinstance(info, dict):
             raise TypeError("requires actual first-person capture and paid decision")
+        self._mind = mind  # External read-only reference, never published.
         history = _water_personal(mind)
         water_effect = mind.effects.stats.get(("boire",))
         summary = {
@@ -56,6 +58,8 @@ class ReplayWaterObserver:
             "personal_position": list(mind.pos),
             "personal_water_beliefs": history,
             "personal_water_belief_sha256": _digest(history),
+            "predecision_learned_values_sha256": _digest(mind.values),
+            "predecision_personal_buffer_sha256": _digest(list(mind.buffer)),
             "personally_known_water_cells": sum(
                 belief > 0.5 for _, _, belief in history),
             "personally_learned_drink_effect":
@@ -70,6 +74,7 @@ class ReplayWaterObserver:
             "replay_memory_indices": [],
             "replay_priority_indices": [],
             "pre_replay_priority_sha256": None,
+            "pre_replay_state_sha256": None,
         }
         self._pending = summary
         return None
@@ -92,12 +97,36 @@ class ReplayWaterObserver:
         self._pending["replay_memory_indices"] = list(selected)
         self._pending["replay_priority_indices"] = list(ranked[:len(selected)])
         self._pending["pre_replay_priority_sha256"] = _digest(priorities)
+        # This observer runs immediately before the actually funded TD replay
+        # on the live Mind, after its base outcome update. Hashing records
+        # exact state equality without exposing an oracle or changing it.
+        if self._mind is None:
+            raise RuntimeError("original Mind reference missing")
+        # Replay-relevant learned state also includes the learned effects
+        # used by drift/projection, and personal first-person belief state.
+        # Never compare values+buffer alone as if the whole learning state
+        # were identical when experienced outcomes may have diverged.
+        m = self._mind
+        self._pending["pre_replay_state_sha256"] = _digest({
+            "values": m.values,
+            "buffer": list(m.buffer),
+            "effects": [[list(k), v] for k, v in
+                        sorted(m.effects.stats.items(),
+                               key=lambda item: repr(item[0]))],
+            "hist": [[list(p), v] for p,v in sorted(m.hist.items())],
+            "map": [[list(p),v] for p,v in sorted(m.map.items())],
+            "position": list(m.pos),
+            "inventory_beliefs": sorted(m.acc.items()),
+            "rng": repr(m.rng.getstate()),
+            "budget_rng": repr(m._budget_rng.getstate()),
+        })
 
     def commit(self, *, mind, world, result, replay_limit, post_audit):
         if self._pending is None:
             raise RuntimeError("replay-water witness missing prepare")
         event = self._pending
         self._pending = None
+        self._mind = None
         if replay_limit is None:
             if event["replay_count_prepaid"] != 0:
                 raise RuntimeError("replay executed without prepaid learning")
@@ -123,6 +152,7 @@ class ReplayWaterObserver:
         event["paid_learning_energy"] = post_audit["energy"]["paid"]
         event["paid_learning_vigilance"] = post_audit["vigilance"]["paid"]
         after = _water_personal(mind)
+        event["postlearning_values_sha256"] = _digest(mind.values)
         event["personal_water_belief_after_learning_sha256"] = _digest(after)
         self.steps.append(event)
 
@@ -150,6 +180,11 @@ def first_divergences(a, b):
         raise ValueError("source report schema differs")
     channels = {
         "replay_memory_indices": lambda x: x["replay_memory_indices"],
+        "pre_replay_learned_state": lambda x: x["pre_replay_state_sha256"],
+        "predecision_learned_values": lambda x: x["predecision_learned_values_sha256"],
+        "predecision_memory_buffer": lambda x: x["predecision_personal_buffer_sha256"],
+        "postlearning_values": lambda x: x["postlearning_values_sha256"],
+        "learned_drink_effect": lambda x: x["personally_learned_drink_effect"],
         "personal_water_belief": lambda x: x["personal_water_belief_sha256"],
         "decision": lambda x: (x["decision_option"], x["action"], x["param"]),
         "body_water": lambda x: x["capture_water_before_decision"],

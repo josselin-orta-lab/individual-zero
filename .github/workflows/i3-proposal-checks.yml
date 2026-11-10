@@ -21,6 +21,7 @@ on:
       - 'src/i3/docs/studies/stage2-replay-gate-selected-design/B1_ARCHIVE_ONCE.json'
       - 'src/i3/docs/studies/stage2-replay-gate-selected-design/THREE_ARM_LAUNCH_ONCE.json'
       - 'src/i3/docs/studies/stage2-replay-gate-selected-design/CONTENT_48_LAUNCH_ONCE.json'
+      - 'src/i3/docs/studies/stage2-replay-gate-selected-design/WATER_DIVERGENCE_24_LAUNCH_ONCE.json'
 
 permissions:
   contents: read
@@ -1283,3 +1284,132 @@ jobs:
           path: ${{ runner.temp }}/i3-water-replay-observer-engineering.json
           retention-days: 30
           if-no-files-found: warn
+
+
+  stage2-water-divergence-24-once:
+    # Only trusted main SHA and source-scoped one-shot 24-unit study.
+    # PR runs software only; old 48/64/96 cohorts remain irrevocably closed.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.run_attempt == 1
+    name: I3 first replay/water divergence 24-pair DEVELOPMENT once
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    permissions:
+      contents: write
+    concurrency:
+      group: i3-water-replay-divergence-24-one-shot
+      cancel-in-progress: false
+    env:
+      PYTHONPATH: src
+      SOURCE_SHA: ${{ github.sha }}
+      CLAIM_REF: custody/i3-water-divergence-24-20261110-claimed
+      EVIDENCE_REF: evidence/i3-water-divergence-24-20261110-originals
+      I3_WATER_DIVERGENCE_CLAIM_BRANCH: custody/i3-water-divergence-24-20261110-claimed
+      ARCHIVE_SOURCE: /tmp/i3-water-divergence-24-originals
+      EVIDENCE_DIR: archive/i3/stage2-water-divergence-2026-11-10
+    steps:
+      - name: Checkout exact trusted merged main source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Python 3.11 source custody
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: PRE-BIRTH test, allocation, source and no previous claim
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          test -z "$(git status --porcelain)"
+          if git ls-remote --heads origin "$CLAIM_REF" | grep -q .; then
+            echo "Water divergence scientific source was already consumed"
+            exit 3
+          fi
+          if git ls-remote --heads origin "$EVIDENCE_REF" | grep -q .; then
+            echo "Water divergence originals already exist: NO RETRY"
+            exit 4
+          fi
+          python -m unittest discover -s tests/i3 -p 'test_stage2_water_divergence_24_development.py' -v
+          python - <<'PY'
+          import os
+          from i3.lab import stage2_water_divergence_24_development as D
+          p=D.plan()
+          rows=D.cases()
+          assert p["matched_units"]==24 and len(rows)==48
+          assert [r["index"] for r in rows[::2]]==list(range(510000,510024))
+          assert {r["cohort"] for r in rows}=={"development"}
+          assert {r["policy"] for r in rows}==set(D.POLICIES)
+          assert p["independent_iid_ecology_attested"] is False
+          assert p["scientific_registration"] is False
+          assert p["scientific_go"] is False
+          print("I3_WATER_DIVERGENCE_PREBIRTH_FROZEN source="+os.environ["SOURCE_SHA"]+
+                " plan_sha256="+D._sha(D.PLAN.read_bytes())+
+                " fingerprint="+D.SOURCE.source_fingerprint()+
+                " lives=48 external_iid=NO")
+          PY
+      - name: Permanently claim 24 complete World/G0/life units BEFORE birth
+        id: claim
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Individual Zero scientific custody"
+          git config user.email "334698467+josselin-orta-lab@users.noreply.github.com"
+          git switch --create "$CLAIM_REF" "$SOURCE_SHA"
+          git commit --allow-empty -m "custody(i3): consume water-divergence-24 source $SOURCE_SHA run $GITHUB_RUN_ID NO_RETRY"
+          git push origin "HEAD:refs/heads/$CLAIM_REF"
+          git checkout --detach "$SOURCE_SHA"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          test -z "$(git status --porcelain)"
+          echo "I3_WATER_DIVERGENCE_SOURCE_CONSUMED_BEFORE_FIRST_WORLD"
+      - name: Execute 48 original full lives once, seal G, verify R and temporal outcomes
+        id: run
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_water_divergence_24_development execute "$ARCHIVE_SOURCE" \
+            > "$RUNNER_TEMP/water-divergence-24-console.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          r=json.loads((Path(os.environ["ARCHIVE_SOURCE"])/"EXECUTION_REPORT.json").read_text())
+          assert r["status"]=="COMPLETE_EXPLORATORY_DEVELOPMENT_ONLY"
+          assert r["planned"]==r["generated"]==r["reduced"]==48
+          assert r["phase_G"]=="GENERATED" and r["phase_R"]=="COMPLETE"
+          assert r["analysis"]["mechanism"]["assigned_pairs"]==24
+          assert r["analysis"]["mechanism"]["causal_mediation_claim"] is False
+          assert r["analysis"]["scientific_go"] is False
+          assert r["analysis"]["scientific_verdict"]=="NOT_ISSUED"
+          print("I3_WATER_DIVERGENCE_48_LIVES_G_R_COMPLETE_ORIGINALS_NO_CONFIRMATORY_CLAIM")
+          PY
+      - name: Preserve every original and any failure, never rerun, never overwrite
+        if: always() && steps.claim.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-remote --heads origin "$EVIDENCE_REF" | grep -q .; then
+            echo "Evidence already exists; never overwrite"
+            exit 4
+          fi
+          git config user.name "Individual Zero scientific custody"
+          git config user.email "334698467+josselin-orta-lab@users.noreply.github.com"
+          git switch --create "$EVIDENCE_REF" "$SOURCE_SHA"
+          mkdir -p "$EVIDENCE_DIR"
+          if [ -d "$ARCHIVE_SOURCE" ]; then
+            cp -a "$ARCHIVE_SOURCE"/. "$EVIDENCE_DIR"/
+          fi
+          if [ -f "$RUNNER_TEMP/water-divergence-24-console.json" ]; then
+            cp "$RUNNER_TEMP/water-divergence-24-console.json" "$EVIDENCE_DIR/CONSOLE_REPORT.json"
+          fi
+          if [ ! -f "$EVIDENCE_DIR/EXECUTION_REPORT.json" ]; then
+            printf '{"status":"RUNNER_EXCEPTION_PRESERVED","no_retry":true,"scientific_verdict":"NOT_ISSUED"}\n' > "$EVIDENCE_DIR/EXECUTION_FAILURE.json"
+          fi
+          git add "$EVIDENCE_DIR"
+          git diff --cached --check
+          git diff --cached --stat
+          git commit -m "custody(i3): store all first water-divergence originals and failures, source $SOURCE_SHA"
+          git push origin "HEAD:refs/heads/$EVIDENCE_REF"
+          echo "I3_WATER_DIVERGENCE_FIRST_ORIGINALS_ARCHIVED"
