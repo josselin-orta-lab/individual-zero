@@ -122,7 +122,10 @@ class WaterDivergence24Tests(unittest.TestCase):
                "dead_at_horizon":False,
                "paid_energy":100.,"paid_vigilance":110.,
                "replays_paid":2,"sleep_steps":1,
-               "random_content_receipt":None,
+               "random_content_receipt":(
+                   {"distinct_from_priority_subsets":1,
+                    "paid_replay_opportunities":1}
+                   if is_random else None),
                "world_sha256":str(case["world_seed"]),
                "genome_sha256":str(case["genome_seed"]),
                "source_sha256":"synthetic-test",
