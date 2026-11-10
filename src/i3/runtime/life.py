@@ -33,6 +33,7 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
              score_addend_mode: str = "normal",
              observer_resource_acquisition: bool = False,
              observer_full_competition: bool = False,
+             observer_replay_water: bool = False,
              decision_policy: str = "reference",
              admission=None) -> dict:
     started = time.perf_counter()
@@ -73,6 +74,15 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
         raise TypeError("observer_resource_acquisition must be bool")
     if type(observer_full_competition) is not bool:
         raise TypeError("observer_full_competition must be bool")
+    if type(observer_replay_water) is not bool:
+        raise TypeError("observer_replay_water must be bool")
+    if observer_replay_water and decision_policy not in (
+            "p13_replay_gate_v1", "p13_replay_gate_random_content_v1"):
+        raise PermissionError("replay-water observer only on matched GATE content policies")
+    if observer_replay_water and (
+            learning_mode != "normal" or effect_readout != "full" or
+            score_addend_mode != "normal"):
+        raise PermissionError("replay-water observer forbids learning/decision ablations")
     if effect_readout not in (
             "full", "blind_predictions", "blind_action_predictions",
             "blind_sleep_forecast", "blind_sources", "blind_all",
@@ -243,6 +253,10 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
               for c in ("energy", "vigilance")}
     shortfall_steps = 0
     world = World(spec)
+    replay_water_observer = None
+    if observer_replay_water:
+        from i3.runtime.replay_water_observer import ReplayWaterObserver
+        replay_water_observer = ReplayWaterObserver()
     resource_observer = None
     if observer_resource_acquisition:
         from i3.runtime.resource_observer import ResourceObserver
@@ -327,6 +341,9 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
             competition_trace.append(capture_competition(
                 info=info, action=action, param=param, work=work,
                 allowed=allowance, capture=capture))
+        if replay_water_observer is not None:
+            replay_water_observer.prepare(
+                mind=mind, cap=capture, info=info, action=action, param=param)
         pending_resource = (resource_observer.prepare(
             cap=capture, mind=mind, info=info, action=action, param=param)
             if resource_observer is not None else None)
@@ -372,9 +389,15 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
                 preserved = [v[:] for v in mind.values]
             else:
                 preserved = None
-            replays = target.learn_from_outcome(
-                result, replay_limit=replay_limit,
-                replay_retention=(learning_mode != "discard_replay"))
+            if replay_water_observer is None:
+                replays = target.learn_from_outcome(
+                    result, replay_limit=replay_limit,
+                    replay_retention=(learning_mode != "discard_replay"))
+            else:
+                replays = target.learn_from_outcome(
+                    result, replay_limit=replay_limit,
+                    replay_retention=True,
+                    replay_observer=replay_water_observer.replay)
             if learning_mode == "discard_effects":
                 mind.effects = preserved
             elif learning_mode == "discard_values":
@@ -394,6 +417,10 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
                          "body_before": list(before_learning),
                          "body_after_debit": list(world.body)},
         }
+        if replay_water_observer is not None:
+            replay_water_observer.commit(
+                mind=mind, world=world, result=result,
+                replay_limit=replay_limit, post_audit=post_audit)
         if resource_observer is not None:
             resource_observer.commit(
                 pending_resource, world=world, physical_body=before_learning,
@@ -693,6 +720,8 @@ def run_life(genome: dict, spec: WorldSpec, life_seed: int, horizon: int,
         out["observer_decision_diagnostics"] = dict(observer_counts)
     if resource_observer is not None:
         out["observer_resource_acquisition"] = resource_observer.report()
+    if replay_water_observer is not None:
+        out["observer_replay_water"] = replay_water_observer.report()
     if competition_trace is not None:
         out["observer_full_competition"] = {
             "schema": "i3-p5e-full-paid-competition/v1",
