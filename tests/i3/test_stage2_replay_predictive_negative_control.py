@@ -58,7 +58,7 @@ class ReplayPredictiveNegativeControlTests(unittest.TestCase):
         for fields in ({"life_seed":-1},{"life_seed":True},
                        {"sleep_ordinal":-1},{"sleep_ordinal":1.2}):
             with self.subTest(fields=fields),self.assertRaises(ValueError):
-                NEG.contrast(src,count=2,life_seed=1,sleep_ordinal=1,**fields)
+                NEG.contrast(src,**({ "count":2,"life_seed":1,"sleep_ordinal":1 } | fields))
         for body in ((80.,65.,70.),(80.,65.,float("nan"),90.,70.),
                      (80.,65.,110.,90.,70.),(True,65.,60.,90.,70.)):
             with self.subTest(body=body),self.assertRaises(ValueError):
