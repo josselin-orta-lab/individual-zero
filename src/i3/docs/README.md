@@ -8,6 +8,9 @@ operational surface below.
 
 ## Current
 
+- **First real-state replay memory fork completed:** [48 new full-life originals, 24 assigned matched units](studies/stage2-replay-gate-selected-design/REALSTATE_FORK_24_RESULTS_2026-11-10.md). From identical actual pre-replay learned Mind states, equal-count priority vs random-content TD updates differed in **17/24 assigned units**; **7/24 no applicable fork**, retained as null. Secondary horizon survivors TD priority 8/24, random content 10/24. Original source consumed once and permanently closed; source-bound independent full-gzip read-only audit in the closure PR. No iid or biological survival mediation claim.
+
+
 - **Water/replay causal hypothesis instrumentation and prospective 24-pair observation:** [48 complete new-source original lives, first replay selection difference at equal learned state in 18/24, then water-belief and decision divergence in 16/24](studies/stage2-replay-gate-selected-design/WATER_DIVERGENCE_24_RESULTS_2026-11-10.md). Secondary survival priority 8/24 vs random memory 10/24. All previous cohorts and the new 24-pair source closed; no causal mediation or independent iid claim. Independent original-only audit **48 packed and 48 unpacked SHA-256s, first divergence and all paid receipts PASS** in [PR #1266 / Actions #42810066826](https://github.com/josselin-orta-lab/individual-zero/actions/runs/42810066826), with no new organism.
 
 

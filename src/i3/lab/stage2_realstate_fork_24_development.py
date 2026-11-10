@@ -350,48 +350,15 @@ def _claim_trusted_main():
 
 
 def execute(destination):
-    sha=_claim_trusted_main()
-    root=Path(destination).resolve()
-    if root.exists() and any(root.iterdir()):
-        raise PermissionError("original destination occupied, never retry")
-    root.mkdir(parents=True,exist_ok=True)
-    scheduled=cases()
-    fingerprint=SOURCE.source_fingerprint()
-    lock={
-        "schema":SCHEMA+"/claim","status":"CONSUMED_BEFORE_FIRST_BIRTH",
-        "source_sha":sha,"source_fingerprint":fingerprint,
-        "plan_sha256":_sha(PLAN.read_bytes()),"witness_sha256":WITNESS_SHA,
-        "claim_branch":CLAIM_BRANCH,"evidence_branch":EVIDENCE_BRANCH,
-        "pairs":PAIRS,"lives":2*PAIRS,"no_retry":True,
-        "confirmatory_science_authorized":False}
-    (root/"SOURCE_LOCK.json").write_text(
-        json.dumps(lock,sort_keys=True,indent=2)+"\n")
-    g=TP.generate(scheduled,_run_case(scheduled,fingerprint),root/"originals")
-    report={
-        "schema":SCHEMA,"status":"GENERATION_INCOMPLETE_NO_RETRY",
-        "planned":2*PAIRS,"generated":g["generated"],"reduced":0,
-        "phase_G":g["status"],"phase_R":None,
-        "source_sha":sha,"source_fingerprint":fingerprint,
-        "plan_sha256":lock["plan_sha256"],
-        "scientific_verdict":"NOT_ISSUED","no_retry":True}
-    if g["status"]!="GENERATED":
-        report["failure"]=g["failure"]
-    else:
-        r=TP.reduce(root/"originals",
-                    lambda case,life:_reduce(case,life,fingerprint))
-        report["phase_R"]=r["status"]
-        if r["status"]!="COMPLETE":
-            report["status"]="REDUCTION_DEFECT_PENDING_REPAIR"
-            report["failure"]=r.get("failure")
-        else:
-            report["reduced"]=len(r["rows"])
-            report["analysis"]=analyze(scheduled,r["rows"])
-            report["status"]="COMPLETE_EXPLORATORY_DEVELOPMENT_ONLY"
-            (root/"REDUCED_ROWS.json").write_text(
-                json.dumps(r["rows"],sort_keys=True,indent=2)+"\n")
-    (root/"EXECUTION_REPORT.json").write_text(
-        json.dumps(report,sort_keys=True,indent=2)+"\n")
-    return report
+    """Consumed once; never reopen these scientific World/G0/life sources.
+
+    Exact source 24531b8a5033a2be1b738dd30734fac2f50a3a8b,
+    Actions 42819947791, 48 original gzip evidence commit
+    e28211865fd1d1e17173a115e81772702fb8cef1.
+    """
+    raise PermissionError(
+        "24 realstate-fork DEVELOPMENT pairs 540000..540023 were born, "
+        "sealed and reduced once; source CLOSED_NO_RETRY.")
 
 
 def main(argv=None):
