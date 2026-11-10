@@ -1746,3 +1746,61 @@ jobs:
           path: ${{ runner.temp }}/i3-realstate-fork-24-independent-original-audit.json
           retention-days: 90
           if-no-files-found: warn
+
+
+  stage2-next-decision-replay-engineering:
+    # Two new PUBLIC F0 technical units 184-185; no scientific births.
+    if: startsWith(github.head_ref, 'research/i3-next-decision-replay-')
+    name: I3 next-decision replay shadow neutrality (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Checkout exact proposed observer source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Unit-test exact-source and noninterference contract
+        run: python -m unittest discover -s tests/i3 -p 'test_stage2_next_decision_replay_observer.py' -v
+      - name: Four original technical full lives on/off with structural receipt only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_next_decision_replay_engineering rehearse > "$RUNNER_TEMP/i3-next-decision-technical.json"
+          python - "$RUNNER_TEMP/i3-next-decision-technical.json" <<'PY'
+          import json,sys
+          from pathlib import Path
+          r=json.loads(Path(sys.argv[1]).read_text())
+          assert r["status"]=="OBSERVER_PHYSICAL_AND_DECISION_NEUTRALITY_PASS"
+          assert r["technical_units"]==2
+          assert r["actual_technical_life_executions"]==4
+          assert 0<=r["shared_action_residuals"]<=r["next_decisions_observed"]<=r["first_detached_forks"]<=2
+          assert r["identical_physical_and_decision_traces_on_off"] is True
+          assert r["no_observer_work_billed_to_organism"] is True
+          assert r["no_new_scientific_lives"] is True
+          assert r["no_survival_outcomes_published"] is True
+          assert r["scientific_verdict"]=="NOT_ISSUED"
+          assert all(field not in r for field in ("terminal","survivors","death_causes","body","actions"))
+          print(json.dumps(r,sort_keys=True))
+          PY
+      - name: Retain only the structural technical witness
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-next-decision-py${{ matrix.python-version }}
+          path: ${{ runner.temp }}/i3-next-decision-technical.json
+          retention-days: 30
+          if-no-files-found: warn
