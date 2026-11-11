@@ -63,10 +63,11 @@ The repository contains distinct architectural generations. They are research ge
 | **I0** | Preserved historical reference. |
 | **I1** | Currently registered active research engine, with its own runtime, laboratory, and evidence records. |
 | **I2** | Unregistered research proposal with an internally executable, locally born native SQLite prototype (paid body, spatial experience and audits); **not** an activated engine or independently witnessed M11 life. |
+| **I3** | **Owner-selected development and architectural reference** (ADR-0020), with native embodied P1.3 funded-v2 research code. It is **not yet a registered active runtime** and its scientific Stage-2 verdict remains `NOT_ISSUED`. |
 
 The current implementation investigates embodied perception, internal regulation, memory, action, and continuity. It does **not** establish that a unified artificial individual has achieved generalized autonomous learning.
 
-For the authoritative technical and scientific boundaries, see the [engine registry](config/engine-registry.json), [I1 evidence matrix](src/i1/docs/EVIDENCE_MATRIX.md), and [I2 research status](src/i2/docs/STATUS.md). Architectural progress, software validation, and scientific evidence are assessed separately.
+For the authoritative technical and scientific boundaries, see the [engine registry](config/engine-registry.json), [I3 reference decision](docs/decisions/ADR-0020-i3-owner-selected-development-reference.md), [I3 research status](src/i3/docs/STATUS.md), [I1 evidence matrix](src/i1/docs/EVIDENCE_MATRIX.md), and [I2 research status](src/i2/docs/STATUS.md). Architectural progress, software validation, and scientific evidence are assessed separately.
 
 ## Published research
 

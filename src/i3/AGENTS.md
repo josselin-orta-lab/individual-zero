@@ -15,6 +15,10 @@ Before editing I3, read:
 
 Do not reconstruct the current handoff from old Stage-1 documents.
 
+## Owner-selected development reference (11 November 2026)
+
+[ADR-0020](../../docs/decisions/ADR-0020-i3-owner-selected-development-reference.md) selects **I3 as the project's default reference for new architectural work and autonomous development**, not as the registered active runtime. The registry distinguishes `reference_generation=I3` from `active_generation=I1`. I3 retains P1.3 funded-v2 as its **internal** science reference, Stage 2.1 `NOT_ISSUED`, and closed original cohorts. Routine software/document engineering needs no repeated owner approval; an independent generation-owned birth, M11 and cold-recovery contract plus exact-source tests must precede runtime release. No new scientific Worlds are opened by reference selection.
+
 ## Current scientific state
 
 - Reference: **P1.3 on funded v2**.

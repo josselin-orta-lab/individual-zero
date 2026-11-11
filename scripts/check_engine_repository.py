@@ -11,6 +11,38 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def reference_selection_errors(registry: dict, contract: dict, surface: dict) -> list[str]:
+    """Owner-selected *development* reference must not become an implicit birth.
+
+    This R0 boundary is intentionally strict while I3 is still a proposal.
+    A later tested promotion must revise the registry and this guard together.
+    """
+    errors: list[str] = []
+    if registry.get("reference_generation") != "I3":
+        errors.append("owner-selected development reference must be I3")
+    if registry.get("active_generation") == "I3":
+        errors.append("I3 reference cannot be activated by the reference pointer")
+    if "I3" in registry.get("generations", {}):
+        errors.append("I3 reference cannot be registered without production release")
+    if (contract.get("generation") != "I3"
+            or contract.get("status") != "proposal"
+            or contract.get("activation") != "NOT_REGISTERED_NOT_EXECUTABLE"
+            or contract.get("entrypoints") != {}):
+        errors.append("I3 proposal contract or entrypoints were promoted without release")
+    governance = surface.get("governance")
+    if not isinstance(governance, dict) or any(
+            governance.get(key) is not False for key in (
+                "i3_registered", "fresh_lived_worlds_allowed",
+                "next_scientific_cohort_authorized", "scientific_gate_authorized",
+        )):
+        errors.append("I3 reference cannot authorize scientific World admission")
+    if (surface.get("reference") != "P1.3 funded-v2"
+            or surface.get("current_stage") != "2.1 replay gate"
+            or surface.get("canonical_status") != "REPLAY_GATE_CAPACITY_SHOWN"):
+        errors.append("I3 current scientific reference or stage was reclassified")
+    return errors
+
+
 def git(*args):
     return subprocess.check_output(["git", *args], cwd=ROOT, text=True).strip()
 
@@ -73,6 +105,13 @@ def check():
         errors.append("unknown archive schema")
     if registry["active_generation"] != "I1":
         errors.append("active generation must be I1")
+    try:
+        i3_contract = json.loads((ROOT / "src/i3/engine.json").read_text())
+        i3_surface = json.loads((ROOT / "src/i3/ACTIVE_SURFACE.json").read_text())
+    except (OSError, ValueError) as exc:
+        errors.append("I3 reference contract unavailable: " + str(exc))
+    else:
+        errors.extend(reference_selection_errors(registry, i3_contract, i3_surface))
     generations = registry["generations"]
     for name, entry in generations.items():
         if not (ROOT / entry["source"]).is_dir():
@@ -136,6 +175,7 @@ def check():
     if unexpected:
         errors.append("unarchived historical workflows: " + ", ".join(unexpected))
     result = {"status": "FAIL" if errors else "PASS", "active_generation": registry["active_generation"],
+              "reference_generation": registry.get("reference_generation"),
               "archived": counts, "errors": errors}
     return result
 
