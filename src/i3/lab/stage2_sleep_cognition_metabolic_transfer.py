@@ -155,7 +155,8 @@ def audit():
         failures.append("sleep_food_control")
     unsaturated = by["sleep_unsaturated"]
     if (unsaturated["same_post_energy_and_vigilance"] or
-            unsaturated["net_food_difference_optional_minus_reference"] >= 0):
+            not isclose(unsaturated["net_food_difference_optional_minus_reference"],
+                        0., abs_tol=1e-12)):
         failures.append("sleep_unsaturated")
     waiting = by["wait_no_conversion"]
     if not (isclose(waiting["net_food_difference_optional_minus_reference"],
