@@ -1,6 +1,7 @@
 """One-shot I3 native engineering cycle, no M11 or scientific birth claims."""
 from dataclasses import replace
 from pathlib import Path
+import sqlite3
 import json
 import os
 import subprocess
@@ -13,7 +14,10 @@ from i3.lab.dev_worlds import dev_long_corridor
 from i3.modules.body import BodyLaws
 from i3.modules.genome import midpoint
 from i3.modules.world import World, WorldSpec
-from i3.runtime.engineering_step_ledger import inspect as inspect_steps
+from i3.runtime.engineering_step_ledger import (
+    inspect as inspect_steps, DB_NAME as STEP_DB_NAME,
+)
+from i3.runtime import engineering_rollback_witness as witness
 from i3.runtime.life import run_life
 from i3.runtime.native_engineering_session import (
     NativeEngineeringSession, make_engineering_claim, state_hash,
@@ -29,13 +33,14 @@ class NativeEngineeringStepTests(unittest.TestCase):
         self.seed = 7719
         self.spec = dev_long_corridor()
 
-    def begin(self, *, index=1, spec=None, horizon=3, root=None):
+    def begin(self, *, index=1, spec=None, horizon=3, root=None, witness_dir=None):
         spec = spec if spec is not None else self.spec
         root = root if root is not None else self.root
         claim = make_engineering_claim(birth_index=index, genome=self.genome,
                                        spec=spec, life_seed=self.seed)
         return NativeEngineeringSession.begin(
-            root, claim, genome=self.genome, spec=spec, horizon=horizon)
+            root, claim, genome=self.genome, spec=spec, horizon=horizon,
+            witness_directory=witness_dir)
 
     def test_real_paid_motor_learning_step_and_complete_local_receipt(self):
         session = self.begin(horizon=3)
@@ -160,6 +165,7 @@ class NativeEngineeringStepTests(unittest.TestCase):
         original.step()
         script = '''\
 from pathlib import Path
+import sqlite3
 import json
 from i3.lab.dev_worlds import dev_long_corridor
 from i3.modules.genome import midpoint
@@ -197,6 +203,86 @@ print(json.dumps(reconstructed.step(),sort_keys=True))
             with self.assertRaisesRegex(PermissionError, "terminal"):
                 NativeEngineeringSession.reconstruct(
                     Path(other), old.claim, genome=self.genome, spec=self.spec)
+
+    def test_separate_witness_survives_new_process_and_binds_native_steps(self):
+        with tempfile.TemporaryDirectory() as anchor_dir:
+            local_witness = Path(anchor_dir)
+            session = self.begin(horizon=4, witness_dir=local_witness)
+            session.step()
+            first = witness.verify(local_witness, self.root, session.claim)
+            self.assertEqual(first["sequence"], 1)
+            self.assertFalse(first["off_host_monotonic"])
+            with self.assertRaisesRegex(PermissionError, "cannot be bypassed"):
+                NativeEngineeringSession.reconstruct(
+                    self.root, session.claim, genome=self.genome, spec=self.spec)
+            script = '''from pathlib import Path
+import json
+from i3.lab.dev_worlds import dev_long_corridor
+from i3.modules.genome import midpoint
+from i3.runtime.native_engineering_session import NativeEngineeringSession,make_engineering_claim
+root,external = Path(%r),Path(%r)
+spec,genome = dev_long_corridor(),midpoint()
+claim = make_engineering_claim(birth_index=1,genome=genome,spec=spec,life_seed=7719)
+reconstructed = NativeEngineeringSession.reconstruct(root,claim,genome=genome,spec=spec,
+                                                       witness_directory=external)
+print(json.dumps(reconstructed.step(),sort_keys=True))
+''' % (str(self.root), str(local_witness))
+            repo = Path(__file__).resolve().parents[2]
+            env = dict(os.environ)
+            env["PYTHONPATH"] = str(repo / "src") + os.pathsep + env.get("PYTHONPATH", "")
+            done = subprocess.run([sys.executable, "-c", script], cwd=repo,
+                                  env=env, text=True, capture_output=True, timeout=40)
+            self.assertEqual(done.returncode, 0, done.stdout + done.stderr)
+            self.assertEqual(json.loads(done.stdout)["sequence"], 2)
+            self.assertEqual(witness.verify(local_witness, self.root, session.claim)["sequence"], 2)
+            with self.assertRaises(PermissionError):
+                session.step()  # stale original process cannot apply motor
+
+    def test_old_complete_ledger_rejected_against_newer_separate_witness(self):
+        with tempfile.TemporaryDirectory() as anchor_dir:
+            session = self.begin(horizon=4, witness_dir=Path(anchor_dir))
+            session.step()
+            backup = self.root / "old.sqlite3"
+            with sqlite3.connect(self.root / STEP_DB_NAME) as src:
+                with sqlite3.connect(backup) as dst:
+                    src.backup(dst)
+            session.step()
+            self.assertEqual(witness.verify(anchor_dir, self.root, session.claim)["sequence"], 2)
+            os.replace(backup, self.root / STEP_DB_NAME)
+            for ending in ("-wal", "-shm"):
+                candidate = self.root / (STEP_DB_NAME + ending)
+                if candidate.exists():
+                    candidate.unlink()
+            # The old ledger is internally consistent, but it is NOT latest.
+            self.assertEqual(inspect_steps(self.root, session.claim)["sequence"], 1)
+            with self.assertRaisesRegex(PermissionError, "witness rejects"):
+                NativeEngineeringSession.reconstruct(
+                    self.root, session.claim, genome=self.genome, spec=self.spec,
+                    witness_directory=anchor_dir)
+
+    def test_crash_before_witness_prepare_cannot_execute_native_motor(self):
+        with tempfile.TemporaryDirectory() as anchor_dir:
+            session = self.begin(horizon=3, witness_dir=Path(anchor_dir))
+            with patch.object(witness, "prepared", side_effect=RuntimeError("witness unavailable")):
+                with patch.object(World, "step", side_effect=AssertionError("motor executed")):
+                    with self.assertRaisesRegex(RuntimeError, "witness unavailable"):
+                        session.step()
+            with self.assertRaisesRegex(PermissionError, "uncertain prepared motor"):
+                NativeEngineeringSession.reconstruct(
+                    self.root, session.claim, genome=self.genome, spec=self.spec,
+                    witness_directory=anchor_dir)
+
+    def test_after_seal_before_witness_commit_fails_closed(self):
+        with tempfile.TemporaryDirectory() as anchor_dir:
+            session = self.begin(horizon=3, witness_dir=Path(anchor_dir))
+            with patch.object(witness, "committed", side_effect=RuntimeError("seal witness crash")):
+                with self.assertRaisesRegex(RuntimeError, "seal witness crash"):
+                    session.step()
+            self.assertEqual(inspect_steps(self.root, session.claim)["sequence"], 1)
+            with self.assertRaisesRegex(PermissionError, "witness rejects"):
+                NativeEngineeringSession.reconstruct(
+                    self.root, session.claim, genome=self.genome, spec=self.spec,
+                    witness_directory=anchor_dir)
 
     def test_no_cross_generation_or_m11_compatibility_entrypoint(self):
         import inspect
