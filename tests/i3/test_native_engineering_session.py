@@ -5,6 +5,9 @@ import sqlite3
 import json
 import os
 import subprocess
+import socket
+import time
+from contextlib import contextmanager, closing
 import sys
 import tempfile
 import unittest
@@ -15,9 +18,10 @@ from i3.modules.body import BodyLaws
 from i3.modules.genome import midpoint
 from i3.modules.world import World, WorldSpec
 from i3.runtime.engineering_step_ledger import (
-    inspect as inspect_steps, DB_NAME as STEP_DB_NAME,
+    inspect as inspect_steps, DB_NAME as STEP_DB_NAME, REMOTE_MODE,
 )
 from i3.runtime import engineering_rollback_witness as witness
+from i3.runtime.engineering_remote_witness import RemoteEngineeringWitness
 from i3.runtime.life import run_life
 from i3.runtime.native_engineering_session import (
     NativeEngineeringSession, make_engineering_claim, state_hash,
@@ -33,14 +37,14 @@ class NativeEngineeringStepTests(unittest.TestCase):
         self.seed = 7719
         self.spec = dev_long_corridor()
 
-    def begin(self, *, index=1, spec=None, horizon=3, root=None, witness_dir=None):
+    def begin(self, *, index=1, spec=None, horizon=3, root=None, witness_dir=None, remote=None):
         spec = spec if spec is not None else self.spec
         root = root if root is not None else self.root
         claim = make_engineering_claim(birth_index=index, genome=self.genome,
                                        spec=spec, life_seed=self.seed)
         return NativeEngineeringSession.begin(
             root, claim, genome=self.genome, spec=spec, horizon=horizon,
-            witness_directory=witness_dir)
+            witness_directory=witness_dir, remote_witness=remote)
 
     def test_real_paid_motor_learning_step_and_complete_local_receipt(self):
         session = self.begin(horizon=3)
@@ -283,6 +287,141 @@ print(json.dumps(reconstructed.step(),sort_keys=True))
                 NativeEngineeringSession.reconstruct(
                     self.root, session.claim, genome=self.genome, spec=self.spec,
                     witness_directory=anchor_dir)
+
+    @contextmanager
+    def remote_authority(self):
+        # Separate real server process and durable database, loopback test only.
+        with tempfile.TemporaryDirectory() as outside:
+            key = bytes(range(32))
+            authority_id = "d" * 64
+            with socket.socket() as sock:
+                sock.bind(("127.0.0.1", 0))
+                port = sock.getsockname()[1]
+            repo = Path(__file__).resolve().parents[2]
+            env = dict(os.environ)
+            env["PYTHONPATH"] = str(repo / "src") + os.pathsep + env.get("PYTHONPATH", "")
+            service = subprocess.Popen([
+                sys.executable, "-m", "i3.lab.engineering_remote_authority",
+                "--database", str(Path(outside)/"remote.sqlite3"),
+                "--authority-id", authority_id, "--key-hex", key.hex(),
+                "--port", str(port)], cwd=repo, env=env,
+                stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+            try:
+                for _ in range(120):
+                    if service.poll() is not None:
+                        self.fail("remote authority quit: " + service.stderr.read().decode())
+                    try:
+                        with socket.create_connection(("127.0.0.1", port), .2):
+                            break
+                    except OSError:
+                        time.sleep(.03)
+                else:
+                    self.fail("remote authority did not start")
+                client = RemoteEngineeringWitness(
+                    "http://127.0.0.1:%d" % port,
+                    key=key, authority_id=authority_id,
+                    allow_test_loopback_http=True, timeout=1)
+                yield client, port, key, authority_id
+            finally:
+                service.terminate()
+                service.wait(timeout=5)
+                service.stderr.close()
+
+    def test_remote_cas_native_paid_motor_and_second_process_restart(self):
+        with self.remote_authority() as (remote, port, key, aid):
+            session = self.begin(horizon=4, remote=remote)
+            first = session.step()
+            self.assertEqual(first["witness_mode"], REMOTE_MODE)
+            self.assertTrue(first["remote_witness_transport"])
+            self.assertFalse(first["independent_m11_antirollback"])
+            script = '''from pathlib import Path
+import json
+from i3.lab.dev_worlds import dev_long_corridor
+from i3.modules.genome import midpoint
+from i3.runtime.native_engineering_session import NativeEngineeringSession,make_engineering_claim
+from i3.runtime.engineering_remote_witness import RemoteEngineeringWitness
+root=Path(%r)
+client=RemoteEngineeringWitness("http://127.0.0.1:%d",key=bytes.fromhex(%r),
+    authority_id=%r,allow_test_loopback_http=True)
+spec,genome=dev_long_corridor(),midpoint()
+claim=make_engineering_claim(birth_index=1,genome=genome,spec=spec,life_seed=7719)
+session=NativeEngineeringSession.reconstruct(root,claim,genome=genome,spec=spec,
+                                             remote_witness=client)
+print(json.dumps(session.step(),sort_keys=True))
+''' % (str(self.root), port, key.hex(), aid)
+            repo = Path(__file__).resolve().parents[2]
+            env = dict(os.environ)
+            env["PYTHONPATH"] = str(repo / "src") + os.pathsep + env.get("PYTHONPATH", "")
+            done = subprocess.run([sys.executable,"-c",script],cwd=repo,env=env,
+                                  text=True,capture_output=True,timeout=40)
+            self.assertEqual(done.returncode,0,done.stdout+done.stderr)
+            self.assertEqual(json.loads(done.stdout)["sequence"],2)
+            self.assertEqual(remote.verify(session.claim,inspect_steps(self.root,session.claim))["sequence"],2)
+            with self.assertRaises(PermissionError):
+                session.step() # stale process cannot act, even with credentials
+
+    def test_common_local_birth_and_ledger_rollback_blocked_by_remote(self):
+        with self.remote_authority() as (remote,*_):
+            session = self.begin(horizon=4,remote=remote)
+            session.step()
+            snapshots=[]
+            for name in ("i3_birth_reservations.sqlite3", STEP_DB_NAME):
+                saved = self.root/("backup_"+name)
+                with closing(sqlite3.connect(self.root/name)) as src:
+                    with closing(sqlite3.connect(saved)) as dst:
+                        src.backup(dst)
+                snapshots.append((name,saved))
+            session.step()
+            for name,saved in snapshots:
+                os.replace(saved,self.root/name)
+                for suffix in ("-wal","-shm"):
+                    extra=self.root/(name+suffix)
+                    if extra.exists(): extra.unlink()
+            old = inspect_steps(self.root,session.claim)
+            self.assertEqual(old["sequence"],1)
+            with self.assertRaisesRegex(PermissionError,"remote authority rejects"):
+                NativeEngineeringSession.reconstruct(self.root,session.claim,
+                    genome=self.genome,spec=self.spec,remote_witness=remote)
+            with self.assertRaises(PermissionError):
+                session.step()
+
+    def test_remote_prepare_failure_never_executes_native_motor(self):
+        with self.remote_authority() as (remote,*_):
+            session = self.begin(horizon=3,remote=remote)
+            with patch.object(remote,"prepared",side_effect=PermissionError("lost authority")):
+                with patch.object(World,"step",side_effect=AssertionError("motor executed")):
+                    with self.assertRaisesRegex(PermissionError,"lost authority"):
+                        session.step()
+            with self.assertRaisesRegex(PermissionError,"uncertain prepared motor"):
+                NativeEngineeringSession.reconstruct(self.root,session.claim,
+                    genome=self.genome,spec=self.spec,remote_witness=remote)
+
+    def test_after_local_commit_remote_unacknowledged_stays_blocked(self):
+        with self.remote_authority() as (remote,*_):
+            session = self.begin(horizon=3,remote=remote)
+            with patch.object(remote,"committed",side_effect=PermissionError("ack lost")):
+                with self.assertRaisesRegex(PermissionError,"ack lost"):
+                    session.step()
+            self.assertEqual(inspect_steps(self.root,session.claim)["sequence"],1)
+            with self.assertRaisesRegex(PermissionError,"remote authority rejects"):
+                NativeEngineeringSession.reconstruct(self.root,session.claim,
+                    genome=self.genome,spec=self.spec,remote_witness=remote)
+
+    def test_remote_mode_is_bound_and_cannot_degrade_to_local_or_none(self):
+        with self.remote_authority() as (remote,*_):
+            session = self.begin(horizon=4,remote=remote)
+            session.step()
+            with self.assertRaisesRegex(PermissionError,"cannot be bypassed"):
+                NativeEngineeringSession.reconstruct(self.root,session.claim,
+                    genome=self.genome,spec=self.spec)
+            with tempfile.TemporaryDirectory() as d:
+                with self.assertRaisesRegex(PermissionError,"cannot be bypassed"):
+                    NativeEngineeringSession.reconstruct(self.root,session.claim,
+                        genome=self.genome,spec=self.spec,witness_directory=Path(d))
+            with self.assertRaises(ValueError):
+                NativeEngineeringSession.begin(self.root,session.claim,
+                    genome=self.genome,spec=self.spec,horizon=4,
+                    witness_directory=Path(self.root.parent),remote_witness=remote)
 
     def test_no_cross_generation_or_m11_compatibility_entrypoint(self):
         import inspect
