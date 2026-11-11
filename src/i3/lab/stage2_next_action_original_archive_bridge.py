@@ -167,6 +167,9 @@ def audit(root):
     # Trust neither an unverified standalone REDUCED_ROWS.json nor a
     # caller's claimed "sha256": the existing archive audit checks all 48
     # compressed/uncompressed actual original bytes and reductions.
+    # Hash ONLY (do not interpret) the reduced snapshot before entering the
+    # existing full-original audit; detect any replacement during audit.
+    reduced_before_sha = sha256((base / "REDUCED_ROWS.json").read_bytes()).hexdigest()
     attested = ORIGINAL.audit(base)
     _require(attested["status"] == "READ_ONLY_ALL_ORIGINALS_AND_REDUCTIONS_PASS"
              and attested["packed_sha_verified"] == 48
@@ -174,10 +177,11 @@ def audit(root):
              and attested["complete_matched_pairs"] == 24
              and attested["manifest_sha256"] == ORIGINAL.MANIFEST_SHA,
              "original source integrity not fully authenticated")
-    rows = json.loads((base / "REDUCED_ROWS.json").read_bytes())
-    # Re-reading a previously audited reduced file can race a concurrent
-    # writer; require a bounded local snapshot and re-verify content by
-    # reusing the canonical original summary on the same parsed rows.
+    reduced_after = (base / "REDUCED_ROWS.json").read_bytes()
+    _require(sha256(reduced_after).hexdigest() == reduced_before_sha,
+             "reduced archive changed during original verification")
+    rows = json.loads(reduced_after)
+    # Recheck the original aggregated account on the identical byte snapshot.
     audit_summary = ORIGINAL._summaries(rows)
     _require(audit_summary["mechanism"] == attested["primary"],
              "verified archive reduced rows changed between reads")
