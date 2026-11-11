@@ -2224,3 +2224,98 @@ jobs:
                 "old_detached_alternative_differences=1, new_Worlds=0")
           print("aggregate_report_sha256="+result["aggregate_report_sha256"])
           PY
+
+  stage2-old-original-causal-readiness:
+    # Both historical cohorts are already consumed; pure original-only audit.
+    # No World, run_life, cohort source or mutation is permitted in this job.
+    if: startsWith(github.head_ref, 'research/i3-stage2-old-source-identifiability-')
+    name: I3 Stage 2 old 144-original causal-readiness READ ONLY
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      PYTHONPATH: src
+      CONTENT_BRANCH: evidence/i3-content-48-development-20261110-originals
+      CONTENT_COMMIT: 459d0d9f90ea8edae95881d4e3110b91a24f85f5
+      CONTENT_ROOT: archive/i3/stage2-content-development-2026-11-10
+      NEXT_BRANCH: evidence/i3-next-decision-24-development-20261110-originals
+      NEXT_COMMIT: 20ca7efbf7797fa7b1f12983ce68906b754b312c
+      NEXT_ROOT: archive/i3/stage2-next-decision-development-2026-11-10
+    steps:
+      - name: Checkout exact candidate with no write credentials
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup Python 3.11 for original-only audit
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Read-only fetch of exact old original archive commits
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL=https://github.com/josselin-orta-lab/individual-zero.git
+          git fetch --no-tags --depth=1 "$URL" "refs/heads/$CONTENT_BRANCH"
+          test "$(git rev-parse FETCH_HEAD)" = "$CONTENT_COMMIT" || {
+            echo "OLD_CONTENT_SOURCE_MOVED__NO_VERDICT"; exit 1;
+          }
+          mkdir -p "$RUNNER_TEMP/stage2-old-content"
+          git archive FETCH_HEAD "$CONTENT_ROOT" | tar -xf - -C "$RUNNER_TEMP/stage2-old-content"
+          git fetch --no-tags --depth=1 "$URL" "refs/heads/$NEXT_BRANCH"
+          test "$(git rev-parse FETCH_HEAD)" = "$NEXT_COMMIT" || {
+            echo "OLD_NEXT_SOURCE_MOVED__NO_VERDICT"; exit 1;
+          }
+          mkdir -p "$RUNNER_TEMP/stage2-old-next"
+          git archive FETCH_HEAD "$NEXT_ROOT" | tar -xf - -C "$RUNNER_TEMP/stage2-old-next"
+      - name: Reverify all 144 originals and test causal source sufficiency
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_old_original_causal_readiness \
+            "$RUNNER_TEMP/stage2-old-content/$CONTENT_ROOT" \
+            "$RUNNER_TEMP/stage2-old-next/$NEXT_ROOT" \
+            > "$RUNNER_TEMP/stage2-causal-readiness.json"
+          python - "$RUNNER_TEMP/stage2-causal-readiness.json" <<'PY'
+          import json,sys
+          from pathlib import Path
+          line=Path(sys.argv[1]).read_text().strip()
+          assert line.startswith("I3_STAGE2_OLD_SOURCE_CAUSAL_READINESS=")
+          r=json.loads(line.split("=",1)[1])
+          assert r["historical_source_commits"]["content_48"]==(
+              "459d0d9f90ea8edae95881d4e3110b91a24f85f5")
+          assert r["historical_source_commits"]["next_decision_24"]==(
+              "20ca7efbf7797fa7b1f12983ce68906b754b312c")
+          assert r["packed_and_unpacked_originals_verified"]==144
+          assert r["historical_born_lives_reverified"]==144
+          assert r["historical_complete_pairs"]==72
+          assert r["by_source"]["content_48"]["old_originals"]==96
+          assert r["by_source"]["next_decision_24"]["old_originals"]==48
+          assert r["by_source"]["next_decision_24"][
+              "historical_next_perception_with_shadow"]==20
+          assert r["by_source"]["next_decision_24"][
+              "detached_alternative_motor_differences"]==1
+          assert r["actual_alternative_after_same_capture_executed"]==0
+          assert r["new_equal_paid_visible_discard_source"] is False
+          assert r["new_action_relevant_paid_information_delivered"] is False
+          assert r["causal_net_information_gain_identifiable"] is False
+          assert r["eligibility"]==(
+              "OLD_ORIGINALS_INSUFFICIENT_FOR_PAID_INFORMATION_CAUSAL_TEST")
+          assert r["old_original_bytes_changed"] is False
+          assert r["new_worlds_opened"]==r["new_lives_created"]==0
+          assert r["scientific_verdict"]=="NOT_ISSUED"
+          assert r["stage2_2_go"] is False
+          print("I3_OLD_ORIGINALS_144_OF_144_READONLY_IDENTIFIABILITY_PASS")
+          print("aggregate_sha256="+r["aggregate_sha256"])
+          print("actual_paid_information_delivery=0, original_Worlds_new=0")
+          PY
+      - name: Retain aggregate-only structural attestation
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-stage2-old-original-causal-readiness-readonly
+          path: ${{ runner.temp }}/stage2-causal-readiness.json
+          retention-days: 30
+          if-no-files-found: warn
