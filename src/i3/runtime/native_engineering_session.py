@@ -27,8 +27,10 @@ from i3.modules.mind import EffectsModel, Mind
 from i3.modules.world import World, WorldSpec
 from i3.runtime.birth_reservation import Reservation, reserve
 from i3.runtime.engineering_step_ledger import (
-    INTENT_SCHEMA, RECEIPT_SCHEMA, initialize, inspect, prepare, seal,
+    INTENT_SCHEMA, RECEIPT_SCHEMA, ANCHOR_MODE, LEGACY_MODE,
+    initialize, inspect, prepare, seal,
 )
+from i3.runtime import engineering_rollback_witness as witness
 from i3.runtime.provenance import digest, source_snapshot, world_snapshot
 
 
@@ -151,18 +153,22 @@ class NativeEngineeringSession:
     """An in-process reference session, optionally rebuilt by verified replay."""
 
     def __init__(self, directory: Path, claim: Reservation, *, horizon: int,
-                 world: World, mind: Mind, head: str):
+                 world: World, mind: Mind, head: str,
+                 witness_directory: Path | None = None):
         self.directory = Path(directory)
         self.claim = claim
         self.horizon = horizon
         self.world = world
         self.mind = mind
         self.head = head
+        self.witness_directory = (None if witness_directory is None
+                                  else Path(witness_directory))
         self._stopped = False
 
     @classmethod
     def begin(cls, directory: Path, claim: Reservation, *, genome: dict,
-              spec: WorldSpec, horizon: int) -> NativeEngineeringSession:
+              spec: WorldSpec, horizon: int,
+              witness_directory: Path | None = None) -> NativeEngineeringSession:
         """Consume a fresh, source-matched engineering slot, never a cohort."""
         if type(claim) is not Reservation or type(spec) is not WorldSpec:
             raise TypeError("exact I3 engineering claim and WorldSpec required")
@@ -178,15 +184,28 @@ class NativeEngineeringSession:
         # Verify the full state is representable before consuming a slot.
         state_hash(world)
         state_hash(mind)
+        if witness_directory is not None:
+            # SQLite witness seeds must fit the signed 64-bit integer column.
+            if claim.life_seed > 2**63 - 1:
+                raise ValueError("local witness cannot persist this life seed")
+            # Preflight the separate local witness before consuming a birth slot.
+            witness.validate_location(witness_directory, directory)
         reserve(directory, claim)  # durable one-shot local reservation
         view = initialize(directory, claim, horizon=horizon,
-                          initial_body=world.body)
+                          initial_body=world.body,
+                          witness_mode=(ANCHOR_MODE if witness_directory is not None
+                                        else LEGACY_MODE))
+        if witness_directory is not None:
+            # A failure here leaves an unusable birth slot, never a hidden life.
+            witness.register(witness_directory, directory, claim, view)
         return cls(directory, claim, horizon=horizon, world=world,
-                   mind=mind, head=view["head_sha256"])
+                   mind=mind, head=view["head_sha256"],
+                   witness_directory=witness_directory)
 
     @classmethod
     def reconstruct(cls, directory: Path, claim: Reservation, *, genome: dict,
-                    spec: WorldSpec) -> NativeEngineeringSession:
+                    spec: WorldSpec,
+                    witness_directory: Path | None = None) -> NativeEngineeringSession:
         """Cold read + source-pinned *detached deterministic replay*.
 
         Never replays a PREPARED/uncertain motor, a dead/censored life, or an
@@ -201,6 +220,11 @@ class NativeEngineeringSession:
                 genome=genome, spec=spec, life_seed=claim.life_seed):
             raise PermissionError("current source/world/genome differs from sealed life")
         view = inspect(directory, claim)  # rejects incomplete or corrupt ledger
+        mode = ANCHOR_MODE if witness_directory is not None else LEGACY_MODE
+        if view["witness_mode"] != mode:
+            raise PermissionError("registered engineering witness cannot be bypassed")
+        if witness_directory is not None:
+            witness.verify(witness_directory, directory, claim, view)
         if view["terminal"] != "OPEN":
             raise PermissionError("cannot reconstruct or resume a terminal I3 life")
         world, mind = World(spec), Mind(genome, claim.life_seed)
@@ -217,8 +241,12 @@ class NativeEngineeringSession:
                 or list(world.body) != view["last_body"]):
             raise PermissionError("reconstructed native state differs from custody")
         # No restore fallback or source-independent lineage import.
+        if witness_directory is not None:
+            # Revalidate after deterministic replay, before new motor authority.
+            witness.verify(witness_directory, directory, claim)
         return cls(directory, claim, horizon=view["horizon"],
-                   world=world, mind=mind, head=view["head_sha256"])
+                   world=world, mind=mind, head=view["head_sha256"],
+                   witness_directory=witness_directory)
 
     def step(self) -> dict:
         """One genuine native paid step, ledger PREPARE *before* World.step.
@@ -230,6 +258,12 @@ class NativeEngineeringSession:
             raise PermissionError("failed or terminal native engineering session")
         try:
             view = inspect(self.directory, self.claim)
+            mode = (ANCHOR_MODE if self.witness_directory is not None
+                    else LEGACY_MODE)
+            if view["witness_mode"] != mode:
+                raise PermissionError("native witness mode changed or omitted")
+            if self.witness_directory is not None:
+                witness.verify(self.witness_directory, self.directory, self.claim, view)
             if (view["head_sha256"] != self.head or view["terminal"] != "OPEN"
                     or view["sequence"] != self.world.t
                     or view["last_body"] != list(self.world.body)):
@@ -242,11 +276,18 @@ class NativeEngineeringSession:
             action, param, work, intent = _native_decide(self.world, self.mind)
             prepared = prepare(self.directory, self.claim,
                                expected_head=self.head, intent=intent)
-            # The sole *new* World.step happens after durable PREPARED.
+            if self.witness_directory is not None:
+                # Witness PREPARED is durable BEFORE executing a new motor.
+                witness.prepared(self.witness_directory, self.directory,
+                                 self.claim, previous_ledger=view, intent=intent)
+            # The sole *new* World.step happens after durable PREPARED in both stores.
             receipt = _native_outcome(self.world, self.mind, action, param, work)
             sealed = seal(self.directory, self.claim,
                           expected_head=prepared["prior_head_sha256"],
                           seal_token=prepared["seal_token"], receipt=receipt)
+            if self.witness_directory is not None:
+                witness.committed(self.witness_directory, self.directory,
+                                   self.claim, previous_ledger=view, intent=intent)
             self.head = sealed["head_sha256"]
             if sealed["terminal"] != "OPEN":
                 self._stopped = True
@@ -255,6 +296,9 @@ class NativeEngineeringSession:
                     "pos": list(self.world.pos), "sequence": sealed["sequence"],
                     "head_sha256": self.head, "terminal": sealed["terminal"],
                     "durable_m11": False, "cold_recovery_available": False,
+                    "witness_mode": (ANCHOR_MODE if self.witness_directory is not None
+                                     else LEGACY_MODE),
+                    "independent_m11_antirollback": False,
                     "scientific_world_authorized": False}
         except BaseException:
             self._stopped = True

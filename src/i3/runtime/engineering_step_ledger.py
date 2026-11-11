@@ -18,7 +18,9 @@ import sqlite3
 
 from i3.runtime.birth_reservation import Reservation, inspect as inspect_birth
 
-SCHEMA = "i3-engineering-step-ledger/v1"
+SCHEMA = "i3-engineering-step-ledger/v2"
+ANCHOR_MODE = "SEPARATE_LOCAL_WITNESS_V1"
+LEGACY_MODE = "UNANCHORED"
 INTENT_SCHEMA = "i3-engineering-step-intent/v1"
 RECEIPT_SCHEMA = "i3-engineering-post-paid-learning/v1"
 APP_ID = 0x4933534C  # I3SL
@@ -166,7 +168,8 @@ def _check_schema(conn, *, create: bool) -> None:
         conn.execute("CREATE TABLE session (id INTEGER PRIMARY KEY CHECK(id=1), "
                      "identity TEXT NOT NULL, birth_index INTEGER NOT NULL, "
                      "horizon INTEGER NOT NULL, initial_body TEXT NOT NULL, "
-                     "last_seq INTEGER NOT NULL, head TEXT NOT NULL, status TEXT NOT NULL)")
+                     "last_seq INTEGER NOT NULL, head TEXT NOT NULL, status TEXT NOT NULL, "
+                     "witness_mode TEXT NOT NULL)")
         conn.execute("CREATE TABLE steps (seq INTEGER PRIMARY KEY, "
                      "prev_head TEXT NOT NULL, phase TEXT NOT NULL, "
                      "intent_json TEXT NOT NULL, receipt_json TEXT, step_head TEXT, "
@@ -185,20 +188,21 @@ def _parse(text: str) -> object:
 def _read(conn, *, allow_prepared: bool = False) -> dict:
     _check_schema(conn, create=False)
     rows = conn.execute("SELECT id,identity,birth_index,horizon,initial_body,"
-                        "last_seq,head,status FROM session").fetchall()
+                        "last_seq,head,status,witness_mode FROM session").fetchall()
     if len(rows) != 1 or rows[0][0] != 1:
         raise PermissionError("invalid unique session header")
-    _, identity, index, horizon, first_body, last_seq, head, status = rows[0]
+    _, identity, index, horizon, first_body, last_seq, head, status, mode = rows[0]
     _hash(identity, "identity")
     _integer(index, "birth_index")
     _integer(horizon, "horizon", minimum=1)
     _integer(last_seq, "last_seq")
-    if last_seq > horizon or status not in ("OPEN", "DEAD", "CENSORED"):
+    if (last_seq > horizon or status not in ("OPEN", "DEAD", "CENSORED")
+            or mode not in (ANCHOR_MODE, LEGACY_MODE)):
         raise PermissionError("invalid session terminal/sequence")
     initial_body = _body(_parse(first_body))
     previous = _digest({"schema": SCHEMA, "identity": identity,
                         "birth_index": index, "horizon": horizon,
-                        "initial_body": initial_body})
+                        "initial_body": initial_body, "witness_mode": mode})
     expected_body = initial_body
     committed = []
     prepared = None
@@ -243,6 +247,7 @@ def _read(conn, *, allow_prepared: bool = False) -> dict:
         raise PermissionError("uncertain prepared motor: fail-closed, no recovery")
     return {"schema": SCHEMA, "status": STATUS, "birth_index": index,
             "identity_sha256": identity, "horizon": horizon,
+            "witness_mode": mode,
             "sequence": last_seq, "head_sha256": head, "terminal": status,
             "last_body": expected_body, "events": committed,
             "prepared": prepared, "durable_m11": False,
@@ -285,9 +290,12 @@ def _write(directory: Path, work):
 
 
 def initialize(directory: Path, claim: Reservation, *, horizon: int,
-               initial_body: list | tuple) -> dict:
+               initial_body: list | tuple,
+               witness_mode: str = LEGACY_MODE) -> dict:
     """Initialize local engineering custody after a separate consumed birth claim."""
     _integer(horizon, "horizon", minimum=1)
+    if witness_mode not in (ANCHOR_MODE, LEGACY_MODE):
+        raise ValueError("unknown engineering witness mode")
     body = _body(initial_body)
     if any(body[i] == 0 for i in (1, 2, 3)):
         raise ValueError("cannot initialize a live ledger with a dead body")
@@ -301,10 +309,10 @@ def initialize(directory: Path, claim: Reservation, *, horizon: int,
                 _check_schema(conn, create=True)
                 head = _digest({"schema": SCHEMA, "identity": claim.identity_sha256,
                                 "birth_index": claim.birth_index, "horizon": horizon,
-                                "initial_body": body})
-                conn.execute("INSERT INTO session VALUES (1,?,?,?,?,?,?,?)",
+                                "initial_body": body, "witness_mode": witness_mode})
+                conn.execute("INSERT INTO session VALUES (1,?,?,?,?,?,?,?,?)",
                              (claim.identity_sha256, claim.birth_index, horizon,
-                              _json(body), 0, head, "OPEN"))
+                              _json(body), 0, head, "OPEN", witness_mode))
                 conn.execute("COMMIT")
             except BaseException:
                 conn.execute("ROLLBACK")
@@ -323,6 +331,23 @@ def inspect(directory: Path, claim: Reservation) -> dict:
     except (sqlite3.DatabaseError, ValueError, TypeError,
             json.JSONDecodeError) as exc:
         raise PermissionError("corrupted engineering ledger") from exc
+    _bound(view, claim)
+    return view
+
+
+def inspect_pending(directory: Path, claim: Reservation) -> dict:
+    """Read a pending intent ONLY for pre-motor witness synchronization.
+
+    This does not grant permission to resume or to re-execute an uncertain
+    motor. Ordinary public inspect() continues to refuse pending steps.
+    """
+    _check_claim(directory, claim)
+    try:
+        with closing(_connection(directory, mode="ro")) as conn:
+            view = _read(conn, allow_prepared=True)
+    except (sqlite3.DatabaseError, ValueError, TypeError,
+            json.JSONDecodeError) as exc:
+        raise PermissionError("corrupted pending engineering ledger") from exc
     _bound(view, claim)
     return view
 
