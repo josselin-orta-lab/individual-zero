@@ -1,6 +1,10 @@
 """One-shot I3 native engineering cycle, no M11 or scientific birth claims."""
 from dataclasses import replace
 from pathlib import Path
+import json
+import os
+import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -131,6 +135,68 @@ class NativeEngineeringStepTests(unittest.TestCase):
                          {"energy": 0.0, "vigilance": 0.0})
         with self.assertRaises(PermissionError):
             session.step()
+
+    def test_deterministic_reconstruction_matches_uninterrupted_world(self):
+        first = self.begin(horizon=4)
+        old_receipts = [first.step()["receipt"] for _ in range(2)]
+        claim = first.claim
+        del first
+        recovered = NativeEngineeringSession.reconstruct(
+            self.root, claim, genome=self.genome, spec=self.spec)
+        self.assertEqual(recovered.world.t, 2)
+        self.assertEqual(recovered.head, inspect_steps(self.root, claim)["head_sha256"])
+        with tempfile.TemporaryDirectory() as other:
+            independent = self.begin(index=2, horizon=4, root=Path(other))
+            for expected in old_receipts:
+                self.assertEqual(independent.step()["receipt"], expected)
+            expected_next = independent.step()
+        actual_next = recovered.step()
+        self.assertEqual(actual_next["receipt"], expected_next["receipt"])
+        self.assertEqual(actual_next["pos"], expected_next["pos"])
+        self.assertEqual(actual_next["terminal"], expected_next["terminal"])
+
+    def test_new_python_process_reconstructs_then_commits_one_more_step(self):
+        original = self.begin(horizon=4)
+        original.step()
+        script = '''\
+from pathlib import Path
+import json
+from i3.lab.dev_worlds import dev_long_corridor
+from i3.modules.genome import midpoint
+from i3.runtime.native_engineering_session import NativeEngineeringSession,make_engineering_claim
+root = Path(%r)
+spec,genome = dev_long_corridor(),midpoint()
+claim = make_engineering_claim(birth_index=1,genome=genome,spec=spec,life_seed=7719)
+reconstructed = NativeEngineeringSession.reconstruct(root,claim,genome=genome,spec=spec)
+assert reconstructed.world.t == 1
+print(json.dumps(reconstructed.step(),sort_keys=True))
+''' % str(self.root)
+        repo = Path(__file__).resolve().parents[2]
+        env = dict(os.environ)
+        env["PYTHONPATH"] = str(repo / "src") + os.pathsep + env.get("PYTHONPATH", "")
+        done = subprocess.run([sys.executable, "-c", script], cwd=repo,
+                              env=env, text=True, capture_output=True, timeout=40)
+        self.assertEqual(done.returncode, 0, done.stdout + done.stderr)
+        recovered_result = json.loads(done.stdout.strip())
+        self.assertEqual(recovered_result["sequence"], 2)
+        self.assertEqual(inspect_steps(self.root, original.claim)["sequence"], 2)
+        with self.assertRaises(PermissionError):
+            original.step()  # stale owner cannot commit another motor
+
+    def test_uncertain_or_terminal_history_is_never_reconstructed(self):
+        session = self.begin(horizon=2)
+        with patch.object(World, "step", side_effect=RuntimeError("crash after prepare")):
+            with self.assertRaises(RuntimeError):
+                session.step()
+        with self.assertRaisesRegex(PermissionError, "uncertain prepared motor"):
+            NativeEngineeringSession.reconstruct(
+                self.root, session.claim, genome=self.genome, spec=self.spec)
+        with tempfile.TemporaryDirectory() as other:
+            old = self.begin(index=9, horizon=1, root=Path(other))
+            self.assertEqual(old.step()["terminal"], "CENSORED")
+            with self.assertRaisesRegex(PermissionError, "terminal"):
+                NativeEngineeringSession.reconstruct(
+                    Path(other), old.claim, genome=self.genome, spec=self.spec)
 
     def test_no_cross_generation_or_m11_compatibility_entrypoint(self):
         import inspect
