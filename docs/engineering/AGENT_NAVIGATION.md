@@ -6,7 +6,8 @@ This is a **navigation index**, not a second architectural specification. It sho
 
 | If your task is... | Start here | Then verify |
 | --- | --- | --- |
-| Determine what is currently active | `config/engine-registry.json` | current HEAD and generation `engine.json` |
+| Determine what is currently active | `config/engine-registry.json` (`active_generation`) | current HEAD and generation `engine.json` |
+| Select the owner-chosen architecture for **new development** | `config/engine-registry.json` (`reference_generation=I3`), [ADR-0020](../decisions/ADR-0020-i3-owner-selected-development-reference.md) | I3's generation-owned AGENTS/STATUS, then current exact scientific source; do not treat reference as runtime activation |
 | Decide the next scientific intervention | `docs/engineering/RESEARCH_COORDINATOR.md` and `config/research-program.json` | dated evidence, source-pinned dossiers, current issues and unreviewed gaps |
 | See the architecture, causal path and intervention owners | `docs/architecture/ATLAS.md` | `docs/architecture/ENGINE_GENERATIONS.md`, generation-owned Stage maps and real call sites |
 | Distinguish I2 historic G1/G2 proposals from its current native prototype | `src/i2/docs/STATUS.md`, `src/i2/docs/ARCHITECTURE.md` | real native call path, dated proposal headers and original P4 negative lives |
@@ -36,7 +37,7 @@ For physical file location, [historical research study indexes](../research/stud
 
 ## Source of truth
 
-**Registry** says *which generation is active*. **Engine contract + real code** say *what is installed and executable*. **ADRs** say *what is allowed*. **CI on an exact SHA** says *what software was checked*. **Experimental evidence** says *what was measured*, and only a reviewed scientific gate can say *what was established*. An older issue, PR, historical status ledger, theoretical proposal or test fixture never overrides these.
+**Registry** distinguishes *which generation is active* (`active_generation=I1`) from *which architecture is the new development reference* (`reference_generation=I3`). **Engine contract + real code** say *what is installed and executable*. **ADRs** say *what is allowed*. **CI on an exact SHA** says *what software was checked*. **Experimental evidence** says *what was measured*, and only a reviewed scientific gate can say *what was established*. An older issue, PR, historical status ledger, theoretical proposal or test fixture never overrides these.
 
 ## Lightweight documentation checks
 
@@ -45,7 +46,7 @@ Use `python tools/check_repo_navigation.py --scope current` for current guides. 
 ## Working boundaries
 
 - I0 is immutable research history; I1 is the active generation. I2 has independent synthetic fixtures **and local born native SQLite research-only lives**, but no registered active engine, independently witnessed M11 or scientific GO. Follow [I2 approved integrated roadmap](../../src/i2/docs/INTEGRATED_BEHAVIOR_ROADMAP.md) and master [#921](https://github.com/josselin-orta-lab/individual-zero/issues/921). No I1 runtime imports, inherited live memory, duplicate owners or old compatibility modes.
-- I3 is an independently owned **unregistered proposal** under `src/i3/`, with an engine contract declaring no entrypoints. Its P1.2 change failed the preregistered general non-inferiority threshold. For status and next experimental question, start with [I3 status](../../src/i3/docs/STATUS.md), not a historical issue or a green test.
+- I3 is the **owner-selected development reference** under [ADR-0020](../decisions/ADR-0020-i3-owner-selected-development-reference.md), while remaining an **unregistered runtime proposal** under `src/i3/` with an engine contract declaring no production entrypoints. Its P1.2 change failed the preregistered general non-inferiority threshold. For status and next experimental question, start with [I3 status](../../src/i3/docs/STATUS.md), not a historical issue or a green test.
 - `src/i1/docs/STATUS.md` and `src/i2/docs/STATUS.md` are **short current reading surfaces**, with earlier campaign ledgers preserved alongside as `STATUS_HISTORY.md`.
 - `docs/research/` includes many historical experiment records. Read the current evidence index and the original, dated protocol **before** drawing a conclusion. `experiments/` contains experiment conventions and formal records; its sparse index is not evidence that no research has occurred.
 - For a narrow fix, read the specific owner contract and its direct tests. Don't load every historical file into agent context.
