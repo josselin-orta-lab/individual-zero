@@ -20,6 +20,7 @@ from i3.runtime.birth_reservation import Reservation, inspect as inspect_birth
 
 SCHEMA = "i3-engineering-step-ledger/v2"
 ANCHOR_MODE = "SEPARATE_LOCAL_WITNESS_V1"
+REMOTE_MODE = "REMOTE_MONOTONIC_ENGINEERING_V1"
 LEGACY_MODE = "UNANCHORED"
 INTENT_SCHEMA = "i3-engineering-step-intent/v1"
 RECEIPT_SCHEMA = "i3-engineering-post-paid-learning/v1"
@@ -197,7 +198,7 @@ def _read(conn, *, allow_prepared: bool = False) -> dict:
     _integer(horizon, "horizon", minimum=1)
     _integer(last_seq, "last_seq")
     if (last_seq > horizon or status not in ("OPEN", "DEAD", "CENSORED")
-            or mode not in (ANCHOR_MODE, LEGACY_MODE)):
+            or mode not in (ANCHOR_MODE, LEGACY_MODE, REMOTE_MODE)):
         raise PermissionError("invalid session terminal/sequence")
     initial_body = _body(_parse(first_body))
     previous = _digest({"schema": SCHEMA, "identity": identity,
@@ -294,7 +295,7 @@ def initialize(directory: Path, claim: Reservation, *, horizon: int,
                witness_mode: str = LEGACY_MODE) -> dict:
     """Initialize local engineering custody after a separate consumed birth claim."""
     _integer(horizon, "horizon", minimum=1)
-    if witness_mode not in (ANCHOR_MODE, LEGACY_MODE):
+    if witness_mode not in (ANCHOR_MODE, LEGACY_MODE, REMOTE_MODE):
         raise ValueError("unknown engineering witness mode")
     body = _body(initial_body)
     if any(body[i] == 0 for i in (1, 2, 3)):
