@@ -20,7 +20,7 @@ Scientific verdict: **NOT_ISSUED**.
   Old manifest SHA-256
   `53fdea10f56994a9171d274ecc6388a3301128503b98c1572052ee4b780196b5`,
   old-source code SHA `d86474d4eea47e8066169988c152f24c40f8efb6`.
-- Existing [read-only original auditor](../../../../lab/stage2_next_decision_24_original_audit.py)
+- Existing [read-only original auditor](../../../lab/stage2_next_decision_24_original_audit.py)
   is executed **first**: verifies **48/48 packed + 48/48
   unpacked SHA-256**, source admission, plan, policy, original-to-reduced
   exact identity, all 24 paired families, cognition funding, old
