@@ -6,6 +6,7 @@ state recovery, claim globally unique identities, or admit scientific Worlds.
 """
 from __future__ import annotations
 
+from contextlib import closing
 from dataclasses import dataclass
 from hashlib import sha256
 import json
@@ -94,7 +95,7 @@ def reserve(directory: Path, reservation: Reservation) -> dict:
         raise ValueError("reservation identity/content mismatch")
     db = _path(Path(directory))
     try:
-        with sqlite3.connect(db, isolation_level=None, timeout=5) as conn:
+        with closing(sqlite3.connect(db, isolation_level=None, timeout=5)) as conn:
             conn.execute("PRAGMA journal_mode=WAL")
             conn.execute("PRAGMA synchronous=FULL")
             conn.execute("BEGIN IMMEDIATE")
@@ -126,7 +127,7 @@ def inspect(directory: Path, birth_index: int) -> dict:
     if not db.is_file():
         raise PermissionError("no reservation database")
     try:
-        with sqlite3.connect(db.resolve().as_uri() + "?mode=ro", uri=True) as conn:
+        with closing(sqlite3.connect(db.resolve().as_uri() + "?mode=ro", uri=True)) as conn:
             _check_database(conn, create=False)
             row = conn.execute("SELECT payload, identity_sha256 FROM reservations "
                                "WHERE birth_index=?", (birth_index,)).fetchone()
