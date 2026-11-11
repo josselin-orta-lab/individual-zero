@@ -1,6 +1,7 @@
 {
   "schema": "individual-zero-engine-registry/v1",
   "active_generation": "I1",
+  "reference_generation": "I3",
   "reference_commit": "704a20ee048d7dee5151ccfed439be37ba02e36b",
   "archive_manifest": "config/archives/i0-20261017.json",
   "generations": {
