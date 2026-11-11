@@ -15,18 +15,9 @@ rationale, checked references and deliberate compatibility boundaries. The machi
 - **ADR-0017:** **owner-lifted on 9 November 2026** for fingerprint `dcada9e2…f1` and the frozen DEVELOPMENT 80/81 pilot only.
 - **I3:** proposal only, unregistered.
 
-**Current research handoff (11 November 2026):** The cost-only, fixed-action
-software campaigns through [PR #1302](https://github.com/josselin-orta-lab/individual-zero/pull/1302)
-and [canonical result](studies/stage2-replay-gate-selected-design/COMPUTATION_VALUE_IDENTIFIABILITY_RESULTS_2026-11-11.md)
-show how an optional two-currency calculation can displace next learning,
-consume additional food during sleep and alter inherited bodily distress.
-They **do not** show that information changed a later motor command or
-improved the individual's personally lived outcome. The active manifest's
-`next_scientific_action` therefore now directs a **design and custody
-review** for a new, cost-calibrated, phase-aligned and independent
-prospective action-mediation test; **it grants no new World**. Keep
-`fresh_lived_worlds_allowed=false`, all previously consumed science
-closed, P1.3 unchanged, and no Stage 2.2 promotion.
+**Current research handoff (11 November 2026, after E3):** The [Stage-2 stop and closure-readiness assessment](studies/stage2-replay-gate-selected-design/STAGE2_POST_E3_SCIENTIFIC_STOP_ASSESSMENT_2026-11-11.md) is the **current operational decision**, not the older cost-only #1302 handoff. The precommitted [E3 native VISIBLE-versus-paid-discard result](studies/stage2-replay-gate-selected-design/E3_NATIVE_PAID_BRANCH_DELIVERY_RESULTS_2026-11-11.md) had **equal modeled optional computation in both arms**, one intermediate native score difference among two informed *synthetic/unpaid* histories, but **zero** legal native motor changes; the separate empty-history control was null. [Exact-source CI #43065730480](https://github.com/josselin-orta-lab/individual-zero/actions/runs/43065730480) passed **1,148/1,148 I3 software tests each** on Python 3.11 and 3.12. **This precise E3 candidate is CLOSED NEGATIVE** without post-exposure retuning. It is not a general cognition/survival failure; Stage-2 scientific verdict remains **NOT_ISSUED**. The old [cost-identifiability result](studies/stage2-replay-gate-selected-design/COMPUTATION_VALUE_IDENTIFIABILITY_RESULTS_2026-11-11.md) remains intact as historical E0 data, not the current launch instruction.
+
+**Immediate gate:** do not create another replay head, new synthetic fixture/seed search or Stage-2.2/2.3 controller just to obtain an action. Future research requires **either** an independent methods assessment of a defensible *bounded negative* scientific closeout **or** a genuinely distinct, source-justified first-person paid information mechanism that passes one separately frozen **no-World native action** falsifier. Only then consider independent ecological sampling/NI power, true physical two-currency/learning cost, exact G/R custody and a **new, separately scoped owner-index authorization**. Current `next_scientific_action` encodes this hold, **not** permission to create a World. Keep `fresh_lived_worlds_allowed=false`, consumed studies closed, P1.3 unchanged and I3 unregistered.
 
 The corrected R0-R4 software falsifier executed exactly once and passed.
 The hardened transport passed 36/36 G/R rehearsals on Python 3.11 and 3.12
@@ -100,8 +91,8 @@ For current development, read only:
 
 1. `docs/STATUS.md`
 2. this file / `ACTIVE_SURFACE.json`
-3. `docs/STAGE2_REPLAY_GATE.md`
-4. the specific source and tests you will edit
+3. `docs/studies/stage2-replay-gate-selected-design/STAGE2_POST_E3_SCIENTIFIC_STOP_ASSESSMENT_2026-11-11.md`
+4. the specific **frozen** source, protocol and tests you are auditing; read `docs/STAGE2_REPLAY_GATE.md` for the historical gate, not as an instruction to relaunch it
 
 Read `DEVELOPMENT_PLAN.md` when changing stage boundaries or ordering. Read
 older Stage-1 documents only for a named historical question.
@@ -121,7 +112,8 @@ Stop and re-evaluate if a change does any of the following:
 - imports Stage-1 lab helpers into active Stage-2 science;
 - creates another Stage-1 candidate;
 - reuses supplied 68/69 as prospective evidence;
-- jumps to Stage 2.2 while the frozen positive Stage-2.1 path is still open.
+- launches Stage 2.2 or 2.3 while the scientific Stage-2.1 verdict is `NOT_ISSUED`;
+- retunes the frozen E3 synthetic states after the **0/2** native action result or relabels a score-only difference as a living motor and body improvement.
 
 The purpose of this map is not to erase history. It is to stop history from
 pretending to be the present.
