@@ -22,7 +22,7 @@
 ## Software assertions and exact scientific status
 
 1. **Source isolation:** refuse World instantiation; the helper uses only existing I3 native Mind, BodyLaws, CognitiveBudget and the declared synthetic fixtures. No run_life, no birth.
-2. **Native funding:** every executed simulation/Competition work count is an actual successful CognitiveBudget purchase in both model currencies; 0 <= paid simulated steps <= horizon; no fake negative/unpaid units; no motor after-cost assumption.
+2. **Native funding:** every executed simulation/Competition work count is an actual successful CognitiveBudget purchase in both model currencies; 0 <= actual modeled-plan steps <= horizon; total prepaid simulated-work units are **at least** plan steps and also include the native self-projection blocks. No fake negative/unpaid units or motor after-cost assumption.
 3. **Determinism:** identical seed/body/plan/horizon produces identical work and forecast; no World name, future information or external target. Extra cycles never alter the frozen scored vector; selected winner must be one of its original alternatives and its score cannot exceed maximum.
 4. **Primary descriptive mechanism result:** counts of bodies where one or both plan forecasts change from depth 1 to 8; counts of bodies with cross-plan raw-rank differences; complete cycle no-information result and cost table. Do not require a favorable option ranking; zero is a result.
 5. **Primary scientific result:** always NOT_ISSUED. No inference on independent organisms, calibration of CPU energy, action utility, survival non-inferiority, or Stage 2.2/2.3 promotion.
