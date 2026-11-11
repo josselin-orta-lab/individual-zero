@@ -38,6 +38,10 @@ The original, evidence-pinned `src/i3/runtime/life.py` is **unchanged**. Its ord
 
 **CI acceptance:** Python 3.11 and Python 3.12 complete I3 proposal software suites on the exact PR SHA, all 7 new integration tests included. If any test fails, diagnose and fix without changing the archived original runner or scientific cohorts. Local isolated syntax/fail-closed checks do **not** replace repository CI.
 
+## Addendum: source-pinned deterministic local reconstruction
+
+A later engineering-only implementation adds [`NativeEngineeringSession.reconstruct`](ENGINEERING_DETERMINISTIC_RECONSTRUCTION.md), which repeats the **previously sealed** reference motor/learning path on a detached World and verifies every historical intent and receipt before returning a new in-process session. A real second Python process test exercises this route. It does **not** persist an authenticated M11 state or allow interrupted PREPARED steps or terminal lives to continue. The original one-shot engineering result and its limitations remain historically applicable to its initial SHA.
+
 ## Remaining R2/R3 requirements before production I3
 
 A genuinely release-ready native generation still needs an **explicitly versioned, safe-to-load codec** for the full mutable Mind/World/RNG, a generation-owned writer and independently anchored monotonic receipt/anti-rollback control, crash injection on both sides of native motor/payment/commit, source-locked cold-process reconstruction and exact continuation parity, and performance instrumentation avoiding the present full-chain O(n²) total verification cost. M11 and active-engine registration remain NOT DEMONSTRATED.
