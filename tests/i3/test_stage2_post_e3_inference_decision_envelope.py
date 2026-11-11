@@ -67,9 +67,9 @@ class Stage2PostE3InferenceEnvelope(unittest.TestCase):
         e3, e1 = r["e3"], r["e1"]
         self.assertEqual((e3["unique_fixed_software_cases"],
                           e3["observed_event_count"]), (2, 0))
-        self.assertEqual(
+        self.assertAlmostEqual(
             e3["hypothetical_one_sided_95pct_upper_if_iid"],
-            1 - sqrt(.05))
+            1 - sqrt(.05), places=14)
         self.assertFalse(e3["iid_source_sampling_verified"])
         self.assertFalse(e3["ecological_confidence_bound_claim"])
         self.assertEqual(e3["no_support_control"], 1)
