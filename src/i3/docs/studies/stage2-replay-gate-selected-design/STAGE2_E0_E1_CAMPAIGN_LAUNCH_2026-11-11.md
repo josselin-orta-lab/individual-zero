@@ -1,0 +1,47 @@
+# I3 Stage 2 campaign: E0 evidence result and E1 software gate
+
+**Campaign launched:** 11 November 2026. **Owner direction:** proceed autonomously with the approved Stage 2 completion scenario. **Source baseline:** main 295ed0d984172a9cab83433f3dc53eba05cc0b2c, merged audit and roadmap [PR #1310](https://github.com/josselin-orta-lab/individual-zero/pull/1310). The original audited code baseline was 9bae12732a4bdfda5ed98983a70dbcfe7fe9cb98.
+
+**Single governing plan:** [Stage 2 scientific roadmap](../../STAGE2_COMPLETION_AUDIT_AND_ROADMAP_2026-11-11.md), [development plan](../../DEVELOPMENT_PLAN.md), [issue #1062](https://github.com/josselin-orta-lab/individual-zero/issues/1062). This is an E0/E1 execution log, not another competing roadmap or a grant to open scientific Worlds. A separately proposed [future paid information handoff design, PR #1309](https://github.com/josselin-orta-lab/individual-zero/pull/1309), remains a design for review.
+
+## E0: exact evidence boundary
+
+Earlier original [read-only #1307 CI](https://github.com/josselin-orta-lab/individual-zero/actions/runs/43017416135) was inspected on GitHub: old-original SHA checks and software jobs on Python 3.11/3.12 all passed. This is a **previous run**, not a new execution or independent World replication in this campaign.
+
+| Distinct source | Full finite panel result | Allowed inference |
+| --- | --- | --- |
+| [80/81 DEVELOPMENT](../stage2-replay-gate-development-80-81/RESULTS.md) | FIXED 4/12, GATE 3/12 horizon survivors. GATE reduced replay and cognition per lived step but one severe adverse lifespan block | Descriptive cost reduction, survival NI not established |
+| [B1 DEVELOPMENT 96 pairs](B1_EXPLORATORY_DEVELOPMENT_RESULTS_2026-11-10.md) | FIXED 30/96, GATE 38/96 survivors, 13 GATE-only and 5 FIXED-only; GATE paid more vigilance per assigned life | Favorable finite survival direction, no independent ecology/power/NI |
+| [64 three-arm DEVELOPMENT](THREE_ARM_EXPLORATORY_RESULTS_2026-11-10.md) | GATE and randomized-count comparator both 27/64 survivors, 4 exclusive each | No finite survival advantage of current gate over randomized quantity |
+| [48 replay-content DEVELOPMENT](CONTENT_48_EXPLORATORY_RESULTS_2026-11-10.md) | Priority 17/48, genuinely random memory content 23/48 survivors; 1 priority-only and 7 random-only | Adverse exploratory priority direction, no general content effect |
+| [24 new next-decision units](NEXT_DECISION_24_RESULTS_2026-11-10.md) and [48-old-original byte audit](ARCHIVED_NEXT_ACTION_ACTUAL_VS_SHADOW_BRIDGE_RESULTS_2026-11-11.md) | 20/24 different paid replay subsets with following perception; 19/20 same next motor, one **detached** alternate motor; **zero** alternative motors physically executed | Not an observed causal readout-to-action-to-survival effect |
+| [256 synthetic cost cells](COMPUTATION_VALUE_IDENTIFIABILITY_RESULTS_2026-11-11.md) | 46 lost next-learning allocations, 6 synthetic terminal contrasts; equal-cost visible/discard branches have 256/256 identical physical effects with action held fixed | Real modeled cost mechanisms, expected information benefit **unidentified**, not zero |
+
+In a separate read-only combinatorial calculation in the audit work environment, the exact hypothetical independent-pair two-sided sign arithmetic was: B1 13 vs 5 -> 0.09625244140625; three-arm 4 vs 4 -> 1; random-content 1 vs 7 -> 0.0703125. **None of these is an admissible population-level p-value for the actual studies:** source-independent sampling and exchangeability remain unproven. Do not pool distinct panels post hoc.
+
+### Specific structural constraint from the source
+
+[Mind.learn_from_outcome](../../../modules/mind.py) applies one action-conditioned EffectsModel update to the actual learned result **before** TD replay. The optional TD memory replay updates TD values and the replay buffer, **not** EffectsModel. The prospectively specified [proper-forecast negative control](REPLAY_PREDICTIVE_NEGATIVE_CONTROL_2026-11-10.md) reported different values but **0/48** changes in the native one-step action-effect forecasts across priority versus random-content replay. The historical replay buffer contains before-body, after-body and death, **not the action identifier**. Do not invent action conditioning from an unlabeled buffer.
+
+**Decision:** REPLAY_ONLY_PROMOTION_NOT_SUPPORTED; ACTION_MEDIATION_NOT_IDENTIFIED; PRESERVE_P1.3_FUNDED_V2. The canonical Stage 2.1 software verdict REPLAY_GATE_CAPACITY_SHOWN remains true **only for its frozen R0-R4 software criteria**. It is not changed to FAIL. Stage 2.1 scientific verdict remains NOT_ISSUED; this E0 report does not prematurely open Stage 2.2. In particular, there is **no justification to spend another prospective scientific cohort simply remeasuring the unchanged one-step EffectsModel response to TD replay content**.
+
+## E1: the decisive software-only falsifier before any living study
+
+**Hypothesis H1:** a single bounded, genuinely additional computation from **previously paid first-person experience** can produce a nontrivial **action-conditional** forecast which the unchanged native motor decision process can use. Compute and physically model-charge that same operation for two matched software arms; make its result available to native option evaluation only in VISIBLE, and discard the actually computed result in PAID_DISCARD. A newly computed scalar that never reaches a later native decision is NOT a successful E1 mechanism.
+
+**Falsifiers:** no change in the relevant learned forecast; false action labels for TD memories; a merely action-agnostic head marketed as an off-policy action forecast; a readout available only to an observer; unequal actual operators or native bills between arms; future outcome leakage, invented World knowledge, forced eating/drinking, extra innate reward, postponed/waived cost, stolen energy for motor action, or after-death work.
+
+**Smallest bounded technical sequence, zero new scientific lives:**
+
+1. Audit the actual value paths in [Mind](../../../modules/mind.py), [personal native effects readout](../../../lab/stage2_action_conditional_existing_effects.py), [budget preflight](../../../lab/stage2_action_phase_readout_budget.py), [prior distress forecasts](../../../lab/stage2_personal_distress_forecast_shadow.py) and [next-action custody](../../../lab/stage2_next_action_mediation_custody.py). Decide **before coding** whether an actual learned action-conditioned source supplies information not already used by P1.3.
+2. If such a source exists, freeze **one** candidate readout definition, strict first-person provenance, interpretation and exact bounded cost, then implement it **opt-in only**, not registered or activated. Both arms must do the same paid work; differences may arise only from the visible/discarded result. Use the same native action options, Competition and Action Control.
+3. In no-World software fixtures, run the **real native Mind decision call** with each permitted controller visibility state. Require exact funding, no observer feedback, a genuine downstream option-score dependency and at least one **frozen** input where legal decision behavior is discriminated without imposing a motor. Nulls and unchanged decisions remain in the denominator. Any gate passed on synthetic data is SOFTWARE CAPACITY ONLY.
+4. If no legitimate action-conditional information channel exists, or the additional modeled costs outweigh the information in the targeted test, issue a **negative E1 verdict** and stop the replay-readout path. Do not add a second predictor or new memory representation merely to obtain a favorable synthetic example. Investigate at most one separately justified existing-computation alternative, such as deliberation/simulation depth, under the same Stage 2 decision charter.
+
+**Acceptance:** no World construction/run_life; no hidden state, no direct motor command or new reward; identical fully funded computation in both arms; actual native score/motor authority consumed when visible; negative and unaffordable/terminal controls pass. Record exact source SHA and test result before any decision about ecological cohorts. An E1 green result proves only software capacity, not science.
+
+## Future scientific gate remains closed
+
+Any later E2/E3 would require a new independent ecological sampling frame, source/entropy and WorldSpec witness, prospective matched newborn plan, valid units and power/margins, all terminal/no-funding cases, strict two-phase source-locked G/R archive and exact-transport rehearsal, and a **new, explicit owner-index-scoped authorization**. Prior 80/81 lift is exhausted. E0/E1 software autonomy is approved; this general authorization is **not** an index-scoped research birth permit.
+
+**Execution receipt for this document:** no local source-code unit suite (container network DNS blocks clone); no new scientific World, birth, cohort, stage promotion, prototype behavior modification, genome or body-law change. E0 result is a source-backed classification and limited arithmetic, not a new lived scientific test. Next task: source-backed E1 information-use feasibility review and, only if legitimate, one bounded opt-in software falsifier. Related open issues [#1062](https://github.com/josselin-orta-lab/individual-zero/issues/1062), [#1276](https://github.com/josselin-orta-lab/individual-zero/issues/1276), [#1283](https://github.com/josselin-orta-lab/individual-zero/issues/1283) and [#1239](https://github.com/josselin-orta-lab/individual-zero/issues/1239).
