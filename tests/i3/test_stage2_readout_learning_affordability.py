@@ -121,7 +121,7 @@ class ReadoutLearningAffordabilityTests(unittest.TestCase):
     def test_optional_work_denied_before_any_lookups_or_mind_training(self):
         body = dict(E.CASES)["optional_denied"]
         with patch.object(Mind, "learn_from_outcome",
-                          side_effect=AssertionError("no learning allowed")), patch(
+                          side_effect=AssertionError("no learning allowed")), patch.object(
                               PHASE, "passive_readouts",
                               side_effect=AssertionError("no prediction allowed")):
             E.examine(body, extra_requested=True)
