@@ -36,13 +36,20 @@ class LedgerTest(unittest.TestCase):
                                   "memory_items": 14, "replays": 0}}
 
     def receipt(self, step=1, body=None, action="attendre", deaths=None):
-        body = body or [90., 84., 74., 65., 54.]
+        body = list(body or [90., 84., 74., 65., 54.])
+        if deaths and "zero_water" in deaths:
+            body[2] = 0.0
+        learning_paid = ({"energy": 0.0, "vigilance": 0.0} if deaths else
+                         {"energy": 0.02, "vigilance": 0.05})
+        after_motor = list(body)
+        after_motor[0] += learning_paid["energy"]
+        after_motor[4] += learning_paid["vigilance"]
         return {"schema": RECEIPT_SCHEMA, "phase": "POST_PAID_LEARNING",
                 "tick": step, "action": action, "param": None,
-                "body_after_motor": list(body),
-                "body_after_paid_learning": list(body),
+                "body_after_motor": after_motor,
+                "body_after_paid_learning": body,
                 "decision_paid": {"energy": 0.15, "vigilance": 0.16},
-                "learning_paid": {"energy": 0.02, "vigilance": 0.05},
+                "learning_paid": learning_paid,
                 "death_causes": deaths or [],
                 "world_state_sha256": "d"*64,
                 "mind_state_sha256": "e"*64}
@@ -125,6 +132,21 @@ class LedgerTest(unittest.TestCase):
         with self.assertRaises(PermissionError):
             inspect(self.root, replace(self.claim, life_seed=99))
         self.seal(p, self.receipt())
+
+    def test_payment_body_and_mortality_must_be_mutually_consistent(self):
+        p = self.prepared()
+        baseline = self.receipt()
+        cases = [
+            {"learning_paid": {"energy": 0.07, "vigilance": 0.05}},
+            {"body_after_paid_learning": [90., 0., 74., 65., 54.]},
+            {"death_causes": ["zero_water"]},
+            {"body_after_motor": [90., 84., 74., 65., 54.]},
+            {"body_after_paid_learning": [90., 84., 74., 0., 54.]},
+        ]
+        for changes in cases:
+            with self.subTest(changes=changes), self.assertRaises(PermissionError):
+                self.seal(p, dict(baseline, **changes))
+        self.seal(p, baseline)
 
     def test_tampering_missing_and_foreign_database_rejected(self):
         with closing(sqlite3.connect(self.root / DB_NAME)) as con:
