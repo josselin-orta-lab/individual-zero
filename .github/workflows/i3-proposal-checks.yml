@@ -2225,7 +2225,7 @@ jobs:
           print("aggregate_report_sha256="+result["aggregate_report_sha256"])
           PY
 
-stage2-old-original-causal-readiness:
+  stage2-old-original-causal-readiness:
     # Both historical cohorts are already consumed; pure original-only audit.
     # No World, run_life, cohort source or mutation is permitted in this job.
     if: startsWith(github.head_ref, 'research/i3-stage2-old-source-identifiability-')
