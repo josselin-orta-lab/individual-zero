@@ -1,5 +1,7 @@
 # From an engine proposal to an independently reviewed generation
 
+**Owner selection, active engine registration and scientific GO are separate.** Since [ADR-0020](../decisions/ADR-0020-i3-owner-selected-development-reference.md), `reference_generation=I3` selects the reference for new architecture/development without registering I3 runtime; `active_generation=I1` still identifies the executable registered engine. The owner has delegated routine I3 engineering without repeated validation, but objective native birth, state-owner, M11/cold recovery and fail-closed software release checks are still required for active cutover. The Stage-2.1 scientific verdict remains `NOT_ISSUED`, and no old scientific World indices are reopened.
+
 An engine proposal is a source **scaffold**, not a born individual. This
 process is designed to prevent accidental registration or reuse of another
 engine's Lab, cognitive policy, persistent identity or historical scientific
