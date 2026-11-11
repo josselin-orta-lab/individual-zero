@@ -3,8 +3,10 @@
 Creates a fresh local **test-only** World and Mind (P1.3 reference), never a
 registered birth or scientific cohort. A committed receipt proves that this
 in-process path actually called the native physics and paid learning. It does
-NOT persist/reconstruct the full mutable organism, authenticate source bytes,
-or permit cold continuation. Failure at any stage poisons the session.
+NOT persist the full mutable organism or authenticate source bytes. Source-
+pinned deterministic *detached replay* can reconstruct a previously fully
+sealed engineering history in a new process, but is NOT M11 or independently
+anchored anti-rollback. Unsealed actions always poison continuation.
 
 This intentionally duplicates the small reference step sequence from life.py
 rather than changing that historically pinned experimental runner.
@@ -96,8 +98,57 @@ def make_engineering_claim(*, birth_index: int, genome: dict,
                             genome_sha256=genome_digest(genome))
 
 
+def _native_decide(world: World, mind: Mind):
+    """Reproduce the original P1.3 decision from first-person capture only."""
+    capture = world.capture()
+    budget = CognitiveBudget(world.body, world.laws)
+    action, param, work, _info = mind.decide(capture, budget)
+    if work != budget.work:
+        raise ValueError("Mind decision work differs from the native allowance")
+    intent = {"schema": INTENT_SCHEMA, "tick_before": world.t,
+              "body_before": list(world.body), "action": action, "param": param,
+              "decision_work": {name: getattr(work, name)
+                  for name in ("cycles", "simulated_steps", "memory_items", "replays")}}
+    return action, param, work, intent
+
+
+def _native_outcome(world: World, mind: Mind, action, param,
+                    work: CognitiveWork) -> dict:
+    """Apply exactly one native motor plus the already prepaid learning path.
+
+    Only the caller that has durably PREPARED an intent may use this as a
+    *new* action. Read-only reconstruction replays it on a detached World.
+    """
+    outcome = world.step(action, param, work)
+    motor_body = list(outcome["body"])
+    paid_learning = {"energy": 0.0, "vigilance": 0.0}
+    if not outcome["dead"] and mind.last is not None:
+        learning = CognitiveBudget(outcome["body"], world.laws)
+        mind.observe_outcome(outcome)
+        replay_limit = mind.prepare_learning(outcome, learning)
+        if replay_limit is not None:
+            audit = world.pay_cognition(learning.work)
+            outcome["body"] = world.body
+            replays = mind.learn_from_outcome(
+                outcome, replay_limit=replay_limit)
+            if replays != replay_limit:
+                raise RuntimeError("executed replays differ from prepaid replay count")
+            paid_learning = {key: audit[key]["paid"]
+                             for key in ("energy", "vigilance")}
+    return {"schema": RECEIPT_SCHEMA, "phase": "POST_PAID_LEARNING",
+            "tick": world.t, "action": action, "param": param,
+            "body_after_motor": motor_body,
+            "body_after_paid_learning": list(world.body),
+            "decision_paid": {key: outcome["cognitive_accounting"][key]["paid"]
+                              for key in ("energy", "vigilance")},
+            "learning_paid": paid_learning,
+            "death_causes": list(outcome["dead"]),
+            "world_state_sha256": state_hash(world),
+            "mind_state_sha256": state_hash(mind)}
+
+
 class NativeEngineeringSession:
-    """Ephemeral, one-process-only native reference session, no restart API."""
+    """An in-process reference session, optionally rebuilt by verified replay."""
 
     def __init__(self, directory: Path, claim: Reservation, *, horizon: int,
                  world: World, mind: Mind, head: str):
@@ -133,11 +184,47 @@ class NativeEngineeringSession:
         return cls(directory, claim, horizon=horizon, world=world,
                    mind=mind, head=view["head_sha256"])
 
+    @classmethod
+    def reconstruct(cls, directory: Path, claim: Reservation, *, genome: dict,
+                    spec: WorldSpec) -> NativeEngineeringSession:
+        """Cold read + source-pinned *detached deterministic replay*.
+
+        Never replays a PREPARED/uncertain motor, a dead/censored life, or an
+        external action. All old actions are recomputed on a fresh, isolated
+        local World, and every decision, payment and post-learning state must
+        match the sealed original before a new motor can be authorized.
+        This is NOT externally anchored M11 or production anti-rollback.
+        """
+        if type(claim) is not Reservation or type(spec) is not WorldSpec:
+            raise TypeError("exact I3 engineering claim and WorldSpec required")
+        if claim != make_engineering_claim(birth_index=claim.birth_index,
+                genome=genome, spec=spec, life_seed=claim.life_seed):
+            raise PermissionError("current source/world/genome differs from sealed life")
+        view = inspect(directory, claim)  # rejects incomplete or corrupt ledger
+        if view["terminal"] != "OPEN":
+            raise PermissionError("cannot reconstruct or resume a terminal I3 life")
+        world, mind = World(spec), Mind(genome, claim.life_seed)
+        if world.dead or view["horizon"] > 100:
+            raise PermissionError("invalid native engineering genesis or horizon")
+        for event in view["events"]:
+            action, param, work, intent = _native_decide(world, mind)
+            if intent != event["intent"]:
+                raise PermissionError("historical native choice/work is not reproducible")
+            actual = _native_outcome(world, mind, action, param, work)
+            if actual != event["receipt"]:
+                raise PermissionError("historical native outcome/cost/state differs")
+        if (world.t != view["sequence"]
+                or list(world.body) != view["last_body"]):
+            raise PermissionError("reconstructed native state differs from custody")
+        # No restore fallback or source-independent lineage import.
+        return cls(directory, claim, horizon=view["horizon"],
+                   world=world, mind=mind, head=view["head_sha256"])
+
     def step(self) -> dict:
         """One genuine native paid step, ledger PREPARE *before* World.step.
 
-        An exception never permits the same in-memory session to try again,
-        including when the action may have been executed but the seal failed.
+        Any exception irrevocably stops this process-local attempt; only an
+        entirely sealed, independently verified chain may be reconstructed.
         """
         if self._stopped:
             raise PermissionError("failed or terminal native engineering session")
@@ -152,46 +239,11 @@ class NativeEngineeringSession:
                 if (last["world_state_sha256"] != state_hash(self.world)
                         or last["mind_state_sha256"] != state_hash(self.mind)):
                     raise PermissionError("in-memory native state changed after sealing")
-
-            capture = self.world.capture()  # sole input to Mind
-            budget = CognitiveBudget(self.world.body, self.world.laws)
-            action, param, work, _info = self.mind.decide(capture, budget)
-            if work != budget.work:
-                raise ValueError("Mind decision work differs from the native allowance")
-            before = list(self.world.body)
-            intent = {"schema": INTENT_SCHEMA, "tick_before": self.world.t,
-                      "body_before": before, "action": action, "param": param,
-                      "decision_work": {name: getattr(work, name)
-                          for name in ("cycles", "simulated_steps", "memory_items", "replays")}}
+            action, param, work, intent = _native_decide(self.world, self.mind)
             prepared = prepare(self.directory, self.claim,
                                expected_head=self.head, intent=intent)
-            # No external motor selector: one original native action only.
-            outcome = self.world.step(action, param, work)
-            motor_body = list(outcome["body"])
-            paid_learning = {"energy": 0.0, "vigilance": 0.0}
-            if not outcome["dead"] and self.mind.last is not None:
-                learning = CognitiveBudget(outcome["body"], self.world.laws)
-                self.mind.observe_outcome(outcome)
-                replay_limit = self.mind.prepare_learning(outcome, learning)
-                if replay_limit is not None:
-                    audit = self.world.pay_cognition(learning.work)
-                    outcome["body"] = self.world.body
-                    replays = self.mind.learn_from_outcome(
-                        outcome, replay_limit=replay_limit)
-                    if replays != replay_limit:
-                        raise RuntimeError("executed replays differ from prepaid replay count")
-                    paid_learning = {key: audit[key]["paid"]
-                                     for key in ("energy", "vigilance")}
-            receipt = {"schema": RECEIPT_SCHEMA, "phase": "POST_PAID_LEARNING",
-                       "tick": self.world.t, "action": action, "param": param,
-                       "body_after_motor": motor_body,
-                       "body_after_paid_learning": list(self.world.body),
-                       "decision_paid": {key: outcome["cognitive_accounting"][key]["paid"]
-                                         for key in ("energy", "vigilance")},
-                       "learning_paid": paid_learning,
-                       "death_causes": list(outcome["dead"]),
-                       "world_state_sha256": state_hash(self.world),
-                       "mind_state_sha256": state_hash(self.mind)}
+            # The sole *new* World.step happens after durable PREPARED.
+            receipt = _native_outcome(self.world, self.mind, action, param, work)
             sealed = seal(self.directory, self.claim,
                           expected_head=prepared["prior_head_sha256"],
                           seal_token=prepared["seal_token"], receipt=receipt)
