@@ -11,7 +11,7 @@ For a task-oriented architecture map and intervention matrix, begin with the [Ar
 | I1 birth | canonical natural identity | `i1lab.i1_birth.birth_i1` | no old experimental flags / hidden oracle |
 | I1 test harness | real engine, SMOKE/FULL | `scripts/test_i1_ci.py` | assert mechanism and observed outcomes, not fixed choices |
 | I2 | unregistered research proposal with a locally born native SQLite prototype | `src/i2/`, `src/i2/docs/STATUS.md` | isolated local research lives; no engine activation or independently established M11 custody |
-| I3 | unregistered proposal with independent local laboratory and preregistered study records | `src/i3/`, `tests/i3/`, `src/i3/docs/README.md` | preserve original commit provenance, failed P1.2 gate and no-entrypoint contract; no engine activation |
+| I3 | **owner-selected reference for new architecture and development**, still an unregistered runtime proposal | `src/i3/`, `tests/i3/`, `src/i3/docs/README.md` | preserve evidence, P1.3 funded-v2 and Stage-2.1 scientific `NOT_ISSUED`; [ADR-0020](../decisions/ADR-0020-i3-owner-selected-development-reference.md) does not activate runtime |
 | I0 history | non-authoritative for I1 | `archive/i0/` | byte immutable; manual restoration only |
 | Registry | canonical generation locations | `config/engine-registry.json` | review when adding a generation |
 | Archive inventory | original Git blob identities | `config/archives/i0-20261017.json` | never edit archived bytes to match a new engine |
@@ -28,7 +28,7 @@ For a task-oriented architecture map and intervention matrix, begin with the [Ar
 
 ## Next engine generation: I2, I3, ...
 
-**I2 has an independent, locally born native SQLite research prototype, but is not an activated engine. I3 is also an unregistered proposal with independent laboratory code and documented G2/G2b/G2c results; P1.2 remains rejected.** For each proposed generation, keep `src/iN/` source separate from previous generations, define a generation-owned constructor/identity, isolated Lab, typed contracts, a unique test harness, an explicit activation decision and dedicated checks when appropriate. Never infer activation from local execution or test success. Update the registry only following the formal promotion decision. Do not rename I1 or inherit an experiment's measurements as normative requirements.
+**I2 has an independent, locally born native SQLite research prototype, but is not an activated engine. I3 is now the owner-selected architectural/development reference (ADR-0020), while still an unregistered active-runtime proposal with independent laboratory code; P1.3 funded-v2 remains its internal research reference, and historical P1.2 remains rejected.** For each proposed generation, keep `src/iN/` source separate from previous generations, define a generation-owned constructor/identity, isolated Lab, typed contracts, a unique test harness, an explicit activation decision and dedicated checks when appropriate. Never infer activation from local execution or test success. Update the registry only following the formal promotion decision. Do not rename I1 or inherit an experiment's measurements as normative requirements.
 
 Use this promotion sequence: design proposal → architectural decision → isolated prototype → software invariants → new preregistered physical evidence → explicit activation. Record NO-GO and limitations. Keep older generations available for reproducible historical audits.
 
