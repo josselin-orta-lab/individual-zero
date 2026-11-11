@@ -100,7 +100,7 @@ class NativeOptionDepthE1(unittest.TestCase):
                               mode=contrast["mode"]):
                 self.assertIn(contrast["mode"], ("cap1", "cap4"))
                 self.assertLessEqual(
-                    contrast["action_divergence_with_full_funding"],
+                    contrast["motor_divergence_with_full_funding"],
                     contrast["complete_comparable"])
                 if contrast["motor_divergence_with_full_funding"]:
                     self.assertTrue(contrast["complete_comparable"])
