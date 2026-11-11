@@ -134,7 +134,7 @@ class OldOriginalNextActionBridgeTests(unittest.TestCase):
         bad.append(x)
         x = deepcopy(original)
         x[1]["next_decision_receipt"]["first_fork"]["next_decision"][
-            "priority_action"] = "attendre"
+            "priority_action"] = "collecter"
         bad.append(x)
         x = deepcopy(original)
         x[1]["family"] = "invented"
@@ -151,6 +151,9 @@ class OldOriginalNextActionBridgeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp, patch.object(
                 B.ORIGINAL, "audit",
                 side_effect=PermissionError("source sha mismatch")):
+            # Supply only an arbitrary reduced text blob so the first SHA
+            # snapshot succeeds; the original verifier must still reject it.
+            (Path(tmp) / "REDUCED_ROWS.json").write_text("[]")
             with self.assertRaises(PermissionError):
                 B.audit(tmp)
 
