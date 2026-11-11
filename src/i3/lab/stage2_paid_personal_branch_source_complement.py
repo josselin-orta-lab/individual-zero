@@ -47,6 +47,19 @@ def _sha(value):
     return sha256(_canonical(value)).hexdigest()
 
 
+
+
+def _effects_rows(mind):
+    """Canonical JSON-safe identity, count and mean; never loses action keys."""
+    return [
+        {"action_key": list(key), "effective_count": state[0],
+         "mean_delta": list(state[1]), "raw_count": state[2]}
+        for key, state in sorted(
+            mind.effects.stats.items(), key=lambda item: repr(item[0])
+        )
+    ]
+
+
 def _paid_work(body, budget, requested):
     if budget.work != requested:
         raise AssertionError("existing model did not prepay exact declared work")
@@ -96,7 +109,7 @@ def _make(label, deltas):
         raise AssertionError("lost or duplicated synthetic personal outcome")
     native_pred = mind._read_plan_prediction(NATIVE_KEY)
     source_before = _sha({
-        "native_effects": mind.effects.stats,
+        "native_effects": _effects_rows(mind),
         "native_values": mind.values,
         "rng": repr(mind.rng.getstate()),
         "budget_rng": repr(mind._budget_rng.getstate()),
@@ -119,7 +132,7 @@ def _make(label, deltas):
     ):
         raise AssertionError("native priced branch read receipt is incomplete")
     source_after = _sha({
-        "native_effects": mind.effects.stats,
+        "native_effects": _effects_rows(mind),
         "native_values": mind.values,
         "rng": repr(mind.rng.getstate()),
         "budget_rng": repr(mind._budget_rng.getstate()),
@@ -131,9 +144,9 @@ def _make(label, deltas):
         raise AssertionError("paid observational read altered stored source")
     return {
         "label": label,
-        "native_effects_stats": mind.effects.stats,
+        "native_effects_stats": _effects_rows(mind),
         "native_forecast": native_pred,
-        "native_effects_digest": _sha(mind.effects.stats),
+        "native_effects_digest": _sha(_effects_rows(mind)),
         "stored_action_key": KEY,
         "stored_samples": len(history._samples),
         "storage_model_payment_each": stored,
