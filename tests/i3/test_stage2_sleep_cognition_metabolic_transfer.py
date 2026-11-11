@@ -35,7 +35,7 @@ class SleepCognitionMetabolicTransferTests(unittest.TestCase):
         self.assertFalse(result["cpu_to_body_calibrated"])
 
     def test_saturated_sleep_hides_energy_vigilance_but_food_costs_differ(self):
-        before=dict((x,(b,a)) for x,b,a in E.CASES)["sleep_saturated"]
+        before, _ = {name: (body, action) for name, body, action in E.CASES}["sleep_saturated"]
         plain=E.examine(before,action="dormir",request_readout=False)
         extra=E.examine(before,action="dormir",request_readout=True)
         self.assertEqual(plain["post_action_body"][0],100.)
