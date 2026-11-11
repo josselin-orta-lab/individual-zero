@@ -8,6 +8,8 @@ operational surface below.
 
 ## Current
 
+- **Native-I3 release R1 engineering slice (11 November 2026):** [engineering-only birth-slot reservation](ENGINEERING_BIRTH_RESERVATION.md), merged via [PR #1332](https://github.com/josselin-orta-lab/individual-zero/pull/1332). SQLite WAL/FULL one-shot *local* claim and tamper checks passed full I3 software CI on Python 3.11/3.12, but **NO actual birth, durable M11, recovery, scientific World authorization or active-engine cutover**. [Issue #1331](https://github.com/josselin-orta-lab/individual-zero/issues/1331) tracks genuine native owner identity and cold-recovery proof. The reference selection is [ADR-0020](../../../docs/decisions/ADR-0020-i3-owner-selected-development-reference.md).
+
 - **Owner-selected reference for new development (11 November 2026):** [ADR-0020](../../../docs/decisions/ADR-0020-i3-owner-selected-development-reference.md) records the owner's decision that I3 is the project's reference engine for future architecture. This is a reference-selection decision, not active runtime activation: `reference_generation=I3`, `active_generation=I1`, I3 contract still proposal/no entrypoints. P1.3 funded-v2 remains the internal reference, Stage 2.1 scientific `NOT_ISSUED`, closed cohorts unchanged. Prioritize native generation-owned identity, persistent ownership and cold-recovery verification before source-specific runtime promotion.
 
 
