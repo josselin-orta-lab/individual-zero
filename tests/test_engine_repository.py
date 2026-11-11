@@ -44,7 +44,51 @@ class EngineToolingTests(unittest.TestCase):
         report = json.loads(proc.stdout)
         self.assertEqual(report["status"], "PASS")
         self.assertEqual(report["active_generation"], "I1")
+        self.assertEqual(report["reference_generation"], "I3")
         self.assertEqual(report["archived"], {"workflows": 127, "tests": 297})
+
+    def test_owner_selected_i3_reference_is_not_automatic_active_release(self):
+        from scripts.check_engine_repository import reference_selection_errors
+        from tools.run_engine_checks import plan
+
+        registry = json.loads((ROOT / "config/engine-registry.json").read_text())
+        contract = json.loads((ROOT / "src/i3/engine.json").read_text())
+        surface = json.loads((ROOT / "src/i3/ACTIVE_SURFACE.json").read_text())
+        self.assertEqual(registry["reference_generation"], "I3")
+        self.assertEqual(registry["active_generation"], "I1")
+        self.assertNotIn("I3", registry["generations"])
+        self.assertEqual(reference_selection_errors(registry, contract, surface), [])
+        self.assertFalse(surface["governance"]["fresh_lived_worlds_allowed"])
+        with self.assertRaisesRegex(ValueError, "only the registered active engine"):
+            plan("I3", "smoke")
+
+        def snapshot():
+            return (json.loads(json.dumps(registry)),
+                    json.loads(json.dumps(contract)),
+                    json.loads(json.dumps(surface)))
+
+        for problem in (
+            "wrong_reference", "active_i3", "registered_i3",
+            "contract_active", "contract_entrypoint", "scientific_world",
+            "wrong_stage",
+        ):
+            r, c, s = snapshot()
+            if problem == "wrong_reference":
+                r["reference_generation"] = "I1"
+            elif problem == "active_i3":
+                r["active_generation"] = "I3"
+            elif problem == "registered_i3":
+                r["generations"]["I3"] = {"source": "src/i3"}
+            elif problem == "contract_active":
+                c["status"] = "active"
+            elif problem == "contract_entrypoint":
+                c["entrypoints"] = {"runtime": "unreleased.runtime"}
+            elif problem == "scientific_world":
+                s["governance"]["next_scientific_cohort_authorized"] = True
+            else:
+                s["current_stage"] = "2.2 controller"
+            with self.subTest(problem=problem):
+                self.assertTrue(reference_selection_errors(r, c, s))
 
     def test_proposal_ci_not_misclassified_as_archived_i0(self):
         from scripts.check_engine_repository import unexpected_workflows
