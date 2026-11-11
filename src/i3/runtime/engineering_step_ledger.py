@@ -10,7 +10,7 @@ from __future__ import annotations
 from contextlib import closing
 from hashlib import sha256
 import json
-from math import isfinite
+from math import isclose, isfinite
 from pathlib import Path
 import re
 import secrets
@@ -102,14 +102,31 @@ def _receipt(raw: object, seq: int, intent: dict, horizon: int) -> dict:
             or raw["action"] != intent["action"]
             or raw["param"] != intent["param"]):
         raise ValueError("step/intent/phase mismatch")
-    _body(raw["body_after_motor"])
-    _body(raw["body_after_paid_learning"])
+    after_motor = _body(raw["body_after_motor"])
+    after_learning = _body(raw["body_after_paid_learning"])
     _money(raw["decision_paid"])
-    _money(raw["learning_paid"])
+    learned_cost = _money(raw["learning_paid"])
+    # Learning is the second native payment, after the physical motor.
+    # It cannot alter food, water or integrity and must debit E and V exactly.
+    if (after_learning[1:4] != after_motor[1:4]
+            or not isclose(after_learning[0],
+                           after_motor[0] - learned_cost["energy"],
+                           rel_tol=1e-10, abs_tol=1e-8)
+            or not isclose(after_learning[4],
+                           after_motor[4] - learned_cost["vigilance"],
+                           rel_tol=1e-10, abs_tol=1e-8)):
+        raise ValueError("post-learning body does not settle the two currencies")
     causes = raw["death_causes"]
     if (type(causes) is not list or len(causes) != len(set(causes))
             or any(type(c) is not str or c not in DEATH_CAUSES for c in causes)):
         raise ValueError("invalid terminal causes")
+    required_causes = {name for name, i in (
+        ("zero_food", 1), ("zero_water", 2), ("zero_integrity", 3))
+        if after_motor[i] == 0}
+    if set(causes) != required_causes:
+        raise ValueError("death causes contradict physical motor body")
+    if causes and (learned_cost["energy"] or learned_cost["vigilance"]):
+        raise ValueError("postmortem cognition must not be charged")
     _hash(raw["world_state_sha256"], "world_state_sha256")
     _hash(raw["mind_state_sha256"], "mind_state_sha256")
     return raw
@@ -272,6 +289,8 @@ def initialize(directory: Path, claim: Reservation, *, horizon: int,
     """Initialize local engineering custody after a separate consumed birth claim."""
     _integer(horizon, "horizon", minimum=1)
     body = _body(initial_body)
+    if any(body[i] == 0 for i in (1, 2, 3)):
+        raise ValueError("cannot initialize a live ledger with a dead body")
     _check_claim(directory, claim)
     try:
         with closing(_connection(directory, mode="rwc")) as conn:
