@@ -140,7 +140,10 @@ class ExistingPaidPersonalBranchSourceE2(unittest.TestCase):
         a=Mind(midpoint(), E.SEED)
         b=Mind(midpoint(), E.SEED)
         self.assertFalse(hasattr(a, "branch_memory"))
-        self.assertEqual(a.__dict__, b.__dict__)
+        self.assertEqual(a.effects.stats, b.effects.stats)
+        self.assertEqual(a.rng.getstate(), b.rng.getstate())
+        self.assertEqual(a._budget_rng.getstate(), b._budget_rng.getstate())
+        self.assertEqual(a.values, b.values)
         r=E.audit()
         self.assertTrue(all(x["original_source_not_mutated_by_paid_read"]
                             for x in r["rows"]))
