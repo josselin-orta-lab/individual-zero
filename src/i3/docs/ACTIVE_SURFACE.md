@@ -15,6 +15,19 @@ rationale, checked references and deliberate compatibility boundaries. The machi
 - **ADR-0017:** **owner-lifted on 9 November 2026** for fingerprint `dcada9e2…f1` and the frozen DEVELOPMENT 80/81 pilot only.
 - **I3:** proposal only, unregistered.
 
+**Current research handoff (11 November 2026):** The cost-only, fixed-action
+software campaigns through [PR #1302](https://github.com/josselin-orta-lab/individual-zero/pull/1302)
+and [canonical result](studies/stage2-replay-gate-selected-design/COMPUTATION_VALUE_IDENTIFIABILITY_RESULTS_2026-11-11.md)
+show how an optional two-currency calculation can displace next learning,
+consume additional food during sleep and alter inherited bodily distress.
+They **do not** show that information changed a later motor command or
+improved the individual's personally lived outcome. The active manifest's
+`next_scientific_action` therefore now directs a **design and custody
+review** for a new, cost-calibrated, phase-aligned and independent
+prospective action-mediation test; **it grants no new World**. Keep
+`fresh_lived_worlds_allowed=false`, all previously consumed science
+closed, P1.3 unchanged, and no Stage 2.2 promotion.
+
 The corrected R0-R4 software falsifier executed exactly once and passed.
 The hardened transport passed 36/36 G/R rehearsals on Python 3.11 and 3.12
 with the **same exact content fingerprint** `dcada9e2…f1`, verified after
