@@ -36,8 +36,13 @@ class RemoteAuthorityEngineeringTests(unittest.TestCase):
     @classmethod
     def start_service(cls):
         env = dict(os.environ)
-        root = Path(__file__).resolve().parents[1]
-        env["PYTHONPATH"] = str(root) + os.pathsep + env.get("PYTHONPATH", "")
+        # Repository uses tests/i3 and src/i3; isolated local runs use i3/.
+        root = Path(__file__).resolve().parents[2]
+        source = root / "src"
+        if not (source / "i3" / "runtime").is_dir():
+            source = Path(__file__).resolve().parents[1]
+            root = source
+        env["PYTHONPATH"] = str(source) + os.pathsep + env.get("PYTHONPATH", "")
         cls.service = subprocess.Popen([
             sys.executable, "-m", "i3.lab.engineering_remote_authority",
             "--database", str(cls.database), "--authority-id", cls.ID,
