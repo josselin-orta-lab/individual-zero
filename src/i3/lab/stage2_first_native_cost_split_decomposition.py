@@ -25,6 +25,10 @@ GRID = (("dev-open-field", 840061),
         ("dev-open-field", 840062),
         ("dev-failing-well", 840061),
         ("dev-failing-well", 840062))
+# Original full-life totals can diverge AFTER the first physical cost split.
+# Pin all four original accepted totals without claiming full-life parity.
+ORIGINAL_FULL_LIFE_READ_TOTALS = ((120, 120), (105, 105),
+                                  (119, 115), (141, 141))
 TOL = 1e-10
 
 
@@ -90,8 +94,10 @@ def reduce_source(source):
                 x.get("first_motor_difference") is not None):
             raise ValueError("modified original fixed-unit denominator")
         vr, dr = x.get("visible_funded_reads"), x.get("discard_funded_reads")
-        if type(vr) is not int or type(dr) is not int or vr < 0 or vr != dr:
-            raise ValueError("original equal optional read count changed")
+        expected_vr, expected_dr = ORIGINAL_FULL_LIFE_READ_TOTALS[len(rows)]
+        if (type(vr) is not int or type(dr) is not int
+                or (vr, dr) != (expected_vr, expected_dr)):
+            raise ValueError("original full-life read totals changed")
         _body(x.get("visible_end_body"))
         _body(x.get("discard_end_body"))
         f = x.get("first_cost_confound")
@@ -102,6 +108,7 @@ def reduce_source(source):
                 "original_end_bodies_equal":
                     x["visible_end_body"] == x["discard_end_body"],
                 "first_split_step": None, "native_motor": None,
+                "full_life_optional_read_totals": [vr, dr],
                 "additional_competition_cycles": None,
                 "extra_native_energy_bill": None,
                 "extra_native_vigilance_bill": None,
@@ -147,6 +154,7 @@ def reduce_source(source):
             "original_end_bodies_equal":
                 x["visible_end_body"] == x["discard_end_body"],
             "first_split_step": f["step"], "native_motor": f["native_motor"],
+            "full_life_optional_read_totals": [vr, dr],
             "original_visible_decision_work": asdict(v),
             "original_discard_decision_work": asdict(d),
             "additional_competition_cycles": diff,
