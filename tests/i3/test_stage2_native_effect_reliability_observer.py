@@ -100,7 +100,7 @@ class NativeEffectsPrequentialTests(unittest.TestCase):
 
     def test_cannot_fabricate_payment_or_wrong_source_grid(self):
         w = E.PrequentialWitness()
-        with self.assertRaisesRegex(RuntimeError, "missing actual"):
+        with self.assertRaisesRegex(RuntimeError, "unpaid or forged physical") :
             E._check_paid(BodyLaws(), CognitiveWork(cycles=1), {})
         with self.assertRaises(ValueError):
             E.run_observed(E.dev_open_field, 999)
