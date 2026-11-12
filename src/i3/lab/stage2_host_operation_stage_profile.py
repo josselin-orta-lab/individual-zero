@@ -112,6 +112,11 @@ def profile_once(n, extras, mode, *, body=BODY):
     head, head_diag = _measure(lambda: CompactPersonalDistressHead(source))
     memory, snapshot_diag = _measure(lambda: tuple(source.buffer))
     selectors, selector_diag = _measure(lambda: _both_selectors(memory))
+    if (selectors["priority_key_visits"] != n
+            or selectors["hmac_identity_messages"] != n
+            or len(selectors["priority"]) != K
+            or len(selectors["random"]) != K):
+        raise RuntimeError("operator or work parity defect")
     if tuple(head._eligible_records) != memory:
         raise RuntimeError("snapshot and personal copied data differ")
     indices = (selectors["priority"] if mode == "priority"
