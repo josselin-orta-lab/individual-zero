@@ -38,6 +38,13 @@ class FirstNativeCostSplitTests(unittest.TestCase):
                          [None,11,3,3])
         self.assertEqual([z["additional_competition_cycles"] for z in r["rows"]],
                          [None,1,2,2])
+        # The original full-life counts may DIFFER after cost mediation,
+        # even while the optional operator matched at first cost split.
+        self.assertEqual(
+            [tuple(z["full_life_optional_read_totals"]) for z in r["rows"]],
+            list(E.ORIGINAL_FULL_LIFE_READ_TOTALS))
+        self.assertEqual(r["rows"][2]["full_life_optional_read_totals"],
+                         [119,115])
         for x in r["rows"]:
             if x["first_split_step"] is None:
                 self.assertTrue(x["original_end_bodies_equal"])
