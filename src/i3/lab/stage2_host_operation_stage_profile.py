@@ -131,12 +131,8 @@ def profile_once(n, extras, mode, *, body=BODY):
                 body=body, mode=mode))
     if (predict_calls != K + 2 or head.training_updates != K
             or result["updates"] != K
-            or not result["posttraining_inference_always_executed"]
-            if "posttraining_inference_always_executed" in result else False):
+            or not result["posttraining_forecast_computed"]):
         raise RuntimeError("unequal actual inference/training work")
-    # The helper's actual return uses the key below; always check it.
-    if not result["posttraining_forecast_computed"]:
-        raise RuntimeError("discard skipped its actual post-training forecast")
     if _source_seal(source) != source_before:
         raise RuntimeError("optional head mutated personal source or RNG")
     energy, vigilance = cognitive_cost(budget.laws, budget.work)
