@@ -30,6 +30,34 @@ class Stage2HostOperationStageProfileTests(unittest.TestCase):
         self.assertEqual(report["worlds_opened"], 0)
         self.assertEqual(report["scientific_verdict"], "NOT_ISSUED")
         self.assertFalse(report["host_cpu_joules_calibrated"])
+        # Human-auditable, source-locked CI receipt. Volatile host metrics
+        # are deliberately NOT included in the deterministic SHA digest.
+        import json
+        reference_rows = [
+            row for row in report["rows"]
+            if row["memories"] in (12, 512)
+            and row["unrelated_entries"] in (0, 256)]
+        receipt = {
+            "schema": report["schema"],
+            "status": report["status"],
+            "deterministic_structural_sha256":
+                report["deterministic_structural_sha256"],
+            "predeclared_cells": report["predeclared_cells"],
+            "repeats_per_arm": report["repeats_per_arm"],
+            "scientific_verdict": report["scientific_verdict"],
+            "host_cpu_joules_calibrated": report["host_cpu_joules_calibrated"],
+            "native_World_debits_observed":
+                report["native_World_debits_observed"],
+            "reference_host_stage_rows": [{
+                "memory": row["memories"],
+                "unrelated_entries": row["unrelated_entries"],
+                "mode": row["mode"],
+                "counts": row["counts"],
+                "stage_diagnostics": row["stage_diagnostics"],
+            } for row in reference_rows],
+        }
+        print("I3_HOST_STAGE_PROFILE_RECEIPT="
+              +json.dumps(receipt, sort_keys=True, separators=(",", ":")))
         for row in report["rows"]:
             n = row["memories"]
             self.assertTrue(row["source_and_rng_unchanged"])
