@@ -4,18 +4,21 @@ The audit log is physically in the SAME rollbackable SQLite authority file.
 Passing these tests never constitutes independent off-host monotonic custody.
 """
 from contextlib import closing
-from hashlib import sha256
 from pathlib import Path
 import os
+import threading
 import sqlite3
 import tempfile
 import unittest
 
 from i3.lab.engineering_remote_authority import (
-    AuthorityStore, AUDIT_SCHEMA, DB_SCHEMA,
+    AuthorityStore, AUDIT_SCHEMA, DB_SCHEMA, serve_test_loopback,
 )
 from i3.runtime.birth_reservation import make_reservation
-from i3.runtime.engineering_remote_witness import SCHEMA, claim_data
+from i3.runtime.engineering_remote_witness import (
+    SCHEMA, RemoteEngineeringWitness, claim_data,
+)
+from i3.runtime.engineering_step_ledger import REMOTE_MODE
 
 
 class RemoteAuthorityAuditTests(unittest.TestCase):
@@ -111,6 +114,40 @@ class RemoteAuthorityAuditTests(unittest.TestCase):
                 conn.execute("UPDATE audit SET ordinal=20 WHERE ordinal=3")
         with self.assertRaisesRegex(PermissionError, "audit"):
             self.verify()
+
+    def test_signed_http_verify_rejects_corrupt_authority_without_ack(self):
+        # End-to-end loopback HTTP test: a valid request/key cannot bypass an
+        # audit failure to obtain a signed high-water confirmation.
+        key = bytes(range(32))
+        srv = serve_test_loopback(self.db, self.AUTHORITY, key, port=0)
+        thread = threading.Thread(target=srv.serve_forever,
+                                  kwargs={"poll_interval": 0.02}, daemon=True)
+        thread.start()
+        try:
+            client = RemoteEngineeringWitness(
+                f"http://127.0.0.1:{srv.server_port}", key=key,
+                authority_id=self.AUTHORITY, timeout=2,
+                allow_test_loopback_http=True)
+            claim = self.claim
+            ledger = {"witness_mode": REMOTE_MODE, "sequence": 0,
+                      "terminal": "OPEN", "prepared": None,
+                      "identity_sha256": claim["identity_sha256"],
+                      "horizon": 3, "head_sha256": self.GENESIS}
+            # Register from the actual signed test client first.
+            from i3.runtime.birth_reservation import make_reservation
+            born = make_reservation(birth_index=5,life_seed=42,
+                source_sha256="a"*64, world_sha256="b"*64, genome_sha256="c"*64)
+            client.register(born, ledger)
+            self.assertEqual(client.verify(born, ledger)["sequence"], 0)
+            with closing(sqlite3.connect(self.db)) as conn:
+                with conn:
+                    conn.execute("UPDATE histories SET head=?", ("f" * 64,))
+            with self.assertRaisesRegex(PermissionError, "unavailable/rejected"):
+                client.verify(born, ledger)
+        finally:
+            srv.shutdown()
+            thread.join(timeout=5)
+            srv.server_close()
 
     def test_changed_authority_metadata_fails_before_signed_answer(self):
         self.register()
