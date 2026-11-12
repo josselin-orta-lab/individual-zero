@@ -7,7 +7,7 @@ Model allowances are NOT actual World payments or physical CPU joules.
 from __future__ import annotations
 
 from dataclasses import asdict
-from hashlib import sha256
+from hashlib import sha1, sha256
 import json
 from math import fsum, isfinite
 from pathlib import Path
@@ -24,6 +24,7 @@ SCHEMA = "i3-stage2.1-archived-residual-model-paid-readout/v1"
 SIDECAR = (DATASET.parent /
            "STAGE2_ARCHIVED_RESIDUAL_READOUT_DECISION_BILLS_2026-11-12.json")
 SIDECAR_SCHEMA = "i3-stage2.1-archived-native-decision-body-receipts-sidecar/v1"
+SIDECAR_GIT_BLOB_SHA1 = "678c9fbe6d74189f3210734de782e421644c6a95"
 MODES = ("VISIBLE", "PAID_DISCARD")
 
 
@@ -246,9 +247,15 @@ def reduce_sources(original, sidecar):
 
 
 def audit():
+    # Pin the complete sidecar bytes to the exact Git blob archived before
+    # this readout was implemented, not just labels and event seals.
+    raw = SIDECAR.read_bytes()
+    git_blob = sha1(b"blob " + str(len(raw)).encode("ascii") + b"\\0" + raw).hexdigest()
+    if git_blob != SIDECAR_GIT_BLOB_SHA1:
+        raise ValueError("native decision sidecar Git blob changed")
     return reduce_sources(
         json.loads(DATASET.read_text(encoding="utf-8")),
-        json.loads(SIDECAR.read_text(encoding="utf-8")))
+        json.loads(raw.decode("utf-8")))
 
 
 if __name__ == "__main__":
