@@ -243,6 +243,7 @@ def audit():
             visible = run_arm(factory, seed, "VISIBLE")
             discard = run_arm(factory, seed, "PAID_DISCARD")
             first_difference = None
+            first_cost_confound = None
             for a,b in zip(visible["steps"], discard["steps"]):
                 # Prior to the first decision divergence, both worlds have
                 # the same history, body, actual work and source records.
@@ -250,14 +251,14 @@ def audit():
                               (b["native_action"],b["native_param"]))
                 if a["source_digest_before_decision"] != b[
                         "source_digest_before_decision"]:
-                    if first_difference is None:
-                        raise RuntimeError("private source divergence without motor")
+                    if first_difference is None and first_cost_confound is None:
+                        raise RuntimeError("private source divergence without motor or cost")
                     break
                 if (a["risk_reads_attempted"] != b["risk_reads_attempted"]
                         or a["risk_reads_funded"] != b["risk_reads_funded"]
                         or a["risk_source_visits"] != b["risk_source_visits"]):
-                    if first_difference is None:
-                        raise RuntimeError("unequal paid risk work before first motor difference")
+                    if first_difference is None and first_cost_confound is None:
+                        raise RuntimeError("unequal paid risk work before first motor/cost difference")
                     break
                 for x,y in zip(a["risk_events"],b["risk_events"]):
                     if any(x[k] != y[k] for k in (
@@ -278,16 +279,36 @@ def audit():
                         "full_decision_work_visible": a["decision_work"],
                         "full_decision_work_discard": b["decision_work"],
                     }
-                if first_difference is None and a["after_storage_body"] != b[
-                        "after_storage_body"]:
-                    raise RuntimeError("matched native motor nevertheless diverged bodily")
+                if (first_difference is None and first_cost_confound is None
+                        and (a["decision_work"] != b["decision_work"]
+                             or a["after_storage_body"] != b["after_storage_body"])):
+                    # The optional read scans are matched, but original
+                    # Competition can spend a DIFFERENT number of cycles
+                    # when learned uncertainty changes its score. This is
+                    # native causal mediation through compute cost, NOT
+                    # a software parity defect or clean information-to-motor.
+                    # Preserve the unfavorable result, block interpretation
+                    # of all later motors, and never retune frozen fixtures.
+                    first_cost_confound = {
+                        "step": a["step"],
+                        "native_motor": [a["native_action"],a["native_param"]],
+                        "read_work_matched": True,
+                        "visible_decision_work": a["decision_work"],
+                        "discard_decision_work": b["decision_work"],
+                        "visible_after_storage_body": a["after_storage_body"],
+                        "discard_after_storage_body": b["after_storage_body"],
+                    }
+                    break
             paired.append({
                 "world": visible["world"], "seed": seed,
                 "visible": visible, "discard": discard,
-                "first_motor_difference": first_difference})
+                "first_motor_difference": first_difference,
+                         "first_cost_confound": first_cost_confound})
     return {
         "schema": SCHEMA,
-        "status": ("PAID_RESIDUAL_READOUT_ENGINEERING_PASS_MOTOR_MEDIATION"
+        "status": ("PAID_RESIDUAL_READOUT_STOP_NATIVE_COST_CONFOUND"
+                   if any(p["first_cost_confound"] is not None for p in paired)
+                   else "PAID_RESIDUAL_READOUT_ENGINEERING_PASS_MOTOR_MEDIATION"
                    if any(p["first_motor_difference"] is not None for p in paired)
                    else "PAID_RESIDUAL_READOUT_ENGINEERING_PASS_NO_MOTOR_MEDIATION"),
         "engineering_worlds": 8,
@@ -295,6 +316,10 @@ def audit():
             p[m]["steps_lived"] for p in paired for m in ("visible","discard")),
         "first_differences": sum(p["first_motor_difference"] is not None
                                  for p in paired),
+        "early_native_cost_confounds": sum(
+            p["first_cost_confound"] is not None for p in paired),
+        "general_action_mediation_inference_admissible": not any(
+            p["first_cost_confound"] is not None for p in paired),
         "private_readout_funded_total": sum(
             sum(s["risk_reads_funded"] for s in p[m]["steps"])
             for p in paired for m in ("visible","discard")),
@@ -315,6 +340,7 @@ def audit():
             "visible_end_body": p["visible"]["final_body"],
             "discard_end_body": p["discard"]["final_body"],
             "first_motor_difference": p["first_motor_difference"],
+            "first_cost_confound": p["first_cost_confound"],
             "visible_error_records": p["visible"]["final_private_error_records"],
             "discard_error_records": p["discard"]["final_private_error_records"],
             "visible_funded_reads": sum(s["risk_reads_funded"]
