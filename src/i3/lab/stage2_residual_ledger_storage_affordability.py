@@ -16,7 +16,8 @@ from ..modules.body import BodyLaws, CognitiveBudget, CognitiveWork, validate_bo
 from .stage2_posthoc_zero_baseline_analysis import (
     DATASET, GRID, N_PER_UNIT, SOURCE_DIGEST, SOURCE_HEAD, paired_score)
 from .stage2_archived_residual_readout_paid import (
-    SIDECAR as DECISION_BILLS, reduce_sources)
+    SIDECAR as DECISION_BILLS, SIDECAR_GIT_BLOB_SHA1 as DECISION_BILLS_SHA1,
+    reduce_sources)
 
 SCHEMA = "i3-stage2.1-residual-ledger-storage-model-affordability/v1"
 POST_BODY = DATASET.parent / "STAGE2_RESIDUAL_LEDGER_POST_PAID_BODY_SIDECAR_2026-11-12.json"
@@ -178,16 +179,19 @@ def reduce_sources_with_storage(source, bills, post):
 
 
 def audit():
-    # Pin the raw historical derivative to an immutable Git content hash.
+    # Verify BOTH immutable derivative blob byte streams before reduction.
     raw = POST_BODY.read_bytes()
     blob = sha1(b"blob " + str(len(raw)).encode("ascii") + b"\0" + raw).hexdigest()
     if blob != POST_BODY_BLOB_SHA1:
         raise ValueError("original postpaid body sidecar bytes changed")
+    bills_raw = DECISION_BILLS.read_bytes()
+    bills_blob = sha1(b"blob " + str(len(bills_raw)).encode("ascii") + b"\0" + bills_raw).hexdigest()
+    if bills_blob != DECISION_BILLS_SHA1:
+        raise ValueError("original native decision bill bytes changed")
     return reduce_sources_with_storage(
         json.loads(DATASET.read_text(encoding="utf-8")),
-        json.loads(DECISION_BILLS.read_text(encoding="utf-8")),
+        json.loads(bills_raw.decode("utf-8")),
         json.loads(raw.decode("utf-8")))
-
 
 if __name__ == "__main__":
     a = audit()
