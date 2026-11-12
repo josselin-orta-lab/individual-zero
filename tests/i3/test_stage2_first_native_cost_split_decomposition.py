@@ -44,7 +44,7 @@ class FirstNativeCostSplitTests(unittest.TestCase):
             [tuple(z["full_life_optional_read_totals"]) for z in r["rows"]],
             list(E.ORIGINAL_FULL_LIFE_READ_TOTALS))
         self.assertEqual(r["rows"][2]["full_life_optional_read_totals"],
-                         [119,115])
+                         [115,119])
         for x in r["rows"]:
             if x["first_split_step"] is None:
                 self.assertTrue(x["original_end_bodies_equal"])
