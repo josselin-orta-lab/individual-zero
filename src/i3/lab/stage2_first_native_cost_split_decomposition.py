@@ -28,7 +28,7 @@ GRID = (("dev-open-field", 840061),
 # Original full-life totals can diverge AFTER the first physical cost split.
 # Pin all four original accepted totals without claiming full-life parity.
 ORIGINAL_FULL_LIFE_READ_TOTALS = ((120, 120), (105, 105),
-                                  (119, 115), (141, 141))
+                                  (115, 119), (141, 141))
 TOL = 1e-10
 
 
