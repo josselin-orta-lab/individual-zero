@@ -18,7 +18,17 @@ class PaidResidualNativeUncertaintyEngineeringTests(unittest.TestCase):
               json.dumps(r,sort_keys=True,separators=(",",":")))
         self.assertIn(r["status"],(
             "PAID_RESIDUAL_READOUT_ENGINEERING_PASS_MOTOR_MEDIATION",
-            "PAID_RESIDUAL_READOUT_ENGINEERING_PASS_NO_MOTOR_MEDIATION"))
+            "PAID_RESIDUAL_READOUT_ENGINEERING_PASS_NO_MOTOR_MEDIATION",
+            "PAID_RESIDUAL_READOUT_STOP_NATIVE_COST_CONFOUND"))
+        self.assertEqual(r["early_native_cost_confounds"],sum(
+            p["first_cost_confound"] is not None for p in r["pair_results"]))
+        self.assertEqual(
+            r["general_action_mediation_inference_admissible"],
+            r["early_native_cost_confounds"] == 0)
+        if r["early_native_cost_confounds"]:
+            self.assertEqual(
+                r["status"], "PAID_RESIDUAL_READOUT_STOP_NATIVE_COST_CONFOUND")
+            self.assertFalse(r["general_action_mediation_inference_admissible"])
         self.assertEqual(r["engineering_worlds"],8)
         self.assertLessEqual(r["engineering_world_steps"],96)
         self.assertEqual(len(r["pair_results"]),4)
