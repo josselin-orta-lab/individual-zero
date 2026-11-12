@@ -250,7 +250,7 @@ def audit():
     # Pin the complete sidecar bytes to the exact Git blob archived before
     # this readout was implemented, not just labels and event seals.
     raw = SIDECAR.read_bytes()
-    git_blob = sha1(b"blob " + str(len(raw)).encode("ascii") + b"\\0" + raw).hexdigest()
+    git_blob = sha1(b"blob " + str(len(raw)).encode("ascii") + b"\0" + raw).hexdigest()
     if git_blob != SIDECAR_GIT_BLOB_SHA1:
         raise ValueError("native decision sidecar Git blob changed")
     return reduce_sources(
