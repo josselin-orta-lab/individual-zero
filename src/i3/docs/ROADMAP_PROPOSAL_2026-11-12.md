@@ -294,6 +294,8 @@ Ces chantiers sont repris sans changement du [chemin critique du 12/11](STAGE2_A
 
 La référence P1.3 n'est pas modifiée par cet axe : aucun mécanisme n'est ajouté à l'individu. L'outillage de P3 existe déjà ([p3_pilot.py](../lab/p3_pilot.py), [p3_schedule.py](../lab/p3_schedule.py)) : 4 populations, 3 générations, bras `selected` et `random_parent`, 864 vies.
 
+**Erratum du 13 novembre 2026.** RP-B0 est fait, et le dimensionnement avancé ci-dessous pour RP-B1 et RP-B2 est caduc. Ce texte évoquait 8 à 12 populations de 6 génomes sur 4 à 6 générations, soit 2 304 à 5 184 vies, et un « témoin positif » directionnel. Une lecture descriptive de P3 et un modèle nul de dérive, tous deux sans aucune vie, montrent qu'un tel plan n'aurait presque rien pu détecter et que la direction présumée était fausse. Le plan proposé devient : 16 populations de 24 génomes sur 3 générations, critère de signe bilatéral à 13 sur 16, soit 11 520 à 13 824 vies. Les coûts de RP-B1, de RP-B2, de la section 5.1 et de DÉC-3 sont à lire en conséquence. Les sources sont dans le dossier `src/i3/docs/studies/stage6-light-preparation/` de la branche `research/i3-stage6-light-preparation-integrated-20261113` (PR #1391). Cet erratum n'autorise rien : selon l'ADR-0021, aucune cohorte des étapes 3 à 6 n'est libérée.
+
 #### RP-B0 · H0 · Lecture descriptive des génomes de P3 déjà archivés
 
 - **Question falsifiable.** Dans P3, la distribution de `beta_u` du bras sélectionné s'écarte-t-elle de celle du bras à parents aléatoires ? La réponse est descriptive.
