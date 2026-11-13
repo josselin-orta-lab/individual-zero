@@ -33,31 +33,39 @@ class RemoteAuthorityAuditTests(unittest.TestCase):
         self.dir = Path(self.tmp.name)
         self.db = self.dir / "authority.sqlite3"
         self.store = AuthorityStore(self.db, self.AUTHORITY)
+        self._nonce_number = 0
         self.claim = claim_data(make_reservation(
             birth_index=5, life_seed=42, source_sha256="a" * 64,
             world_sha256="b" * 64, genome_sha256="c" * 64))
+
+    def call(self, envelope):
+        # Each low-level fixture call has a unique transport nonce. The
+        # actual signed HTTP loopback handler supplies a random client nonce.
+        self._nonce_number += 1
+        return self.store.apply(
+            envelope, request_nonce=f"{self._nonce_number:032x}")
 
     def envelope(self, operation, **fields):
         return {"schema": SCHEMA, "authority_id": self.AUTHORITY,
                 "operation": operation, "claim": self.claim, **fields}
 
     def register(self):
-        return self.store.apply(self.envelope(
+        return self.call(self.envelope(
             "register", horizon=3, head_sha256=self.GENESIS))
 
     def prepare(self):
-        return self.store.apply(self.envelope(
+        return self.call(self.envelope(
             "prepare", sequence=1, previous_head_sha256=self.GENESIS,
             intent_sha256=self.INTENT))
 
     def commit(self, terminal="OPEN"):
-        return self.store.apply(self.envelope(
+        return self.call(self.envelope(
             "commit", sequence=1, previous_head_sha256=self.GENESIS,
             intent_sha256=self.INTENT, head_sha256=self.NEXT_HEAD,
             terminal=terminal))
 
     def verify(self):
-        return self.store.apply(self.envelope("verify"))
+        return self.call(self.envelope("verify"))
 
     def test_chain_is_append_only_per_actual_cas_transition_and_cold_reopen(self):
         self.register()
@@ -162,7 +170,7 @@ class RemoteAuthorityAuditTests(unittest.TestCase):
         other = claim_data(make_reservation(
             birth_index=6, life_seed=43, source_sha256="a" * 64,
             world_sha256="b" * 64, genome_sha256="c" * 64))
-        self.store.apply({"schema": SCHEMA, "authority_id": self.AUTHORITY,
+        self.call({"schema": SCHEMA, "authority_id": self.AUTHORITY,
                           "operation": "register", "claim": other,
                           "horizon": 3, "head_sha256": "8" * 64})
         self.prepare()
@@ -170,7 +178,7 @@ class RemoteAuthorityAuditTests(unittest.TestCase):
         self.assertEqual(self.verify()["sequence"], 1)
         with closing(sqlite3.connect(self.db)) as conn:
             self.assertEqual(conn.execute("SELECT COUNT(*) FROM audit").fetchone()[0], 4)
-        self.assertEqual(self.store.apply({"schema": SCHEMA,
+        self.assertEqual(self.call({"schema": SCHEMA,
                          "authority_id": self.AUTHORITY,
                          "operation": "verify", "claim": other})["sequence"], 0)
 
@@ -181,7 +189,7 @@ class RemoteAuthorityAuditTests(unittest.TestCase):
         self.store = AuthorityStore(self.db, self.AUTHORITY)
         self.assertEqual(self.verify()["terminal"], "DEAD")
         with self.assertRaisesRegex(PermissionError, "CAS refused"):
-            self.store.apply(self.envelope("prepare", sequence=2,
+            self.call(self.envelope("prepare", sequence=2,
                           previous_head_sha256=self.NEXT_HEAD,
                           intent_sha256=self.INTENT))
 

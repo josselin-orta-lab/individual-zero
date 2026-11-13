@@ -22,7 +22,8 @@ from i3.runtime.engineering_remote_witness import SCHEMA, canonical
 
 APP_ID = 0x4933524D  # I3RM
 HEX = re.compile(r"[0-9a-f]{64}\Z")
-DB_SCHEMA = "i3-remote-cas-authority-store/v2"
+NONCE = re.compile(r"[0-9a-f]{32}\Z")
+DB_SCHEMA = "i3-remote-cas-authority-store/v3"
 AUDIT_SCHEMA = "i3-remote-cas-authority-audit/v1"
 
 _ROW_KEYS = ("claim_json", "horizon", "sequence", "head", "phase",
@@ -102,9 +103,15 @@ class AuthorityStore:
                               "previous_sha256 TEXT NOT NULL, "
                               "event_json TEXT NOT NULL, "
                               "event_sha256 TEXT NOT NULL)")
+                    # Received signed request nonces are durable even for verify.
+                    # This table shares the authority rollback domain: NOT M11.
+                    c.execute("CREATE TABLE request_nonces ("
+                              "nonce TEXT PRIMARY KEY, "
+                              "request_sha256 TEXT NOT NULL)")
                 elif (app != APP_ID or objects != {("table", "metadata"),
                                                    ("table", "histories"),
-                                                   ("table", "audit")}
+                                                   ("table", "audit"),
+                                                   ("table", "request_nonces")}
                       or c.execute("SELECT schema,authority_id FROM metadata "
                                    "WHERE id=1").fetchall() != [(DB_SCHEMA, authority_id)]):
                     raise PermissionError("foreign or mismatched remote authority store")
@@ -141,7 +148,7 @@ class AuthorityStore:
                                 "WHERE id=1").fetchall()
         if (conn.execute("PRAGMA application_id").fetchone()[0] != APP_ID
                 or objects != {("table", "metadata"), ("table", "histories"),
-                               ("table", "audit")}
+                               ("table", "audit"), ("table", "request_nonces")}
                 or metadata != [(DB_SCHEMA, self.authority_id)]):
             raise PermissionError("authority schema or identity changed after initialization")
         expected_prev = self._genesis()
@@ -233,7 +240,11 @@ class AuthorityStore:
         if current != latest:
             raise PermissionError("authority head disagrees with its audit chain")
 
-    def apply(self, envelope: dict) -> dict:
+    def apply(self, envelope: dict, *, request_nonce: str) -> dict:
+        # Required even for read-only verify: no in-process bypass of the
+        # authenticated loopback transport nonce journal.
+        if type(request_nonce) is not str or not NONCE.fullmatch(request_nonce):
+            raise PermissionError("exact 32-hex authenticated request nonce required")
         if (type(envelope) is not dict or envelope.get("schema") != SCHEMA
                 or envelope.get("authority_id") != self.authority_id
                 or envelope.get("operation") not in
@@ -256,6 +267,14 @@ class AuthorityStore:
             c.execute("BEGIN IMMEDIATE")
             try:
                 self._check_audit(c)
+                try:
+                    # Insert and CAS share one SQLite transaction. A refused
+                    # command rolls back its nonce; an accepted verify journals
+                    # it durably without modifying the motor/CAS audit chain.
+                    c.execute("INSERT INTO request_nonces VALUES (?,?)",
+                              (request_nonce, sha256(canonical(envelope)).hexdigest()))
+                except sqlite3.IntegrityError as exc:
+                    raise PermissionError("authenticated request nonce replay refused") from exc
                 row = c.execute("SELECT claim_json,horizon,sequence,head,phase,terminal,"
                                 "pending_seq,pending_intent FROM histories WHERE identity=?",
                                 (claim["identity_sha256"],)).fetchone()
@@ -351,7 +370,7 @@ def serve_test_loopback(database: Path, authority_id: str, secret: bytes,
                 request = json.loads(data)
                 if canonical(request) != data:
                     raise ValueError("noncanonical request")
-                response = store.apply(request)
+                response = store.apply(request, request_nonce=nonce)
                 raw = canonical(response)
             except (ValueError, PermissionError, TypeError, KeyError, sqlite3.Error):
                 # No decision, result or state oracle is exposed to a bad caller.
