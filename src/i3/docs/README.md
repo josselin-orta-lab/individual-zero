@@ -8,7 +8,9 @@ operational surface below.
 
 ## Current
 
-- **Current Stage-2 stop/methods decision:** [12-Nov critical-path audit](STAGE2_POST_COST_SPLIT_AUDIT_AND_CRITICAL_PATH_2026-11-12.md) and [internal C01 futility triage](STAGE2_C01_INTERNAL_FUTILITY_REVIEW_2026-11-12.md) are the primary scientific handoff; Stage 2.1 remains `NOT_ISSUED` with original E1/E3 negatives retained. [Future forecast custody](studies/stage2-replay-gate-selected-design/STAGE2_FUTURE_PREQUENTIAL_CUSTODY_RESULTS_2026-11-12.md) is **software-only**, not a newly proven benefit. **No further synthetic Stage-2 candidate without genuinely new information and independent methods review; no scientific birth permission.**
+- **13-Nov RP-A1/RP-A2 documentary decision:** [internal source/estimand matrix](STAGE2_C01_INTERNAL_DISPOSITION_2026-11-13.md) and [ADR-0021](../../../docs/decisions/ADR-0021-i3-stage2-internal-hold-no-verdict.md) remove the **mandatory external C01 reviewer** and record general Stage-2 `HOLD_NO_VERDICT`, scientific `NOT_ISSUED`. E1/E3 negative candidate gates and P1.3 remain unchanged. No scientific birth/World authorization; proceed only with separately scoped I3 R1/R2 M11 engineering under ADR-0020. The [global coordinator](../../../docs/engineering/RESEARCH_COORDINATOR.md) routes there without claiming active I3 release.
+
+- **Current Stage-2 stop/methods decision:** [12-Nov critical-path audit](STAGE2_POST_COST_SPLIT_AUDIT_AND_CRITICAL_PATH_2026-11-12.md) and [internal C01 futility triage](STAGE2_C01_INTERNAL_FUTILITY_REVIEW_2026-11-12.md) are the primary scientific handoff; Stage 2.1 remains `NOT_ISSUED` with original E1/E3 negatives retained. [Future forecast custody](studies/stage2-replay-gate-selected-design/STAGE2_FUTURE_PREQUENTIAL_CUSTODY_RESULTS_2026-11-12.md) is **software-only**, not a newly proven benefit. **No further synthetic Stage-2 candidate without a genuinely new, prospectively justified source; no scientific birth permission.** The new 13-Nov C01 disposition supersedes the historical *mandatory reviewer* part for documentation only.
 
 - **Latest R2.4 engineering release status:** [13-Nov committed-anchor software results](engineering/R24_COMMITTED_ANCHOR_CONTRACT_RESULTS_2026-11-13.md) test remote + dual-local rollback against a volatile separately retained pin. Independently anchored off-host M11 **NOT_ATTESTED**, so I3 remains unregistered, I1 active. Release issue [#1339](https://github.com/josselin-orta-lab/individual-zero/issues/1339) remains OPEN.
 
@@ -89,11 +91,7 @@ operational surface below.
 - **Autonomous B1 research execution:** [Exact paired survival study and engineering-only launch](studies/stage2-replay-gate-selected-design/SURVIVAL_B1_LAUNCH.md) runs numerical statistical scenarios and 24 temporary engineering G/R lives; **scientific cohort remains locked**, not a prospective survival verdict.
 - **Survival study launched (statistical phase only):** [Confirmatory survival power and sampling review](studies/stage2-replay-gate-selected-design/CONFIRMATORY_SURVIVAL_POWER_STUDY.md); independent-cluster target, loss margin and World opening remain unapproved.
 - **Current analysis campaign:** [Phase-A historical reanalysis](studies/stage2-replay-gate-selected-design/ANALYSIS_CAMPAIGN_2026-11-09.md) reads all sealed 80/81 originals, exposes survival/cognition/heterogeneity and keeps the old owner lift consumed.
-- **Next action:** obtain independent methodological review of the
-  mechanism-first v3 finite-panel question versus generalizable survival
-  non-inferiority; verify source/world provenance and prospective authority
-  before any World. Neither v3 nor the older selected-pipeline candidate
-  is an approved new exposure. DEVELOPMENT 80/81 is permanently closed.
+- **Current next action (13 November):** preserve the RP-A1/RP-A2 internal HOLD, pursue only I3 engineering for independent M11 custody/rollback resistance (issues #1331/#1339), and keep any future scientific cohort blocked pending a distinct source, source-frozen method, independent sampling and new owner World/index authorization. Historical mechanism-first v3 and DEVELOPMENT 80/81 are closed/non-admissible; no C01 reviewer is needed for this documentary decision.
 
 Start here:
 
