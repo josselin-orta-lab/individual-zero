@@ -136,6 +136,19 @@ class RemoteEngineeringWitness:
                     or data["phase"] not in ("COMMITTED", "PREPARED")
                     or data["terminal"] not in ("OPEN", "DEAD", "CENSORED")):
                 raise ValueError("bad response values")
+            # A valid HMAC is not permission to accept a logically impossible
+            # custody state. In particular bool is an int subclass in Python,
+            # so exact pending-sequence typing is required before any motor.
+            if data["phase"] == "COMMITTED":
+                if (data["pending_sequence"] is not None
+                        or data["pending_intent_sha256"] is not None):
+                    raise ValueError("COMMITTED response has pending work")
+            elif (data["terminal"] != "OPEN"
+                  or type(data["pending_sequence"]) is not int
+                  or data["pending_sequence"] != data["sequence"] + 1
+                  or type(data["pending_intent_sha256"]) is not str
+                  or not HEX.fullmatch(data["pending_intent_sha256"])):
+                raise ValueError("invalid PREPARED response state")
             return data
         except (ValueError, TypeError) as exc:
             raise PermissionError("remote response cannot establish custody") from exc
