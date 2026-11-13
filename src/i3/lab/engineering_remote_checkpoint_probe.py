@@ -52,7 +52,8 @@ def _checked_checkpoint(checkpoint: dict, authority_id: str) -> None:
 
 
 def capture_exact_checkpoint(database: Path, authority_id: str, *,
-                             expected_source_sha256: str | None = None) -> dict:
+                             expected_source_sha256: str | None = None,
+                             expected_open_identity_sha256: str | None = None) -> dict:
     """Fully re-audit a *stable COMMITTED* local DB and seal a public digest.
 
     This call is O(audit events + accepted nonces), has no speed advantage and
@@ -62,6 +63,10 @@ def capture_exact_checkpoint(database: Path, authority_id: str, *,
             and (type(expected_source_sha256) is not str
                  or HEX64.fullmatch(expected_source_sha256) is None)):
         raise PermissionError("expected source must be exact lowercase SHA256")
+    if (expected_open_identity_sha256 is not None
+            and (type(expected_open_identity_sha256) is not str
+                 or HEX64.fullmatch(expected_open_identity_sha256) is None)):
+        raise PermissionError("expected open identity must be lowercase SHA256")
     path = Path(database)
     if not path.is_file() or path.is_symlink():
         raise PermissionError("existing regular v3 authority required")
@@ -86,6 +91,17 @@ def capture_exact_checkpoint(database: Path, authority_id: str, *,
                     raise PermissionError("bad source in audited claim") from exc
                 if any(src != expected_source_sha256 for src in sources):
                     raise PermissionError("foreign source in authority checkpoint")
+            if expected_open_identity_sha256 is not None:
+                candidates = [row for row in histories
+                              if row[0] == expected_open_identity_sha256]
+                if (len(candidates) != 1
+                        or candidates[0][5] != "COMMITTED"
+                        or candidates[0][6] != "OPEN"
+                        or candidates[0][7] is not None
+                        or candidates[0][8] is not None
+                        or candidates[0][3] >= candidates[0][2]):
+                    raise PermissionError(
+                        "target engineering identity is not open and unambiguous")
             if any(row[5] != "COMMITTED" or row[7] is not None
                    or row[8] is not None for row in histories):
                 raise PermissionError("unresolved PREPARED state not checkpointable")
