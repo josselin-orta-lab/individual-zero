@@ -1,0 +1,3 @@
+# Test-only Ed25519 verification for I3 R2.4 signed checkpoint receipts.
+# No production M11 signer, key custody or off-host authority is installed.
+cryptography>=42,<47
