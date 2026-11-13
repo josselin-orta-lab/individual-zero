@@ -1,0 +1,171 @@
+{
+  "schema": "i3-stage6-light-method-preauth/v1",
+  "protocol_id": "I3_STAGE6_LIGHT_METHOD_V1",
+  "status": "METHOD_FIXED_PREAUTH_NOT_EXECUTABLE",
+  "phase": "design_only",
+  "design_baseline_main_sha": "f18877e15a8e59fab1bcebfca40a97dd30dac39b",
+  "scientific_verdict": "NOT_ISSUED",
+  "stage2_disposition": "HOLD_NO_VERDICT",
+  "reference_policy": "P1.3 funded-v2",
+  "active_generation": "I1",
+  "reference_generation": "I3",
+  "data_origin": {
+    "prior_p3": "DESCRIPTIVE_POST_EXPOSURE_NO_INFERENCE",
+    "prior_drift_null": "NUMERIC_SIZING_APPROXIMATION_NOT_POWER_GUARANTEE",
+    "historical_first_execution_time": "INDEPENDENT_PRE_EXECUTION_TIME_NOT_ATTESTED",
+    "stage6_light_exposure_count_at_design": 0
+  },
+  "authorization": {
+    "worlds_allowed": false,
+    "cohorts_allowed": false,
+    "engineering_rehearsal_allowed": false,
+    "science_admission_allowed": false,
+    "auto_start_allowed": false,
+    "owner_decision_sha": null,
+    "owner_authorized_world_indices": null,
+    "assigned_world_seeds": null,
+    "assigned_founder_seeds": null,
+    "execution_source_sha": null,
+    "execution_transport_fingerprint": null,
+    "independent_allocation_manifest_sha256": null,
+    "full_scale_python311_rehearsal_sha": null,
+    "full_scale_python312_rehearsal_sha": null,
+    "adr0017_lineage_exception_accepted": false
+  },
+  "design": {
+    "populations": 16,
+    "founders_per_population": 24,
+    "generations": [
+      0,
+      1,
+      2
+    ],
+    "arms": [
+      "selected",
+      "random_parent"
+    ],
+    "families": [
+      "stable",
+      "depletion",
+      "pulse"
+    ],
+    "repeats_per_family": 2,
+    "horizon_steps": 400,
+    "mutation_scale": 0.1,
+    "reference_genome_version": 4,
+    "g0_shared_one_original": true,
+    "fitness_sort": [
+      "censored_lives_desc",
+      "total_lived_steps_desc",
+      "slot_asc"
+    ],
+    "parent_selection_weights": [
+      24,
+      23,
+      22,
+      21,
+      20,
+      19,
+      18,
+      17,
+      16,
+      15,
+      14,
+      13,
+      12,
+      11,
+      10,
+      9,
+      8,
+      7,
+      6,
+      5,
+      4,
+      3,
+      2,
+      1
+    ],
+    "random_parent": "uniform_24_slots_no_fitness_tuning",
+    "heritable_material": "generic_genome_only_no_memory_no_world_fact",
+    "primary_gene": "beta_u_eff = beta_u * (1 + 0.5 * temperament.exploration)"
+  },
+  "plan": {
+    "world_coordinate_formula": "((population*3+generation)*3+family_index)*2+repeat",
+    "logical_world_coordinates": 288,
+    "actual_world_indices_assigned": false,
+    "genotype_founders": 384,
+    "lives_by_generation": {
+      "G0": 2304,
+      "G1": 4608,
+      "G2": 4608
+    },
+    "total_lives_if_later_authorized": 11520,
+    "max_physical_steps_if_later_authorized": 4608000,
+    "max_world_steps_if_later_authorized": 11520,
+    "historic_cohort_reuse_allowed": false,
+    "reserve_seed_reuse_allowed": false,
+    "distinct_worlds_between_populations_required": true,
+    "paired_worlds_and_life_seeds_within_population": true
+  },
+  "analysis": {
+    "unit": "population",
+    "n_units": 16,
+    "contrast": "mean_beta_u_eff_G2_selected_minus_random_parent",
+    "signs_zero_policy": "zero_neither_positive_nor_negative_keep_n_16",
+    "threshold_concordant_signs": 13,
+    "two_sided_binomial_null": {
+      "numerator": 1394,
+      "denominator": 65536,
+      "requires": "independent_symmetrically_distributed_nonzero_signs"
+    },
+    "neutral_markers": [
+      "omega",
+      "temperament.affiliation",
+      "temperament.reward_sensitivity"
+    ],
+    "neutral_alert_if_markers_reach_threshold": 1,
+    "invalid_if_markers_reach_threshold_at_least": 2,
+    "positive_status": "STAGE6_LIGHT_SIGN_CONCORDANCE_PASS",
+    "negative_status": "STAGE6_LIGHT_NO_SIGN_CONCORDANCE",
+    "invalid_status": "STAGE6_LIGHT_INVALID",
+    "not_run_status": "STAGE6_LIGHT_NOT_RUN_NO_AUTHORIZATION",
+    "inferential_claim": "F0_ONLY_DIRECTIONAL_PARAMETER_CONTRAST_NOT_GENERAL_SURVIVAL_ADVANTAGE",
+    "modeled_minimum_detectable_beta_u_eff": 0.314,
+    "modeled_power_at_that_shift": 0.8,
+    "modeled_power_is_guarantee": false,
+    "forced_actions_allowed": false,
+    "reclassification_after_exposure_allowed": false
+  },
+  "custody": {
+    "phases": [
+      "G0",
+      "SEAL_G0",
+      "SELECT_G1",
+      "G1",
+      "SEAL_G1",
+      "SELECT_G2",
+      "G2",
+      "SEAL_G2",
+      "R_FINAL"
+    ],
+    "selection_reducer_read_scope": [
+      "censored",
+      "steps_lived",
+      "slot",
+      "hashes_and_ids"
+    ],
+    "selection_reducer_write_scope": [
+      "parent_slots",
+      "mutation_seed_commitments",
+      "hashes"
+    ],
+    "per_generation_selection_requires_separate_adr0017_acceptance": true,
+    "generation_retry_allowed": false,
+    "postmortem_resume_allowed": false,
+    "blind_final_reduction_repair_max_cycles": 2,
+    "full_scale_technical_rehearsal_before_science_required": true,
+    "rehearsal_worlds_and_lives_now_allowed": false,
+    "scientific_worlds_and_lives_now_allowed": false,
+    "all_final_results_including_adverse_required": true
+  }
+}
