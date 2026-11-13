@@ -115,8 +115,10 @@ class ExactCheckpointProbeTests(unittest.TestCase):
         checkpoint = capture_exact_checkpoint(self.path, self.AUTHORITY)
         with closing(sqlite3.connect(self.path)) as conn:
             with conn:
-                conn.execute("UPDATE request_nonces SET nonce=? WHERE nonce=?",
-                             ("f" * 32, "1" * 32))
+                mutated = conn.execute(
+                    "UPDATE request_nonces SET nonce=? WHERE nonce=?",
+                    ("f" * 32, f"{1:032x}"))
+                self.assertEqual(mutated.rowcount, 1, "fault must actually alter stored nonce")
         # The current full audit validates transitions, not nonce membership:
         # equality-checking retained content is necessary in this probe.
         self.assertEqual(capture_exact_checkpoint(
