@@ -174,6 +174,71 @@ class ExactCheckpointProbeTests(unittest.TestCase):
         with self.assertRaisesRegex(PermissionError, "differs"):
             assert_exact_checkpoint(self.path, self.AUTHORITY, newest)
 
+    def test_checkpoint_capture_does_not_invoke_writer_initializer(self):
+        self.register()
+        self.step(1)
+        # The original probe invoked AuthorityStore.__init__, which opens a
+        # BEGIN IMMEDIATE write transaction and may change journal mode.
+        # Capturing an existing snapshot must work even if that initializer
+        # is explicitly forbidden on the inspection path.
+        with patch.object(AuthorityStore, "__init__",
+                          side_effect=AssertionError("writer initializer called")):
+            snapshot = capture_exact_checkpoint(self.path, self.AUTHORITY)
+            self.assertEqual(snapshot["audit_ordinal"], 3)
+            self.assertEqual(
+                assert_exact_checkpoint(self.path, self.AUTHORITY, snapshot),
+                snapshot)
+
+    def test_verified_inspection_is_sqlite_readonly_and_cannot_update_head(self):
+        self.register()
+        before = capture_exact_checkpoint(self.path, self.AUTHORITY)
+        with AuthorityStore.open_existing_verified_readonly(
+                self.path, self.AUTHORITY) as connection:
+            self.assertEqual(connection.execute(
+                "PRAGMA query_only").fetchone()[0], 1)
+            with self.assertRaises(sqlite3.OperationalError):
+                connection.execute("UPDATE histories SET head=?", ("f" * 64,))
+            with self.assertRaises(sqlite3.OperationalError):
+                connection.execute(
+                    "INSERT INTO request_nonces VALUES (?,?)",
+                    ("e" * 32, "f" * 64))
+        self.assertEqual(assert_exact_checkpoint(
+            self.path, self.AUTHORITY, before), before)
+
+    def test_verified_readonly_rejects_missing_and_foreign_authority(self):
+        missing = self.path.parent / "no_such_authority.sqlite3"
+        with self.assertRaises(PermissionError):
+            with AuthorityStore.open_existing_verified_readonly(
+                    missing, self.AUTHORITY):
+                self.fail("missing DB incorrectly admitted")
+        self.assertFalse(missing.exists())
+        self.register()
+        with self.assertRaises(PermissionError):
+            with AuthorityStore.open_existing_verified_readonly(
+                    self.path, "e" * 64):
+                self.fail("foreign authority incorrectly admitted")
+
+    def test_verified_read_transaction_is_consistent_across_concurrent_verify(self):
+        self.register()
+        with AuthorityStore.open_existing_verified_readonly(
+                self.path, self.AUTHORITY) as snapshot:
+            before = snapshot.execute(
+                "SELECT COUNT(*) FROM request_nonces").fetchone()[0]
+            self.assertEqual(before, 1)
+            # Writer uses its own SQLite connection while this verified
+            # read transaction remains open; no mixed before/after snapshot.
+            self.assertEqual(self.send("verify")["phase"], "COMMITTED")
+            in_read_tx = snapshot.execute(
+                "SELECT COUNT(*) FROM request_nonces").fetchone()[0]
+            self.assertEqual(in_read_tx, before)
+        with closing(sqlite3.connect(self.path)) as connection:
+            after = connection.execute(
+                "SELECT COUNT(*) FROM request_nonces").fetchone()[0]
+        self.assertEqual(after, 2)
+        self.assertEqual(
+            capture_exact_checkpoint(self.path, self.AUTHORITY)[
+                "request_nonce_count"], 2)
+
     def test_rollback_both_sqlite_and_pin_is_accepted_negative_control(self):
         self.register()
         self.step(1)
