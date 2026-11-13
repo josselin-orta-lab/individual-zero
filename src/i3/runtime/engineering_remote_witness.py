@@ -60,7 +60,8 @@ class RemoteEngineeringWitness:
 
     def __init__(self, base_url: str, *, key: bytes, authority_id: str,
                  timeout: float = 3.0, allow_test_loopback_http: bool = False,
-                 tls_context: ssl.SSLContext | None = None):
+                 tls_context: ssl.SSLContext | None = None,
+                 commit_anchor=None):
         if type(base_url) is not str or type(key) is not bytes or len(key) < 32:
             raise ValueError("remote URL and >=32-byte authentication key required")
         if type(authority_id) is not str or not HEX.fullmatch(authority_id):
@@ -83,6 +84,14 @@ class RemoteEngineeringWitness:
         self._timeout = timeout
         self._opener = build_opener(_NeverRedirect(), HTTPSHandler(context=tls_context),
                                     HTTPHandler())
+        # Optional operator-supplied COMMITTED high-water pin. It is NOT an
+        # attested off-host M11 anchor merely because it implements this API.
+        # Any unavailable/untrusted anchor must fail closed, not be bypassed.
+        if commit_anchor is not None and (
+                not callable(getattr(commit_anchor, "assert_current", None))
+                or not callable(getattr(commit_anchor, "publish", None))):
+            raise ValueError("committed anchor needs assert_current and publish")
+        self._commit_anchor = commit_anchor
 
     def _request(self, operation: str, **fields) -> dict:
         if operation not in {"register", "verify", "prepare", "commit"}:
@@ -139,6 +148,8 @@ class RemoteEngineeringWitness:
         out = self._request("register", claim=claim_data(claim),
                             horizon=ledger["horizon"], head_sha256=ledger["head_sha256"])
         self._check(out, claim, ledger)
+        if self._commit_anchor is not None:
+            self._commit_anchor.publish(out)  # reject failed/ambiguous genesis
         return out
 
     def verify(self, claim: Reservation, ledger: dict) -> dict:
@@ -146,6 +157,8 @@ class RemoteEngineeringWitness:
             raise PermissionError("remote mode or stable ledger required")
         out = self._request("verify", claim=claim_data(claim))
         self._check(out, claim, ledger)
+        if self._commit_anchor is not None:
+            self._commit_anchor.assert_current(out)
         return out
 
     @staticmethod
@@ -169,6 +182,12 @@ class RemoteEngineeringWitness:
                 or pending["prepared"]["seq"] != pending["sequence"] + 1
                 or pending["prepared"]["intent"] != intent):
             raise PermissionError("remote PREPARED must follow exact ledger PREPARED")
+        # Re-check an authenticated remote COMMITTED head against the
+        # independently retained pin before asking permission for a motor.
+        # The previous local receipt alone is not a trusted remote witness.
+        # This extra read is an engineering transport/host cost.
+        if self._commit_anchor is not None:
+            self.verify(claim, previous_ledger)
         n = pending["prepared"]["seq"]
         d = intent_digest(claim.identity_sha256, n, pending["head_sha256"], intent)
         out = self._request("prepare", claim=claim_data(claim), sequence=n,
@@ -196,4 +215,6 @@ class RemoteEngineeringWitness:
                             intent_sha256=d, head_sha256=ledger["head_sha256"],
                             terminal=ledger["terminal"])
         self._check(out, claim, ledger)
+        if self._commit_anchor is not None:
+            self._commit_anchor.publish(out)
         return out
