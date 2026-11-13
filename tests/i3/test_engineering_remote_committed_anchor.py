@@ -194,6 +194,39 @@ class PinnedRemoteCASFaultTests(unittest.TestCase):
         self.assertEqual(self.pin.records[
             (self.AUTHORITY_ID, self.claim.identity_sha256)][0], 2)
 
+    def test_complete_rollback_including_volatile_pin_is_not_independent_m11(self):
+        # An attacker controlling every state-bearing object can restore a
+        # coherent older version of the *pin*, too. This EXPECTED ACCEPTANCE
+        # is the explicit release-blocking negative control, not a security
+        # PASS and not an authorized scientific World.
+        session = self.begin()
+        session.step()
+        pinned_before = dict(self.pin.records)
+        older = {}
+        for src in (self.root / BIRTH_DB, self.root / LEDGER_DB, self.remote_db):
+            backup = src.with_name("old_" + src.name)
+            self.snapshot(src, backup)
+            older[src] = backup
+        original_second = session.step()
+        self.assertEqual(original_second["sequence"], 2)
+        self.stop()
+        for src, backup in older.items():
+            self.restore(src, backup)
+        self.pin.records = pinned_before  # deliberate compromised test pin
+        self.start()
+        old_ledger = inspect_steps(self.root, self.claim)
+        self.assertEqual(old_ledger["sequence"], 1)
+        self.assertEqual(self.client.verify(self.claim, old_ledger)["sequence"], 1)
+        resumed = NativeEngineeringSession.reconstruct(
+            self.root, self.claim, genome=self.genome, spec=self.spec,
+            remote_witness=self.client)
+        self.assertEqual(resumed.world.t, 1)
+        # A second *synthetic test* motor is accepted under a full coordinated
+        # rollback. A real external motor cannot be repeated safely this way.
+        replayed = resumed.step()
+        self.assertEqual(replayed["sequence"], 2)
+        self.assertFalse(replayed["independent_m11_antirollback"])
+
     def test_after_remote_commit_before_anchor_publish_failure_is_stop(self):
         session = self.begin()
         original_publish = self.pin.publish
