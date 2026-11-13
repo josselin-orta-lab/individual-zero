@@ -163,6 +163,11 @@ class NativeEngineeringSession:
         self.world = world
         self.mind = mind
         self.head = head
+        # Sequence zero has no sealed receipt to compare against. Pin the
+        # complete native state produced by this construction before its
+        # first paid motor; this is process-local, not independent M11 custody.
+        self._virgin_world_sha256 = state_hash(world)
+        self._virgin_mind_sha256 = state_hash(mind)
         self.witness_directory = (None if witness_directory is None
                                   else Path(witness_directory))
         self.remote_witness = remote_witness
@@ -300,6 +305,12 @@ class NativeEngineeringSession:
                 if (last["world_state_sha256"] != state_hash(self.world)
                         or last["mind_state_sha256"] != state_hash(self.mind)):
                     raise PermissionError("in-memory native state changed after sealing")
+            elif (self._virgin_world_sha256 != state_hash(self.world)
+                  or self._virgin_mind_sha256 != state_hash(self.mind)):
+                # Neither body nor tick detects a changed hidden environment
+                # or unpaid learned value before the first sealed receipt.
+                raise PermissionError(
+                    "unsealed native genesis state changed before first motor")
             action, param, work, intent = _native_decide(self.world, self.mind)
             prepared = prepare(self.directory, self.claim,
                                expected_head=self.head, intent=intent)
