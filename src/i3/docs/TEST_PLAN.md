@@ -1,5 +1,9 @@
 # I3: Test plan
 
+## Stage-6-light methodology, zero-World controls (13 November 2026)
+
+The [fixed-method preauthorization plan](studies/stage6-light-preparation/STAGE6_LIGHT_PROTOCOL_METHOD_V1_2026-11-13.md) and [non-executable manifest](studies/stage6-light-preparation/STAGE6_LIGHT_PROTOCOL_METHOD_V1.json) are tested by `tests/i3/test_stage6_light_protocol_preauth.py`. The tests assert the 16×24×G0/G1/G2 schedule, the **unique** G0 2,304 + G1/G2 4,608 each = 11,520 eventual lives, 288 **logical** World coordinates, exact two-sided sign count 13/16, null model assumptions and three neutral sentinels. Adversarial mutations of every authorization field, fake owner evidence, reopened cohort and postmortem/retry rights fail closed. They create **zero** Worlds/lives and never call a science runner. The separately archived original Git-bundle provenance check remains in `tests/i3/test_stage6_light_bundle_provenance.py`. Future full-scale engineering rehearsal and science are **not** authorized by these tests.
+
 ## Current Stage 2 checks
 
 Current source-of-truth: [ACTIVE_SURFACE.md](ACTIVE_SURFACE.md).
