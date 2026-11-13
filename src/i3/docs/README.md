@@ -159,6 +159,12 @@ generalization claims. It is NOT an authorization or a revised frozen protocol.
 is read-only, checks 720 candidate G0 lives against a separate v3
 source-lock schema, and never executes a World or issues a scientific verdict.
 
+[Proposed I3 development roadmap (12 November 2026)](ROADMAP_PROPOSAL_2026-11-12.md)
+is **PROPOSED and non-authoritative**, written in French and awaiting owner
+arbitration. It does not replace [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) or the
+Stage-2 critical-path documents, authorizes no World or life, and is an
+agent-produced analysis, not an independent review.
+
 ## Stage 2.1 engineering custody
 
 - [Hardened 36/36 sealed rehearsal](studies/stage2-replay-gate-development-80-81/HARDENED_REHEARSAL.md): structural PASS under ADR-0019, **not** an ADR-0017 lift.
