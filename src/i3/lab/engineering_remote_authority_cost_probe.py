@@ -145,7 +145,7 @@ def probe(steps: int) -> dict:
             "verify": _summary(times["verify"]),
             "prepare": _summary(times["prepare"]),
             "commit": _summary(times["commit"]),
-            "paid_step_host_only": _summary(step_times),
+            "cas_step_host_only": _summary(step_times),
             "first_quarter_step": _summary(step_times[:quarter]),
             "last_quarter_step": _summary(step_times[-quarter:]),
             "world_steps": 0,
