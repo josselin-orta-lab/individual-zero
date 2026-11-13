@@ -190,6 +190,8 @@ Stage 2, change Competition, or add an exploration bonus.
 
 ### Stage 2: decide how much to think
 
+**Documentary C07 concordance (13 November 2026):** [RP-A2 / S2-C07 source-to-specification crosswalk](STAGE2_C07_INITIAL_SPEC_TRACEABILITY_2026-11-13.md) checks the original Stage-2 launch, inherited `n_base`/`h_max`, the four T/E/S/Tr closure dimensions, non-adoption of proposed DÉC-2 scope and prospective reopening predicates against [ADR-0021](../../../docs/decisions/ADR-0021-i3-stage2-internal-hold-no-verdict.md). This is a **HOLD**, not a reopened scientific cohort or Stage-2 scientific closeout.
+
 Execute another computation only when its expected viability gain exceeds
 its cost expressed through the same distress function D, subject to physical
 funding. `n_base` and `h_max` become ceilings, not instructions. Replay is
