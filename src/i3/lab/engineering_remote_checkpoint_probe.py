@@ -6,7 +6,6 @@ together, rollback is still accepted. No production CAS fast path is added.
 """
 from __future__ import annotations
 
-from contextlib import closing
 from hashlib import sha256
 from pathlib import Path
 import re
@@ -60,14 +59,10 @@ def capture_exact_checkpoint(database: Path, authority_id: str) -> dict:
     path = Path(database)
     if not path.is_file() or path.is_symlink():
         raise PermissionError("existing regular v3 authority required")
-    # A startup full audit also checks schema/authority; NEVER create a new DB
-    # merely because a recovery/checkpoint probe was asked to inspect it.
-    store = AuthorityStore(path, authority_id)
-    with closing(sqlite3.connect(path, isolation_level=None, timeout=5)) as conn:
-        conn.execute("PRAGMA query_only=ON")
-        conn.execute("BEGIN")
+    # One consistent audited read snapshot, without creating the store,
+    # changing its journaling policy or acquiring a writer transaction.
+    with AuthorityStore.open_existing_verified_readonly(path, authority_id) as conn:
         try:
-            store._check_audit(conn)
             histories = conn.execute(
                 "SELECT identity,claim_json,horizon,sequence,head,phase,"
                 "terminal,pending_seq,pending_intent FROM histories "
@@ -108,8 +103,6 @@ def capture_exact_checkpoint(database: Path, authority_id: str) -> dict:
             return dict(payload, checkpoint_sha256=_digest(payload))
         except sqlite3.DatabaseError as exc:
             raise PermissionError("authority checkpoint cannot be read") from exc
-        finally:
-            conn.execute("ROLLBACK")
 
 
 def assert_exact_checkpoint(database: Path, authority_id: str,
