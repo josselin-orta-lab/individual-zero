@@ -24,8 +24,10 @@ SHA40 = re.compile(r"^[0-9a-fA-F]{40}$")
 POSITIVE_GATE_STATES = {"APPROVED", "VERIFIED", "FROZEN", "CONFIRMATORY_GO"}
 I3_ROUTE_SCHEMA = "individual-zero-i3-research-route/v1"
 I3_ROUTING_FILE = "src/i3/ACTIVE_SURFACE.json"
-I3_STOP_REVIEW = "src/i3/docs/STAGE2_C01_INTERNAL_FUTILITY_REVIEW_2026-11-12.md"
+I3_STOP_REVIEW = "src/i3/docs/STAGE2_C01_INTERNAL_DISPOSITION_2026-11-13.md"
+I3_HOLD_DECISION = "docs/decisions/ADR-0021-i3-stage2-internal-hold-no-verdict.md"
 I3_SCIENTIFIC_ISSUE = 1062
+I3_ENGINEERING_ISSUE = 1339
 
 
 def read_json(root: Path, path: str) -> dict:
@@ -203,6 +205,7 @@ def i3_scientific_route(root: Path, registry: dict) -> dict:
         "scientific_verdict": "UNVERIFIED",
         "source_pin_reviewed": False,
         "independent_methods_review": False,
+        "internal_methods_disposition": "UNVERIFIED",
         "scientific_world_authorized": False,
         "engine_activation_authorized": False,
         "execution": "NOT_PERFORMED",
@@ -220,6 +223,8 @@ def i3_scientific_route(root: Path, registry: dict) -> dict:
         surface = json.loads(raw)
         contract = read_json(root, "src/i3/engine.json")
         gov = surface["governance"]
+        c01_text = (root / I3_STOP_REVIEW).read_text(encoding="utf-8")
+        hold_text = (root / I3_HOLD_DECISION).read_text(encoding="utf-8")
         result["stage"] = surface["current_stage"]
         result["internal_reference"] = surface["reference"]
         result["software_capacity"] = surface["canonical_status"]
@@ -243,15 +248,17 @@ def i3_scientific_route(root: Path, registry: dict) -> dict:
             and not contract.get("entrypoints")
             and contract.get("activation") == "NOT_REGISTERED_NOT_EXECUTABLE"
             and registry.get("active_generation") == "I1"
-            and (root / I3_STOP_REVIEW).is_file()
+            and "HOLD_NO_VERDICT" in c01_text
+            and "HOLD_NO_VERDICT" in hold_text
         )
         if valid:
-            result["status"] = "HOLD_INDEPENDENT_METHODS_REVIEW"
+            result["status"] = "HOLD_NO_VERDICT_DOCUMENTED"
             result["scientific_verdict"] = "NOT_ISSUED"
+            result["internal_methods_disposition"] = "HOLD_NO_VERDICT"
         else:
             result["warning"] = (
-                "I3 routing or permission contract changed: inspect live source "
-                "and human review; NEVER fall back to I2 or launch Worlds."
+                "I3 routing, documentary HOLD, or permission contract changed: "
+                "inspect live source; NEVER fall back to I2 or launch Worlds."
             )
     except (OSError, ValueError, TypeError, KeyError):
         result["warning"] = (
@@ -262,61 +269,69 @@ def i3_scientific_route(root: Path, registry: dict) -> dict:
 
 
 def i3_review_recommendation(state: dict, top: int) -> dict:
-    """A non-executable manual-review pointer outside the I1/I2 curated DAG."""
+    """Non-executing Stage-2 HOLD + parallel I3 native engineering route.
+
+    The owner removed the reviewer requirement for internal C01/RP-A2.
+    This does not certify scientific evidence or release a World or engine.
+    """
     route = state.get("i3_scientific_route") or {
         "status": "I3_SOURCE_REVIEW_REQUIRED", "issue": I3_SCIENTIFIC_ISSUE,
         "gate_source": I3_STOP_REVIEW,
     }
     stage = route["status"]
+    valid = stage == "HOLD_NO_VERDICT_DOCUMENTED"
     proposal = {
-        "id": "I3-S2-C01-INDEPENDENT-METHODS",
-        "title": "I3 Stage 2: independent bounded methods/futility adjudication",
-        "gate": "I3-S2-C01-EXTERNAL_REVIEW_REQUIRED",
-        "questions": ["I3-STAGE2-VALUE_OF_COMPUTATION"],
-        "agent_route": "src/i3/docs",
-        "issue": I3_SCIENTIFIC_ISSUE,
+        "id": "I3-R2-NATIVE-ENGINEERING-AFTER-STAGE2-HOLD",
+        "title": "I3 R2: native identity and independently anchored M11 engineering",
+        "gate": "I3-R2-ENGINEERING_ONLY_NO_SCIENTIFIC_GO",
+        "questions": ["I3-M11-DURABLE-NATIVE-IDENTITY"],
+        "agent_route": "src/i3/runtime",
+        "issue": I3_ENGINEERING_ISSUE,
         "issue_url": (f"https://github.com/{state['repository']}/issues/"
-                      f"{I3_SCIENTIFIC_ISSUE}"),
+                      f"{I3_ENGINEERING_ISSUE}"),
         "issue_state": "UNVERIFIED_LIVE",
         "stage": stage,
-        "blocked_by_gates": ["INDEPENDENT_METHODS_AND_SOURCE_REVIEW"],
+        "blocked_by_gates": [],
+        "release_blockers": ["INDEPENDENT_OFF_HOST_M11_CUSTODY_NOT_ATTESTED",
+                             "NO_I3_ENGINE_ACTIVATION"],
         "unverified_sources": [I3_ROUTING_FILE],
         "action": (
-            "Read the current I3 Stage-2 stop assessment; secure a genuinely "
-            "independent methods disposition of the existing evidence before "
-            "any new scientific World/source. Do NOT run E3/old cohorts or "
-            "interpret I3 technical CI as scientific GO."
+            "C01/RP-A1 internally documented HOLD_NO_VERDICT and RP-A2 "
+            "recorded under ADR-0021; no external reviewer is required for "
+            "that documentary decision. Continue only source-isolated R1/R2 "
+            "M11 identity, durability, cold-recovery and rollback engineering. "
+            "Preserve E1/E3 negatives and all closed cohorts. Never open "
+            "scientific Worlds, release I3, or treat HOLD as Stage-2 closure."
         ),
         "expected_knowledge": (
-            "Whether a preannounced bounded Stage-2 question can be closed "
-            "negative, or requires a distinct viable source; otherwise HOLD."
+            "Whether an independent off-host M11 witness and protected "
+            "state/identity can reject whole-store rollback in engineering."
         ),
         "disconfirming_result": (
-            "No independent causal/estimand/power adjudication, or no new "
-            "source that passes a prospective costed native decision test."
+            "An intact authority-store rollback is accepted, evidence has "
+            "no independent custody, or technical tests are read as science."
         ),
-        "deliverables": [route["gate_source"]],
+        "deliverables": [route["gate_source"], I3_HOLD_DECISION],
         "recorded_findings_not_verified": [],
         "heuristic": {"not_ranked_against_i1_i2": True,
                       "not_a_scientific_probability": True},
-        "authorization": "RECOMMENDATION_ONLY_NO_WORLD_AUTHORITY",
-        "human_review_required": True,
+        "authorization": "ENGINEERING_ONLY_NO_WORLD_AUTHORITY",
+        "human_review_required": False,
+        "future_scientific_cohort_gates_unchanged": True,
     }
     return {
-        "status": ("I3_HOLD_NON_EXECUTABLE" if
-                   stage == "HOLD_INDEPENDENT_METHODS_REVIEW"
+        "status": ("I3_HOLD_ENGINEERING_ONLY" if valid
                    else "I3_BLOCKED_SOURCE_REVIEW"),
         "head_sha": state["head_sha"],
         "active_generation": state["active_generation"],
         "development_reference_generation":
             state.get("development_reference_generation"),
-        "recommended_next": (proposal if
-                             stage == "HOLD_INDEPENDENT_METHODS_REVIEW"
-                             else None),
-        "proposals": [proposal][:top],
-        "total_proposals": 1,
-        "external_verification_required": True,
-        "scoring": "Unranked scientific STOP/review route; no I1/I2 heuristic",
+        "recommended_next": proposal if valid else None,
+        "proposals": [proposal][:top] if valid else [],
+        "total_proposals": 1 if valid else 0,
+        "external_verification_required": False,
+        "independent_release_attestation_required": True,
+        "scoring": "Unranked engineering route; scientific Stage 2 HOLD",
         "scientific_verdict": "NOT_EVALUATED",
         "execution": "NOT_PERFORMED",
         "promotion": "NOT_AUTHORIZED",
