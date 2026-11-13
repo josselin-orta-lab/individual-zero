@@ -25,7 +25,7 @@
 
 **Les trois prochaines décisions :**
 
-1. **Sortir de l'étape 2.** Geler les ajouts, demander une revue externe bornée avec une date butoir, et publier « pas de verdict » si elle n'aboutit pas.
+1. **Sortir de l'étape 2.** Geler les ajouts, consolider la décision C01 interne traçable, puis publier `HOLD_NO_VERDICT` si les preuves existantes ne permettent aucune clôture bornée.
 2. **Laisser la suite avancer sous ce « pas de verdict ».** Le plan actuel met tout derrière l'étape 2. Je propose de débloquer explicitement ce qui n'en dépend pas.
 3. **Lancer la lignée courte** (« étape 6 légère »). C'est le plus petit essai qui teste enfin si la survie façonne l'inné. Il porterait sur la curiosité (`beta_u`). Le gène ω y servirait de témoin neutre, et κ ne peut pas y être testé.
 
@@ -41,7 +41,7 @@ Les chiffres et leurs sources sont en section 2. Les options, les coûts et les 
 | Contrat I3 | `status=proposal`, `entrypoints={}`, `activation=NOT_REGISTERED_NOT_EXECUTABLE`, `scientific.gate=not_established` | [engine.json](../engine.json) |
 | Référence interne et étape | P1.3 funded-v2 ; étape 2.1 ; logiciel `REPLAY_GATE_CAPACITY_SHOWN` ; `fresh_lived_worlds_allowed=false`, `scientific_gate_authorized=false`, `next_scientific_cohort_authorized=false` ; `updated=2026-11-11` | [ACTIVE_SURFACE.json](../ACTIVE_SURFACE.json) |
 | Étape 1 | `CLOSED_NEGATIVE`, P1.3 conservé, `beta_u` reconnu comme disposition innée (option B) | [ADR-0018](../../../docs/decisions/ADR-0018-i3-cloture-etape-1.md) §5 |
-| Étape 2 | verdict scientifique `NOT_ISSUED` ; revue interne `HOLD_NO_VERDICT_FOR_GENERAL_STAGE2` ; revue externe non réalisée | [revue C01 interne](STAGE2_C01_INTERNAL_FUTILITY_REVIEW_2026-11-12.md) §4, commit `8c7b9a4` |
+| Étape 2 | verdict scientifique `NOT_ISSUED` ; audit interne C01 `HOLD_NO_VERDICT_FOR_GENERAL_STAGE2` ; aucune attestation indépendante revendiquée | [revue C01 interne](STAGE2_C01_INTERNAL_FUTILITY_REVIEW_2026-11-12.md) §4, commit `8c7b9a4` |
 | Délégation aux agents | ingénierie de routine, tests sans World, réduction d'archives, documentation ; aucune extension des permissions de World | [ADR-0020](../../../docs/decisions/ADR-0020-i3-owner-selected-development-reference.md) §4-§5 |
 | Ouverture de mondes | deux phases G/R, répétition scellée sur le SHA exact, levée consignée par le propriétaire dans `STATUS.md` | [ADR-0017](../../../docs/decisions/ADR-0017-i3-moratoire-deux-phases-repetition-scellee.md) §1-§3 |
 
@@ -103,7 +103,7 @@ Classement : **ÉTABLI**, **RÉFUTÉ SUR CANDIDAT FIGÉ**, **NON OBSERVÉ**, **N
 | 15 | Étapes 2.2 et 2.3 : choisir les cycles de Competition et la profondeur | **NON OBSERVÉ** | T : absentes de la référence. | [chemin critique du 12/11](STAGE2_AUDIT_DELTA_AND_CRITICAL_PATH_2026-11-12.md) §B |
 | 16 | Chaîne complète : information payée, décision native, moteur, corps | **NON OBSERVÉ** | Aucun contraste factuel dans un individu né puis exposé. | idem §B |
 | 17 | Non-infériorité de survie et écologie indépendante | **NON OBSERVÉ** | Le test de signes 7/8 peut coexister avec une perte moyenne de 15,42 points. La borne B1 de -4,33 points repose sur des hypothèses non approuvées. | [audit d'inférence](studies/stage2-replay-gate-selected-design/INFERENCE_POWER_AUDIT.md) |
-| 18 | Verdict scientifique de l'étape 2 | **NON ÉMIS** | `NOT_ISSUED`. Tri interne : `HOLD_NO_VERDICT_FOR_GENERAL_STAGE2`. Revue externe non réalisée. | [revue C01 interne](STAGE2_C01_INTERNAL_FUTILITY_REVIEW_2026-11-12.md) |
+| 18 | Verdict scientifique de l'étape 2 | **NON ÉMIS** | `NOT_ISSUED`. Tri interne : `HOLD_NO_VERDICT_FOR_GENERAL_STAGE2`. La révision RP-A1 ne réclame pas de revue externe. | [revue C01 interne](STAGE2_C01_INTERNAL_FUTILITY_REVIEW_2026-11-12.md) |
 | 19 | Individualité acquise (#1026) et question P5d (#1054) | **NON OBSERVÉ** | `NOT_OBSERVED` pour P5d. | [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md), étape 0 |
 | 20 | Généralisation hors F0 (familles F1 à F5) | **NON OBSERVÉ** | Contrats prospectifs, générateurs non implémentés. | [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md), familles de mondes |
 | 21 | Autres individus (F6) et besoin social | **NON OBSERVÉ** | Hors périmètre. `World` ne porte qu'un corps. | [ADR-0016](../../../docs/decisions/ADR-0016-i3-generalization-without-imposed-rules.md) §6, [world.py](../modules/world.py) |
@@ -160,7 +160,7 @@ Chaque rapport est le fichier `STAGE2_<NOM>_RESULTS_2026-11-12.md` du dossier [s
 - **Complexité.** +5 415 lignes en une journée, 13 modules de laboratoire de plus (71 au total), un manifeste qui ne les classe pas.
 - **Preuves locales répétées.** Douze verdicts sur treize sont des PASS d'invariants d'ingénierie. Les mêmes 320 événements, issus de deux mondes DEV et de deux graines, sont relus par #1348, #1349, #1350 et #1351. Les quatre paires de #1353 sont relues par #1354 puis par #1356.
 - **CI.** Chaque PR relance la suite I3 sur Python 3.11 et 3.12. Le dernier rapport cite 1 284 tests par interpréteur.
-- **Information de bout en bout.** Aucune ligne de la chaîne « information payée, décision native, moteur, corps » n'a quitté le classement NON OBSERVÉ (lignes 14 à 16 du tableau 2.1). Surtout, la décision suivante est la même avant et après. Le matin, la revue interne demandait une revue externe ou une source réellement distincte, et aucun candidat supplémentaire. Le soir, l'audit fusionné (`de89d13`, section F) demande N0, N1 puis N7, sans aucune vie nouvelle.
+- **Information de bout en bout.** Aucune ligne de la chaîne « information payée, décision native, moteur, corps » n'a quitté le classement NON OBSERVÉ (lignes 14 à 16 du tableau 2.1). Surtout, la décision suivante est la même avant et après. Le matin, la revue interne demandait une source réellement distincte ou un arbitrage de méthode, et aucun candidat supplémentaire. Le soir, l'audit fusionné (`de89d13`, section F) demande N0, N1 puis N7, sans aucune vie nouvelle.
 
 Deux éléments aggravent le constat.
 
@@ -189,7 +189,7 @@ Trois enseignements d'instrumentation méritent d'être gardés. Ils ne servent 
 
 **DRIFT DETECTED**, au sens d'AGENTS.md. Il s'agit d'une dérive d'information et non d'une violation d'autorisation. Je recommande cinq mesures.
 
-1. **Geler immédiatement l'étape 2.** Aucun nouveau module `src/i3/lab/stage2_*`, aucune nouvelle étude, garde ou analyse post-hoc, jusqu'à l'avis externe C01 ou jusqu'à la décision DÉC-1.
+1. **Geler immédiatement l'étape 2.** Aucun nouveau module `src/i3/lab/stage2_*`, aucune nouvelle étude, garde ou analyse post-hoc, jusqu'à la décision interne C01 versionnée et au cadrage RP-A2, sans attendre de relecteur externe.
 2. **Inscrire ce gel là où les agents lisent** : `next_scientific_action` du manifeste, AGENTS.md d'I3 et section « Current » du README. Cette action touche des fichiers que cette mission n'a pas le droit de modifier. Elle revient au propriétaire ou à un agent mandaté (RP-F2).
 3. **Poser une règle d'entrée simple.** Avant toute étude, nommer la décision que son résultat peut changer. S'il n'y en a pas, ne pas l'écrire (RP-F3).
 4. **Rediriger l'ingénierie déléguée** vers la priorité de l'ADR-0020 (R1 et R2, issues #1331 et #1339) et vers le protocole de la lignée courte (RP-B1).
@@ -229,19 +229,20 @@ Les plans existants sont fusionnés en sept voies. Les identifiants existants ne
 
 ### 4.3 Axe A — issue scientifique de l'étape 2
 
-#### RP-A1 · H0 · Revue méthodologique externe bornée (S2-C01)
+#### RP-A1 · H0 · Arbitrage méthodologique interne borné et reproductible (S2-C01)
 
-- **Question falsifiable.** Les preuves existantes répondent-elles à une hypothèse de l'étape 2 réellement préannoncée ? Trois issues sont admises, celles du chemin critique du 12/11 : `CLOSE_BOUNDED`, `DISTINCT_SOURCE_REQUIRED` ou `HOLD_NO_VERDICT`.
-- **Lien avec l'intention.** L'individu décide seul combien penser. On ne déclare ni succès ni échec de cette capacité sans base.
-- **Falsificateur et règle d'arrêt.** L'avis est irrecevable s'il vient d'un auteur du projet ou d'un agent. Sans avis externe versionné à la date butoir fixée par le propriétaire (DÉC-1), on passe à RP-A2 en `HOLD_NO_VERDICT`.
-- **Contrôle ou ablation.** Les deux arguments de clôture déjà rejetés en interne sont soumis tels quels au relecteur : « E3 à 0/2, donc négatif général » et « B1 à +8/96, donc succès ».
-- **Observable.** Un avis signé sur l'estimand, l'unité indépendante, la puissance et le périmètre.
-- **Plus petit test exécutable.** Un dossier de revue de dix pages au plus : hypothèse d'origine ([STAGE2_LAUNCH.md](STAGE2_LAUNCH.md)), tableau des contrastes, deux arguments rejetés, trois issues. Aucun code.
-- **Dépendances.** DÉC-1. Issues #1062, #1226 et #1239.
-- **Coût.** 0,5 à 1 jour d'agent pour le dossier, 0,5 à 2 jours de relecteur. 0 World, 0 vie, calcul nul.
-- **Autorisation requise.** Propriétaire : choix du relecteur et date butoir.
-- **Risque de règle imposée ou d'oracle.** Aucun, le chantier est documentaire. Risque propre : faire passer une relecture par agent pour une revue indépendante.
-- **Critère de sortie.** T : sans objet. E : sans objet. S : une des trois issues, versionnée. Tr : reprise par RP-A2.
+- **Question falsifiable.** Les preuves existantes répondent-elles à une hypothèse de l'étape 2 réellement préannoncée ? Trois issues sont admises : `CLOSE_BOUNDED`, `DISTINCT_SOURCE_REQUIRED` ou `HOLD_NO_VERDICT`.
+- **Lien avec l'intention.** L'individu décide seul combien penser. Aucun succès ni échec général de cette capacité n'est déclaré sur la seule base d'un test logiciel ou d'un contraste exploratoire.
+- **Falsificateur et règle d'arrêt.** Un verdict de clôture est irrecevable si l'hypothèse d'origine, l'estimand, les unités indépendantes, les contrastes, la puissance et la portée ne correspondent pas aux preuves antérieures à l'exposition. Aucun seuil, aucune population et aucune marge ne peuvent être choisis après observation. En cas d'inférence insuffisante, le résultat est `HOLD_NO_VERDICT` ; aucune attente de relecteur ou de date butoir ne bloque RP-A2.
+- **Contrôle ou ablation.** L'audit interne applique à l'identique ses critères aux deux arguments déjà rejetés : « E3 à 0/2, donc négatif général » et « B1 à +8/96, donc succès ». Ils doivent rester rejetés tant qu'aucune preuve de portée et d'indépendance correspondante n'existe.
+- **Observable.** Une matrice de décision traçable, datée et versionnée par commit : hypothèse d'origine, estimand, unité statistique, source exacte, traitement, contrôle, puissance et limites, contres-arguments, décision motivée. Ce document est expressément qualifié d'**audit interne**, jamais de validation indépendante.
+- **Règle de décision.** `CLOSE_BOUNDED` uniquement si une hypothèse préannoncée est réellement évaluée dans un périmètre suffisamment identifié et avec une inférence défendable ; `DISTINCT_SOURCE_REQUIRED` si une question précise ne peut être traitée qu'avec une source personnelle vraiment nouvelle, définie avant essais ; `HOLD_NO_VERDICT` lorsque les données existantes ne départagent pas honnêtement succès, échec ou continuation. Une clôture d'un candidat E1/E3 ne constitue pas une clôture générale de l'étape 2.
+- **Plus petit test exécutable.** Reprendre en lecture seule le dossier C01 interne déjà versionné ([STAGE2_C01_INTERNAL_FUTILITY_REVIEW_2026-11-12.md](STAGE2_C01_INTERNAL_FUTILITY_REVIEW_2026-11-12.md)) et produire une synthèse contradictoire de dix pages maximum, en reliant [STAGE2_LAUNCH.md](STAGE2_LAUNCH.md), contrastes et deux arguments rejetés. Aucun code, aucune nouvelle vie.
+- **Dépendances.** Sources archivées et issues #1062, #1226 et #1239 comme références méthodologiques, **sans dépendance à DÉC-1, à un relecteur externe ni à un délai d'avis**.
+- **Coût.** 0,5 à 1 jour d'agent pour la consolidation documentaire ; **0 jour de relecteur**, 0 World, 0 vie, calcul expérimental nul.
+- **Autorisation requise.** Aucune nouvelle autorisation pour cet audit documentaire délégué ; toute éventuelle nouvelle cohorte exige séparément sa propre autorisation de source, de protocole et d'indices. Les autres portes prospectives des issues #1226 et #1239 ne sont pas levées ici.
+- **Risque de règle imposée ou d'oracle.** Aucun changement de comportement de l'individu. Risque méthodologique : biais de confirmation interne, sélection rétrospective et fausse indépendance. Parades : pièces immuables, critères explicites, arguments adverses et portée bornée.
+- **Critère de sortie.** T et E : sans objet. S : une des trois issues motivée et versionnée. **À preuve inchangée, la revue C01 déjà publiée soutient `HOLD_NO_VERDICT` pour l'étape 2 générale**, tout en conservant les négatifs strictement locaux E1/E3. Tr : passage immédiat à RP-A2, sans relecteur.
 
 #### RP-A2 · H0 · Décision de fin d'étape 2, variante `HOLD_NO_VERDICT` comprise (S2-C07)
 
@@ -251,7 +252,7 @@ Les plans existants sont fusionnés en sept voies. Les identifiants existants ne
 - **Contrôle ou ablation.** Les quatre verdicts sont rédigés séparément. `HOLD_NO_VERDICT` est écrit comme une suspension, pas comme une clôture.
 - **Observable.** Un ADR proposé (numéro suivant : 0021) qui fixe l'issue, la référence P1.3 funded-v2 avec ses budgets hérités fixes `n_base` et `h_max`, la liste des négatifs par candidat, la règle de transition (DÉC-2) et les conditions de réouverture (point 5 de la revue interne).
 - **Plus petit test exécutable.** Un brouillon d'ADR d'une page, relu contre les sources.
-- **Dépendances.** RP-A1 ou sa date butoir. DÉC-1 et DÉC-2.
+- **Dépendances.** RP-A1 et la décision de transition DÉC-2 ; aucun avis ni délai externe.
 - **Coût.** 0,5 à 1 jour. 0 World, 0 vie.
 - **Autorisation requise.** Acceptation de l'ADR par le propriétaire.
 - **Risque de règle imposée ou d'oracle.** Aucun côté individu. Risque de méthode : transformer une absence de preuve en clôture.
@@ -267,7 +268,7 @@ Ce chantier n'existe que si RP-A1 rend `DISTINCT_SOURCE_REQUIRED` et nomme la so
 - **Contrôle ou ablation.** Les mêmes opérateurs sont exécutés et payés, puis masqués. S'y ajoutent les cas sans information, à énergie basse, à vigilance basse, non financé et mort.
 - **Observable.** Moteur natif admis, coûts payés en énergie et en vigilance, nombre de cycles de Competition (médiateur, section 3.5).
 - **Plus petit test exécutable.** Un protocole gelé avant tout code, sur des cas neufs.
-- **Dépendances.** RP-A1. La source « erreurs personnelles passées » a déjà été exposée par les PR #1349 à #1357. Elle ne serait admissible que sur des cas neufs gelés, et seulement si le relecteur la retient **(hypothèse de lecture des règles de non-retouche)**.
+- **Dépendances.** RP-A1. La source « erreurs personnelles passées » a déjà été exposée par les PR #1349 à #1357. Elle ne serait admissible que sur des cas neufs gelés, et seulement si un protocole distinct, préalablement gelé et justifié par une source actionnable, empêche toute retouche sur les résultats déjà vus.
 - **Coût.** 2 à 4 jours d'agent. 0 World scientifique, 0 vie scientifique.
 - **Autorisation requise.** ADR-0020 §4 pour le logiciel. Aucune ouverture de monde.
 - **Risque de règle imposée ou d'oracle.** Élevé dans trois cas : si l'on règle les cas jusqu'à obtenir un moteur différent, si le signal vient de l'état caché du World, ou si la lecture est gratuite.
@@ -515,7 +516,7 @@ Ces trois chantiers sont hors chemin critique : ils n'ajoutent aucune informatio
 Trois constats chiffrés alimentent ce chantier.
 
 - **Le calcul n'est pas le goulot des 7 198 paires.** Les vies seules représentent 5 758 400 pas, soit 1,3 à 2,1 heures-CPU à 0,8-1,3 ms par pas **(hypothèse)**. La contrainte est l'indépendance. La source précise qu'aucun cadre d'échantillonnage défendable ni assez d'indices neufs n'existent.
-- **L'indépendance, elle, coûte cher.** Si l'unité indépendante est une population sélectionnée selon l'ADR-0015 (K = 40 candidats), la sélection domine. Avec 12 à 24 vies de sélection par candidat, 7 198 populations et 2 architectures demandent 6,9 à 13,8 millions de vies, soit 2,8 à 5,5 milliards de pas et 600 à 2 000 heures-CPU **(hypothèse)**. Un critère continu fondé sur D, plutôt que sur la survie binaire, pourrait réduire ce besoin. Ce point relève de la revue RP-A1.
+- **L'indépendance, elle, coûte cher.** Si l'unité indépendante est une population sélectionnée selon l'ADR-0015 (K = 40 candidats), la sélection domine. Avec 12 à 24 vies de sélection par candidat, 7 198 populations et 2 architectures demandent 6,9 à 13,8 millions de vies, soit 2,8 à 5,5 milliards de pas et 600 à 2 000 heures-CPU **(hypothèse)**. Un critère continu fondé sur D, plutôt que sur la survie binaire, pourrait réduire ce besoin. Ce point relève de l'arbitrage méthodologique interne RP-A1 pour le périmètre actuel ; tout futur plan confirmatoire doit justifier séparément son indépendance et sa puissance.
 - **La CI coûte peu en minutes, beaucoup en surface.** Le dernier rapport cite 1 284 tests en 127 à 144 secondes par interpréteur. Le coût réel est la surface à maintenir : 121 modules de laboratoire, dont 71 pour l'étape 2, et 13 fichiers de tests ajoutés en une journée.
 
 ### 4.9 Axe G — horizon
@@ -524,7 +525,7 @@ Cet axe ne contient que des questions, des prérequis et des risques. Il n'a pas
 
 **G1. Échanger avec la communauté de recherche.**
 
-- Question : quel est le premier objet d'échange ? Les résultats négatifs bornés et la méthode (pensée payée, exécutions scellées en deux phases) sont présentables tels quels. La première demande concrète est le relecteur externe de RP-A1.
+- Question : quel est le premier objet d'échange ? Les résultats négatifs bornés et la méthode (pensée payée, exécutions scellées en deux phases) sont présentables tels quels. Le premier objet concret est le dossier C01 interne traçable suivi de la décision de transition RP-A2 ; une lecture externe ultérieure reste facultative.
 - Prérequis : un dossier de preuves stable (gel) et une issue écrite de l'étape 2 (RP-A2).
 - Risque : présenter des PASS d'ingénierie comme des résultats.
 
@@ -570,8 +571,8 @@ Cet axe ne contient que des questions, des prérequis et des risques. Il n'a pas
 Au [chemin critique du 12 novembre](STAGE2_AUDIT_DELTA_AND_CRITICAL_PATH_2026-11-12.md) :
 
 1. Déclarer canonique la numérotation C00 à C07. N0 à N7 et R00 à R07 en sont les équivalents terme à terme. La numérotation C00 à C05 du 11/11 n'est plus employée.
-2. C01 : ajouter la date butoir et la bascule vers `HOLD_NO_VERDICT`.
-3. C02 : la source est nommée par la revue externe. Une source déjà exposée n'est admissible que sur des cas neufs gelés.
+2. C01 : remplacer l'exigence de relecteur par une matrice interne versionnée à trois issues, sans date butoir ; à pièces inchangées, retenir `HOLD_NO_VERDICT` pour l'étape 2 générale.
+3. C02 : une source ne devient candidate que si l'audit C01 interne identifie une question distincte, un signal personnel nouveau et un falsificateur préannoncé ; les cas déjà exposés ne peuvent servir à la sélection.
 4. C07 : ajouter la variante `HOLD_NO_VERDICT` et sa règle de transition.
 5. Ajouter la règle de gel de la section 3.6.
 
@@ -585,7 +586,7 @@ Chaque ligne dit pourquoi le chantier y figure : il augmente l'information scien
 
 | Ordre | Chantier | Horizon | Pourquoi il est sur le chemin | Dépend de | Coût |
 | --- | --- | --- | --- | --- | --- |
-| 1 | RP-A2, précédé de RP-A1 dans la limite de sa date butoir | H0 | **Transition.** Par lui-même, il n'ajoute pas d'information de bout en bout et ne débloque pas la release. Il est maintenu parce que le plan en vigueur place les étapes 3 à 5 derrière une décision explicite de l'étape 2. Sans cela, il serait hors chemin critique. | DÉC-1 | 1 à 2 jours d'agent, 0,5 à 2 jours de relecteur, 0 vie |
+| 1 | RP-A1 puis RP-A2, sans attente externe | H0 | **Transition.** Par lui-même, il n'ajoute pas d'information de bout en bout et ne débloque pas la release. Il est maintenu parce que le plan en vigueur place les étapes 3 à 5 derrière une décision explicite de l'étape 2. Sans cela, il serait hors chemin critique. | Dossier C01 interne | 1 à 2 jours d'agent, 0 relecteur, 0 vie |
 | 2 | RP-B1 | H0 | **Maillon** de RP-B2 : protocole, transport, répétition scellée. | DÉC-2, DÉC-3 | 2 à 4 jours, 0 vie scientifique |
 | 3 | RP-B2 | H1 | **Information.** Première mesure de bout en bout de la boucle longue, de la vie vécue jusqu'à l'inné. | RP-B1, levée, indices | 0,5 à 1 jour ; 2 300 à 6 000 vies ; moins d'une heure-CPU **(hypothèse)** |
 | 4 | RP-C1 | H1 | **Information.** Première mesure de la référence hors F0. | DÉC-2 ; RP-B2 pour les génomes | 2 à 4 jours ; 100 à 300 vies **(hypothèse)** |
@@ -594,14 +595,14 @@ Chaque ligne dit pourquoi le chantier y figure : il augmente l'information scien
 | 7 | RP-B3 | H2 | **Information.** La thèse centrale à pleine échelle, sur des familles réservées. | RP-B2, RP-C1 | environ 10^8 pas **(hypothèse)** |
 
 ```text
-DÉC-1 ──► RP-A1 ──► RP-A2 ───────────────┐
+RP-A1 ─────────► RP-A2 ───────────────┐
 DÉC-3 ──► RP-B1 ──► RP-B2 ──┬────────────┼──► RP-C2 (porte 1)
 DÉC-2 ───────────► RP-C1 ───┼────────────┘
                             └──► RP-B3
 RP-D1 ──► RP-D2   (parallèle, sans lien avec les verdicts scientifiques)
 ```
 
-**Total pour H0 et H1** **(hypothèse)** : 8,5 à 19 jours d'agent, 0,5 à 2 jours de relecteur externe, au plus 6 300 vies environ, moins de deux heures-CPU. La contrainte n'est pas le calcul. Ce sont les deux levées à consigner par le propriétaire et les plages d'indices neuves.
+**Total pour H0 et H1** **(hypothèse)** : 8,5 à 19 jours d'agent, aucun jour de relecteur obligatoire, au plus 6 300 vies environ, moins de deux heures-CPU. La contrainte n'est pas le calcul. Ce sont les deux levées à consigner par le propriétaire et les plages d'indices neuves.
 
 ### 5.2 Pistes parallélisables
 
@@ -623,15 +624,17 @@ Une chose ne se parallélise pas : créer des sources de vies pendant qu'une sé
 
 ## 6. Décisions à arbitrer par le propriétaire
 
-### DÉC-1 — Comment sortir de l'étape 2
+### DÉC-1 — Sortir de l'étape 2 sans relecteur obligatoire
+
+**Arbitrage déjà exprimé :** le propriétaire retire la dépendance à un relecteur pour RP-A1. Cette décision de méthode ne vaut ni acceptation globale de cette feuille de route proposée, ni autorisation expérimentale. Le gel et la transition de RP-A2 demeurent à consigner selon les autorités en vigueur.
 
 | Option | Coût | Conséquence |
 | --- | --- | --- |
-| **A (recommandée).** Geler tout de suite. Mandater une revue externe bornée avec une date butoir, par exemple deux à quatre semaines. Écrire ensuite la décision de fin ; sans avis à la date butoir, publier `HOLD_NO_VERDICT`. | 1 à 2 jours d'agent, 0,5 à 2 jours de relecteur, 0 vie | Une décision écrite existe quoi qu'il arrive. L'ingénierie déléguée est libérée pour la release et la lignée. |
-| **B.** Publier `HOLD_NO_VERDICT` tout de suite, sans revue externe. | 0,5 à 1 jour, 0 vie | Plus rapide. On renonce à une éventuelle clôture négative bornée. L'exigence de revue externe reste ouverte. |
-| **C.** Poursuivre la campagne interne sur la source « erreurs personnelles passées ». | Non borné : 13 études en une journée au rythme du 12/11 | La dérive continue. La source a été choisie sur des données déjà vues. |
+| **A (retenue pour RP-A1).** Geler les nouvelles variantes de pensée, réutiliser l'audit C01 interne et produire une matrice contradictoire versionnée. Choisir entre `CLOSE_BOUNDED`, `DISTINCT_SOURCE_REQUIRED` et `HOLD_NO_VERDICT` sur preuves existantes, puis rédiger RP-A2 sans délai d'avis. | 1 à 2 jours d'agent au total, 0 relecteur, 0 vie | Une décision motivée existe sans attendre un tiers. À preuves inchangées, `HOLD_NO_VERDICT` suspend la question générale ; les négatifs E1/E3 restent bornés. |
+| **B.** Publier immédiatement `HOLD_NO_VERDICT` à partir du C01 déjà versionné, sans refaire la matrice. | 0,5 à 1 jour d'agent, 0 vie | Raccourci documentaire possible mais moins explicite sur les critères et contre-arguments ; aucune validation indépendante invoquée. |
+| **C.** Poursuivre sans nouvelle source la campagne interne sur les « erreurs personnelles passées ». | Non borné : 13 études en une journée au rythme du 12/11 | Risque de sélection post-hoc et de dérive ; à ne pas retenir. |
 
-**Recommandation : A.** Elle est la seule à produire une décision datée sans dépendre du résultat de la revue. B reste acceptable si aucun relecteur externe n'est joignable. Je déconseille C.
+**Recommandation : A.** L'absence de relecteur ne transforme ni l'avis interne en preuve indépendante ni un diagnostic `HOLD_NO_VERDICT` en clôture scientifique. Les éventuels avis externes sont facultatifs pour cette étape documentaire. Les contrôles de puissance, de source et de permissions pour de futures études restent distincts.
 
 ### DÉC-2 — La suite peut-elle avancer sous `HOLD_NO_VERDICT` ?
 
@@ -639,7 +642,7 @@ Une chose ne se parallélise pas : créer des sources de vies pendant qu'une sé
 | --- | --- | --- |
 | **A (recommandée).** Oui, par amendement explicite du plan. L'étape 0, la lignée courte et les contrats de mondes avancent tout de suite. Les portes des étapes 3 à 5 avancent avec le budget de pensée fixe hérité, sans aucune affirmation sur un budget adaptatif. | L'amendement : 0,5 jour | L'étape 2 cesse d'être un goulot et reste rouvrable. Si elle aboutit un jour, les portes passées à budget fixe seront à relire. |
 | **B.** Oui pour l'étape 0 et la lignée courte seulement. | Aucun | Prudent. L'axe « mondes plus complexes » reste gelé sans échéance. |
-| **C.** Non. Tout attend un verdict de l'étape 2. | Aucun aujourd'hui | Tout le programme dépend d'une revue externe dont la date n'est pas maîtrisée. |
+| **C.** Non. Tout attend un verdict de l'étape 2. | Aucun aujourd'hui | Tout le programme attendrait une clôture générale non établie malgré une décision interne `HOLD_NO_VERDICT` disponible. |
 
 **Recommandation : A.** L'analyse des dépendances la soutient. L'étape 3 s'appuyait sur l'étape 1, qui est close. L'étape 4 attend des « décisions de budget », et un budget fixe en est une. L'étape 5 planifie « dans le financement de l'étape 2 », qui est alors le budget hérité. L'étape 6 ne dépend pas de l'étape 2 ([DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md), tableau des étapes).
 
@@ -675,7 +678,7 @@ Une chose ne se parallélise pas : créer des sources de vies pendant qu'une sé
 
 ## 7. Ce que cette feuille de route ne prétend pas
 
-- **Ce n'est pas une revue indépendante.** C'est une analyse produite par un agent. Elle ne remplace pas la revue externe de RP-A1.
+- **Ce n'est pas une revue indépendante.** C'est une analyse produite par un agent ; RP-A1 est désormais un arbitrage interne traçable, sans prétendre être une validation indépendante.
 - **Ce n'est pas une autorisation.** Elle n'ouvre aucun World, ne crée aucune vie, n'attribue aucun indice et ne lève aucun moratoire.
 - **Elle n'apporte aucun résultat nouveau** et ne réinterprète aucun résultat négatif ou nul. Un test vert ou une survie plausible ne vaut jamais un GO scientifique.
 - **Sa lecture n'est pas exhaustive.** `STATUS.md` (2 195 lignes) n'a été lu qu'en tête. Les fils de commentaires des issues n'ont pas été lus, faute de quota d'API ; seul le début de leur corps l'a été. La CI n'a pas été interrogée par l'API.
@@ -718,6 +721,6 @@ Format demandé par [AGENTS.md](../../../AGENTS.md).
 
 **Limites.** Celles de la section 7.
 
-**Prochaine étape falsifiable.** DÉC-1, puis RP-A1 avec sa date butoir. DÉC-3, puis RP-B1.
+**Prochaine étape falsifiable.** Finaliser le dossier interne RP-A1, consigner RP-A2 sans relecteur, et traiter séparément les décisions de nouvelle source ou de cohorte. DÉC-3, puis RP-B1.
 
 **Issues liées.** #1062 (étape 2), #1060 (étape 0), #1331 et #1339 (release). La PR draft qui porte ce document est référencée dans sa propre description.
