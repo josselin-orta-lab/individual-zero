@@ -65,8 +65,8 @@ class SignedResponseCustodyTests(unittest.TestCase):
         signed_for = nonce if response_nonce is None else response_nonce
         payload = canonical(state)
         mac = hmac.new(
-            self.KEY, b"R\\n" + signed_for.encode("ascii") +
-            b"\\n200\\n" + payload, sha256).hexdigest()
+            self.KEY, b"R\n" + signed_for.encode("ascii") +
+            b"\n200\n" + payload, sha256).hexdigest()
         response = FakeHTTPResponse(payload, mac)
         with patch("i3.runtime.engineering_remote_witness.secrets.token_hex",
                    return_value=nonce):
