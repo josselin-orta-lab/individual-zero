@@ -121,6 +121,48 @@ class NativeEngineeringStepTests(unittest.TestCase):
             NativeEngineeringSession.begin(
                 self.root, claim, genome=self.genome, spec=self.spec, horizon=101)
 
+    def test_virgin_unpaid_mind_mutation_rejected_before_prepare_or_motor(self):
+        session = self.begin(horizon=3)
+        session.mind.values[0][0] += 0.0001
+        with patch.object(World, "step", side_effect=AssertionError(
+                "virgin motor must not run")) as motor:
+            with self.assertRaisesRegex(PermissionError, "unsealed native genesis"):
+                session.step()
+        motor.assert_not_called()
+        ledger = inspect_steps(self.root, session.claim)
+        self.assertEqual(ledger["sequence"], 0)
+        self.assertEqual(ledger["events"], [])
+        self.assertEqual(session.world.t, 0)
+        with self.assertRaises(PermissionError):
+            session.step()
+
+    def test_virgin_hidden_world_mutation_rejected_before_prepare_or_motor(self):
+        session = self.begin(horizon=3)
+        # Hidden token-effect laws are never in the first-person capture,
+        # and changing them must not bypass the native birth state pin.
+        session.world.effects["forged-unobserved-token"] = (3.0, 0.0)
+        with patch.object(World, "step", side_effect=AssertionError(
+                "virgin motor must not run")) as motor:
+            with self.assertRaisesRegex(PermissionError, "unsealed native genesis"):
+                session.step()
+        motor.assert_not_called()
+        ledger = inspect_steps(self.root, session.claim)
+        self.assertEqual(ledger["sequence"], 0)
+        self.assertEqual(ledger["events"], [])
+        self.assertEqual(session.world.t, 0)
+
+    def test_reconstructed_virgin_state_also_denies_unpaid_mutation(self):
+        session = self.begin(horizon=3)
+        reconstructed = NativeEngineeringSession.reconstruct(
+            self.root, session.claim, genome=self.genome, spec=self.spec)
+        reconstructed.mind.values[0][0] += 0.0001
+        with patch.object(World, "step", side_effect=AssertionError(
+                "virgin motor must not run")) as motor:
+            with self.assertRaisesRegex(PermissionError, "unsealed native genesis"):
+                reconstructed.step()
+        motor.assert_not_called()
+        self.assertEqual(inspect_steps(self.root, session.claim)["sequence"], 0)
+
     def test_mutated_in_process_mind_state_fails_before_second_motor(self):
         session = self.begin(horizon=3)
         session.step()
