@@ -76,8 +76,20 @@ class RemoteEngineeringWitness:
             if not (allow_test_loopback_http is True and url.scheme == "http"
                     and url.hostname == "127.0.0.1"):
                 raise ValueError("HTTPS mandatory outside explicit loopback test")
-        if tls_context is not None and not isinstance(tls_context, ssl.SSLContext):
-            raise ValueError("real TLS context required")
+        if tls_context is not None:
+            if not isinstance(tls_context, ssl.SSLContext):
+                raise ValueError("real TLS context required")
+            if url.scheme != "https":
+                raise ValueError("TLS context cannot secure loopback HTTP")
+            # HTTPSHandler accepts arbitrary caller contexts. An unverified
+            # context otherwise silently removes peer-certificate / hostname
+            # checks despite the HTTPS URL. Refuse it BEFORE network or motor.
+            if (tls_context.verify_mode != ssl.CERT_REQUIRED
+                    or tls_context.check_hostname is not True
+                    or tls_context.minimum_version < ssl.TLSVersion.TLSv1_2):
+                raise ValueError(
+                    "TLS CAS writer requires certificate and hostname verification"
+                    " with TLS >= 1.2")
         self._origin = base_url.rstrip("/")
         self._key = key
         self.authority_id = authority_id
