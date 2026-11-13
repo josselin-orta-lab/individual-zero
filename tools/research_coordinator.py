@@ -214,7 +214,7 @@ def i3_scientific_route(root: Path, registry: dict) -> dict:
         path = root / I3_ROUTING_FILE
         raw = path.read_bytes()
         observed_blob = hashlib.sha1(
-            b"blob " + str(len(raw)).encode("ascii") + b"\\0" + raw
+            b"blob " + str(len(raw)).encode("ascii") + b"\0" + raw
         ).hexdigest()
         result["observed_source_git_blob_sha"] = observed_blob
         surface = json.loads(raw)
