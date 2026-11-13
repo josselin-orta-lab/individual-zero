@@ -43,14 +43,14 @@ class AuthorityCostProbeTests(unittest.TestCase):
                 self.assertEqual(row["verify"]["samples"], n)
                 self.assertEqual(row["prepare"]["samples"], n)
                 self.assertEqual(row["commit"]["samples"], n)
-                self.assertEqual(row["paid_step_host_only"]["samples"], n)
+                self.assertEqual(row["cas_step_host_only"]["samples"], n)
                 self.assertLessEqual(
                     row["first_quarter_step"]["median_ms"],
                     row["first_quarter_step"]["max_ms"])
                 self.assertLessEqual(
                     row["last_quarter_step"]["median_ms"],
                     row["last_quarter_step"]["max_ms"])
-                self.assertGreater(row["paid_step_host_only"]["p95_ms"], 0)
+                self.assertGreater(row["cas_step_host_only"]["p95_ms"], 0)
                 # Diagnostic only: no timing/size comparison is a pass gate.
                 print("R24_AUTHORITY_COST " + json.dumps(row, sort_keys=True),
                       flush=True)
