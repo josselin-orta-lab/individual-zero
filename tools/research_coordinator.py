@@ -22,6 +22,10 @@ SCHEMA = "individual-zero-research-program/v1"
 GITHUB_SCHEMA = "individual-zero-github-snapshot/v1"
 SHA40 = re.compile(r"^[0-9a-fA-F]{40}$")
 POSITIVE_GATE_STATES = {"APPROVED", "VERIFIED", "FROZEN", "CONFIRMATORY_GO"}
+I3_ROUTE_SCHEMA = "individual-zero-i3-research-route/v1"
+I3_ROUTING_FILE = "src/i3/ACTIVE_SURFACE.json"
+I3_STOP_REVIEW = "src/i3/docs/STAGE2_C01_INTERNAL_FUTILITY_REVIEW_2026-11-12.md"
+I3_SCIENTIFIC_ISSUE = 1062
 
 
 def read_json(root: Path, path: str) -> dict:
@@ -179,6 +183,146 @@ def audit(root: Path = ROOT) -> dict:
             "scientific_verdict": "NOT_EVALUATED"}
 
 
+
+def i3_scientific_route(root: Path, registry: dict) -> dict:
+    """Live I3 routing hint, NEVER pinned scientific evidence or a permission.
+
+    Fail closed when either source/contract/registry gate has drifted. A live
+    file SHA is just byte identity, not external authentication or review.
+    """
+    result = {
+        "schema": I3_ROUTE_SCHEMA,
+        "status": "I3_SOURCE_REVIEW_REQUIRED",
+        "route_source": I3_ROUTING_FILE,
+        "observed_source_git_blob_sha": None,
+        "gate_source": I3_STOP_REVIEW,
+        "issue": I3_SCIENTIFIC_ISSUE,
+        "stage": "UNVERIFIED",
+        "internal_reference": "UNVERIFIED",
+        "software_capacity": "UNVERIFIED",
+        "scientific_verdict": "UNVERIFIED",
+        "source_pin_reviewed": False,
+        "independent_methods_review": False,
+        "scientific_world_authorized": False,
+        "engine_activation_authorized": False,
+        "execution": "NOT_PERFORMED",
+        "warning": "I3 live status is a mutable routing hint, NOT independent scientific evidence.",
+    }
+    if registry.get("reference_generation") != "I3":
+        return result
+    try:
+        path = root / I3_ROUTING_FILE
+        raw = path.read_bytes()
+        observed_blob = hashlib.sha1(
+            b"blob " + str(len(raw)).encode("ascii") + b"\\0" + raw
+        ).hexdigest()
+        result["observed_source_git_blob_sha"] = observed_blob
+        surface = json.loads(raw)
+        contract = read_json(root, "src/i3/engine.json")
+        gov = surface["governance"]
+        result["stage"] = surface["current_stage"]
+        result["internal_reference"] = surface["reference"]
+        result["software_capacity"] = surface["canonical_status"]
+        permitted = ("fresh_lived_worlds_allowed", "scientific_gate_authorized",
+                     "other_world_indices_authorized", "next_scientific_cohort_authorized",
+                     "all_new_worlds_currently_authorized")
+        valid = (
+            type(surface) is dict
+            and surface.get("schema") == "i3-active-surface/v1"
+            and type(gov) is dict
+            and all(gov.get(flag) is False for flag in permitted)
+            and surface.get("current_stage") == "2.1 replay gate"
+            and surface.get("reference") == "P1.3 funded-v2"
+            and surface.get("canonical_status") == "REPLAY_GATE_CAPACITY_SHOWN"
+            and type(surface.get("next_scientific_action")) is str
+            and "Stage-2 scientific verdict remains NOT_ISSUED" in
+                surface["next_scientific_action"]
+            and "HOLD" in surface["next_scientific_action"]
+            and contract.get("generation") == "I3"
+            and contract.get("status") == "proposal"
+            and not contract.get("entrypoints")
+            and contract.get("activation") == "NOT_REGISTERED_NOT_EXECUTABLE"
+            and registry.get("active_generation") == "I1"
+            and (root / I3_STOP_REVIEW).is_file()
+        )
+        if valid:
+            result["status"] = "HOLD_INDEPENDENT_METHODS_REVIEW"
+            result["scientific_verdict"] = "NOT_ISSUED"
+        else:
+            result["warning"] = (
+                "I3 routing or permission contract changed: inspect live source "
+                "and human review; NEVER fall back to I2 or launch Worlds."
+            )
+    except (OSError, ValueError, TypeError, KeyError):
+        result["warning"] = (
+            "Missing/malformed I3 route or contract: source review required, "
+            "no scientific or engine execution authorized."
+        )
+    return result
+
+
+def i3_review_recommendation(state: dict, top: int) -> dict:
+    """A non-executable manual-review pointer outside the I1/I2 curated DAG."""
+    route = state.get("i3_scientific_route") or {
+        "status": "I3_SOURCE_REVIEW_REQUIRED", "issue": I3_SCIENTIFIC_ISSUE,
+        "gate_source": I3_STOP_REVIEW,
+    }
+    stage = route["status"]
+    proposal = {
+        "id": "I3-S2-C01-INDEPENDENT-METHODS",
+        "title": "I3 Stage 2: independent bounded methods/futility adjudication",
+        "gate": "I3-S2-C01-EXTERNAL_REVIEW_REQUIRED",
+        "questions": ["I3-STAGE2-VALUE_OF_COMPUTATION"],
+        "agent_route": "src/i3/docs",
+        "issue": I3_SCIENTIFIC_ISSUE,
+        "issue_url": (f"https://github.com/{state['repository']}/issues/"
+                      f"{I3_SCIENTIFIC_ISSUE}"),
+        "issue_state": "UNVERIFIED_LIVE",
+        "stage": stage,
+        "blocked_by_gates": ["INDEPENDENT_METHODS_AND_SOURCE_REVIEW"],
+        "unverified_sources": [I3_ROUTING_FILE],
+        "action": (
+            "Read the current I3 Stage-2 stop assessment; secure a genuinely "
+            "independent methods disposition of the existing evidence before "
+            "any new scientific World/source. Do NOT run E3/old cohorts or "
+            "interpret I3 technical CI as scientific GO."
+        ),
+        "expected_knowledge": (
+            "Whether a preannounced bounded Stage-2 question can be closed "
+            "negative, or requires a distinct viable source; otherwise HOLD."
+        ),
+        "disconfirming_result": (
+            "No independent causal/estimand/power adjudication, or no new "
+            "source that passes a prospective costed native decision test."
+        ),
+        "deliverables": [route["gate_source"]],
+        "recorded_findings_not_verified": [],
+        "heuristic": {"not_ranked_against_i1_i2": True,
+                      "not_a_scientific_probability": True},
+        "authorization": "RECOMMENDATION_ONLY_NO_WORLD_AUTHORITY",
+        "human_review_required": True,
+    }
+    return {
+        "status": ("I3_HOLD_NON_EXECUTABLE" if
+                   stage == "HOLD_INDEPENDENT_METHODS_REVIEW"
+                   else "I3_BLOCKED_SOURCE_REVIEW"),
+        "head_sha": state["head_sha"],
+        "active_generation": state["active_generation"],
+        "development_reference_generation":
+            state.get("development_reference_generation"),
+        "recommended_next": (proposal if
+                             stage == "HOLD_INDEPENDENT_METHODS_REVIEW"
+                             else None),
+        "proposals": [proposal][:top],
+        "total_proposals": 1,
+        "external_verification_required": True,
+        "scoring": "Unranked scientific STOP/review route; no I1/I2 heuristic",
+        "scientific_verdict": "NOT_EVALUATED",
+        "execution": "NOT_PERFORMED",
+        "promotion": "NOT_AUTHORIZED",
+        "i3_scientific_route": route,
+    }
+
 def source_integrity(root: Path, program: dict) -> dict:
     result = {}
     for s in program["source_checks"]:
@@ -251,7 +395,7 @@ def research_state(root: Path = ROOT, *, at_sha: str | None = None,
         return {**item, "source_integrity": "TEXT_MATCH_ONLY" if not missing else "UNVERIFIED",
                 "unverified_sources": missing, "gate_approved": False}
     generations = {}
-    for gen in ("I0", "I1", "I2"):
+    for gen in ("I0", "I1", "I2", "I3"):
         contract_path = root / f"src/{gen.lower()}/engine.json"
         contract = read_json(root, f"src/{gen.lower()}/engine.json") if contract_path.is_file() else {}
         generations[gen] = {"active": registry["active_generation"] == gen,
@@ -261,7 +405,10 @@ def research_state(root: Path = ROOT, *, at_sha: str | None = None,
     github = issue_snapshot(snapshot, m["project"], sha, m["policy"]["github_snapshot_max_age_hours"])
     return {"status": "SOURCE_REVIEW_REQUIRED" if failed else "RECORDED_TEXT_MATCHES",
             "repository": m["project"], "head_sha": sha or "UNKNOWN",
-            "active_generation": registry["active_generation"], "generations": generations,
+            "active_generation": registry["active_generation"],
+            "development_reference_generation": registry.get("reference_generation", "UNKNOWN"),
+            "i3_scientific_route": i3_scientific_route(root, registry),
+            "generations": generations,
             "questions": [map_item(q) for q in m["questions"]],
             "gates": [map_item(g) for g in m["gates"]],
             "findings": [map_item(f) for f in m.get("findings", [])],
@@ -282,6 +429,12 @@ def depends_on(candidate: str, ancestor: str, dag: dict, visited: set | None = N
 def recommendations(state: dict, program: dict, top: int = 5, generation: str = "all") -> dict:
     if state["status"] == "INVALID_PROGRAM":
         return {"status": "BLOCKED_INVALID_PROGRAM", "recommended_next": None}
+    # Routing overlay, NOT an I3 claim inserted into the old I1/I2 curated DAG.
+    # If reference is I3, default advice must not silently choose I2.
+    if generation == "I3" or (
+            generation == "all" and
+            state.get("development_reference_generation") == "I3"):
+        return i3_review_recommendation(state, top)
     gates = {g["id"]:g for g in state["gates"]}
     questions = {q["id"]:q for q in state["questions"]}
     dag = {g["id"]:g["prerequisites"] for g in state["gates"]}
@@ -357,7 +510,9 @@ def graph(program: dict) -> str:
 
 def markdown(state: dict, ranked: dict) -> str:
     lines = [f'# Individual Zero: research state at {state["head_sha"]}',
-             f'Active generation: {state["active_generation"]}. Scientific verdict: NOT_EVALUATED.',
+             f'Active generation: {state["active_generation"]}. '
+             f'Development reference: {state.get("development_reference_generation", "UNKNOWN")}. '
+             f'Scientific verdict: NOT_EVALUATED.',
              f'GitHub issue state: {state["github"]["status"]}. Source status: {state["status"]}.',
              "", "## Research questions"]
     for q in state["questions"]:
@@ -587,7 +742,7 @@ def main(argv: list[str] | None = None, root: Path = ROOT) -> int:
         p.add_argument("--format", choices=("markdown", "json"), default="markdown")
         if name == "recommend":
             p.add_argument("--top", type=int, default=5)
-            p.add_argument("--generation", choices=("all", "I1", "I2"), default="all")
+            p.add_argument("--generation", choices=("all", "I1", "I2", "I3"), default="all")
     args = parser.parse_args(argv)
     try:
         if args.command == "audit":
