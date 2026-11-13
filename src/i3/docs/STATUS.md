@@ -1,5 +1,11 @@
 # I3: current research and engineering status
 
+## R2.4 checkpoint inspection now SQL read-only, independent M11 still not attested (13 November 2026)
+
+The [frozen contract and exact source results](engineering/R24_READONLY_CHECKPOINT_INSPECTION_RESULTS_2026-11-13.md) from [PR #1372](https://github.com/josselin-orta-lab/individual-zero/pull/1372), merged `0b1827a79be377e62e2206917ebebbf77de20099`, correct the prior checkpoint's hidden use of `AuthorityStore.__init__` (`BEGIN IMMEDIATE`, writer capacity). The diagnostic capture now requires **existing SQLite `mode=ro`**, `query_only=ON`, a single read transaction and the full v3 authority audit. [Actions #43431825263](https://github.com/josselin-orta-lab/individual-zero/actions/runs/43431825263) PASS **1,336/1,336 I3 software tests on Python 3.11 and 1,336/1,336 on Python 3.12**. Four no-World tests confirm no writer initialization, SQL-write rejection, foreign/missing denial and coherent concurrency.
+
+This is an **SQL read-only correction**, not a protected OS filesystem or independent authority. It does not accelerate CAS/audit, remove model-cognition costs, grant a scientific World, prove off-host custody or fix simultaneous rollback of SQLite and its public checkpoint. `FAIL_INDEPENDENT_M11` remains the release-blocking negative control; #1339/#1331 stay open, I1 active and I3 proposal/unregistered, P1.3 funded-v2 Stage 2.1 `NOT_ISSUED / HOLD_NO_VERDICT`.
+
 ## R2.4 exact-state checkpoint custody: limited software PASS, independent M11 still unproven (13 November 2026)
 
 The [preannounced R2.4 checkpoint contract](engineering/R24_EXACT_STATE_CHECKPOINT_PREFLIGHT_2026-11-13.md) and [exact-source results](engineering/R24_EXACT_STATE_CHECKPOINT_RESULTS_2026-11-13.md) from [PR #1370](https://github.com/josselin-orta-lab/individual-zero/pull/1370), merge `1edaee0cdb4e8cb98d88beb67a88e142d62304f9`, introduce an isolated **read-only exact-equality** probe for fully audited authority v3 states, including all accepted nonce contents. [Actions #43426105969](https://github.com/josselin-orta-lab/individual-zero/actions/runs/43426105969) passed **1,332/1,332 I3 software tests each** on Python 3.11 and 3.12. The first run #43425671982 failed a nonce-fault-injection fixture; it was corrected with a required one-row mutation assertion and remains in the PR history.
