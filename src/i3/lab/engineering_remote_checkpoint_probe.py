@@ -7,6 +7,7 @@ together, rollback is still accepted. No production CAS fast path is added.
 from __future__ import annotations
 
 from hashlib import sha256
+import json
 from pathlib import Path
 import re
 import sqlite3
@@ -50,12 +51,17 @@ def _checked_checkpoint(checkpoint: dict, authority_id: str) -> None:
         raise PermissionError("checkpoint checksum mismatch")
 
 
-def capture_exact_checkpoint(database: Path, authority_id: str) -> dict:
+def capture_exact_checkpoint(database: Path, authority_id: str, *,
+                             expected_source_sha256: str | None = None) -> dict:
     """Fully re-audit a *stable COMMITTED* local DB and seal a public digest.
 
     This call is O(audit events + accepted nonces), has no speed advantage and
     cannot attest that the caller protects the record independently.
     """
+    if (expected_source_sha256 is not None
+            and (type(expected_source_sha256) is not str
+                 or HEX64.fullmatch(expected_source_sha256) is None)):
+        raise PermissionError("expected source must be exact lowercase SHA256")
     path = Path(database)
     if not path.is_file() or path.is_symlink():
         raise PermissionError("existing regular v3 authority required")
@@ -70,6 +76,16 @@ def capture_exact_checkpoint(database: Path, authority_id: str) -> dict:
             ).fetchall()
             if not histories:
                 raise PermissionError("cannot checkpoint empty authority")
+            if expected_source_sha256 is not None:
+                # Audit validation already checked canonical full birth claims;
+                # this additional read remains inside that SAME snapshot.
+                try:
+                    sources = [json.loads(row[1])["source_sha256"]
+                               for row in histories]
+                except (TypeError, ValueError, KeyError) as exc:
+                    raise PermissionError("bad source in audited claim") from exc
+                if any(src != expected_source_sha256 for src in sources):
+                    raise PermissionError("foreign source in authority checkpoint")
             if any(row[5] != "COMMITTED" or row[7] is not None
                    or row[8] is not None for row in histories):
                 raise PermissionError("unresolved PREPARED state not checkpointable")
