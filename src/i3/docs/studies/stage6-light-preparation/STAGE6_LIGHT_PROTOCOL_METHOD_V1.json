@@ -101,7 +101,6 @@
     },
     "total_lives_if_later_authorized": 11520,
     "max_physical_steps_if_later_authorized": 4608000,
-    "max_world_steps_if_later_authorized": 11520,
     "historic_cohort_reuse_allowed": false,
     "reserve_seed_reuse_allowed": false,
     "distinct_worlds_between_populations_required": true,
