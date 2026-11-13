@@ -203,7 +203,7 @@ class Stage6LightPreauthProtocolTests(unittest.TestCase):
         self.assertIn("METHOD_FIXED_PREAUTH_NOT_EXECUTABLE", doc)
         self.assertIn("11 520", doc)
         self.assertIn("13/16", doc)
-        self.assertIn("aucun nouveau World", doc)
+        self.assertIn("Aucun nouveau World", doc)
         self.assertIn("STAGE6_LIGHT_NOT_RUN_NO_AUTHORIZATION", doc)
 
 
