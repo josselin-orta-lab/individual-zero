@@ -8,7 +8,7 @@ engine registration, M11 credential authority or production service is created.
 from __future__ import annotations
 
 import argparse
-from contextlib import closing
+from contextlib import closing, contextmanager
 from hashlib import sha256
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import hmac
@@ -120,6 +120,40 @@ class AuthorityStore:
             except BaseException:
                 c.execute("ROLLBACK")
                 raise
+
+    @classmethod
+    @contextmanager
+    def open_existing_verified_readonly(cls, database: Path, authority_id: str):
+        """Read a consistent, fully audited v3 snapshot without writer access.
+
+        This is a local engineering inspection facility, not an independent
+        witness. Its untrusted path and the caller's operator privileges
+        provide no external monotonic high-water or security attestation.
+        SQLite WAL may still require shared-memory filesystem access.
+        """
+        path = Path(database)
+        aid = _hex(authority_id)
+        if (path.is_symlink() or path.parent.is_symlink()
+                or not path.is_file()):
+            raise PermissionError("existing regular authority DB required for read-only audit")
+        # A normal AuthorityStore constructor may create a DB and begins
+        # IMMEDIATE; intentionally NEVER call it on this inspection path.
+        verifier = cls.__new__(cls)
+        verifier.database = path
+        verifier.authority_id = aid
+        try:
+            with closing(sqlite3.connect(
+                    path.absolute().as_uri() + "?mode=ro",
+                    uri=True, isolation_level=None, timeout=5)) as conn:
+                conn.execute("PRAGMA query_only=ON")
+                conn.execute("BEGIN")
+                try:
+                    verifier._check_audit(conn)
+                    yield conn
+                finally:
+                    conn.execute("ROLLBACK")
+        except sqlite3.DatabaseError as exc:
+            raise PermissionError("read-only authority inspection failed closed") from exc
 
     def _genesis(self) -> str:
         # Deliberately public: this is local consistency, NOT an off-host anchor.
