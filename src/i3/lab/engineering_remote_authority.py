@@ -16,6 +16,7 @@ import json
 from pathlib import Path
 import re
 import sqlite3
+import ssl
 
 from i3.runtime.birth_reservation import make_reservation
 from i3.runtime.engineering_remote_witness import SCHEMA, canonical
@@ -374,10 +375,31 @@ class AuthorityStore:
 
 
 def serve_test_loopback(database: Path, authority_id: str, secret: bytes,
-                        *, port: int = 0):
-    """Explicit *test-only* loopback server; TLS/auth deployment is NOT supplied."""
+                        *, port: int = 0,
+                        test_tls_context: ssl.SSLContext | None = None,
+                        expected_writer_cert_sha256: str | None = None,
+                        expected_source_sha256: str | None = None):
+    """Test-only 127.0.0.1 CAS server; optional source-pinned mutual TLS.
+
+    The three strict-mode settings are inseparable. This deliberately does
+    not offer a production deployment interface, non-rewindable M11 store,
+    independent source/build attestation or credential management.
+    """
     if type(secret) is not bytes or len(secret) < 32:
         raise ValueError("server authentication key must be at least 32 bytes")
+    strict = test_tls_context is not None
+    if (strict or expected_writer_cert_sha256 is not None
+            or expected_source_sha256 is not None):
+        if (not strict or not isinstance(test_tls_context, ssl.SSLContext)
+                or type(expected_writer_cert_sha256) is not str
+                or HEX.fullmatch(expected_writer_cert_sha256) is None
+                or type(expected_source_sha256) is not str
+                or HEX.fullmatch(expected_source_sha256) is None):
+            raise ValueError("strict test mTLS requires complete writer/source pins")
+        if (test_tls_context.verify_mode != ssl.CERT_REQUIRED
+                or test_tls_context.minimum_version < ssl.TLSVersion.TLSv1_2
+                or test_tls_context.protocol != ssl.PROTOCOL_TLS_SERVER):
+            raise ValueError("strict test mTLS requires TLS server and verified client cert")
     store = AuthorityStore(database, authority_id)
 
     class Handler(BaseHTTPRequestHandler):
@@ -385,6 +407,15 @@ def serve_test_loopback(database: Path, authority_id: str, secret: bytes,
             if self.path != "/v1/command":
                 self.send_error(404)
                 return
+            if strict:
+                # The TLS handshake checked the issuing CA. Require the
+                # *exact* admitted writer leaf as well; same-CA certificates
+                # with a copied test HMAC cannot claim this writer privilege.
+                peer_der = self.connection.getpeercert(binary_form=True)
+                if (type(peer_der) is not bytes or
+                        sha256(peer_der).hexdigest() != expected_writer_cert_sha256):
+                    self.send_error(403)
+                    return
             nonce = self.headers.get("X-I3-Nonce", "")
             signature = self.headers.get("X-I3-Signature", "")
             length = self.headers.get("Content-Length", "")
@@ -404,6 +435,14 @@ def serve_test_loopback(database: Path, authority_id: str, secret: bytes,
                 request = json.loads(data)
                 if canonical(request) != data:
                     raise ValueError("noncanonical request")
+                # Never let a valid writer cert + HMAC self-approve its own
+                # source SHA; the explicitly pinned test source is a separate
+                # operator setting, checked BEFORE SQLite/nonce transitions.
+                if (strict and (type(request) is not dict
+                        or type(request.get("claim")) is not dict
+                        or request["claim"].get("source_sha256")
+                        != expected_source_sha256)):
+                    raise PermissionError("foreign source on strict mTLS ingress")
                 response = store.apply(request, request_nonce=nonce)
                 raw = canonical(response)
             except (ValueError, PermissionError, TypeError, KeyError, sqlite3.Error):
@@ -422,7 +461,15 @@ def serve_test_loopback(database: Path, authority_id: str, secret: bytes,
         def log_message(self, format, *args):
             return
 
-    return ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    if strict:
+        try:
+            server.socket = test_tls_context.wrap_socket(
+                server.socket, server_side=True)
+        except BaseException:
+            server.server_close()
+            raise
+    return server
 
 
 def _main():
