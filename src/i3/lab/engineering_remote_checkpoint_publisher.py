@@ -153,6 +153,39 @@ class TestOnlyCheckpointPublisher:
             previous_raw, previous_payload = raw, payload
         return previous_raw
 
+    @classmethod
+    def inspect_existing_latest(cls, publication_db: Path, authority_db: Path, *,
+                                authority_id: str, source_sha256: str,
+                                key_id: str, trusted_public_key: bytes) -> bytes | None:
+        """Inspect an existing signed journal without constructing a writer.
+
+        This does NOT independently attest publisher custody. The caller
+        supplies all trust pins; no signer or private key is ever required.
+        """
+        pub = Path(publication_db)
+        authority = Path(authority_db)
+        if (not _valid_hash(authority_id)
+                or not _valid_hash(source_sha256)
+                or type(key_id) is not str
+                or _KEY.fullmatch(key_id) is None
+                or type(trusted_public_key) is not bytes
+                or len(trusted_public_key) != 32
+                or pub.is_symlink() or pub.parent.is_symlink()
+                or authority.is_symlink() or authority.parent.is_symlink()
+                or not pub.is_file() or not authority.is_file()
+                or pub.resolve() == authority.resolve()):
+            raise PermissionError("read-only publisher requires two distinct existing pinned stores")
+        inspector = cls.__new__(cls)
+        inspector.publication_db = pub
+        inspector.authority_db = authority
+        inspector.authority_id = authority_id
+        inspector.source_sha256 = source_sha256
+        inspector.key_id = key_id
+        inspector.public_key = trusted_public_key
+        # Bypass __init__ intentionally. A missing or foreign journal must
+        # STOP, never be silently created during recovery inspection.
+        return inspector.latest()
+
     def latest(self) -> bytes | None:
         """Read and validate one local immutable *logical* publication chain.
 
