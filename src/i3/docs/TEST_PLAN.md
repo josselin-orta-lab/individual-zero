@@ -1,5 +1,10 @@
 # I3: Test plan
 
+## Stage-6-light toy persistence-to-parent-to-genome preflight (15 November 2026)
+
+[`test_stage6_light_selection_parent_preflight.py`](../../../tests/i3/test_stage6_light_selection_parent_preflight.py) checks six-opportunity exact-count mock persistence receipts, selected weighted rank/draw versus uniform random-parent draw, fake parent seed and mutation ancestry consistency with native-v4 source-parity tests from #1399, and adversarial tamper/missing/duplicate/permission denial. [Scope and limitations](studies/stage6-light-preparation/STAGE6_LIGHT_SELECTION_PARENT_OFFLINE_PREFLIGHT_2026-11-15.md): mock seeds can be chosen after an outcome and are **not** an independent proof of sampling or historically sealed custody; no real native World/run, new life, original archive, science authorisation, or release. Full source CI required on Python 3.11/3.12.
+
+
 ## Stage-6-light read-only genotype ancestry parity, no World (14 November 2026)
 
 [`test_stage6_light_genome_lineage_preflight.py`](../../../tests/i3/test_stage6_light_genome_lineage_preflight.py) compares the stand-alone offline G0/mutation reproduction with exact genome-v4 code, exercises a full **fabricated** 16-population tree (384 G0, 1,536 G1/G2 and 1,920 claimed original-genotype digests), and rejects forgery of parent slots, descendant genes, mutation seeds, missing identities, extra inherited fields and deny-all method changes. The [scope/limitations](studies/stage6-light-preparation/STAGE6_LIGHT_GENOME_LINEAGE_OFFLINE_PREFLIGHT_2026-11-14.md) explicitly exclude weighted/uniform parent sampling proof, actual gzip original binding, source/seed independence, World exposure and any scientific/admission claim. `PARTIAL_FIXTURE_MATCH_ONLY_NOT_ADMITTED` for a reduced test never passes as method-v1 full coverage.
