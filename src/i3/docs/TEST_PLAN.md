@@ -1,5 +1,10 @@
 # I3: Test plan
 
+## Stage-6-light read-only genotype ancestry parity, no World (14 November 2026)
+
+[`test_stage6_light_genome_lineage_preflight.py`](../../../tests/i3/test_stage6_light_genome_lineage_preflight.py) compares the stand-alone offline G0/mutation reproduction with exact genome-v4 code, exercises a full **fabricated** 16-population tree (384 G0, 1,536 G1/G2 and 1,920 claimed original-genotype digests), and rejects forgery of parent slots, descendant genes, mutation seeds, missing identities, extra inherited fields and deny-all method changes. The [scope/limitations](studies/stage6-light-preparation/STAGE6_LIGHT_GENOME_LINEAGE_OFFLINE_PREFLIGHT_2026-11-14.md) explicitly exclude weighted/uniform parent sampling proof, actual gzip original binding, source/seed independence, World exposure and any scientific/admission claim. `PARTIAL_FIXTURE_MATCH_ONLY_NOT_ADMITTED` for a reduced test never passes as method-v1 full coverage.
+
+
 ## Stage-6-light pinned-checkout source bytes, no World (14 November 2026)
 
 [`test_stage6_light_checkout_source_preflight.py`](../../../tests/i3/test_stage6_light_checkout_source_preflight.py) checks the [standalone source-byte verifier](../lab/stage6_light_checkout_source_preflight.py) and [audit limits](studies/stage6-light-preparation/STAGE6_LIGHT_CHECKOUT_SOURCE_PREAUTH_2026-11-14.md) with small invented Git checkouts. It validates externally pinned method/source/commit SHAs against every real file byte and corresponding Git HEAD blob; rejects claimed self-consistency alone, untracked/dirty trees, `assume-unchanged`, path traversal, symlinks, missing source entries, wrong HEAD and forged scientific permissions. There are no I3 modules imported, no `run_life`, no World or scientific indices. The proof is **conditional on the independent provisioning of the pins**, not a retroactive timestamp or permission. Genetic lineage and full-scale living transport remain blocked under #1395.

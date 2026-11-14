@@ -1,0 +1,24 @@
+# I3 Stage-6-light: genome-v4 ancestry preflight, no World (14 November 2026)
+
+**Status: `GENOME_CHAIN_MATCH_ONLY_NOT_ADMITTED` (on fabricated data only).** This is a source-only, offline engineering check for the unfulfilled lineage dependency in [issue #1395](https://github.com/josselin-orta-lab/individual-zero/issues/1395). It is **not** the generation-specific G/S/R transport, a native archive provenance attestation, a selection-law proof, an accepted amendment to ADR-0017, a rehearsal, or scientific authorization. The [method v1](STAGE6_LIGHT_PROTOCOL_METHOD_V1_2026-11-13.md) and its JSON authorization fields remain deny-all.
+
+## Falsifiable intervention
+
+**Claim tested:** given explicit external records of 384 founder seeds/genomes and 1,536 G1/G2 parent/offspring/seed declarations, can the declared genome-v4 lineages be reproduced byte for byte using the **actual reference mathematics** of `generation_zero`, `mutate(scale=0.1)` and `digest`, with G0 represented once and no inherited memory or World facts?
+
+**Falsifiers:** a claimed G0 value different from native genome-v4 generation; any descendant not equal to `mutate(parent, seed, 0.1)`; absent/duplicate or cross-generation ancestry; non-unique claimed founder/mutation stream seeds; a different parent hash; a changed original-genotype-index digest; an unexpected gene, inherited memory or extra field; incomplete population/generation/arm/slot coverage; a method permission becoming true. The test suite also cross-checks both reconstruction algorithms directly against the current native genome source for multiple seeds. The verifier itself imports neither the native genome nor Mind/World/motor modules.
+
+**Controls:** a fully fabricated genotype table and its own fabricated original-index digest table for 16 populations, plus adversarial replacements of parent, child, seed, identity and claimed archive digest. Unit tests may explicitly use a 1-population fixture; this is labeled `PARTIAL_FIXTURE_MATCH_ONLY_NOT_ADMITTED` and may never pass as a complete method-v1 panel.
+
+**Mechanism:** `src/i3/lab/stage6_light_genome_lineage_preflight.py` first checks the current deny-all method through the existing read-only custody preflight, enforces all 384 + 1,536 genotype rows, verifies both native integer-seed domain shapes, recreates each founder, then recreates each child from the correct previous-generation same-population parent (shared G0 for both arms). It joins one separate, untrusted declared genotype-hash per one of the 1,920 unique genotype keys. The output is strictly a structural count and negative permissions: no gene values, fitness, survival, parent sampling, signed allocation, World or life.
+
+## What this does not establish
+
+- The parent slots are **claims**. Neither the weighted `selected` random draw nor the uniform `random_parent` draw can be certified from these records, because no prospectively fixed authenticated parent-draw seed/receipt or sealed persistence source is present. Passing mutations cannot silently certify the selection mechanism.
+- The "native original" index is **caller supplied**. This adapter does not read sealed gzip bytes or reconcile full per-step evidence. The independently examined native originals (six contexts per genotype) and source checkout must later be bound directly to the lineage receipts under an authorized exact-source transport. Earlier read-only preflights check pieces of this problem independently; combining their Boolean flags does not prove a real study.
+- Unique integer seeds are **not** independent stochastic streams, proof of previously unused Worlds, evidence of a prior registration, or attestation of an owner decision. No real allocation, scientific World, rehearsal or new life was created here.
+- Matching genome code on the current checkout is a **software parity regression**, not proof that these bytes or a recorded lineage operated during a historical run. Native mutation and G0 derivation must be checked again against the authorized source commit if one is ever selected.
+
+**Local narrow check:** `PYTHONPATH=src python -m unittest tests.i3.test_stage6_light_genome_lineage_preflight` (or your configured unittest discovery path). No runtime or execution keys required.
+
+**Remaining critical path:** bind independently sealed G/S parent-draw receipts to authentic original custody; prove actual parent selection and G1/G2 mutation histories on the exact execution source; audit physical costs and independently allocated World indices; obtain a *separate* explicit owner decision on ADR-0017 lineage sequencing and, only afterwards, separate rehearsal/science authorizations. Until then `STAGE6_LIGHT_NOT_RUN_NO_AUTHORIZATION`, I3 remains unregistered, Stage 2.1 remains `NOT_ISSUED/HOLD_NO_VERDICT`, and I1 is active.
