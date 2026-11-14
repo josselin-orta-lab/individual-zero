@@ -60,7 +60,8 @@ def inspect_mock_parent_selection(founders: list[dict], offspring: list[dict],
     receipt_by_person = defaultdict(dict)
     for row in persistence:
         if (type(row) is not dict or set(row) != PERSISTENCE_FIELDS or
-                row["kind"] != KIND or row["population"] not in pops or
+                row["kind"] != KIND or not _int(row["population"], 0, 15) or
+                row["population"] not in pops or
                 not _int(row["generation"], 0, 1) or
                 row["arm"] not in (("shared",) if row["generation"] == 0 else ARMS) or
                 not _int(row["slot"], 0, 23) or row["family"] not in FAMILIES or
@@ -93,7 +94,8 @@ def inspect_mock_parent_selection(founders: list[dict], offspring: list[dict],
     draw_seeds = set()
     for receipt in draws:
         if (type(receipt) is not dict or set(receipt) != DRAW_FIELDS or
-                receipt["kind"] != KIND or receipt["population"] not in pops or
+                receipt["kind"] != KIND or not _int(receipt["population"], 0, 15) or
+                receipt["population"] not in pops or
                 not _int(receipt["generation"], 1, 2) or
                 receipt["arm"] not in ARMS or
                 not _int(receipt["slot"], 0, 23) or
