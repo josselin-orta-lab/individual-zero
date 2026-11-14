@@ -122,6 +122,16 @@ class Stage6ParentChoiceOfflineTests(unittest.TestCase):
             with self.subTest(action=str(action)), self.assertRaises(ValueError):
                 self.audit((f, d, n, p, draws))
 
+    def test_boolean_population_identifiers_not_admitted(self):
+        sample = deepcopy(self.small)
+        sample[3][0]["population"] = False
+        with self.assertRaises(ValueError):
+            self.audit(sample)
+        sample = deepcopy(self.small)
+        sample[4][0]["population"] = False
+        with self.assertRaises(ValueError):
+            self.audit(sample)
+
     def test_parent_mutation_chain_tamper_rejected(self):
         f, d, n, p, draws = deepcopy(self.small)
         d[0]["parent_slot"] = (d[0]["parent_slot"] + 1) % 24
