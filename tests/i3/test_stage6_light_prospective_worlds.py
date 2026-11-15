@@ -1,66 +1,66 @@
-"""No-World regression: prospective Stage6 ecology uses reserved high seeds only.
+"""Stage6 reserved seed adapter parity with untouched historical P2 F0.
 
-Do not instantiate World or run_life. The WorldSpec data factory runs with
-patched ecological validation to avoid any live-world creation during CI.
+Constructs only WorldSpec data under mocked ecological World validation.
+No actual World, Mind or native life is opened by these software tests.
 """
 from __future__ import annotations
 
 import unittest
 from unittest.mock import patch
 
-from i3.lab import p2_ecologies, worldgen
+from i3.lab import p2_ecologies as P2
+from i3.lab import stage6_light_prospective_ecologies as E
+from i3.lab import worldgen
 
 HIGH = 2 << 60
 
 
-class Stage6ProspectiveEcologyGateTests(unittest.TestCase):
-    def test_high_reserve_requires_exact_stage6_flag_and_namespace(self):
-        with patch.object(p2_ecologies, "validate_ecology"):
-            for family in p2_ecologies.FAMILIES:
+class Stage6ProspectiveEcologyTests(unittest.TestCase):
+    def test_original_p2_rejects_all_high_seed_worlds(self):
+        with patch.object(P2, "validate_ecology"):
+            for family in P2.FAMILIES:
                 with self.subTest(family=family):
                     with self.assertRaises(ValueError):
-                        p2_ecologies._generate_ecology(family, HIGH + 102)
+                        P2._generate_ecology(family, HIGH + 102)
                     with self.assertRaises(PermissionError):
-                        p2_ecologies._generate_ecology(
-                            family, HIGH-1, prospective_stage6=True)
+                        E.world_for_stage6(family, HIGH - 1)
                     with self.assertRaises(PermissionError):
-                        p2_ecologies._generate_ecology(
-                            family, 3 << 60, prospective_stage6=True)
-                    with self.assertRaises(TypeError):
-                        p2_ecologies._generate_ecology(
-                            family, HIGH+102, prospective_stage6=1)
+                        E.world_for_stage6(family, 3 << 60)
+                    with self.assertRaises(PermissionError):
+                        E.world_for_stage6(family, True)
+                    with self.assertRaises(ValueError):
+                        E.world_for_stage6("foreign", HIGH + 1)
 
-    def test_exact_p2_f0_mechanisms_with_explicit_reserved_override(self):
-        with patch.object(p2_ecologies, "validate_ecology"), \
-             patch.object(p2_ecologies, "generate", wraps=worldgen.generate) as gen:
-            for i, family in enumerate(p2_ecologies.FAMILIES):
+    def test_prospective_seed_materialization_explicit_reserved_override(self):
+        with patch.object(P2, "validate_ecology"), \
+             patch.object(E, "generate_world", wraps=worldgen.generate) as gen:
+            for i, family in enumerate(P2.FAMILIES):
                 with self.subTest(family=family):
                     seed = HIGH + 123 + i
-                    first = p2_ecologies._generate_ecology(
-                        family, seed, prospective_stage6=True)
+                    first = E.world_for_stage6(family, seed)
                     self.assertEqual(gen.call_args.kwargs,
                                      {"development": False})
-                    again = p2_ecologies._generate_ecology(
-                        family, seed, prospective_stage6=True)
-                    self.assertEqual(
-                        p2_ecologies.fingerprint(first),
-                        p2_ecologies.fingerprint(again))
-                    other = p2_ecologies._generate_ecology(
-                        family, seed+100, prospective_stage6=True)
-                    self.assertNotEqual(
-                        p2_ecologies.fingerprint(first),
-                        p2_ecologies.fingerprint(other))
+                    second = E.world_for_stage6(family, seed)
+                    self.assertEqual(P2.fingerprint(first),
+                                     P2.fingerprint(second))
+                    third = E.world_for_stage6(family, seed+100)
+                    self.assertNotEqual(P2.fingerprint(first),
+                                        P2.fingerprint(third))
 
-    def test_historical_low_seed_p2_behavior_not_modified(self):
-        with patch.object(p2_ecologies, "validate_ecology"), \
-             patch.object(p2_ecologies, "generate", wraps=worldgen.generate) as gen:
-            a = p2_ecologies._generate_ecology("stable", 2034)
-            self.assertEqual(gen.call_args.kwargs, {"development": True})
-            b = p2_ecologies._generate_ecology(
-                "stable", 2034, prospective_stage6=False)
-            self.assertEqual(
-                p2_ecologies.fingerprint(a),
-                p2_ecologies.fingerprint(b))
+    def test_stage6_adapter_matches_exact_historical_f0_for_low_seed_fixtures(self):
+        # Low-seed parity check through a PRIVATE pure adapter helper only.
+        # Public world_for_stage6() itself MUST reject every low seed.
+        with patch.object(P2, "validate_ecology"):
+            for i, family in enumerate(P2.FAMILIES):
+                with self.subTest(family=family):
+                    seed = 2034 + i
+                    historical = P2._generate_ecology(family, seed)
+                    adapter = E._build_family(family, seed)
+                    self.assertEqual(
+                        P2.fingerprint(historical),
+                        P2.fingerprint(adapter))
+                    with self.assertRaises(PermissionError):
+                        E.world_for_stage6(family, seed)
 
 
 if __name__ == "__main__":

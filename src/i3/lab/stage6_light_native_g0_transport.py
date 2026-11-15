@@ -243,13 +243,14 @@ def run_g0(plan: dict, archive_dir: str | Path, published_sha256: str) -> dict:
     cases = g0_cases(plan)
     _claim(root, plan)  # before first possible native World
     from i3.lab import p2_ecologies, two_phase_panel
+    from i3.lab import stage6_light_prospective_ecologies as stage6_ecologies
     from i3.modules.genome import generation_zero, digest as genome_digest
     from i3.runtime.life import run_life
 
     def run_case(case: dict) -> dict:
         genome = generation_zero(case["genome_seed"])
-        spec = p2_ecologies._generate_ecology(
-            case["family"], case["world_seed"], prospective_stage6=True)
+        spec = stage6_ecologies.world_for_stage6(
+            case["family"], case["world_seed"])
         life = run_life(genome, spec, case["life_seed"], HORIZON,
                         keep_trace=True, protocol=PROTOCOL,
                         decision_policy="reference")

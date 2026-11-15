@@ -282,13 +282,14 @@ def native_archive_cases(plan: dict, generation: int,
     No operator-supplied fitness or hidden information is introduced.
     """
     from i3.lab import p2_ecologies
+    from i3.lab import stage6_light_prospective_ecologies as stage6_ecologies
     logical_cases = generation_cases(plan, generation, genomes)
     digests = {}
     for case in logical_cases:
         key = (case["population"], case["family"], case["repeat"])
         if key not in digests:
-            spec = p2_ecologies._generate_ecology(
-                case["family"], case["world_seed"], prospective_stage6=True)
+            spec = stage6_ecologies.world_for_stage6(
+                case["family"], case["world_seed"])
             digests[key] = p2_ecologies.fingerprint(spec)
     return [
         {**{k: v for k, v in row.items() if k != "world_index"},
@@ -365,6 +366,7 @@ def _summary_scores(rows, generation: int,
     """Reduce only sealed original persistence, never output fitness to operator."""
     from i3.modules.genome import digest as genome_digest
     from i3.lab import p2_ecologies
+    from i3.lab import stage6_light_prospective_ecologies as stage6_ecologies
     expected = {(r["population"], r["generation"], r["arm"], r["slot"],
                  r["family"], r["repeat"]): r for r in expected_cases}
     if len(expected) != EXPECTED_GENERATION[generation]:
@@ -386,8 +388,8 @@ def _summary_scores(rows, generation: int,
         paid = billing.get("totals", {})
         opportunity = (case["population"], case["family"], case["repeat"])
         if opportunity not in world_fingerprints:
-            spec = p2_ecologies._generate_ecology(
-                case["family"], case["world_seed"], prospective_stage6=True)
+            spec = stage6_ecologies.world_for_stage6(
+                case["family"], case["world_seed"])
             world_fingerprints[opportunity] = p2_ecologies.fingerprint(spec)
         if (life.get("genome") != genome_digest(ancestor)
                 or manifest.get("genome") != ancestor
@@ -516,6 +518,7 @@ def run_full(plan: dict, destination: str | Path, published_plan_sha: str) -> di
         f.flush()
         os.fsync(f.fileno())
     from i3.lab import two_phase_panel as TP, p2_ecologies
+    from i3.lab import stage6_light_prospective_ecologies as stage6_ecologies
     from i3.runtime.life import run_life
     from i3.modules.genome import digest as genome_digest
     from i3.lab import stage6_light_native_custody_preflight as native_audit
@@ -544,8 +547,8 @@ def run_full(plan: dict, destination: str | Path, published_plan_sha: str) -> di
             original_cases[g] = cases
             archive = root / f"G{g}"
             def one(case: dict) -> dict:
-                spec = p2_ecologies._generate_ecology(case["family"],
-                    case["world_seed"], prospective_stage6=True)
+                spec = stage6_ecologies.world_for_stage6(
+                    case["family"], case["world_seed"])
                 genome = genomes[case["population"], case["arm"], case["slot"]]
                 life = run_life(genome, spec, case["life_seed"], HORIZON,
                                 keep_trace=True, protocol=plan["protocol"],

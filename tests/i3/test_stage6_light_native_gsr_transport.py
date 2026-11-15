@@ -72,7 +72,7 @@ class Stage6FullEngineeringTests(unittest.TestCase):
                               for r in cases}), 2304)
         self.assertEqual(len({(r["population"], r["family"], r["repeat"])
                               for r in cases}), 96)
-        with patch("i3.lab.p2_ecologies._generate_ecology", return_value="fixture-spec"), \
+        with patch("i3.lab.stage6_light_prospective_ecologies.world_for_stage6", return_value="fixture-spec"), \
              patch("i3.lab.p2_ecologies.fingerprint", return_value="1"*64):
             originals = E.native_archive_cases(self.plan, 0, founders)
         expected_fields = {
