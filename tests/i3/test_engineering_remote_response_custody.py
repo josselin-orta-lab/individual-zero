@@ -4,6 +4,7 @@ The forged signatures use a fixed unit-test HMAC key. These tests exercise
 client-side protocol parsing; they do NOT represent off-host authentication.
 """
 from hashlib import sha256
+from email.message import Message
 import hmac
 from unittest.mock import patch
 import unittest
@@ -20,7 +21,12 @@ class FakeHTTPResponse:
 
     def __init__(self, payload, signature):
         self.payload = payload
-        self.headers = {"X-I3-Signature": signature}
+        # Test the signed payload, not a fictional header-less transport.
+        # The real R2 CAS response includes these three canonical headers.
+        self.headers = Message()
+        self.headers.add_header("X-I3-Signature", signature)
+        self.headers.add_header("Content-Length", str(len(payload)))
+        self.headers.add_header("Content-Type", "application/json")
 
     def __enter__(self):
         return self
