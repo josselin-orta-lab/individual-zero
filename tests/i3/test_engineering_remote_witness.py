@@ -2,8 +2,11 @@
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import closing
 from hashlib import sha256
+from email.message import Message
+import hmac
 from pathlib import Path
 import os
+import secrets
 import socket
 import sqlite3
 import subprocess
@@ -17,7 +20,9 @@ from i3.runtime.engineering_step_ledger import (
     REMOTE_MODE, INTENT_SCHEMA, RECEIPT_SCHEMA, DB_NAME as LEDGER_DB,
     initialize, inspect, prepare, seal,
 )
-from i3.runtime.engineering_remote_witness import RemoteEngineeringWitness
+from i3.runtime.engineering_remote_witness import (
+    SCHEMA, RemoteEngineeringWitness, canonical, claim_data,
+)
 
 
 class RemoteAuthorityEngineeringTests(unittest.TestCase):
@@ -238,6 +243,111 @@ class RemoteAuthorityEngineeringTests(unittest.TestCase):
                 "life_seed":self.claim.life_seed,
                 "birth_index":self.claim.birth_index},sequence=4,
                 previous_head_sha256=final["head_sha256"],intent_sha256="b"*64)
+
+
+    def test_raw_http_duplicate_or_ambiguous_headers_stop_before_nonce_journal(self):
+        """Even a request with a valid first HMAC must have unambiguous framing."""
+        body = canonical({
+            "schema": SCHEMA, "authority_id": self.ID,
+            "operation": "verify", "claim": claim_data(self.claim),
+        })
+        with closing(sqlite3.connect(self.database)) as conn:
+            before = conn.execute("SELECT COUNT(*) FROM request_nonces").fetchone()[0]
+
+        cases = (
+            ("duplicate-length", ("Content-Length", str(len(body)))),
+            ("duplicate-nonce", ("X-I3-Nonce", None)),
+            ("duplicate-signature", ("X-I3-Signature", None)),
+            ("duplicate-type", ("Content-Type", "application/json")),
+            ("transfer-encoding", ("Transfer-Encoding", "chunked")),
+            ("content-encoding", ("Content-Encoding", "gzip")),
+            ("expect-continue", ("Expect", "100-continue")),
+            ("noncanonical-length", None),
+            ("wrong-type", None),
+        )
+        for name, extra in cases:
+            with self.subTest(case=name):
+                nonce = secrets.token_hex(16)
+                mac = hmac.new(
+                    self.KEY, b"Q\n" + nonce.encode() + b"\n" + body,
+                    sha256).hexdigest()
+                headers = [
+                    ("Host", "127.0.0.1"),
+                    ("Content-Type", "application/json"),
+                    ("Content-Length", str(len(body))),
+                    ("X-I3-Nonce", nonce),
+                    ("X-I3-Signature", mac),
+                ]
+                if name == "noncanonical-length":
+                    headers[2] = ("Content-Length", "0" + str(len(body)))
+                elif name == "wrong-type":
+                    headers[1] = ("Content-Type", "text/plain")
+                elif name == "duplicate-nonce":
+                    headers.append(("X-I3-Nonce", nonce))
+                elif name == "duplicate-signature":
+                    headers.append(("X-I3-Signature", mac))
+                elif extra is not None:
+                    headers.append(extra)
+                request = (b"POST /v1/command HTTP/1.1\r\n"
+                           + b"".join(f"{k}: {v}\r\n".encode("ascii")
+                                      for k, v in headers)
+                           + b"\r\n" + body)
+                with socket.create_connection(("127.0.0.1", self.port),
+                                              timeout=2.0) as sock:
+                    sock.settimeout(2.0)
+                    sock.sendall(request)
+                    with sock.makefile("rb") as incoming:
+                        status = incoming.readline(512)
+                self.assertIn(b" 403 ", status)
+                with closing(sqlite3.connect(self.database)) as conn:
+                    count = conn.execute(
+                        "SELECT COUNT(*) FROM request_nonces").fetchone()[0]
+                self.assertEqual(count, before,
+                                 "rejected request must not journal its nonce")
+
+    def test_client_rejects_ambiguous_http_response_before_hmac_acceptance(self):
+        """No network and no motor: reject ambiguity before interpreting bytes."""
+        class FakeResponse:
+            status = 200
+
+            def __init__(self, headers):
+                self.headers = headers
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_):
+                return False
+
+            def read(self, size):
+                return b"{}"
+
+        class FakeOpener:
+            def __init__(self, response):
+                self.response = response
+
+            def open(self, *_args, **_kwargs):
+                return self.response
+
+        cases = (
+            ("duplicate-signature", ("X-I3-Signature", "f"*64)),
+            ("duplicate-length", ("Content-Length", "2")),
+            ("duplicate-type", ("Content-Type", "application/json")),
+            ("transfer-encoding", ("Transfer-Encoding", "chunked")),
+            ("content-encoding", ("Content-Encoding", "gzip")),
+            ("noncanonical-length", ("Content-Length", "02")),
+        )
+        for name, extra in cases:
+            with self.subTest(case=name):
+                headers = Message()
+                headers.add_header("X-I3-Signature", "f"*64)
+                headers.add_header("Content-Length", "2")
+                headers.add_header("Content-Type", "application/json")
+                headers.add_header(*extra)
+                self.client._opener = FakeOpener(FakeResponse(headers))
+                with self.assertRaisesRegex(
+                        PermissionError, "ambiguous remote authority response"):
+                    self.client._request("verify", claim=claim_data(self.claim))
 
 
 if __name__=="__main__":
