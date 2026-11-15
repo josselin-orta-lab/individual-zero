@@ -217,10 +217,31 @@ class NativeTraceFundingTests(unittest.TestCase):
                     for expected, observed in zip(native_body, audited_body):
                         self.assertAlmostEqual(expected, observed, places=10)
                     self.assertEqual(audited_death, list(native_death))
-        for action in ('manger', 'boire'):
+        # PR #1404 extends the pure transition to resource actions: the
+        # supplied effects are now independently checked against stock/token
+        # custody by the detached shadow at the inspector boundary.
+        for action, extra in (
+                ('manger', {'food_gain': 12.0, 'integrity_delta': -2.0}),
+                ('boire', {'water_gain': 30.0})):
+            with self.subTest(action=action, resource_effects=extra):
+                native_body, native_death = transition(
+                    [60.] * 5, action, laws, CognitiveWork(), **extra)
+                audited_body, audited_death = v._effect_free_transition(
+                    [60.] * 5, asdict(CognitiveWork()), asdict(laws),
+                    action, **extra)
+                for expected, observed in zip(native_body, audited_body):
+                    self.assertAlmostEqual(expected, observed, places=10)
+                self.assertEqual(audited_death, list(native_death))
+        # Unrelated motor actions cannot mint water or food gains.
+        for action, extra in (
+                ('attendre', {'water_gain': 10.0}),
+                (None, {'food_gain': 8.0}),
+                ('boire', {'food_gain': 2.0}),
+                ('manger', {'water_gain': 4.0})):
             with self.assertRaises(ValueError):
-                v._effect_free_transition([60.] * 5, asdict(CognitiveWork()),
-                                          asdict(laws), action)
+                v._effect_free_transition(
+                    [60.] * 5, asdict(CognitiveWork()), asdict(laws),
+                    action, **extra)
 
     def test_full_native_law_snapshot_required(self):
         laws = asdict(BodyLaws())

@@ -3,10 +3,10 @@
 A native life with ``keep_trace=False`` cannot establish per-step funding from
 its end-of-life totals. This optional strict audit requires an entire trace and
 recomputes its two native hash chains and every recorded cognitive debit.
-For actions without resource gains, the verifier also independently replays
-the deterministic five-channel BodyLaws transition and basic position motion.
-This is NOT a World/resource/inventory replay, proof that Mind chose an action,
-independent source attestation, or permission to open a World.
+An independent dictionary-only shadow reconstructs the declared resource
+stock/inventory/motor changes from the supplied initial WorldSpec snapshot.
+Every declared step must match native five-channel physical consequences.
+No claim is made that the Mind chose the action or that a World ever ran.
 """
 from __future__ import annotations
 
@@ -17,6 +17,7 @@ from math import isfinite
 from pathlib import Path
 
 from i3.lab import stage6_light_native_custody_preflight as custody
+from i3.lab import stage6_light_resource_shadow as resources
 
 BASE_FIELDS = ("t", "action", "param", "option", "body", "pos", "dead")
 TRACE_FIELDS = set(BASE_FIELDS) | {"cognitive_work", "cognitive_accounting",
@@ -67,14 +68,20 @@ def _clamp(value: float) -> float:
 
 
 def _effect_free_transition(before: list, decision: dict, laws: dict,
-                            action: str | None) -> tuple[list, list[str]]:
-    """Independent native body.transition parity when no resource gain occurs.
+                            action: str | None, *, food_gain: float = 0.0,
+                            integrity_delta: float = 0.0,
+                            water_gain: float = 0.0) -> tuple[list, list[str]]:
+    """Independent native body.transition for all declared action effects.
 
-    Token consumption and water acquisition require World state unavailable to
-    this reader, so manger/boire MUST NOT enter this function.
+    Resource gains are reconstructed from supplied, deterministic WorldSpec
+    state by the detached resource shadow, never read from trace.info.
     """
-    if action not in EFFECT_FREE_ACTIONS:
-        raise ValueError("resource action requires unavailable original World replay")
+    if action is not None and action not in ACTION_COSTS:
+        raise ValueError("unexpected native motor action")
+    if action != "manger" and (food_gain or integrity_delta):
+        raise ValueError("food gain without an eating action")
+    if action != "boire" and water_gain:
+        raise ValueError("water gain without a drinking action")
     funded = before[:]
     funded[0] -= _charge(laws, decision, "energy")
     funded[4] -= _charge(laws, decision, "vigilance")
@@ -100,6 +107,11 @@ def _effect_free_transition(before: list, decision: dict, laws: dict,
                      food / laws["rest_food_cost_per_integrity"])
         integrity += repair
         food -= repair * laws["rest_food_cost_per_integrity"]
+    if action == "manger":
+        food += food_gain
+        integrity += integrity_delta
+    elif action == "boire":
+        water += water_gain
     after = [_clamp(x) for x in (energy, food, water, integrity, vigilance)]
     reasons = [name for name, idx in (("zero_food", 1), ("zero_water", 2),
                                       ("zero_integrity", 3)) if after[idx] <= 0.0]
@@ -222,8 +234,9 @@ def inspect_traced_life(identity: dict, life: dict, *, expected_protocol: str,
             not 0 <= initial_position[1] < world["height"]):
         raise ValueError("invalid declared native spawn")
     prev_position = initial_position
+    resource_shadow = resources.initialize(world)
     effect_free_checked = 0
-    resource_steps_unreplayed = 0
+    resource_actions_checked = 0
     head = sha256(json.dumps([life["genome"], life["world"],
                               life["life_seed"], life["horizon"]],
                              separators=(",", ":")).encode()).hexdigest()
@@ -264,17 +277,22 @@ def inspect_traced_life(identity: dict, life: dict, *, expected_protocol: str,
         phases = [_phase(row["funding_phases"][name], laws) for name in PHASES]
         if not all(_same(phases[0][2][k], expected_start[k]) for k in range(5)):
             raise ValueError("funded-body chronology breaks between native steps")
+        effects = resources.declared_step(resource_shadow, row["action"],
+                                          row["param"], t)
+        if effects["pos"] != pos:
+            raise ValueError("declared resource world contradicts traced position")
+        expected_physical, expected_death = _effect_free_transition(
+            phases[0][2], phases[0][0], laws, row["action"],
+            food_gain=effects["food_gain"],
+            integrity_delta=effects["integrity_delta"],
+            water_gain=effects["water_gain"])
+        if (not all(_same(phases[1][2][k], expected_physical[k])
+                    for k in range(5)) or dead != expected_death):
+            raise ValueError("native physical transition/resource effect/death mismatch")
         if row["action"] in EFFECT_FREE_ACTIONS:
-            expected_physical, expected_death = _effect_free_transition(
-                phases[0][2], phases[0][0], laws, row["action"])
-            if (not all(_same(phases[1][2][k], expected_physical[k])
-                        for k in range(5)) or dead != expected_death):
-                raise ValueError("native effect-free physical transition/death mismatch")
             effect_free_checked += 1
         else:
-            # Resource quantities/inventory and scheduled effects need a full
-            # World replay, which is deliberately NOT available to this audit.
-            resource_steps_unreplayed += 1
+            resource_actions_checked += 1
         expected_start = current_body
         if not all(_same(phases[-1][3][k], current_body[k]) for k in range(5)):
             raise ValueError("post-learning body must equal traced native body")
@@ -326,7 +344,9 @@ def inspect_traced_life(identity: dict, life: dict, *, expected_protocol: str,
         "status": "SUPPLIED_TRACE_TWO_CURRENCY_CHAIN_MATCH_NOT_ATTESTED",
         "trace_steps_checked": len(trace),
         "effect_free_physical_transitions_checked": effect_free_checked,
-        "resource_steps_not_physically_replayed": resource_steps_unreplayed,
+        "resource_steps_not_physically_replayed": 0,
+        "declared_resource_actions_replayed": resource_actions_checked,
+        "declared_action_world_dynamics_recomputed": True,
         "native_position_continuity_checked": True,
         "complete_world_physics_replayed": False,
         "trace_head_recomputed": True,
