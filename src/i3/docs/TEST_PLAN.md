@@ -1,5 +1,10 @@
 # I3: Test plan
 
+## Stage-6-light full supplied-original selection binding (15 November 2026; no World)
+
+[`test_stage6_light_original_selection_bridge.py`](../../../tests/i3/test_stage6_light_original_selection_bridge.py) checks exact source-only re-read of archived gzip originals, manifest SHA stability after full native custody pass, 6,912 *original-derived* G0/G1 persistence receipts, 1,920 genotype digests, and 1,536 declared draws/mutations, using only a **fabricated** 11,520-record full panel. Adversarial tests reject altered gzip, identity, path traversal, unpaid native accounting, forged parent and prior-generation seal, and modified uniform draw seed. The adjacent [scope/limitations](studies/stage6-light-preparation/STAGE6_LIGHT_ORIGINAL_SELECTION_BRIDGE_2026-11-15.md) explicitly deny independent original/execution timestamp, source authority, pre-exposure seed commitments, runtime action replay, actual population independence and all World/cohort permissions. Exactly pinned Python 3.11 and 3.12 full CI must run before merge.
+
+
 ## Stage-6-light toy persistence-to-parent-to-genome preflight (15 November 2026)
 
 [`test_stage6_light_selection_parent_preflight.py`](../../../tests/i3/test_stage6_light_selection_parent_preflight.py) checks six-opportunity exact-count mock persistence receipts, selected weighted rank/draw versus uniform random-parent draw, fake parent seed and mutation ancestry consistency with native-v4 source-parity tests from #1399, and adversarial tamper/missing/duplicate/permission denial. [Scope and limitations](studies/stage6-light-preparation/STAGE6_LIGHT_SELECTION_PARENT_OFFLINE_PREFLIGHT_2026-11-15.md): mock seeds can be chosen after an outcome and are **not** an independent proof of sampling or historically sealed custody; no real native World/run, new life, original archive, science authorisation, or release. Full source CI required on Python 3.11/3.12.
