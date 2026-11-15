@@ -3,7 +3,9 @@
 A native life with ``keep_trace=False`` cannot establish per-step funding from
 its end-of-life totals. This optional strict audit requires an entire trace and
 recomputes its two native hash chains and every recorded cognitive debit.
-This is not a physical World replay, proof that Mind actually chose an action,
+For actions without resource gains, the verifier also independently replays
+the deterministic five-channel BodyLaws transition and basic position motion.
+This is NOT a World/resource/inventory replay, proof that Mind chose an action,
 independent source attestation, or permission to open a World.
 """
 from __future__ import annotations
@@ -28,6 +30,98 @@ RATES = {
     "vigilance": ("vigilance_per_cycle", "vigilance_per_simulated_step",
                   None, "vigilance_per_replay"),
 }
+
+# Mirror exactly the BodyLaws v2 asdict snapshot, not a partial bill-only
+# declaration. Reference parity is exercised against i3.modules.body in TESTS,
+# never imported by the auditor. All five channels are native [0, 100].
+LAW_FIELDS = frozenset({
+    "food_decay", "water_decay", "sleep_energy_gain",
+    "sleep_food_cost_per_energy", "rest_integrity_gain",
+    "rest_food_cost_per_integrity", "min_water_for_metabolism",
+    "energy_per_cycle", "energy_per_simulated_step",
+    "energy_per_memory_item", "energy_per_replay",
+    "vigilance_per_cycle", "vigilance_per_simulated_step",
+    "vigilance_per_replay", "sleep_vigilance_gain", "version",
+})
+ACTION_COSTS = {
+    "se_deplacer": 2.0, "collecter": 1.0, "manger": 0.5,
+    "boire": 0.5, "dormir": 0.25, "attendre": 0.35,
+}
+MOVES = {"N": (0, -1), "E": (1, 0), "S": (0, 1), "W": (-1, 0)}
+EFFECT_FREE_ACTIONS = frozenset((None, "attendre", "dormir",
+                                 "se_deplacer", "collecter"))
+
+
+def _validate_laws(laws: object) -> dict:
+    if (type(laws) is not dict or set(laws) != LAW_FIELDS or
+            laws.get("version") != "i3-body-laws-v2" or
+            any(not _number(v) for k, v in laws.items() if k != "version") or
+            laws["sleep_food_cost_per_energy"] <= 0 or
+            laws["rest_food_cost_per_integrity"] <= 0):
+        raise ValueError("incomplete or invalid native v2 physical law snapshot")
+    return laws
+
+
+def _clamp(value: float) -> float:
+    return 0.0 if value < 0.0 else 100.0 if value > 100.0 else value
+
+
+def _effect_free_transition(before: list, decision: dict, laws: dict,
+                            action: str | None) -> tuple[list, list[str]]:
+    """Independent native body.transition parity when no resource gain occurs.
+
+    Token consumption and water acquisition require World state unavailable to
+    this reader, so manger/boire MUST NOT enter this function.
+    """
+    if action not in EFFECT_FREE_ACTIONS:
+        raise ValueError("resource action requires unavailable original World replay")
+    funded = before[:]
+    funded[0] -= _charge(laws, decision, "energy")
+    funded[4] -= _charge(laws, decision, "vigilance")
+    if funded[0] < 0 or funded[4] < 0:
+        raise ValueError("native cognition not physically payable")
+    energy, food, water, integrity, vigilance = funded
+    if action not in (None, "dormir") and energy < ACTION_COSTS[action]:
+        raise ValueError("native motor action not physically payable")
+    food = _clamp(food - laws["food_decay"])
+    water = _clamp(water - laws["water_decay"])
+    hydrated = water >= laws["min_water_for_metabolism"]
+    if action == "dormir":
+        possible = min(laws["sleep_energy_gain"], max(0.0, 100.0 - energy))
+        gained = (min(possible, food / laws["sleep_food_cost_per_energy"])
+                  if hydrated else 0.0)
+        energy += gained
+        food -= gained * laws["sleep_food_cost_per_energy"]
+        vigilance += laws["sleep_vigilance_gain"]
+    elif action is not None:
+        energy -= ACTION_COSTS[action]
+    if action in ("attendre", "dormir") and hydrated:
+        repair = min(laws["rest_integrity_gain"], max(0.0, 100.0 - integrity),
+                     food / laws["rest_food_cost_per_integrity"])
+        integrity += repair
+        food -= repair * laws["rest_food_cost_per_integrity"]
+    after = [_clamp(x) for x in (energy, food, water, integrity, vigilance)]
+    reasons = [name for name, idx in (("zero_food", 1), ("zero_water", 2),
+                                      ("zero_integrity", 3)) if after[idx] <= 0.0]
+    return after, reasons
+
+
+def _position_after(prev: list, action: str | None, param: object,
+                    world: dict) -> list:
+    """Simple native World._step position rule; inventory/cell NOT attested."""
+    if action == "se_deplacer":
+        if type(param) is not str or param not in MOVES:
+            raise ValueError("invalid native directional movement")
+        dx, dy = MOVES[param]
+        expected = [prev[0] + dx, prev[1] + dy]
+    else:
+        if action in (None, "dormir", "attendre", "boire") and param is not None:
+            raise ValueError("native param forbidden for this action")
+        expected = prev[:]
+    if not (0 <= expected[0] < world["width"] and
+            0 <= expected[1] < world["height"]):
+        raise ValueError("native movement exits the declared World bounds")
+    return expected
 
 
 def _number(value: object, *, maximum: float = float("inf")) -> bool:
@@ -118,13 +212,18 @@ def inspect_traced_life(identity: dict, life: dict, *, expected_protocol: str,
     if (type(trace) is not list or len(trace) != life["steps_lived"] or
             not 1 <= len(trace) <= 400):
         raise ValueError("full keep_trace=True evidence is required")
-    laws = life["manifest"]["world"]["laws"]
-    if type(laws) is not dict or laws.get("version") != "i3-body-laws-v2":
-        raise ValueError("native v2 laws required for trace cost replay")
-    for names in RATES.values():
-        if any(key is not None and not _number(laws.get(key)) for key in names):
-            raise ValueError("unreadable native two-currency rate")
-    expected_start = _body(life["manifest"]["world"]["body"])
+    world = life["manifest"]["world"]
+    laws = _validate_laws(world["laws"])
+    expected_start = _body(world["body"])
+    initial_position = world["spawn"]
+    if (type(initial_position) is not list or len(initial_position) != 2 or
+            not all(type(x) is int and x >= 0 for x in initial_position) or
+            not 0 <= initial_position[0] < world["width"] or
+            not 0 <= initial_position[1] < world["height"]):
+        raise ValueError("invalid declared native spawn")
+    prev_position = initial_position
+    effect_free_checked = 0
+    resource_steps_unreplayed = 0
     head = sha256(json.dumps([life["genome"], life["world"],
                               life["life_seed"], life["horizon"]],
                              separators=(",", ":")).encode()).hexdigest()
@@ -155,11 +254,27 @@ def inspect_traced_life(identity: dict, life: dict, *, expected_protocol: str,
                 row["action"] not in {"se_deplacer", "collecter", "manger",
                                       "boire", "dormir", "attendre"}):
             raise ValueError("unexpected motor action in trace")
+        expected_position = _position_after(prev_position, row["action"],
+                                            row["param"], world)
+        if pos != expected_position:
+            raise ValueError("native action contradicts physical position")
+        prev_position = pos
         if type(row["funding_phases"]) is not dict or set(row["funding_phases"]) != set(PHASES):
             raise ValueError("both real cognitive phases required")
         phases = [_phase(row["funding_phases"][name], laws) for name in PHASES]
         if not all(_same(phases[0][2][k], expected_start[k]) for k in range(5)):
             raise ValueError("funded-body chronology breaks between native steps")
+        if row["action"] in EFFECT_FREE_ACTIONS:
+            expected_physical, expected_death = _effect_free_transition(
+                phases[0][2], phases[0][0], laws, row["action"])
+            if (not all(_same(phases[1][2][k], expected_physical[k])
+                        for k in range(5)) or dead != expected_death):
+                raise ValueError("native effect-free physical transition/death mismatch")
+            effect_free_checked += 1
+        else:
+            # Resource quantities/inventory and scheduled effects need a full
+            # World replay, which is deliberately NOT available to this audit.
+            resource_steps_unreplayed += 1
         expected_start = current_body
         if not all(_same(phases[-1][3][k], current_body[k]) for k in range(5)):
             raise ValueError("post-learning body must equal traced native body")
@@ -210,6 +325,10 @@ def inspect_traced_life(identity: dict, life: dict, *, expected_protocol: str,
         "schema": "i3-stage6-native-trace-funding-preflight/v1",
         "status": "SUPPLIED_TRACE_TWO_CURRENCY_CHAIN_MATCH_NOT_ATTESTED",
         "trace_steps_checked": len(trace),
+        "effect_free_physical_transitions_checked": effect_free_checked,
+        "resource_steps_not_physically_replayed": resource_steps_unreplayed,
+        "native_position_continuity_checked": True,
+        "complete_world_physics_replayed": False,
         "trace_head_recomputed": True,
         "funding_evidence_head_recomputed": True,
         "two_currency_phase_and_total_bills_checked": True,
