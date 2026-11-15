@@ -230,9 +230,12 @@ def choose_descendants(plan: dict, next_generation: int, prior: dict,
         for arm in ARMS:
             prev = "shared" if next_generation == 1 else arm
             if arm == "selected":
+                # Read each prior individual's sealed persistence exactly once.
+                # Random-parent branch never touches this table or cache.
+                score_cache = {s: persistence[p, prev, s]
+                               for s in range(SLOTS)}
                 ranking = sorted(range(SLOTS), key=lambda s: (
-                    -persistence[p, prev, s][0],
-                    -persistence[p, prev, s][1], s))
+                    -score_cache[s][0], -score_cache[s][1], s))
             for slot in range(SLOTS):
                 row = lookup[p, next_generation, arm, slot]
                 rng = random.Random(row["parent_draw_seed"])
