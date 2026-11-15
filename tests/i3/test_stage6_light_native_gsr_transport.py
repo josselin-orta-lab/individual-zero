@@ -72,6 +72,17 @@ class Stage6FullEngineeringTests(unittest.TestCase):
                               for r in cases}), 2304)
         self.assertEqual(len({(r["population"], r["family"], r["repeat"])
                               for r in cases}), 96)
+        with patch("i3.lab.p2_ecologies._generate_ecology", return_value="fixture-spec"), \
+             patch("i3.lab.p2_ecologies.fingerprint", return_value="1"*64):
+            originals = E.native_archive_cases(self.plan, 0, founders)
+        expected_fields = {
+            "population", "generation", "arm", "slot", "family", "repeat",
+            "logical_world", "world_seed", "life_seed", "genome_sha256",
+            "world_sha256", "source_sha256",
+        }
+        self.assertEqual(len(originals), 2304)
+        self.assertTrue(all(set(row) == expected_fields for row in originals))
+        self.assertEqual({row["world_sha256"] for row in originals}, {"1"*64})
         with self.assertRaises(ValueError):
             E.generation_cases(self.plan, 1, founders)
         with self.assertRaises(ValueError):
@@ -83,7 +94,7 @@ class Stage6FullEngineeringTests(unittest.TestCase):
             k: (6 if k[-1] == 0 else 0, 2400 if k[-1] == 0 else 6)
             for k in prior
         })
-        children, draws = E.choose_descendants(self.plan, 1, prior, persistence)
+        children, draws = E.choose_descendants(self.plan, 1, prior, persistence, "c"*64)
         self.assertEqual(len(children), 16*2*24)
         self.assertEqual(len(draws), 16*2*24)
         # Selected arm reads each of 24 parent fitness tuples once per pop.
@@ -97,7 +108,7 @@ class Stage6FullEngineeringTests(unittest.TestCase):
         children2, draws2 = E.choose_descendants(
             self.plan, 1, prior,
             {k: (6 if k[-1] == 0 else 0, 2400 if k[-1] == 0 else 6)
-             for k in prior})
+             for k in prior}, "c"*64)
         self.assertEqual(children, children2)
         self.assertEqual(draws, draws2)
         one = E.generation_cases(self.plan, 1, children)
@@ -106,7 +117,7 @@ class Stage6FullEngineeringTests(unittest.TestCase):
         second_scores = {(p, arm, slot): (slot % 6, 100 + slot)
                          for p in range(16) for arm in E.ARMS for slot in range(24)}
         grandchildren, g2_draws = E.choose_descendants(self.plan, 2, children,
-                                                       second_scores)
+                                                       second_scores, "d"*64)
         self.assertEqual(len(g2_draws), 768)
         self.assertEqual(len(E.generation_cases(self.plan, 2, grandchildren)), 4608)
         self.assertEqual(len(grandchildren), 768)

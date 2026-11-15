@@ -177,8 +177,32 @@ def generation_cases(plan: dict, generation: int, genomes: dict) -> list[dict]:
     return cases
 
 
+
+
+def native_archive_cases(plan: dict, generation: int,
+                         genomes: dict) -> list[dict]:
+    """Materialize exactly the immutable native-original custody identity ABI.
+
+    This is live engineering only, after the source-exact no-retry archive claim.
+    No operator-supplied fitness or hidden information is introduced.
+    """
+    from i3.lab import p2_ecologies
+    logical_cases = generation_cases(plan, generation, genomes)
+    digests = {}
+    for case in logical_cases:
+        key = (case["population"], case["family"], case["repeat"])
+        if key not in digests:
+            spec = p2_ecologies._generate_ecology(case["family"], case["world_seed"])
+            digests[key] = p2_ecologies.fingerprint(spec)
+    return [
+        {**{k: v for k, v in row.items() if k != "world_index"},
+         "world_sha256": digests[row["population"], row["family"], row["repeat"]],
+         "source_sha256": plan["source_files_sha256"]}
+        for row in logical_cases
+    ]
+
 def choose_descendants(plan: dict, next_generation: int, prior: dict,
-                       persistence: dict) -> tuple[dict, list[dict]]:
+                       persistence: dict, prior_manifest_sha256: str) -> tuple[dict, list[dict]]:
     """Predeclared linear-rank persistence vs score-blind uniform parents.
 
     The random_parent branch has no access to, and does not query,
@@ -186,6 +210,9 @@ def choose_descendants(plan: dict, next_generation: int, prior: dict,
     """
     if type(next_generation) is not int or next_generation not in (1, 2):
         raise ValueError("only G0->G1 or G1->G2 is permitted")
+    if (type(prior_manifest_sha256) is not str or
+            G0.DIGEST.fullmatch(prior_manifest_sha256) is None):
+        raise ValueError("missing prior-generation sealed original SHA")
     from i3.modules.genome import validate, mutate, digest as genome_digest
     prior_arm = ("shared",) if next_generation == 1 else ARMS
     expected = {(p, arm, slot) for p in range(POPS)
@@ -219,19 +246,20 @@ def choose_descendants(plan: dict, next_generation: int, prior: dict,
                 validate(child)
                 children[p, arm, slot] = child
                 receipts.append({
+                    "schema": "i3-stage6-parent-draw-supplied-claim/v1",
                     "population": p, "generation": next_generation,
                     "arm": arm, "slot": slot, "parent_slot": parent_slot,
                     "parent_genome_sha256": genome_digest(parent),
-                    "genome_sha256": genome_digest(child),
-                    "parent_draw_seed": row["parent_draw_seed"],
-                    "mutation_seed": row["mutation_seed"],
+                    "offspring_genome_sha256": genome_digest(child),
+                    "draw_seed": row["parent_draw_seed"],
+                    "prior_generation_manifest_sha256": prior_manifest_sha256,
                 })
     if len(children) != 768 or len(receipts) != 768:
         raise RuntimeError("missing selected or random-parent offspring")
     return children, receipts
 
 
-def _summary_scores(rows: list[tuple[dict, dict]], generation: int,
+def _summary_scores(rows, generation: int,
                     expected_cases: list[dict], genomes: dict,
                     source_sha: str, source_head: str) -> dict:
     """Reduce only sealed original persistence, never output fitness to operator."""
@@ -239,10 +267,13 @@ def _summary_scores(rows: list[tuple[dict, dict]], generation: int,
     from i3.lab import p2_ecologies
     expected = {(r["population"], r["generation"], r["arm"], r["slot"],
                  r["family"], r["repeat"]): r for r in expected_cases}
-    if len(expected) != EXPECTED_GENERATION[generation] or len(rows) != len(expected):
-        raise ValueError("lost, duplicated or extra sealed life")
+    if len(expected) != EXPECTED_GENERATION[generation]:
+        raise ValueError("case plan has missing or repeated life")
     observed, sums = set(), defaultdict(lambda: [0, 0, 0])
+    world_fingerprints = {}
+    count = 0
     for case, life in rows:
+        count += 1
         key = (case["population"], case["generation"], case["arm"], case["slot"],
                case["family"], case["repeat"])
         if key not in expected or key in observed or case != expected[key]:
@@ -253,10 +284,14 @@ def _summary_scores(rows: list[tuple[dict, dict]], generation: int,
         source = manifest.get("source", {})
         billing = life.get("cognitive_accounting", {})
         paid = billing.get("totals", {})
-        spec = p2_ecologies._generate_ecology(case["family"], case["world_seed"])
+        opportunity = (case["population"], case["family"], case["repeat"])
+        if opportunity not in world_fingerprints:
+            spec = p2_ecologies._generate_ecology(case["family"], case["world_seed"])
+            world_fingerprints[opportunity] = p2_ecologies.fingerprint(spec)
         if (life.get("genome") != genome_digest(ancestor)
                 or manifest.get("genome") != ancestor
-                or manifest.get("world_sha256") != p2_ecologies.fingerprint(spec)
+                or manifest.get("world_sha256") != world_fingerprints[opportunity]
+                or manifest.get("world_sha256") != case["world_sha256"]
                 or manifest.get("execution_model") != "i3-funded-v2"
                 or manifest.get("protocol") != PROTOCOL
                 or source.get("sha256") != source_sha
@@ -279,7 +314,7 @@ def _summary_scores(rows: list[tuple[dict, dict]], generation: int,
         bucket[0] += life["terminal"] == "censored"
         bucket[1] += life["steps_lived"]
         bucket[2] += 1
-    if observed != set(expected):
+    if count != len(expected) or observed != set(expected):
         raise ValueError("original coverage incomplete")
     if set(sums) != set(genomes) or any(v[2] != 6 for v in sums.values()):
         raise ValueError("not all six original contexts are present per genome")
@@ -368,9 +403,23 @@ def run_full(plan: dict, destination: str | Path, published_plan_sha: str) -> di
     from i3.modules.genome import digest as genome_digest
     phases, outcomes = [], []
     genomes = founder_genomes(plan)
+    # Pre-birth, derivable native v4 founder material for detached lineage audit.
+    from i3.modules.genome import digest as frozen_genome_digest
+    founder_index = [
+        {"population": row["population"], "slot": row["slot"],
+         "seed": row["genome_seed"],
+         "genome": genomes[row["population"], "shared", row["slot"]],
+         "genome_sha256": frozen_genome_digest(
+             genomes[row["population"], "shared", row["slot"]])}
+        for row in plan["founders"]
+    ]
+    with (root / "FOUNDERS.json").open("xb") as f:
+        f.write(_canonical(founder_index))
+        f.flush()
+        os.fsync(f.fileno())
     try:
         for g in range(3):
-            cases = generation_cases(plan, g, genomes)
+            cases = native_archive_cases(plan, g, genomes)
             archive = root / f"G{g}"
             def one(case: dict) -> dict:
                 spec = p2_ecologies._generate_ecology(case["family"],
@@ -390,21 +439,34 @@ def run_full(plan: dict, destination: str | Path, published_plan_sha: str) -> di
             digest = sha256((archive / "MANIFEST.json").read_bytes()).hexdigest()
             phases = _append_phase(root, f"G{g}", digest, phases)
             # An intact sealed G is required before S can even read persistence.
-            original_rows = list(TP.load_sealed(archive))
-            fitness = _summary_scores(original_rows, g, cases, genomes,
+            # Stream full native traces one original at a time: never keep
+            # thousands of 400-step objects resident in rehearsal memory.
+            fitness = _summary_scores(TP.load_sealed(archive), g, cases, genomes,
                                       plan["source_files_sha256"],
                                       plan["source_git_head"])
             if sha256((archive / "MANIFEST.json").read_bytes()).hexdigest() != digest:
                 raise RuntimeError("G manifest changed during G seal")
             phases = _append_phase(root, f"SEAL_G{g}", digest, phases)
-            outcomes.append({"generation": g, "lives": len(original_rows),
+            outcomes.append({"generation": g, "lives": len(cases),
                              "seal_sha256": digest})
             if g < 2:
                 children, parent_receipts = choose_descendants(
-                    plan, g+1, genomes, fitness)
+                    plan, g+1, genomes, fitness, digest)
+                allocation = {(r["population"], r["generation"], r["arm"], r["slot"]): r
+                              for r in plan["draws"] if r["generation"] == g+1}
+                offspring_claims = [{
+                    "population": d["population"], "generation": d["generation"],
+                    "arm": d["arm"], "slot": d["slot"],
+                    "parent_slot": d["parent_slot"],
+                    "mutation_seed": allocation[d["population"], d["generation"],
+                                                 d["arm"], d["slot"]]["mutation_seed"],
+                    "parent_genome_sha256": d["parent_genome_sha256"],
+                    "genome": children[d["population"], d["arm"], d["slot"]],
+                    "genome_sha256": d["offspring_genome_sha256"],
+                } for d in parent_receipts]
                 payload = {"schema": "i3-stage6-native-parent-receipts/v1",
                            "generation": g+1, "prior_generation_sha256": digest,
-                           "draws": parent_receipts}
+                           "draws": parent_receipts, "offspring": offspring_claims}
                 target = root / f"SELECT_G{g+1}.json"
                 with target.open("xb") as f:
                     f.write(_canonical(payload))

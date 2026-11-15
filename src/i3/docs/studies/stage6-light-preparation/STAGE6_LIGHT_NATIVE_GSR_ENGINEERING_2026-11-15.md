@@ -18,6 +18,12 @@ The state machine enforces nine ordered phases: `G0, SEAL_G0, SELECT_G1, G1, SEA
 
 Final R executes the frozen G2 contrasts on all 16 population-level mean gene expressions and the three neutral sentinels. In **engineering**, the outcome values and signs are *not displayed*; the result seals only the SHA of the exercised reduction, counts, manifest digests and protocol status. This code never produces a scientific verdict or an admission ticket, even when an internal calculated sign threshold passes.
 
+## Native original and genealogy compatibility
+
+Before engineering G, the runner binds every archive identity to the **exact read-only Stage6 native custody ABI**: population/generation/arm/slot/family/repeat, logical World, World and life seeds, source-map, genome and WorldSpec digests. World hashes are produced once per 96 fixed opportunities; case generation tests use mocked World building and never open an actual life. The frozen G0 native founder material is written once as `FOUNDERS.json`. Each selection receipt uses the existing offline `stage6_light_original_selection_bridge` draw schema, attaches the preceding manifest SHA to every sampled parent, and saves fully reproducible v4 offspring genomes and mutation seeds for a later **detached** original/genome/draw audit. Neither archive compatibility nor self-sealing is external attestation.
+
+The original-reader in R/S is **streamed one gzip record at a time**, instead of holding up to 4,608 complete 400-step traces in RAM. It caches the immutable WorldSpec hash by six-way opportunity, without changing the P1.3 motor policy, parent weights or any frozen statistical rule. The full historical original-byte and motor-physics auditors remain distinct read-only checks to execute after a real, sealed rehearsal.
+
 ## Exact-source engineering commands (NOT YET EXECUTED)
 
 After merge, on a fresh clean pinned checkout with a separately published plan and explicit archive path, run:
