@@ -15,6 +15,10 @@ The two-sided threshold is **13 or more concordant signs of 16** in *either dire
 
 The historical P3 four-population G2 `beta_u_eff` contrasts were negative in all four, mean -0.375246. They were descriptive, with naive two-sided p=0.125, and cannot justify retuning sign direction or classifying any new trial as positive.
 
+## Prospective F0 World generator admission
+
+P2's historical `worldgen.generate` defaults to `development=True` and **rejects seeds ≥ 1,000,000**. The new one-shot Stage6 allocation deliberately uses a separate `world_seed` namespace `[2 × 2^60, 3 × 2^60)`, so the generator **must** be called with explicit `development=False`. The narrow keyword `prospective_stage6=True` was added to `p2_ecologies._generate_ecology` to handle only that exact seed range; with its default `False`, old P2/P3 and reserve protections remain unchanged. This flag is **not an admission permit**: every Stage6 World is additionally controlled by pre-exposure plan, exact source/method/owner checks and atomic one-shot claim. CI checks the reserved gate via a mocked validation that constructs only WorldSpecs, no actual World/life. Historical P2 F0 semantics (stable/depletion/pulse water schedules and food) are unchanged.
+
 ## Source-exact execution sequence
 
 The new one-shot workflow [`.github/workflows/i3-stage6-one-shot-20261115.yml`](../../../../../.github/workflows/i3-stage6-one-shot-20261115.yml) has a **single main-branch push trigger matching only the workflow file**, then declines all `github.run_attempt > 1` reruns. Do not re-edit that trigger to restart consumed evidence. It makes three sequential gates with no ability to skip an unsuccessful predecessor:

@@ -33,6 +33,7 @@ jobs:
           PYTHONPATH: src
         run: |
           python -m unittest discover -s tests/i3 -p 'test_stage6_light_native_gsr_transport.py' -v
+          python -m unittest discover -s tests/i3 -p 'test_stage6_light_prospective_worlds.py' -v
           python -m unittest discover -s tests/i3 -p 'test_stage6_light_science_admission.py' -v
           python - <<'PY'
           from i3.lab import stage6_light_native_gsr_transport as T

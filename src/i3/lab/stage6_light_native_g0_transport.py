@@ -248,7 +248,8 @@ def run_g0(plan: dict, archive_dir: str | Path, published_sha256: str) -> dict:
 
     def run_case(case: dict) -> dict:
         genome = generation_zero(case["genome_seed"])
-        spec = p2_ecologies._generate_ecology(case["family"], case["world_seed"])
+        spec = p2_ecologies._generate_ecology(
+            case["family"], case["world_seed"], prospective_stage6=True)
         life = run_life(genome, spec, case["life_seed"], HORIZON,
                         keep_trace=True, protocol=PROTOCOL,
                         decision_policy="reference")

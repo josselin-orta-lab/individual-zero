@@ -50,19 +50,30 @@ def _clone_food(spec):
             for q, p in spec.food.items()}
 
 
-def _generate_ecology(family: str, seed: int) -> WorldSpec:
+def _generate_ecology(
+        family: str, seed: int, *, prospective_stage6: bool = False) -> WorldSpec:
+    """Keep P2 unchanged; opt-in Stage6 uses only new, high disjoint World seeds.
+
+    Stage6 is still subject to the source-exact owner/method/claim guard in
+    its runner. This generator flag is NOT a scientific admission ticket.
+    """
+    if type(prospective_stage6) is not bool:
+        raise TypeError("stage6 prospective flag must be bool")
+    if prospective_stage6 and not (
+            type(seed) is int and 2 << 60 <= seed < 3 << 60):
+        raise PermissionError("Stage6 World seed outside frozen prospective namespace")
     if family == "depletion":
-        base = generate("R", seed)
+        base = generate("R", seed, development=not prospective_stage6)
         spec = replace(base, name=f"p2-depletion-{seed}",
                        water={q: WaterSource(s.gain, s.stock, s.max_stock, s.restock_every)
                               for q, s in base.water.items()}, food=_clone_food(base))
     elif family == "stable":
-        base = generate("dev", seed)
+        base = generate("dev", seed, development=not prospective_stage6)
         spec = replace(base, name=f"p2-stable-{seed}",
                        water={q: WaterSource(s.gain) for q, s in base.water.items()},
                        food=_clone_food(base))
     elif family == "pulse":
-        base = generate("dev", seed)
+        base = generate("dev", seed, development=not prospective_stage6)
         # Supply returns on a fixed external cycle rather than individual acts.
         # No hidden schedule is ever added to World.capture().
         waters = {q: WaterSource(s.gain, stock=3, max_stock=3, restock_every=0)
