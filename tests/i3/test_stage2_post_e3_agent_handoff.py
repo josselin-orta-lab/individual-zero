@@ -74,18 +74,42 @@ class PostE3ScientificHandoffContract(unittest.TestCase):
         self.assertNotIn("The cost-only, fixed-action\nsoftware campaigns through",
                          active)
 
-    def test_manifest_instruction_is_not_new_living_experiment_permission(self):
+    def test_owner_policy_allows_new_scoped_studies_not_old_e3_retries(self):
         data = json.loads(MANIFEST.read_text(encoding="utf-8"))
         next_step = data["next_scientific_action"]
-        self.assertTrue(next_step.startswith("HOLD: No new World"))
+        self.assertTrue(next_step.startswith(
+            "15-Nov prospective owner direction ADR-0022"))
         for required in ("CLOSED_NEGATIVE", "0 of 2", "NOT_ISSUED",
-                         "P1.3", "paid", "scoped owner authorization",
+                         "P1.3", "paid",
+                         "new run-specific technical admission manifest",
                          "STAGE2_POST_E3_SCIENTIFIC_STOP_ASSESSMENT"):
             self.assertIn(required, next_step)
         self.assertTrue(any(
             "E3 branch-memory visible-versus-paid-discard" in x
             and "CLOSED_NEGATIVE" in x and "may not be retuned" in x
             for x in data["rules"]))
+        # New owner research permission is recorded separately from all old,
+        # exhausted cohort flags and the frozen deny-all Stage6 method.
+        direction_path = (I3 / "docs" / "studies" /
+                          "stage6-light-preparation" /
+                          "STAGE6_LIGHT_OWNER_RESEARCH_DIRECTION_2026-11-15.json")
+        method_path = direction_path.parent / "STAGE6_LIGHT_PROTOCOL_METHOD_V1.json"
+        policy = json.loads(direction_path.read_text(encoding="utf-8"))
+        method = json.loads(method_path.read_text(encoding="utf-8"))
+        self.assertEqual(policy["decision"],
+                         "OWNER_AUTHORIZES_NEW_PROSPECTIVE_I3_EXPERIMENTS")
+        self.assertTrue(policy["applies_to"]
+                        ["scientific_prospective_experiments_authorized"])
+        self.assertFalse(policy["external_custody_policy"]
+                         ["independent_external_witness_required_to_start_experiment"])
+        self.assertEqual(policy["current_execution"]["status"],
+                         "OWNER_POLICY_AUTHORIZED_EXECUTION_NOT_YET_INSTANTIATED")
+        self.assertEqual(policy["current_execution"]["actual_lives_created_by_this_decision"], 0)
+        self.assertFalse(method["authorization"]["worlds_allowed"])
+        self.assertFalse(method["authorization"]["cohorts_allowed"])
+        self.assertEqual(data["governance"]
+                         ["adr_0022_prospective_experiments_owner_authorized"],
+                         "NEW_SCOPE_MUST_BE_INSTANTIATED_NO_EXTERNAL_WITNESS_REQUIRED")
 
     def test_recent_handoff_links_exist_and_are_not_old_run_permission(self):
         for path in (AGENTS, ACTIVE):
