@@ -35,7 +35,7 @@ _SIGNATURE = {"algorithm", "key_id", "value"}
 _PRECOMMIT = {
     "kind", "protocol_id", "run_id", "method_sha256", "source_sha256",
     "transport_sha256", "allocation_sha256", "seed_commitment_sha256",
-    "witness_key_id", "publisher_key_id",
+    "witness_key_id", "publisher_key_id", "publisher_public_key_sha256",
 }
 _PHASE = {
     "kind", "protocol_id", "run_id", "phase", "ordinal",
@@ -149,7 +149,8 @@ def _assert_denied_method(expected_method_sha256: str) -> None:
                 type(custody) is not dict or
                 custody.get("scientific_worlds_and_lives_now_allowed") is not False or
                 custody.get("rehearsal_worlds_and_lives_now_allowed") is not False or
-                custody.get("per_generation_selection_requires_separate_adr0017_acceptance") is not True):
+                custody.get("per_generation_selection_requires_separate_adr0017_acceptance") is not True or
+                custody.get("phases") != list(PHASES)):
             raise ValueError("method permissions are not fully denied")
     except (ValueError, TypeError, KeyError, UnicodeError) as exc:
         raise PermissionError("Stage6 method not valid/deny-all") from exc
@@ -215,6 +216,7 @@ def inspect_signed_custody_prefix(precommit_raw: bytes, event_receipts: list[byt
         "seed_commitment_sha256": expected_seed_commitment_sha256,
         "witness_key_id": witness_key_id,
         "publisher_key_id": publisher_key_id,
+        "publisher_public_key_sha256": sha256(trusted_publisher_public_key).hexdigest(),
     }
     if precommit != expected:
         raise PermissionError("precommit not pinned to the intended method/source/seed roles")

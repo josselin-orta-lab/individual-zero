@@ -55,6 +55,7 @@ class Stage6SignedCustodyTests(unittest.TestCase):
                 "scientific_worlds_and_lives_now_allowed": False,
                 "rehearsal_worlds_and_lives_now_allowed": False,
                 "per_generation_selection_requires_separate_adr0017_acceptance": True,
+                "phases": list(v.PHASES),
             },
         }
         self.method.write_bytes(v._canonical(self.method_data))
@@ -88,6 +89,7 @@ class Stage6SignedCustodyTests(unittest.TestCase):
             "seed_commitment_sha256": self.pins["expected_seed_commitment_sha256"],
             "witness_key_id": self.pins["witness_key_id"],
             "publisher_key_id": self.pins["publisher_key_id"],
+            "publisher_public_key_sha256": _hash(self.publisher_pub),
         }
         self.precommit = self.seal_precommit()
         self.events = self.build_phases()
@@ -174,6 +176,13 @@ class Stage6SignedCustodyTests(unittest.TestCase):
         with self.assertRaises(PermissionError):
             self.audit(trusted_witness_public_key=self.publisher_pub)
 
+    def test_witness_precommit_binds_publisher_key_bytes_not_just_key_id(self):
+        replaced = deepcopy(self.precommit_payload)
+        replaced["publisher_public_key_sha256"] = _hash(b"different publisher key")
+        changed = self.seal_precommit(payload=replaced)
+        with self.assertRaises(PermissionError):
+            self.audit(self.build_phases(precommit=changed), precommit=changed)
+
     def test_publisher_signature_must_verify(self):
         altered = self.events[:]
         obj = json.loads(altered[0])
@@ -244,6 +253,11 @@ class Stage6SignedCustodyTests(unittest.TestCase):
             v._assert_denied_method(self.pins["expected_method_sha256"])
             with self.assertRaises(PermissionError):
                 v._assert_denied_method(_hash(b"unknown method"))
+            self.method_data["custody"]["phases"] = list(reversed(v.PHASES))
+            self.method.write_bytes(v._canonical(self.method_data))
+            with self.assertRaises(PermissionError):
+                v._assert_denied_method(_hash(self.method.read_bytes()))
+            self.method_data["custody"]["phases"] = list(v.PHASES)
             self.method_data["authorization"]["auto_start_allowed"] = True
             self.method.write_bytes(v._canonical(self.method_data))
             with self.assertRaises(PermissionError):
