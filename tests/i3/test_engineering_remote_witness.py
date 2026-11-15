@@ -343,7 +343,10 @@ class RemoteAuthorityEngineeringTests(unittest.TestCase):
                 headers.add_header("X-I3-Signature", "f"*64)
                 headers.add_header("Content-Length", "2")
                 headers.add_header("Content-Type", "application/json")
-                headers.add_header(*extra)
+                if name == "noncanonical-length":
+                    headers.replace_header("Content-Length", "02")
+                else:
+                    headers.add_header(*extra)
                 self.client._opener = FakeOpener(FakeResponse(headers))
                 with self.assertRaisesRegex(
                         PermissionError, "ambiguous remote authority response"):
