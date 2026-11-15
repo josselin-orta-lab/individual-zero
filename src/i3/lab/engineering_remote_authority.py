@@ -416,13 +416,26 @@ def serve_test_loopback(database: Path, authority_id: str, secret: bytes,
                         sha256(peer_der).hexdigest() != expected_writer_cert_sha256):
                     self.send_error(403)
                     return
-            nonce = self.headers.get("X-I3-Nonce", "")
-            signature = self.headers.get("X-I3-Signature", "")
-            length = self.headers.get("Content-Length", "")
-            if (not re.fullmatch(r"[0-9a-f]{32}", nonce)
-                    or not HEX.fullmatch(signature)
-                    or not length.isascii() or not length.isdigit()
-                    or not 1 <= int(length) <= 8192):
+            # HTTPMessage.get() silently selects one of duplicate headers.
+            # Reject ambiguous framing/auth before reading bytes or touching
+            # the durable nonce/CAS journal, even when the first HMAC is valid.
+            def one_header(name):
+                values = self.headers.get_all(name, [])
+                return values[0] if len(values) == 1 else None
+
+            nonce = one_header("X-I3-Nonce")
+            signature = one_header("X-I3-Signature")
+            length = one_header("Content-Length")
+            content_type = one_header("Content-Type")
+            if (type(nonce) is not str or NONCE.fullmatch(nonce) is None
+                    or type(signature) is not str or HEX.fullmatch(signature) is None
+                    or type(length) is not str
+                    or re.fullmatch(r"[1-9][0-9]{0,3}", length) is None
+                    or not 1 <= int(length) <= 8192
+                    or content_type != "application/json"
+                    or self.headers.get_all("Transfer-Encoding", [])
+                    or self.headers.get_all("Content-Encoding", [])
+                    or self.headers.get_all("Expect", [])):
                 self.send_error(403)
                 return
             data = self.rfile.read(int(length))
