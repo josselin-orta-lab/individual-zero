@@ -1,5 +1,10 @@
 # I3: Test plan
 
+## Stage-6-light single-original native trace/funding chain, no World (15 November 2026)
+
+[`test_stage6_light_trace_funding_preflight.py`](../../../tests/i3/test_stage6_light_trace_funding_preflight.py) exercises independent `run_life(keep_trace=True)` hash-formula and paid two-currency phase-accounting reconstruction against an entirely invented 400-step record (without calling World/Mind), and rejects missing/truncated/reordered traces, corrupted bodies/work/phases, forged terminal heads, native summary drift and permission escalation. It **deliberately does not authenticate `trace.info`**, which native hashes exclude. Check the [scope and negative scientific claims](studies/stage6-light-preparation/STAGE6_LIGHT_TRACE_FUNDING_PREFLIGHT_2026-11-15.md): this is one-record software parity, not verification of 11,520 real lives or a physical World/decision replay. Full exact-head Python 3.11/3.12 CI must pass before adoption.
+
+
 ## Stage-6-light full supplied-original selection binding (15 November 2026; no World)
 
 [`test_stage6_light_original_selection_bridge.py`](../../../tests/i3/test_stage6_light_original_selection_bridge.py) checks exact source-only re-read of archived gzip originals, manifest SHA stability after full native custody pass, 6,912 *original-derived* G0/G1 persistence receipts, 1,920 genotype digests, and 1,536 declared draws/mutations, using only a **fabricated** 11,520-record full panel. Adversarial tests reject altered gzip, identity, path traversal, unpaid native accounting, forged parent and prior-generation seal, and modified uniform draw seed. The adjacent [scope/limitations](studies/stage6-light-preparation/STAGE6_LIGHT_ORIGINAL_SELECTION_BRIDGE_2026-11-15.md) explicitly deny independent original/execution timestamp, source authority, pre-exposure seed commitments, runtime action replay, actual population independence and all World/cohort permissions. Exactly pinned Python 3.11 and 3.12 full CI must run before merge.
