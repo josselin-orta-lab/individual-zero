@@ -60,7 +60,7 @@ jobs:
         python-version: ['3.11', '3.12']
     env:
       PYTHONPATH: src
-      CUSTODY: ${{ runner.temp }}/stage6-full-rehearsal
+      CUSTODY: /tmp/i3-stage6-full-rehearsal
       PYVERSION: ${{ matrix.python-version }}
     steps:
       - uses: actions/checkout@v4
@@ -81,7 +81,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: stage6-technical-plan-${{ matrix.python-version }}-${{ github.run_id }}
-          path: ${{ runner.temp }}/stage6-full-rehearsal/PLAN.json
+          path: /tmp/i3-stage6-full-rehearsal/PLAN.json
           if-no-files-found: error
           retention-days: 90
       - name: Run ONCE original full nine-phase native engineering G/S/R
@@ -95,7 +95,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: stage6-technical-receipt-${{ matrix.python-version }}-${{ github.run_id }}
-          path: ${{ runner.temp }}/stage6-full-rehearsal/REHEARSAL_RECEIPT.json
+          path: /tmp/i3-stage6-full-rehearsal/REHEARSAL_RECEIPT.json
           if-no-files-found: error
           retention-days: 90
       - name: Preserve ALL full original gzip records (or partial failure) without retry
@@ -103,7 +103,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: stage6-technical-originals-${{ matrix.python-version }}-${{ github.run_id }}
-          path: ${{ runner.temp }}/stage6-full-rehearsal/originals
+          path: /tmp/i3-stage6-full-rehearsal/originals
           if-no-files-found: warn
           compression-level: 0
           retention-days: 90
@@ -115,7 +115,7 @@ jobs:
     timeout-minutes: 350
     env:
       PYTHONPATH: src
-      CUSTODY: ${{ runner.temp }}/stage6-prospective-science
+      CUSTODY: /tmp/i3-stage6-prospective-science
     steps:
       - uses: actions/checkout@v4
         with:
@@ -131,12 +131,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: stage6-technical-receipt-3.11-${{ github.run_id }}
-          path: ${{ runner.temp }}/stage6-prospective-science/receipts/311
+          path: /tmp/i3-stage6-prospective-science/receipts/311
       - name: Retrieve sealed Python 3.12 full rehearsal receipt
         uses: actions/download-artifact@v4
         with:
           name: stage6-technical-receipt-3.12-${{ github.run_id }}
-          path: ${{ runner.temp }}/stage6-prospective-science/receipts/312
+          path: /tmp/i3-stage6-prospective-science/receipts/312
       - name: Verify both source-exact full rehearsals, neither is scientific evidence
         run: |
           python -m i3.lab.stage6_light_one_shot_receipts combine "$CUSTODY/receipts/311/REHEARSAL_RECEIPT.json" "$CUSTODY/receipts/312/REHEARSAL_RECEIPT.json" "$CUSTODY/REHEARSALS.json"
@@ -148,8 +148,8 @@ jobs:
         with:
           name: stage6-science-preexposure-plan-${{ github.run_id }}
           path: |
-            ${{ runner.temp }}/stage6-prospective-science/SCIENCE_PLAN.json
-            ${{ runner.temp }}/stage6-prospective-science/REHEARSALS.json
+            /tmp/i3-stage6-prospective-science/SCIENCE_PLAN.json
+            /tmp/i3-stage6-prospective-science/REHEARSALS.json
           if-no-files-found: error
           retention-days: 90
       - name: Execute native science G0/SEAL/S1/G1/SEAL/S2/G2/SEAL/R once
@@ -164,9 +164,9 @@ jobs:
         with:
           name: stage6-science-result-${{ github.run_id }}
           path: |
-            ${{ runner.temp }}/stage6-prospective-science/SCIENCE_RESULT.json
-            ${{ runner.temp }}/stage6-prospective-science/originals/R_FINAL_SCIENCE.json
-            ${{ runner.temp }}/stage6-prospective-science/originals/PHASES.jsonl
+            /tmp/i3-stage6-prospective-science/SCIENCE_RESULT.json
+            /tmp/i3-stage6-prospective-science/originals/R_FINAL_SCIENCE.json
+            /tmp/i3-stage6-prospective-science/originals/PHASES.jsonl
           if-no-files-found: error
           retention-days: 90
       - name: Preserve ALL original scientific life histories or failure originals
@@ -174,7 +174,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: stage6-science-originals-${{ github.run_id }}
-          path: ${{ runner.temp }}/stage6-prospective-science/originals
+          path: /tmp/i3-stage6-prospective-science/originals
           if-no-files-found: warn
           compression-level: 0
           retention-days: 90
