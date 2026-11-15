@@ -146,6 +146,16 @@ def science_completion(plan_file: str, originals: str,
         if (len(item["values"]) != 16 or
                 sum(item[k] for k in ("plus", "minus", "zero")) != 16):
             raise ValueError("missing population contrasts or zero sign custody")
+    neutral_count = sum(contrasts[k]["direction_concordant"] for k in
+                        ("omega", "temperament.affiliation",
+                         "temperament.reward_sensitivity"))
+    if (science.get("neutral_marker_alert_count") != neutral_count or
+            science.get("neutral_marker_alert") is not (neutral_count >= 1) or
+            science.get("invalid_neutral_markers") is not (neutral_count >= 2) or
+            science.get("two_sided_sign_null") != {
+                "numerator": 1394, "denominator": 65536,
+                "requires": "INDEPENDENT_SYMMETRIC_NONZERO_SIGNS_NOT_PROVEN"}):
+        raise ValueError("neutral alert or frozen two-sided null was modified")
     bridge = final.get("native_original_selection_audit", {})
     if bridge.get("original_lives_structurally_checked") != 11520:
         raise ValueError("native original bridge not complete")

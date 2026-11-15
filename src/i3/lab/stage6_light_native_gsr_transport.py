@@ -359,7 +359,8 @@ def choose_descendants(plan: dict, next_generation: int, prior: dict,
 
 def _summary_scores(rows, generation: int,
                     expected_cases: list[dict], genomes: dict,
-                    source_sha: str, source_head: str) -> dict:
+                    source_sha: str, source_head: str,
+                    protocol: str) -> dict:
     """Reduce only sealed original persistence, never output fitness to operator."""
     from i3.modules.genome import digest as genome_digest
     from i3.lab import p2_ecologies
@@ -391,7 +392,7 @@ def _summary_scores(rows, generation: int,
                 or manifest.get("world_sha256") != world_fingerprints[opportunity]
                 or manifest.get("world_sha256") != case["world_sha256"]
                 or manifest.get("execution_model") != "i3-funded-v2"
-                or manifest.get("protocol") != PROTOCOL
+                or manifest.get("protocol") != protocol
                 or source.get("sha256") != source_sha
                 or source.get("git_head") != source_head
                 or source.get("working_tree_dirty") is not False
@@ -446,11 +447,18 @@ def final_contrasts(genomes: dict) -> dict:
         contrasts[key] = {"values": values, "plus": plus,
                           "minus": minus, "zero": POPS-plus-minus,
                           "direction_concordant": max(plus, minus) >= 13}
-    invalid = sum(contrasts[k]["direction_concordant"] for k in keys[1:]) >= 2
+    neutral_alert_count = sum(
+        contrasts[k]["direction_concordant"] for k in keys[1:])
+    invalid = neutral_alert_count >= 2
     return {
         "schema": "i3-stage6-light-frozen-population-sign-analysis/v1",
         "unit": "population", "populations": POPS,
         "threshold": 13, "contrast": contrasts,
+        "two_sided_sign_null": {
+            "numerator": 1394, "denominator": 65536,
+            "requires": "INDEPENDENT_SYMMETRIC_NONZERO_SIGNS_NOT_PROVEN"},
+        "neutral_marker_alert_count": neutral_alert_count,
+        "neutral_marker_alert": neutral_alert_count >= 1,
         "invalid_neutral_markers": invalid,
         "status": ("STAGE6_LIGHT_INVALID" if invalid else
                    "STAGE6_LIGHT_SIGN_CONCORDANCE_PASS"
@@ -562,7 +570,8 @@ def run_full(plan: dict, destination: str | Path, published_plan_sha: str) -> di
             # thousands of 400-step objects resident in rehearsal memory.
             fitness = _summary_scores(TP.load_sealed(archive), g, cases, genomes,
                                       plan["source_files_sha256"],
-                                      plan["source_git_head"])
+                                      plan["source_git_head"],
+                                      plan["protocol"])
             if sha256((archive / "MANIFEST.json").read_bytes()).hexdigest() != digest:
                 raise RuntimeError("G manifest changed during G seal")
             phases = _append_phase(root, f"SEAL_G{g}", digest, phases)
