@@ -1,0 +1,62 @@
+{
+  "schema": "i3-owner-prospective-research-direction/v1",
+  "decision_date": "2026-11-15",
+  "decision": "OWNER_AUTHORIZES_NEW_PROSPECTIVE_I3_EXPERIMENTS",
+  "decision_origin": {
+    "kind": "direct_instruction_in_project_conversation",
+    "cryptographically_owner_authenticated": false,
+    "independently_timestamped": false
+  },
+  "source_baseline_main_sha": "22468dd606dda66d0ca3d39fc9de462c0d7d7f66",
+  "adr": "docs/decisions/ADR-0022-i3-owner-authorizes-prospective-experiments-internal-evidence.md",
+  "applies_to": {
+    "generation": "I3",
+    "reference": "P1.3 funded-v2",
+    "engineering_prospective_experiments_authorized": true,
+    "scientific_prospective_experiments_authorized": true,
+    "stage6_light_gsr_lineage_exception_adr0017_accepted": true,
+    "owner_reapproval_of_intermediate_phases_required": false,
+    "previously_consumed_worlds_allowed": false,
+    "legacy_cohort_replay_allowed": false,
+    "active_engine_promotion_authorized": false
+  },
+  "external_custody_policy": {
+    "independent_external_witness_required_to_start_experiment": false,
+    "external_signed_first_seen_required_to_start_experiment": false,
+    "external_m11_highwater_required_for_isolated_laboratory_experiment": false,
+    "independent_provenance_may_be_claimed_without_external_evidence": false,
+    "independent_m11_production_may_be_claimed_without_external_evidence": false,
+    "provenance_label": "INTERNAL_PROSPECTIVE_NOT_EXTERNALLY_ATTESTED"
+  },
+  "prospective_execution_requirements": {
+    "frozen_method_v1_remains_immutable": true,
+    "new_source_and_transport_sha_required": true,
+    "new_disjoint_world_and_life_seed_allocation_required": true,
+    "pre_exposure_internal_commitments_required": true,
+    "complete_source_exact_engineering_rehearsal_for_stage6_science_required": true,
+    "python_311_and_312_checks_required": true,
+    "all_originals_favorable_adverse_null_required": true,
+    "individual_motor_policy_changed_or_forced": false,
+    "terminal_or_uncertain_life_retry_allowed": false,
+    "post_hoc_threshold_tuning_allowed": false,
+    "run_specific_admission_manifest_required": true,
+    "extra_discretionary_owner_signoff_after_technical_release_required": false
+  },
+  "current_execution": {
+    "status": "OWNER_POLICY_AUTHORIZED_EXECUTION_NOT_YET_INSTANTIATED",
+    "manifest_sha256": null,
+    "exact_source_sha": null,
+    "world_indices": null,
+    "allocated_world_seeds": null,
+    "engineering_rehearsal_sha": null,
+    "stage6_scientific_run_id": null,
+    "actual_worlds_created_by_this_decision": 0,
+    "actual_lives_created_by_this_decision": 0,
+    "stage6_scientific_status": "NOT_RUN"
+  },
+  "prior_method_v1_status": "METHOD_FIXED_PREAUTH_NOT_EXECUTABLE_REMAINS_UNCHANGED",
+  "active_generation": "I1",
+  "reference_generation": "I3",
+  "stage2_scientific_verdict": "NOT_ISSUED",
+  "stage2_disposition": "HOLD_NO_VERDICT"
+}

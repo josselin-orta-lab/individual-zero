@@ -13,6 +13,10 @@ This file governs **repository work**, never the mind, values or behavior of a b
 
 For location-oriented lookup use [test placement](tests/TEST_LAYOUT.md), [archive custody](archive/README.md), [research records](docs/research/README.md), and `python tools/repository_layout.py inventory --kind tests --match <topic>`. These navigation tools never move or promote source-pinned evidence.
 
+## 15-Nov-2026 owner direction: i3 prospective experimentation
+
+[ADR-0022](docs/decisions/ADR-0022-i3-owner-authorizes-prospective-experiments-internal-evidence.md) is the owner's **direct authorization** for new prospective I3 research experiments, including the per-generation Stage6-light G/S/R lineage exception. **Do not keep demanding a real off-host custodian, external timestamp, independent M11 signer, or repeated discretionary owner go-ahead to start research-laboratory experiments.** New studies must still freeze their source, method, distinct indices/seeds, non-retry rule, costs and controls in a **new run-specific, pre-exposure internal manifest**, and Stage6 science still requires its prescribed sealed engineering rehearsal. Prior permission flags/old method v1 refer to closed or not-yet-instantiated scopes: **do not mutate them to manufacture admission**; instantiate a new scoped technical release. No source-exact runner/World is launched merely by reading this text. External provenance, independent M11, general scientific validity and active-engine release remain **unclaimed**, not magically satisfied by owner waiver. I1 stays active, I3 development reference, Stage2.1 verdict `NOT_ISSUED/HOLD_NO_VERDICT` until evidence changes. The whole user direction is prospectively recorded, not retroactively applied to historical cohorts.
+
 ## Authority and evidence, never interchangeable
 
 | Question | Primary authority |
