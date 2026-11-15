@@ -139,6 +139,10 @@ class RemoteEngineeringWitness:
                 length = int(lengths[0])
                 answer = resp.read(length + 1)
                 received = signatures[0]
+        except PermissionError:
+            # PermissionError derives from OSError. Preserve a deliberate
+            # protocol refusal instead of mislabeling it as network outage.
+            raise
         except (URLError, HTTPError, TimeoutError, OSError) as exc:
             raise PermissionError("remote authority unavailable/rejected: fail closed") from exc
         if (code != 200 or len(answer) != length or
