@@ -1,5 +1,10 @@
 # I3: Test plan
 
+## R2 test-only authenticated CAS HTTP parser ambiguity (15 November 2026)
+
+[`test_engineering_remote_witness.py`](../../../tests/i3/test_engineering_remote_witness.py) includes a raw-socket test with valid HMAC but duplicated `Content-Length`, nonce, signature or content type, noncanonical length, hostile transfer/content encoding and unsupported `Expect`, verifying a **403 before any nonce journal mutation**. A separate in-memory fake-response test rejects duplicate or noncanonical signed response headers before interpreting HMAC bytes. These are protocol-regression tests, not actual off-host independence, M11 production, source-authenticated births or scientific admissions. Run focused test and full source-exact I3 software suites under Python 3.11 and Python 3.12; no World/cohort generation is required. The [off-host release-gate matrix](engineering/OFFHOST_M11_INDEPENDENCE_RELEASE_GATE_2026-11-13.md) retains its independent operator and high-water `NOT_RUN` blocks.
+
+
 ## Stage6-light genuine off-host custodian acceptance (15 November 2026; NOT_RUN)
 
 [External operator handoff and negative matrix C-01–C-10](studies/stage6-light-preparation/STAGE6_LIGHT_EXTERNAL_CUSTODY_OPERATIONAL_HANDOFF_2026-11-15.md) require an actual separately administered signer and protected monotonic append high-water to record pre-exposure first-seen timestamps, then survive A+B rollback/fork, stale/altered keys and missing original bytes. **All 10 real deployment cases are NOT_RUN**, because no off-host operator or storage has been provided. Neither source-only tests nor signed fictional chains can replace these evidentiary controls. No new software test or authorized native life was executed by this documentary change. Historic #1405 exact-head [I3 CI #43745182122](https://github.com/josselin-orta-lab/individual-zero/actions/runs/43745182122) was 1,541/1,541 PASS on Python 3.11 and 3.12, a *software* result only. #1404 [CI #43743574459](https://github.com/josselin-orta-lab/individual-zero/actions/runs/43743574459) was 1,526/1,526 PASS on each version. The executable Stage6 method and all owner permissions remain deny-all.
