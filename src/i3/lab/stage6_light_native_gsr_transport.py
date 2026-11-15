@@ -23,6 +23,8 @@ from . import stage6_light_native_g0_transport as G0
 
 SCHEMA = "i3-stage6-light-native-gsr-engineering-plan/v1"
 PROTOCOL = "i3-stage6-light-native-gsr-engineering-funded-v2/v1"
+SCIENCE_SCHEMA = "i3-stage6-light-native-gsr-science-plan/v1"
+SCIENCE_PROTOCOL = "i3-stage6-light-native-gsr-science-funded-v2/v1"
 PHASES = ("G0", "SEAL_G0", "SELECT_G1", "G1", "SEAL_G1",
           "SELECT_G2", "G2", "SEAL_G2", "R_FINAL")
 ARMS = ("selected", "random_parent")
@@ -132,6 +134,99 @@ def verify_plan(plan: object) -> dict:
     return plan
 
 
+def _check_rehearsals(receipts: dict, head: str, source_sha: str) -> None:
+    """Two distinct, source-exact FULL rehearsal receipts, not toy CI."""
+    if type(receipts) is not dict or set(receipts) != {"3.11", "3.12"}:
+        raise PermissionError("both full-scale Python rehearsal receipts required")
+    keys = {"schema", "status", "python_version", "source_git_head",
+            "source_files_sha256", "allocation_sha256", "last_chain_sha256",
+            "lives_archived", "planned_worlds", "phase_count",
+            "archive_sha256", "reduction_sha256", "science_admission",
+            "no_retry", "workflow_run_id", "job_name"}
+    allocations = set()
+    for version in ("3.11", "3.12"):
+        r = receipts[version]
+        if type(r) is not dict or set(r) != keys:
+            raise PermissionError("missing or extra full rehearsal evidence")
+        if (r["schema"] != "i3-stage6-rehearsal-receipt/v1" or
+                r["status"] != "ENGINEERING_FULL_GSR_REHEARSAL_NO_SCIENCE" or
+                r["python_version"] != version or
+                r["source_git_head"] != head or
+                r["source_files_sha256"] != source_sha or
+                r["lives_archived"] != 11520 or r["planned_worlds"] != 288 or
+                r["phase_count"] != 9 or
+                r["science_admission"] is not False or
+                r["no_retry"] is not True or
+                type(r["workflow_run_id"]) is not int or
+                r["workflow_run_id"] <= 0 or
+                r["job_name"] != f"engineering-{version}" or
+                any(type(r[k]) is not str or
+                    G0.DIGEST.fullmatch(r[k]) is None
+                    for k in ("allocation_sha256", "last_chain_sha256",
+                              "archive_sha256", "reduction_sha256"))):
+            raise PermissionError("full rehearsals do not prove source-exact technical readiness")
+        allocations.add(r["allocation_sha256"])
+    if len(allocations) != 2:
+        raise PermissionError("two independent rehearsal root allocations required")
+
+
+def make_science_plan(root_hex: str, source_git_head: str,
+                      source_files_sha256: str, archive_root: str,
+                      rehearsals: dict) -> dict:
+    """One distinct, prospective internally attested scientific allocation.
+
+    The frozen legacy Stage6 method remains deny-all, but ADR-0022 already
+    authorizes separately source-locked prospective laboratory science.
+    """
+    _check_rehearsals(rehearsals, source_git_head, source_files_sha256)
+    owner = json.loads(G0.DIRECTION.read_bytes())
+    allowed = owner.get("applies_to", {})
+    needs = owner.get("prospective_execution_requirements", {})
+    if (allowed.get("scientific_prospective_experiments_authorized") is not True
+            or allowed.get("stage6_light_gsr_lineage_exception_adr0017_accepted") is not True
+            or needs.get("run_specific_admission_manifest_required") is not True
+            or needs.get("complete_source_exact_engineering_rehearsal_for_stage6_science_required") is not True
+            or needs.get("all_originals_favorable_adverse_null_required") is not True):
+        raise PermissionError("owner research direction does not permit native Stage6 science")
+    p = make_plan(root_hex, source_git_head, source_files_sha256,
+                  archive_root)
+    if p["allocation_sha256"] in {r["allocation_sha256"]
+                                  for r in rehearsals.values()}:
+        raise PermissionError("science must have fresh independent allocation")
+    del p["allocation_sha256"]
+    p.update({
+        "schema": SCIENCE_SCHEMA,
+        "protocol": SCIENCE_PROTOCOL,
+        "status": "PROSPECTIVE_SCIENCE_ALLOCATED_NOT_EXPOSED",
+        "scientific_admission": True,
+        "science_scope": "F0_ONLY_DIRECTIONAL_PARAMETER_NOT_SURVIVAL_ADVANTAGE",
+        "fixed_primary": "beta_u_eff",
+        "fixed_sign_threshold": 13,
+        "fixed_neutral_sentinels": [
+            "omega", "temperament.affiliation",
+            "temperament.reward_sensitivity"],
+        "fixed_neutral_invalid_at": 2,
+        "engineering_full_scale_receipts": rehearsals,
+        "scientific_verdict_before_exposure": "NOT_ISSUED",
+        "source_of_science_authorization": "ADR-0022_SEPARATE_SCOPE",
+    })
+    p["allocation_sha256"] = _sha(p)
+    return p
+
+
+def verify_science_plan(plan: object) -> dict:
+    if type(plan) is not dict or plan.get("schema") != SCIENCE_SCHEMA:
+        raise PermissionError("no separate source-locked science admission plan")
+    expected = make_science_plan(
+        plan.get("root_hex"), plan.get("source_git_head"),
+        plan.get("source_files_sha256"), plan.get("archive_root"),
+        plan.get("engineering_full_scale_receipts"))
+    if _canonical(expected) != _canonical(plan):
+        raise PermissionError("changed science source, method, seeds or rehearsal evidence")
+    return plan
+
+
+
 def founder_genomes(plan: dict) -> dict:
     """Only innate v4 genes, never inherited memory or World facts."""
     from i3.modules.genome import generation_zero, validate
@@ -187,12 +282,14 @@ def native_archive_cases(plan: dict, generation: int,
     No operator-supplied fitness or hidden information is introduced.
     """
     from i3.lab import p2_ecologies
+    from i3.lab import stage6_light_prospective_ecologies as stage6_ecologies
     logical_cases = generation_cases(plan, generation, genomes)
     digests = {}
     for case in logical_cases:
         key = (case["population"], case["family"], case["repeat"])
         if key not in digests:
-            spec = p2_ecologies._generate_ecology(case["family"], case["world_seed"])
+            spec = stage6_ecologies.world_for_stage6(
+                case["family"], case["world_seed"])
             digests[key] = p2_ecologies.fingerprint(spec)
     return [
         {**{k: v for k, v in row.items() if k != "world_index"},
@@ -264,10 +361,12 @@ def choose_descendants(plan: dict, next_generation: int, prior: dict,
 
 def _summary_scores(rows, generation: int,
                     expected_cases: list[dict], genomes: dict,
-                    source_sha: str, source_head: str) -> dict:
+                    source_sha: str, source_head: str,
+                    protocol: str) -> dict:
     """Reduce only sealed original persistence, never output fitness to operator."""
     from i3.modules.genome import digest as genome_digest
     from i3.lab import p2_ecologies
+    from i3.lab import stage6_light_prospective_ecologies as stage6_ecologies
     expected = {(r["population"], r["generation"], r["arm"], r["slot"],
                  r["family"], r["repeat"]): r for r in expected_cases}
     if len(expected) != EXPECTED_GENERATION[generation]:
@@ -289,14 +388,15 @@ def _summary_scores(rows, generation: int,
         paid = billing.get("totals", {})
         opportunity = (case["population"], case["family"], case["repeat"])
         if opportunity not in world_fingerprints:
-            spec = p2_ecologies._generate_ecology(case["family"], case["world_seed"])
+            spec = stage6_ecologies.world_for_stage6(
+                case["family"], case["world_seed"])
             world_fingerprints[opportunity] = p2_ecologies.fingerprint(spec)
         if (life.get("genome") != genome_digest(ancestor)
                 or manifest.get("genome") != ancestor
                 or manifest.get("world_sha256") != world_fingerprints[opportunity]
                 or manifest.get("world_sha256") != case["world_sha256"]
                 or manifest.get("execution_model") != "i3-funded-v2"
-                or manifest.get("protocol") != PROTOCOL
+                or manifest.get("protocol") != protocol
                 or source.get("sha256") != source_sha
                 or source.get("git_head") != source_head
                 or source.get("working_tree_dirty") is not False
@@ -351,11 +451,18 @@ def final_contrasts(genomes: dict) -> dict:
         contrasts[key] = {"values": values, "plus": plus,
                           "minus": minus, "zero": POPS-plus-minus,
                           "direction_concordant": max(plus, minus) >= 13}
-    invalid = sum(contrasts[k]["direction_concordant"] for k in keys[1:]) >= 2
+    neutral_alert_count = sum(
+        contrasts[k]["direction_concordant"] for k in keys[1:])
+    invalid = neutral_alert_count >= 2
     return {
         "schema": "i3-stage6-light-frozen-population-sign-analysis/v1",
         "unit": "population", "populations": POPS,
         "threshold": 13, "contrast": contrasts,
+        "two_sided_sign_null": {
+            "numerator": 1394, "denominator": 65536,
+            "requires": "INDEPENDENT_SYMMETRIC_NONZERO_SIGNS_NOT_PROVEN"},
+        "neutral_marker_alert_count": neutral_alert_count,
+        "neutral_marker_alert": neutral_alert_count >= 1,
         "invalid_neutral_markers": invalid,
         "status": ("STAGE6_LIGHT_INVALID" if invalid else
                    "STAGE6_LIGHT_SIGN_CONCORDANCE_PASS"
@@ -381,8 +488,16 @@ def _append_phase(root: Path, phase: str, payload_sha: str,
 
 
 def run_full(plan: dict, destination: str | Path, published_plan_sha: str) -> dict:
-    """One-shot full native ENGINEERING G/S/R, not a science admission."""
-    verify_plan(plan)
+    """One-shot full native G/S/R with an explicit separate science plan.
+
+    The science plan is source-bound to two completed rehearsals and must be
+    precommitted; legacy method v1 is never promoted into a science permit.
+    """
+    scientific = type(plan) is dict and plan.get("schema") == SCIENCE_SCHEMA
+    if scientific:
+        verify_science_plan(plan)
+    else:
+        verify_plan(plan)
     if published_plan_sha != plan["allocation_sha256"]:
         raise PermissionError("missing exact published pre-exposure plan digest")
     root = Path(destination).resolve()
@@ -392,7 +507,8 @@ def run_full(plan: dict, destination: str | Path, published_plan_sha: str) -> di
     G0._verify_checkout(plan)  # no World imported until after checkout guard
     # One fixed, precommitted path: cannot use another folder to retry this plan.
     root.mkdir()  # no exist_ok, atomic claim; parent must already exist
-    receipt = {"schema": "i3-stage6-native-gsr-engineering-claim/v1",
+    receipt = {"schema": ("i3-stage6-native-gsr-science-claim/v1" if scientific
+                          else "i3-stage6-native-gsr-engineering-claim/v1"),
                "plan_sha256": plan["allocation_sha256"],
                "source_git_head": plan["source_git_head"],
                "archive_root": plan["archive_root"],
@@ -402,9 +518,14 @@ def run_full(plan: dict, destination: str | Path, published_plan_sha: str) -> di
         f.flush()
         os.fsync(f.fileno())
     from i3.lab import two_phase_panel as TP, p2_ecologies
+    from i3.lab import stage6_light_prospective_ecologies as stage6_ecologies
     from i3.runtime.life import run_life
     from i3.modules.genome import digest as genome_digest
+    from i3.lab import stage6_light_native_custody_preflight as native_audit
     phases, outcomes = [], []
+    original_cases = {}
+    offspring_all = []
+    parent_draws_all = []
     genomes = founder_genomes(plan)
     # Pre-birth, derivable native v4 founder material for detached lineage audit.
     from i3.modules.genome import digest as frozen_genome_digest
@@ -423,13 +544,14 @@ def run_full(plan: dict, destination: str | Path, published_plan_sha: str) -> di
     try:
         for g in range(3):
             cases = native_archive_cases(plan, g, genomes)
+            original_cases[g] = cases
             archive = root / f"G{g}"
             def one(case: dict) -> dict:
-                spec = p2_ecologies._generate_ecology(case["family"],
-                                                     case["world_seed"])
+                spec = stage6_ecologies.world_for_stage6(
+                    case["family"], case["world_seed"])
                 genome = genomes[case["population"], case["arm"], case["slot"]]
                 life = run_life(genome, spec, case["life_seed"], HORIZON,
-                                keep_trace=True, protocol=PROTOCOL,
+                                keep_trace=True, protocol=plan["protocol"],
                                 decision_policy="reference")
                 if (life["genome"] != case["genome_sha256"]
                         or genome_digest(genome) != case["genome_sha256"]):
@@ -441,12 +563,20 @@ def run_full(plan: dict, destination: str | Path, published_plan_sha: str) -> di
                 raise RuntimeError("native generation failed: NO_RETRY")
             digest = sha256((archive / "MANIFEST.json").read_bytes()).hexdigest()
             phases = _append_phase(root, f"G{g}", digest, phases)
+            audited = native_audit.inspect_sealed_generation(
+                archive, g, cases, expected_protocol=plan["protocol"],
+                source_pin=plan["source_files_sha256"],
+                source_head=plan["source_git_head"])
+            if (audited["checked_native_records"] != len(cases) or
+                    audited["original_manifest_sha256"] != digest):
+                raise ValueError("native original structural audit mismatch")
             # An intact sealed G is required before S can even read persistence.
             # Stream full native traces one original at a time: never keep
             # thousands of 400-step objects resident in rehearsal memory.
             fitness = _summary_scores(TP.load_sealed(archive), g, cases, genomes,
                                       plan["source_files_sha256"],
-                                      plan["source_git_head"])
+                                      plan["source_git_head"],
+                                      plan["protocol"])
             if sha256((archive / "MANIFEST.json").read_bytes()).hexdigest() != digest:
                 raise RuntimeError("G manifest changed during G seal")
             phases = _append_phase(root, f"SEAL_G{g}", digest, phases)
@@ -467,6 +597,8 @@ def run_full(plan: dict, destination: str | Path, published_plan_sha: str) -> di
                     "genome": children[d["population"], d["arm"], d["slot"]],
                     "genome_sha256": d["offspring_genome_sha256"],
                 } for d in parent_receipts]
+                offspring_all.extend(offspring_claims)
+                parent_draws_all.extend(parent_receipts)
                 payload = {"schema": "i3-stage6-native-parent-receipts/v1",
                            "generation": g+1, "prior_generation_sha256": digest,
                            "draws": parent_receipts, "offspring": offspring_claims}
@@ -481,17 +613,51 @@ def run_full(plan: dict, destination: str | Path, published_plan_sha: str) -> di
                 genomes = children
             else:
                 final = final_contrasts(genomes)
-                # The engineering rehearsal exercises R, but cannot publish
-                # effect directions as an independently validated study.
-                result = {"schema": "i3-stage6-gsr-engineering-result/v1",
-                          "status": "ENGINEERING_FULL_GSR_REHEARSAL_NO_SCIENCE",
-                          "original_lives": sum(i["lives"] for i in outcomes),
-                          "generation_seals": outcomes,
-                          "reduction_sha256": _sha(final),
-                          "science_decision_disclosed": False,
-                          "scientific_admission": False,
-                          "provenance": "INTERNAL_PROSPECTIVE_NOT_EXTERNALLY_ATTESTED"}
-                target = root / "R_FINAL_ENGINEERING.json"
+                if scientific:
+                    from i3.lab import stage6_light_original_selection_bridge as bridge
+                    # Full blinded archival join after G2 is sealed: parents,
+                    # source-bound WorldSpec, mutation and seed draws all rechecked.
+                    audit = bridge.inspect_original_selection(
+                        {j: root / f"G{j}" for j in range(3)},
+                        original_cases, founder_index,
+                        offspring_all, parent_draws_all,
+                        expected_protocol=plan["protocol"],
+                        source_pin=plan["source_files_sha256"],
+                        source_head=plan["source_git_head"])
+                    if (audit["original_lives_structurally_checked"] != 11520 or
+                            audit["claimed_parent_draws_reproduced"] != 1536 or
+                            audit["offspring_mutations_reproduced"] != 1536):
+                        raise RuntimeError("full precommitted lineage audit failed")
+                    result = {
+                        "schema": "i3-stage6-light-prospective-science-result/v1",
+                        "status": final["status"],
+                        "source_git_head": plan["source_git_head"],
+                        "source_files_sha256": plan["source_files_sha256"],
+                        "preexposure_allocation_sha256": plan["allocation_sha256"],
+                        "scientific_scope": plan["science_scope"],
+                        "rehearsal_receipts_sha256": _sha(
+                            plan["engineering_full_scale_receipts"]),
+                        "original_lives": sum(i["lives"] for i in outcomes),
+                        "generation_seals": outcomes,
+                        "frozen_analysis": final,
+                        "native_original_selection_audit": audit,
+                        "provenance": "INTERNAL_PROSPECTIVE_NOT_EXTERNALLY_ATTESTED",
+                        "stage2_scientific_verdict": "NOT_ISSUED",
+                        "scientific_admission": True}
+                    target = root / "R_FINAL_SCIENCE.json"
+                else:
+                    # Technical R computes only a sealed digest. Never reveal
+                    # engineering contrast signs before the science exposure.
+                    result = {
+                        "schema": "i3-stage6-gsr-engineering-result/v1",
+                        "status": "ENGINEERING_FULL_GSR_REHEARSAL_NO_SCIENCE",
+                        "original_lives": sum(i["lives"] for i in outcomes),
+                        "generation_seals": outcomes,
+                        "reduction_sha256": _sha(final),
+                        "science_decision_disclosed": False,
+                        "scientific_admission": False,
+                        "provenance": "INTERNAL_PROSPECTIVE_NOT_EXTERNALLY_ATTESTED"}
+                    target = root / "R_FINAL_ENGINEERING.json"
                 with target.open("xb") as f:
                     f.write(_canonical(result))
                     f.flush()
@@ -501,17 +667,20 @@ def run_full(plan: dict, destination: str | Path, published_plan_sha: str) -> di
                                        phases)
         if len(phases) != len(PHASES):
             raise RuntimeError("incomplete nine-phase Stage6 engineering process")
-        return {"status": "ENGINEERING_FULL_GSR_REHEARSAL_NO_SCIENCE",
+        return {"status": (final["status"] if scientific
+                           else "ENGINEERING_FULL_GSR_REHEARSAL_NO_SCIENCE"),
                 "source_git_head": plan["source_git_head"],
                 "allocation_sha256": plan["allocation_sha256"],
                 "last_chain_sha256": phases[-1]["chain_sha256"],
                 "lives_archived": sum(i["lives"] for i in outcomes),
-                "science_admission": False,
+                "science_admission": scientific,
                 "no_retry": True}
     except BaseException as exc:
         # Never relabel an incomplete generation as a death or repeat it.
         failure = {"schema": "i3-stage6-native-gsr-abort/v1",
-                   "status": "ENGINEERING_FAILURE_NOT_A_DEATH_NO_RETRY",
+                   "status": ("SCIENTIFIC_EXECUTION_DEFECT_NO_RETRY"
+                              if scientific else
+                              "ENGINEERING_FAILURE_NOT_A_DEATH_NO_RETRY"),
                    "phase_index": len(phases),
                    "error_type": type(exc).__name__, "no_retry": True}
         with (root / "FAILURE.json").open("xb") as f:
@@ -531,6 +700,26 @@ def main() -> None:
         print(json.dumps({"status": plan["status"],
                           "allocation_sha256": plan["allocation_sha256"],
                           "worlds": 0, "lives": 0}, sort_keys=True))
+    elif len(sys.argv) == 7 and sys.argv[1] == "allocate-science":
+        _, _, head, source_hash, output, archive, rehearsals_file = sys.argv
+        receipts = json.loads(Path(rehearsals_file).read_text(encoding="utf-8"))
+        plan = make_science_plan(secrets.token_hex(32), head, source_hash,
+                                 archive, receipts)
+        with Path(output).open("x", encoding="utf-8") as f:
+            json.dump(plan, f, sort_keys=True, indent=2)
+            f.write("\n")
+        print(json.dumps({"status": plan["status"],
+                          "allocation_sha256": plan["allocation_sha256"],
+                          "worlds_opened": 0, "lives_created": 0}))
+    elif len(sys.argv) == 3 and sys.argv[1] == "verify-science":
+        plan = verify_science_plan(json.loads(Path(sys.argv[2]).read_text()))
+        print(json.dumps({"status": plan["status"],
+                          "allocation_sha256": plan["allocation_sha256"],
+                          "lives_planned": plan["planned_lives"]}))
+    elif len(sys.argv) == 5 and sys.argv[1] == "run-science":
+        plan = json.loads(Path(sys.argv[2]).read_text(encoding="utf-8"))
+        verify_science_plan(plan)
+        print(json.dumps(run_full(plan, sys.argv[3], sys.argv[4]), sort_keys=True))
     elif len(sys.argv) == 3 and sys.argv[1] == "verify":
         plan = verify_plan(json.loads(Path(sys.argv[2]).read_text()))
         print(json.dumps({"status": plan["status"],
@@ -540,7 +729,7 @@ def main() -> None:
         plan = json.loads(Path(sys.argv[2]).read_text(encoding="utf-8"))
         print(json.dumps(run_full(plan, sys.argv[3], sys.argv[4]), sort_keys=True))
     else:
-        raise SystemExit("usage: ... allocate HEAD SOURCE_SHA PLAN.json ABS_ARCHIVE_PATH | verify PLAN.json | run-engineering PLAN.json ABS_ARCHIVE_PATH PREPUBLISHED_PLAN_SHA")
+        raise SystemExit("usage: allocate HEAD SOURCE_SHA PLAN.json ABS_ARCHIVE_PATH | verify PLAN.json | run-engineering PLAN.json DIR SHA | allocate-science HEAD SOURCE_SHA PLAN.json ABS_ARCHIVE_PATH REHEARSALS.json | verify-science PLAN.json | run-science PLAN.json DIR SHA")
 
 
 if __name__ == "__main__":

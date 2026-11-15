@@ -57,6 +57,9 @@ def unexpected_workflows(paths, *, active_ci: str) -> list[str]:
         active_ci, "i0-archive-manual.yml", "engine-structural.yml",
         "i1-preset-worlds.yml", "i2-proposal-safety.yml",
         "agent-context-static.yml", "i3-proposal-checks.yml",
+        # ADR-0022: one exact, owner-authorized prospective Stage6 laboratory
+        # workflow, separately source-locked and no I3 active-engine promotion.
+        "i3-stage6-one-shot-20261115.yml",
     }
     return sorted(path.name for path in paths
                   if not path.name.startswith("i1-") and path.name not in allowed)

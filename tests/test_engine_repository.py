@@ -111,6 +111,18 @@ class EngineToolingTests(unittest.TestCase):
         self.assertEqual(unexpected_workflows(paths, active_ci="i1-current-ci.yml"),
                          sorted(rejected))
 
+    def test_one_shot_stage6_allowance_is_exact_not_a_prefix(self):
+        from scripts.check_engine_repository import unexpected_workflows
+
+        allowed = "i3-stage6-one-shot-20261115.yml"
+        blocked = ("i3-stage6-one-shot-20261115-retry.yml",
+                   "i3-stage6-one-shot-20261116.yml",
+                   "i3-scientific-study.yml")
+        paths = [Path(".github/workflows/" + name)
+                 for name in (allowed, *blocked)]
+        self.assertEqual(unexpected_workflows(paths,
+                         active_ci="i1-current-ci.yml"), sorted(blocked))
+
     def test_static_agent_navigation_is_not_historical_runtime_ci(self):
         from scripts.check_engine_repository import unexpected_workflows
         paths = [Path(".github/workflows/agent-context-static.yml"),
