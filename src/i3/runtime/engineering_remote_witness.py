@@ -121,11 +121,28 @@ class RemoteEngineeringWitness:
         try:
             with self._opener.open(req, timeout=self._timeout) as resp:
                 code = resp.status
-                answer = resp.read(8193)
-                received = resp.headers.get("X-I3-Signature", "")
+                headers = resp.headers
+                # Treat ambiguous/multi-valued response framing as STOP even
+                # when one response HMAC would verify. No motor may depend on
+                # how an HTTP stack chooses among duplicate headers.
+                signatures = headers.get_all("X-I3-Signature", [])
+                lengths = headers.get_all("Content-Length", [])
+                types = headers.get_all("Content-Type", [])
+                if (len(signatures) != 1 or len(lengths) != 1
+                        or len(types) != 1 or types[0] != "application/json"
+                        or type(lengths[0]) is not str
+                        or re.fullmatch(r"[1-9][0-9]{0,3}", lengths[0]) is None
+                        or not 1 <= int(lengths[0]) <= 8192
+                        or headers.get_all("Transfer-Encoding", [])
+                        or headers.get_all("Content-Encoding", [])):
+                    raise PermissionError("ambiguous remote authority response headers")
+                length = int(lengths[0])
+                answer = resp.read(length + 1)
+                received = signatures[0]
         except (URLError, HTTPError, TimeoutError, OSError) as exc:
             raise PermissionError("remote authority unavailable/rejected: fail closed") from exc
-        if code != 200 or len(answer) > 8192 or not HEX.fullmatch(received):
+        if (code != 200 or len(answer) != length or
+                type(received) is not str or not HEX.fullmatch(received)):
             raise PermissionError("unsigned or invalid remote authority response")
         expected = hmac.new(self._key, b"R\n" + nonce.encode() + b"\n" +
                             str(code).encode() + b"\n" + answer, sha256).hexdigest()
