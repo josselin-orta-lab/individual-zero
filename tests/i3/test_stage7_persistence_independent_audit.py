@@ -170,7 +170,7 @@ class Stage7IndependentAuditTests(unittest.TestCase):
     def test_no_source_replay_or_archive_generation_on_import(self):
         with TemporaryDirectory() as temp:
             archive = Path(temp) / "never-create"
-            with self.assertRaises(ValueError):
+            with self.assertRaises(FileNotFoundError):
                 audit.audit_full(str(Path(temp) / "nonexistent-plan.json"),
                                  str(archive), "no-result.json")
             self.assertFalse(archive.exists())
