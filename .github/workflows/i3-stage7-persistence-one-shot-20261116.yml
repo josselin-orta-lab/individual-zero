@@ -60,7 +60,7 @@ jobs:
         python-version: ['3.11', '3.12']
     env:
       PYTHONPATH: src
-      CUSTODY: /tmp/i3-stage7-engineering
+      CUSTODY: /tmp/i3-stage7-engineering-${{ matrix.python-version }}
       PYVERSION: ${{ matrix.python-version }}
     steps:
       - uses: actions/checkout@v4
@@ -81,7 +81,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: stage7-engineering-plan-${{ matrix.python-version }}-${{ github.run_id }}
-          path: /tmp/i3-stage7-engineering/PLAN.json
+          path: /tmp/i3-stage7-engineering-${{ matrix.python-version }}/PLAN.json
           if-no-files-found: error
           retention-days: 90
       - name: Run complete native G0-SELECT-G1-SELECT-G2 and sealed blind R ONCE
@@ -95,7 +95,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: stage7-engineering-receipt-${{ matrix.python-version }}-${{ github.run_id }}
-          path: /tmp/i3-stage7-engineering/REHEARSAL_RECEIPT.json
+          path: /tmp/i3-stage7-engineering-${{ matrix.python-version }}/REHEARSAL_RECEIPT.json
           if-no-files-found: error
           retention-days: 90
       - name: Preserve all engineering original traces, deaths and failures
@@ -103,7 +103,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: stage7-engineering-originals-${{ matrix.python-version }}-${{ github.run_id }}
-          path: /tmp/i3-stage7-engineering/originals
+          path: /tmp/i3-stage7-engineering-${{ matrix.python-version }}/originals
           if-no-files-found: warn
           compression-level: 0
           retention-days: 90
