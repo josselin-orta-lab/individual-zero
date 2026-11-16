@@ -138,17 +138,23 @@ class NavigationSanity(unittest.TestCase):
         self.assertIn("find tests -maxdepth 1 -type f -name 'test_*.py'", i0)
         self.assertNotIn("mv tests/test_i1_*.py tests/test_engine_repository.py", i0)
 
-    def test_docs_only_i2_updates_use_lightweight_navigation_ci(self):
-        heavy = (ROOT / ".github/workflows/i2-proposal-safety.yml").read_text(encoding="utf-8")
+    def test_archived_i2_updates_use_lightweight_navigation_ci(self):
+        # I2 is archived at its original paths: any PR touching the frozen
+        # source/tests must hit the fast fail-closed tree guard, while the
+        # exhaustive 3.11/3.12 I2 software suite is manual reproduction only.
+        historical = (ROOT / ".github/workflows/i2-proposal-safety.yml").read_text(encoding="utf-8")
         light = (ROOT / ".github/workflows/agent-context-static.yml").read_text(encoding="utf-8")
-        self.assertIn("'src/i2/**'", heavy)
-        self.assertIn("'!src/i2/docs/**'", heavy)
-        self.assertIn("'!src/i2/AGENTS.md'", heavy)
-        self.assertIn("'tests/i2/**'", heavy)
-        self.assertIn("'.github/workflows/i2-proposal-safety.yml'", heavy)
-        for path in ("src/i2/docs/STATUS.md", "src/i2/docs/STATUS_HISTORY.md",
+        events = historical.partition("on:")[2].partition("permissions:")[0]
+        self.assertIn("  workflow_dispatch:", events)
+        self.assertNotIn("  pull_request:", events)
+        for path in ("src/i2/**", "tests/i2/**",
+                     "config/archives/i2-20261116.json",
+                     "archive/i2/**", "tools/check_i2_archive.py",
+                     ".github/workflows/i2-proposal-safety.yml",
+                     "src/i2/docs/STATUS.md", "src/i2/docs/STATUS_HISTORY.md",
                      "src/i2/docs/README.md", "src/i2/AGENTS.md"):
             self.assertIn("'" + path + "'", light)
+        self.assertIn("python tools/check_i2_archive.py --json", light)
         self.assertIn("check_repo_navigation.py --scope current", light)
 
 
