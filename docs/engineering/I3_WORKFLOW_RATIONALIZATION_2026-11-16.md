@@ -22,11 +22,11 @@ The 6 retired job bodies accounted for **812 original lines**. A four-line expla
 - The separate `i3-stage6-one-shot-20261115.yml` and `i3-stage7-persistence-one-shot-20261116.yml` workflows remain untouched and carry **no new execution authorization**.
 - No test in `tests/i3/`, original data, frozen study plan, I3 Mind/World/Body/UC, I2 archive tree or I1 runtime is modified.
 
-The extra [fail-closed static guard](../../tests/test_i3_workflow_archive.py) checks original Git blob identity, retired `if: false` gates, unmodified event header, byte identity of surviving jobs, and absence of a job that could become active on a historical main push. Its scope is exact; it does **not** certify the scientific adequacy of a research run.
+The extra [fail-closed static guard](../../tests/i3/test_workflow_archive.py) checks original Git blob identity, retired `if: false` gates, unmodified event header, byte identity of surviving jobs, and absence of a job that could become active on a historical main push. Its scope is exact; it does **not** certify the scientific adequacy of a research run.
 
 ## Required verification
 
-- Run source-exact `agent-context-static.yml` PR CI, including `python -m unittest discover -s tests -p test_i3_workflow_archive.py -v`.
+- Run source-exact `agent-context-static.yml` PR CI, including `python -m unittest discover -s tests/i3 -p test_workflow_archive.py -v`.
 - Run the ordinary I3 software matrix on the PR HEAD: Python 3.11 **and** 3.12. Neither may be treated as a surrogate for the other.
 - Confirm none of the six removed jobs appears as runnable work on the PR, and no `push` scientific transport was triggered.
 - If a check fails, **do not** silently alter a retired original, source pin, run condition or allocation to force green. Record and review the cause.
