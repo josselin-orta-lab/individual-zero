@@ -158,5 +158,56 @@ class Stage8MeanProspectiveNoWorldTests(unittest.TestCase):
         self.assertFalse(Path(self.original).exists())
 
 
+    def test_mocked_one_shot_orchestrator_keeps_science_separate_without_worlds(self):
+        # The entire native engine and science audit are mocked. A unit test
+        # must never open a World or misrepresent a fixture as live evidence.
+        with TemporaryDirectory() as tmp:
+            root = str(Path(tmp) / "new-stage8-study")
+            plan = E.make_plan(ROOT, HEAD, SOURCE, root,
+                               scientific=True, rehearsals=self.receipts)
+            fakecore = {"original_lives": 11520,
+                        "phase_chain_sha256": "f"*64}
+            fake_analysis = {
+                "status": E.SCIENCE_NO,
+                "primary": E.reduce_population_mean([0.0]*32),
+                "native_original_lives_rechecked": 23040,
+                "native_parent_draws_reproduced": 3072,
+                "native_mutations_reproduced": 3072,
+            }
+            with patch.object(E.G0, "_verify_checkout", return_value=None), \
+                 patch.object(E.P, "run_full",
+                              side_effect=[fakecore, fakecore]) as native, \
+                 patch.object(E, "_science_reduce",
+                              return_value=fake_analysis) as reducer:
+                core = E.run_once(plan, root, plan["allocation_sha256"])
+                self.assertEqual(core["status"], E.SCIENCE_NO)
+                self.assertEqual(core["original_lives"], 23040)
+                self.assertEqual(native.call_count, 2)
+                self.assertEqual(reducer.call_count, 1)
+                self.assertTrue((Path(root) / "CLAIM.json").exists())
+                self.assertTrue((Path(root) / "SCIENCE_FINAL.json").exists())
+                self.assertFalse((Path(root) / "PANEL_0/G0").exists())
+                with self.assertRaises(FileExistsError):
+                    E.run_once(plan, root, plan["allocation_sha256"])
+
+    def test_mocked_partial_engineering_failure_cannot_be_replayed(self):
+        with TemporaryDirectory() as tmp:
+            root = str(Path(tmp) / "failed-stage8-technical")
+            plan = E.make_plan(ROOT, HEAD, SOURCE, root)
+            stub = {"original_lives": 11520, "phase_chain_sha256": "a"*64}
+            with patch.object(E.G0, "_verify_checkout", return_value=None), \
+                 patch.object(E.P, "run_full",
+                              side_effect=[stub, RuntimeError("fixture failure")]):
+                with self.assertRaises(RuntimeError):
+                    E.run_once(plan, root, plan["allocation_sha256"])
+            failure = Path(root) / "FAILURE.json"
+            self.assertTrue(failure.exists())
+            self.assertEqual(__import__("json").loads(failure.read_text())["status"],
+                             "TECHNICAL_NO_VERDICT_NO_RETRY")
+            with self.assertRaises(FileExistsError):
+                with patch.object(E.G0, "_verify_checkout", return_value=None):
+                    E.run_once(plan, root, plan["allocation_sha256"])
+
+
 if __name__ == "__main__":
     unittest.main()
