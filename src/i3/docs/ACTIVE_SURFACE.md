@@ -1,5 +1,10 @@
 # I3 active surface
 
+## Live Stage7 research status (16 November 2026)
+
+The current prospective scientific action is the [new source-locked Stage7 inherited-persistence study](studies/stage7-persistence/STAGE7_EXECUTION_LIVE_HANDOFF_2026-11-16.md) ([GitHub run #43830174125](https://github.com/josselin-orta-lab/individual-zero/actions/runs/43830174125)). Its **Python 3.11 and 3.12 full native engineering rehearsals are running**, their plans published before births; science has not yet been admitted and no Stage7 persistence result exists. The completed 15-Nov Stage6 gene-direction result (9 positive/7 negative) is CLOSED negative for its prior primary and is not eligible for a rerun. The Stage7 exact source is `06cfcf9cc9414e0f139b39a42d05177ddb813782`; documentation changes are not the scientific source and **must never trigger another cohort**. All dated Stage-2 study freezes remain authoritative in their scopes; Stage 2.1 verdict `NOT_ISSUED/HOLD_NO_VERDICT`, I1 active, I3 unregistered reference. See [current status](STATUS.md) for detailed chronology.
+
+
 This is the short operational map for developers and agents. It does not replace
 scientific evidence or ADRs. See the
 [code/dependency audit](I3_DEPENDENCY_AUDIT_2026-11-09.md) for archival
