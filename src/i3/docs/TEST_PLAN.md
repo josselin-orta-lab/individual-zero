@@ -2,7 +2,7 @@
 
 **Maintained entrypoint · 16 November 2026.** The complete historical 28,523-byte test catalogue (original Git blob `91679d8db3be1c91c3d983186d3d200ee18de07a`) is preserved, byte-identically, at [TEST_PLAN_HISTORY_2026-11-16.md](TEST_PLAN_HISTORY_2026-11-16.md). Dated paragraphs there document actual past tests and `NOT_RUN` boundaries **at their original times**, not a present Stage6/Stage7 execution or a new permission.
 
-**Tests prove code and contracts only.** A passing run, sealed rehearsal or original-extraction check does not establish persistence improvement, independent custody or scientific GO. [Current I3 status](STATUS.md), [active surface](ACTIVE_SURFACE.md) and [test placement](../../../tests/TEST_LAYOUT.md) take precedence for current routing.
+**Tests prove code and contracts only.** A passing run, sealed rehearsal or original-extraction check does not establish persistence improvement, independent custody or scientific GO; Stage2 science stays `NOT_ISSUED/HOLD_NO_VERDICT`. [Current I3 status](STATUS.md), [active surface](ACTIVE_SURFACE.md) and [test placement](../../../tests/TEST_LAYOUT.md) take precedence for current routing.
 
 ## Run the minimum software check for the question
 
