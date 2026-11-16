@@ -51,7 +51,7 @@ python -m unittest discover -s tests -p test_agent_context.py -v
 python tools/check_repo_navigation.py --scope entrypoints
 ```
 
-The scoped [`agent-context-static`](../../.github/workflows/agent-context-static.yml) PR check runs only these navigation checks. It never instantiates an individual or performs science. Changes to engine contracts, actual runtime, behavioral modules or promotion still require their separate generation-specific checks and reviews.
+The scoped [`agent-context-static`](../../.github/workflows/agent-context-static.yml) PR check runs navigation checks **and the pure source-locked I3 E3 handoff contract** (`tests/i3/test_stage2_post_e3_agent_handoff.py`). This focused module asserts the current I3 AGENTS/STATUS stop, historical link integrity and unpromoted Stage2/Stage6 authority; it does not import an I3 engine, create a World or launch a study. Its inclusion prevents a short-doc refactor from silently dropping scientific stop references without paying for the entire I3 software matrix. It never instantiates an individual or performs science. Changes to engine contracts, actual runtime, behavioral modules or promotion still require their separate generation-specific checks and reviews.
 
 ## Handoff
 

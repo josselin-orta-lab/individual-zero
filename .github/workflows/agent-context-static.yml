@@ -19,6 +19,9 @@ on:
       - 'src/i3/docs/STATUS_HISTORY_2026-11-16.md'
       - 'src/i3/docs/README.md'
       - 'src/i3/docs/README_HISTORY_2026-11-16.md'
+      - 'src/i3/docs/ACTIVE_SURFACE.md'
+      - 'src/i3/ACTIVE_SURFACE.json'
+      - 'tests/i3/test_stage2_post_e3_agent_handoff.py'
       - 'tests/test_agent_historical_sources.py'
       - 'config/research-program.json'
       - 'config/research-dossiers.json'
@@ -102,6 +105,8 @@ jobs:
           python tools/check_i2_archive.py --json
           python -m unittest discover -s tests -p test_historical_generation_archive.py -v
           python -m unittest discover -s tests -p test_agent_historical_sources.py -v
+          # Pure documentation contract: no I3 runtime, World, motor or cohort.
+          python -m unittest discover -s tests/i3 -p test_stage2_post_e3_agent_handoff.py -v
           python tools/research_coordinator.py audit --structure-only > /tmp/iz-research-audit.json
           python -m unittest discover -s tests -p test_research_coordinator.py -v
           python -m unittest discover -s tests -p test_research_knowledge.py -v
