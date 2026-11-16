@@ -115,6 +115,13 @@ class Stage7IndependentAuditTests(unittest.TestCase):
         self.assertEqual(
             audit._life_check(fixture_life(400, "censored"), identity, plan),
             (400, True))
+        # Death at exactly the horizon is an observed death, not censoring.
+        self.assertEqual(
+            audit._life_check(fixture_life(400, "dead"), identity, plan),
+            (400, False))
+        # Administrative censoring before the horizon is invalid.
+        with self.assertRaises(ValueError):
+            audit._life_check(fixture_life(399, "censored"), identity, plan)
         bad = fixture_life()
         bad["trace"] = []
         with self.assertRaises(ValueError):
