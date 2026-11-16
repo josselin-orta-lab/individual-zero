@@ -153,11 +153,16 @@ class TicketAndDispatchTests(unittest.TestCase):
 
 class LedgerTests(unittest.TestCase):
     def test_status_ledger_records_exact_owner_lift_and_only_one_transport(self):
-        status = (ROOT / "src/i3/docs/STATUS.md").read_text()
+        current = (ROOT / "src/i3/docs/STATUS.md").read_text()
+        status = (ROOT / "src/i3/docs/STATUS_HISTORY_2026-11-16.md").read_text()
         old_fingerprint = "dcada9e221f79b9450a4f05fecd20e60ac6595bb306aa871f29e45aefea0b6f1"
         current_fingerprint = ADM.transport_fingerprint(PLAN)
+        self.assertIn("STATUS_HISTORY_2026-11-16.md", current)
+        # The past owner lift is historically recorded exactly once; it must
+        # not be reissued by the current short handoff or a new transport.
         self.assertTrue(ADM.owner_lift_recorded(status, old_fingerprint))
         self.assertEqual(status.count(ADM.LIFT_PREFIX + old_fingerprint), 1)
+        self.assertFalse(ADM.owner_lift_recorded(current, old_fingerprint))
         self.assertNotEqual(current_fingerprint, old_fingerprint)
         self.assertFalse(ADM.canonical_owner_lift_recorded(current_fingerprint))
         self.assertFalse(ADM.owner_lift_recorded(status, "0" * 64))
