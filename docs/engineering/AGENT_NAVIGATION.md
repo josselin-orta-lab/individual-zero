@@ -15,8 +15,8 @@ This is a **navigation index**, not a second architectural specification. It sho
 | Understand I1 causal flow | `src/i1/docs/COGNITIVE_FLOW.md` | `src/i1/docs/STAGES_AND_INTERFACES.md` |
 | Change memory, needs, sleep or M11 | `src/i1/docs/README.md` | mechanism guide, observed source paths and invariants |
 | Evaluate an I1 scientific claim | `src/i1/docs/EVIDENCE_MATRIX.md` | original preregistration, exact SHA and evidence |
-| Work on independent I2 research / spatial-life roadmap | `src/i2/docs/INTEGRATED_BEHAVIOR_ROADMAP.md`, `src/i2/AGENTS.md` | live native owner, `src/i2/docs/STATUS.md`, issue #921 and `tests/i2/` |
-| Inspect I3 independent proposal and original G2/G2b/G2c evidence | `src/i3/docs/README.md`, `src/i3/docs/STATUS.md` | ADR-0014, exact preregistration SHAs, `tests/i3/`, rejected P1.2 alternative branch; **not an active engine** |
+| Inspect **archived I2** research | `archive/i2/README.md` and `config/archives/i2-20261116.json` | frozen `src/i2/` / `tests/i2/` tree SHAs and historical results; no new I2 intervention |
+| Work on **I3**, the development reference | `src/i3/docs/STATUS.md` (short), `src/i3/AGENTS.md` and `src/i3/docs/ACTIVE_SURFACE.md` | task-specific frozen protocol and original evidence; full dated `STATUS_HISTORY_2026-11-16.md` only if needed; **not an active engine** |
 | Propose/promote an engine | `docs/engineering/ENGINE_PROMOTION.md` | `docs/decisions/ADR-0001-strict-generation-autonomy.md` |
 | Inspect archived I0 | `docs/architecture/ENGINE_GENERATIONS.md` | `config/archives/i0-20261017.json` without modifying history |
 | Contribute or file an issue | `CONTRIBUTING.md` | issue/PR templates and code owner policy |
