@@ -123,6 +123,18 @@ class EngineToolingTests(unittest.TestCase):
         self.assertEqual(unexpected_workflows(paths,
                          active_ci="i1-current-ci.yml"), sorted(blocked))
 
+    def test_stage7_inherited_persistence_allowance_is_exact_once(self):
+        from scripts.check_engine_repository import unexpected_workflows
+
+        allowed = "i3-stage7-persistence-one-shot-20261116.yml"
+        blocked = ("i3-stage7-persistence-one-shot-20261116-retry.yml",
+                   "i3-stage7-persistence-one-shot-20261117.yml",
+                   "i3-stage7-persistence-extra-worlds.yml")
+        paths = [Path(".github/workflows/" + name)
+                 for name in (allowed, *blocked)]
+        self.assertEqual(unexpected_workflows(
+            paths, active_ci="i1-current-ci.yml"), sorted(blocked))
+
     def test_static_agent_navigation_is_not_historical_runtime_ci(self):
         from scripts.check_engine_repository import unexpected_workflows
         paths = [Path(".github/workflows/agent-context-static.yml"),
