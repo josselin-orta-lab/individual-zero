@@ -143,30 +143,50 @@ class EngineToolingTests(unittest.TestCase):
         self.assertEqual(unexpected_workflows(paths, active_ci="i1-current-ci.yml"),
                          ["stage9-historical.yml"])
 
-    def test_static_engine_policy_routes_to_light_ci_not_living_i1(self):
-        heavy = (ROOT / ".github/workflows/i1-current-ci.yml").read_text()
-        light = (ROOT / ".github/workflows/i2-proposal-safety.yml").read_text()
-        heavy_paths = heavy.split("  workflow_dispatch:", 1)[0]
+    def test_archived_i2_is_static_on_pr_and_full_matrix_is_manual(self):
+        # I2's original 3.11/3.12 tests remain reproducible but never run
+        # automatically when someone edits a frozen tree or shared policy.
+        living = (ROOT / ".github/workflows/i1-current-ci.yml").read_text()
+        archived = (ROOT / ".github/workflows/i2-proposal-safety.yml").read_text()
+        light = (ROOT / ".github/workflows/agent-context-static.yml").read_text()
+        living_paths = living.split("  workflow_dispatch:", 1)[0]
+        archived_dispatch = archived.split("\npermissions:", 1)[0]
         light_paths = light.split("\npermissions:", 1)[0]
-        for owned in ("tools/assess_engine_proposal.py",
-                      "tests/test_engine_repository.py"):
-            # No positive path in I1's expensive PR trigger.
-            self.assertNotIn("      - '" + owned + "'", heavy_paths)
-            # Same static source changes must activate I2 proposal tests.
+
+        self.assertIn("  workflow_dispatch:", archived_dispatch)
+        self.assertNotIn("  pull_request:", archived_dispatch)
+        self.assertIn("ref: ${{ github.sha }}", archived)
+        self.assertIn("python tools/i2_ci_shards.py", archived)
+        self.assertIn("python-version: ['3.11', '3.12']", archived)
+        self.assertIn("python scripts/check_engine_repository.py --json", archived)
+
+        for owned in ("src/i2/**", "tests/i2/**",
+                      "config/archives/i2-20261116.json",
+                      "tools/check_i2_archive.py",
+                      "tools/i2_ci_shards.py",
+                      "tools/assess_engine_proposal.py",
+                      "scripts/check_engine_repository.py",
+                      "tests/test_engine_repository.py",
+                      ".github/workflows/i2-proposal-safety.yml"):
             self.assertIn("      - '" + owned + "'", light_paths)
-        self.assertIn("      - 'scripts/**'", heavy_paths)
-        self.assertIn("      - '!scripts/check_engine_repository.py'", heavy_paths)
-        self.assertGreater(
-            heavy_paths.index("      - '!scripts/check_engine_repository.py'"),
-            heavy_paths.index("      - 'scripts/**'"),
-        )
-        self.assertIn("      - 'scripts/check_engine_repository.py'", light_paths)
+        self.assertIn("python tools/check_i2_archive.py --json", light)
         self.assertIn("python scripts/check_engine_repository.py --json", light)
         self.assertIn(
             "python -m unittest discover -s tests -p test_engine_repository.py -v",
             light,
         )
-        # Changes to real I1 source/engine contracts must still run full I1.
+
+        # I1 must still get full native CI for actual live code, but a
+        # static I2/registry guard must not require I1 births.
+        for owned in ("tools/assess_engine_proposal.py",
+                      "tests/test_engine_repository.py"):
+            self.assertNotIn("      - '" + owned + "'", living_paths)
+        self.assertIn("      - 'scripts/**'", living_paths)
+        self.assertIn("      - '!scripts/check_engine_repository.py'", living_paths)
+        self.assertGreater(
+            living_paths.index("      - '!scripts/check_engine_repository.py'"),
+            living_paths.index("      - 'scripts/**'"),
+        )
         for required in (
             "      - 'src/i1/**'",
             "      - 'tests/i1/**'",
@@ -175,15 +195,14 @@ class EngineToolingTests(unittest.TestCase):
             "      - '.github/workflows/i1-current-ci.yml'",
             "      - '.github/workflows/engine-structural.yml'",
         ):
-            self.assertIn(required, heavy_paths)
+            self.assertIn(required, living_paths)
         for negative in (
             "!src/i1/**/*.md", "!src/i1/docs/**", "!src/i1/AGENTS.md"
         ):
             self.assertGreater(
-                heavy_paths.index(negative),
-                heavy_paths.index("      - '.github/workflows/engine-structural.yml'"),
+                living_paths.index(negative),
+                living_paths.index("      - '.github/workflows/engine-structural.yml'"),
             )
-
 
     def test_original_engine_sources_are_present(self):
         self.assertFalse((ROOT / "src/lab").exists())
