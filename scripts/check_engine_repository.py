@@ -63,6 +63,9 @@ def unexpected_workflows(paths, *, active_ci: str) -> list[str]:
         # A separate ADR-0022 one-shot for NEW prospective inherited persistence:
         # permit only this reviewed filename, not a wildcard scientific runner.
         "i3-stage7-persistence-one-shot-20261116.yml",
+        # ADR-0022: separate NEW Stage8-A mean-persistence full laboratory
+        # experiment. Only one exactly named workflow, never a wildcard.
+        "i3-stage8a-mean-persistence-once-20261116.yml",
     }
     return sorted(path.name for path in paths
                   if not path.name.startswith("i1-") and path.name not in allowed)

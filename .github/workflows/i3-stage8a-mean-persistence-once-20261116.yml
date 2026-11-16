@@ -1,0 +1,181 @@
+# Separate Stage8-A one-shot experiment. No Stage7 seed/data replay.
+# A full source-specific protocol is already frozen before the first birth.
+name: I3 Stage8-A one-shot native mean persistence
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/i3-stage8a-mean-persistence-once-20261116.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: i3-stage8a-mean-persistence-one-shot
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    if: ${{ github.run_attempt == 1 && github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Frozen mean-persistence and two-panel source preflight, NO lives
+        run: |
+          python -m unittest discover -s tests/i3 -p 'test_stage8a_mean_persistence.py' -v
+          python - <<'PY'
+          import os, subprocess
+          from i3.lab import stage8a_mean_persistence as E
+          from i3.runtime.provenance import source_snapshot
+          assert E.G0._pins()
+          src = source_snapshot()
+          assert src["git_head"] == os.environ["GITHUB_SHA"]
+          assert src["sha256"] and src["working_tree_dirty"] is False
+          assert not subprocess.check_output(
+              ["git", "status", "--porcelain", "--untracked-files=all"]).strip()
+          assert E.METHOD["population_units"] == 32
+          assert E.METHOD["alpha_one_sided"] == 0.025
+          assert E.METHOD["t_critical_df31"] == 2.0395134463964077
+          print("STAGE8A_SOURCE_EXACT_ONE_SIDED_MEAN_PROTOCOL_FROZEN_NO_BIRTH")
+          PY
+
+  engineering:
+    if: ${{ github.run_attempt == 1 }}
+    needs: preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        python-version: ['3.11', '3.12']
+    env:
+      PYTHONPATH: src
+      PYVERSION: ${{ matrix.python-version }}
+      CUSTODY: /tmp/i3-stage8a-engineering-${{ matrix.python-version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Allocate one full 32-population engineering root (ZERO births)
+        run: |
+          mkdir -p "$CUSTODY"
+          SOURCE=$(python -c 'from i3.runtime.provenance import source_snapshot; print(source_snapshot()["sha256"])')
+          python -m i3.lab.stage8a_mean_persistence allocate "$GITHUB_SHA" "$SOURCE" "$CUSTODY/PLAN.json" "$CUSTODY/originals"
+          python -m i3.lab.stage8a_mean_persistence verify "$CUSTODY/PLAN.json"
+      - name: Publish every World/founder/parent/mutation seed BEFORE any native life
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8a-technical-plan-${{ matrix.python-version }}-${{ github.run_id }}
+          path: /tmp/i3-stage8a-engineering-${{ matrix.python-version }}/PLAN.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Run ONCE two 16-population native full G/S/R engineering panels
+        run: |
+          SHA=$(python -c 'import json,os; print(json.load(open(os.environ["CUSTODY"]+"/PLAN.json"))["allocation_sha256"])')
+          python -m i3.lab.stage8a_mean_persistence run-engineering "$CUSTODY/PLAN.json" "$CUSTODY/originals" "$SHA" > "$CUSTODY/CORE.json"
+      - name: Verify all 23,040 originals, 18 seals and two complete panel receipts
+        run: |
+          python -m i3.lab.stage8a_mean_persistence rehearsal-receipt "$CUSTODY/PLAN.json" "$CUSTODY/originals" "$CUSTODY/CORE.json" "$CUSTODY/TECH_RECEIPT.json" "$PYVERSION" "$GITHUB_RUN_ID"
+      - name: Publish technical receipt without any unblinded mean effect
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8a-technical-receipt-${{ matrix.python-version }}-${{ github.run_id }}
+          path: /tmp/i3-stage8a-engineering-${{ matrix.python-version }}/TECH_RECEIPT.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Retain complete technical original gzip lives and failures, no retry
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8a-technical-originals-${{ matrix.python-version }}-${{ github.run_id }}
+          path: /tmp/i3-stage8a-engineering-${{ matrix.python-version }}/originals
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 90
+
+  science:
+    if: ${{ github.run_attempt == 1 }}
+    needs: engineering
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    env:
+      PYTHONPATH: src
+      CUSTODY: /tmp/i3-stage8a-prospective-science
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Create science custody parent outside clean source
+        run: mkdir -p "$CUSTODY"
+      - name: Download complete Python 3.11 source-specific native rehearsal receipt
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8a-technical-receipt-3.11-${{ github.run_id }}
+          path: /tmp/i3-stage8a-prospective-science/receipts/311
+      - name: Download complete Python 3.12 source-specific native rehearsal receipt
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8a-technical-receipt-3.12-${{ github.run_id }}
+          path: /tmp/i3-stage8a-prospective-science/receipts/312
+      - name: Verify BOTH technical successes, then mint fresh Stage8 science root
+        run: |
+          python -m i3.lab.stage8a_mean_persistence combine "$CUSTODY/receipts/311/TECH_RECEIPT.json" "$CUSTODY/receipts/312/TECH_RECEIPT.json" "$CUSTODY/REHEARSALS.json"
+          SOURCE=$(python -c 'from i3.runtime.provenance import source_snapshot; print(source_snapshot()["sha256"])')
+          python -m i3.lab.stage8a_mean_persistence allocate-science "$GITHUB_SHA" "$SOURCE" "$CUSTODY/SCIENCE_PLAN.json" "$CUSTODY/originals" "$CUSTODY/REHEARSALS.json"
+          python -m i3.lab.stage8a_mean_persistence verify "$CUSTODY/SCIENCE_PLAN.json"
+      - name: Publish distinct science plan and full frozen mean criterion BEFORE birth
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8a-science-preexposure-${{ github.run_id }}
+          path: |
+            /tmp/i3-stage8a-prospective-science/SCIENCE_PLAN.json
+            /tmp/i3-stage8a-prospective-science/REHEARSALS.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Run fresh 32-population G0/G1/G2 persistence cohort ONCE
+        run: |
+          SHA=$(python -c 'import json,os; print(json.load(open(os.environ["CUSTODY"]+"/SCIENCE_PLAN.json"))["allocation_sha256"])')
+          python -m i3.lab.stage8a_mean_persistence run-science "$CUSTODY/SCIENCE_PLAN.json" "$CUSTODY/originals" "$SHA" > "$CUSTODY/SCIENCE_CORE.json"
+      - name: Reverify all 23,040 originals and 3,072 parent draws before verdict
+        run: |
+          python -m i3.lab.stage8a_mean_persistence science-receipt "$CUSTODY/SCIENCE_PLAN.json" "$CUSTODY/originals" "$CUSTODY/SCIENCE_CORE.json" "$CUSTODY/SCIENCE_RESULT.json"
+      - name: Publish all 32 mean contrasts, nulls, negatives and confidence bound
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8a-science-result-${{ github.run_id }}
+          path: |
+            /tmp/i3-stage8a-prospective-science/SCIENCE_RESULT.json
+            /tmp/i3-stage8a-prospective-science/originals/SCIENCE_FINAL.json
+            /tmp/i3-stage8a-prospective-science/originals/PANEL_0/PHASES.jsonl
+            /tmp/i3-stage8a-prospective-science/originals/PANEL_1/PHASES.jsonl
+          if-no-files-found: error
+          retention-days: 90
+      - name: Retain all science original gzip lives and negative outcomes, no retry
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8a-science-originals-${{ github.run_id }}
+          path: /tmp/i3-stage8a-prospective-science/originals
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 90
