@@ -30,7 +30,7 @@ class ContextRouting(unittest.TestCase):
             "active_ci_scripts": ["scripts/check_engine_repository.py"],
             "research_or_legacy_review": ["scripts/audit_i0_sqlite.py"]
         }), encoding="utf-8")
-        for gen, status in (("i1", "active"), ("i2", "proposal")):
+        for gen, status in (("i1", "active"), ("i2", "proposal"), ("i3", "proposal")):
             target = self.root / f"src/{gen}/engine.json"
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(json.dumps({"generation": gen.upper(), "status": status,
@@ -65,6 +65,18 @@ class ContextRouting(unittest.TestCase):
         self.assertEqual(result["contract_status"], "proposal")
         self.assertEqual(result["scientific_gate"], "NOT_EVALUATED")
         self.assertIn("NOT_REGISTERED", result["activation"])
+
+    def test_i3_current_route_is_short_and_nonregistered(self):
+        result = router.route_context(self.root, paths=["src/i3/modules/mind.py"])
+        self.assertEqual(result["route"], "i3-current")
+        self.assertEqual(result["generation"], "I3")
+        self.assertEqual(result["contract_status"], "proposal")
+        self.assertEqual(result["active_generation"], "I1")
+        self.assertEqual(result["scientific_gate"], "NOT_EVALUATED")
+        self.assertIn("src/i3/docs/STATUS.md", result["documents"])
+        self.assertNotIn("src/i3/docs/STATUS_HISTORY_2026-11-16.md", result["documents"])
+        with self.assertRaises(ValueError):
+            router.route_context(self.root, selected="i3-current", paths=["src/i1/modules/memory.py"])
 
     def test_i1_memory_and_m11_take_specific_owner(self):
         for path, expected in (("src/i1/modules/memory.py", "i1-memory"),
