@@ -110,3 +110,13 @@ caches without a fresh equivalence assessment.
 Primary evidence:
 - https://github.com/josselin-orta-lab/individual-zero/actions/runs/41740611291
 - https://github.com/josselin-orta-lab/individual-zero/issues/946
+
+## Addendum: archival PR gate versus historical full suite (16 November 2026)
+
+I2 became `ARCHIVED_IN_PLACE` by ADR-0023, with its original `src/i2/` and `tests/i2/` Git tree SHA values frozen and checked by `tools/check_i2_archive.py`. Consequently, an ordinary change to the shared engine-structure policy no longer needs to execute the 877-occurrence historical I2 suite in each Python version simply to prove that a *frozen* source tree remains unchanged.
+
+In the latest-100-run baseline recorded at main `9091387a...` (12–16 November), **two successful** I2 proposal workflows had median wall duration **1,567 s**; sample [#43829717223](https://github.com/josselin-orta-lab/individual-zero/actions/runs/43829717223) executed 877 occurrences on Python 3.11 and 877 on 3.12, with jobs of 872 s and 1,554 s. These are measured historic wall durations, not billable-minute totals, and the sample is small.
+
+**Proposed routing control:** the PR-path workflow retains both Python jobs but replaces the expensive step with fail-closed original I2 tree checks, common engine-boundary tests and the static inert-proposal assessment. The complete `tools/i2_ci_shards.py` suite is **not removed or shortened**; it runs only in the exact manually confirmed archive-audit workflow. Any I2 source/test mutation fails the original tree guard rather than receiving a new, uncontrolled synthetic trial.
+
+**Causal cost reduction not yet measured:** verify the first ordinary exact-head PR run after this change and report its two job durations; do not infer realized savings just from conditional YAML. Never run the full suite or a new living cohort solely to benchmark the change.

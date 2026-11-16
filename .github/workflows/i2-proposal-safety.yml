@@ -4,8 +4,8 @@ on:
   pull_request:
     branches: [main]
     paths:
-      # I2 source or fixtures still require the full inert-proposal checks.
-      # Pure documentation changes use agent-context-static.yml instead.
+      # Archived I2 sources/tests are SHA-frozen; PRs get only static denial checks.
+      # Full 3.11/3.12 historical suite is manual-only, never ordinary PR CI.
       - 'src/i2/**'
       - '!src/i2/docs/**'
       - '!src/i2/README.md'
@@ -17,24 +17,30 @@ on:
       - 'scripts/check_engine_repository.py'
       - 'tests/test_engine_repository.py'
       - '.github/workflows/i2-proposal-safety.yml'
+  workflow_dispatch:
+    inputs:
+      archive_review:
+        description: 'Explicit historical I2 software audit only, NOT new scientific cohorts'
+        type: choice
+        required: true
+        options:
+          - I2_EXPLICIT_HISTORICAL_TECHNICAL_AUDIT
 
 permissions:
   contents: read
 
 concurrency:
-  group: i2-proposal-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  group: i2-proposal-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   inert-proposal:
+    if: github.event_name == 'pull_request' || github.event.inputs.archive_review == 'I2_EXPLICIT_HISTORICAL_TECHNICAL_AUDIT'
     name: I2 inactive proposal (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
-    # Two processes per runner schedule ALL discovered tests exactly once.
-    # Preserve the full source-locked 3.11/3.12 suite and all gate checks.
-    # Source-locked #985 second full attempt: Python 3.11 PASS 812/812
-    # plus six boundaries and inert engine at ~27 min; Python 3.12
-    # shard 0 PASS 384/384 in 1126 s but shard 1 still running at 30m.
-    # Exhaustive guards and cohort stay unchanged; only the job timeout grows.
+    # Keep the two Python versions and the original full suite for explicit
+    # historical technical review. PRs must fail quickly on archive drift,
+    # cannot run paid synthetic I2 research lives by a documentation edit.
     timeout-minutes: 45
     strategy:
       fail-fast: false
@@ -44,18 +50,17 @@ jobs:
       - name: Exact reviewed PR source
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
       - name: Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Isolated I2 policy and scaffold tests (no birth)
+      - name: Source-locked I2 archive and registered generation boundaries (PR-safe)
         run: |
-          python tools/i2_ci_shards.py
-          python -m compileall -q src/i2 tests/i2
-      - name: Registered generation boundaries (static only, no I1 runtime)
-        run: |
+          python tools/check_i2_archive.py --json
+          python -m unittest discover -s tests -p test_historical_generation_archive.py -v
+          python scripts/check_engine_contracts.py --json
           python scripts/check_engine_repository.py --json
           python -m unittest discover -s tests -p test_engine_repository.py -v
       - name: Independent proposal assessment (expected BLOCKED)
@@ -79,3 +84,8 @@ jobs:
           assert r["human_review_required"] is True, r
           print("I2_PROPOSAL_POLICY_INERT_GUARD_PASS")
           PY
+      - name: Full archived I2 test suite (explicit manual audit ONLY)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.archive_review == 'I2_EXPLICIT_HISTORICAL_TECHNICAL_AUDIT'
+        run: |
+          python tools/i2_ci_shards.py
+          python -m compileall -q src/i2 tests/i2
