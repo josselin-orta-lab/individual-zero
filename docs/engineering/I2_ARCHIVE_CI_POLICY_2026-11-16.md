@@ -16,7 +16,8 @@ Under the [I2 historical archive portal](../../archive/i2/README.md), both `src/
 | PR touches `scripts/check_engine_repository.py`, `tests/test_engine_repository.py`, `tools/assess_engine_proposal.py`, `tools/i2_ci_shards.py` or the old I2 workflow | Same automatic static CI, including original repository-boundary unittests | **No.** Shared policy remains covered without I1 birth or historical I2 full matrix. |
 | Operator explicitly starts `workflow_dispatch` for `i2-proposal-safety.yml` | Original 3.11/3.12 full I2 software suite, sharded as before, source checked out at `github.sha` | **Yes, manually only.** This does not authorize an I2 research cohort. |
 | PR touches actual `src/i1/**` or `tests/i1/**` | Existing registered-I1 workflow unchanged | No change to I1 checks. |
-| I3 software/science work | Existing generation-owned I3 checks and frozen one-shot gates unchanged | No I2 suite triggered. |
+| PR touches only the shared repository tests/guard | `agent-context-static.yml` runs the repository-boundary suite; `i3-proposal-checks.yml` no longer starts a full I3 matrix for these shared static paths | Neither full I2 nor full I3 test matrices start from the shared policy change alone. |
+| I3-owned source, tests or a change to its own workflow | Existing full I3 software matrices for Python 3.11 and 3.12; frozen one-shot conditions unchanged | No I2 suite triggered. |
 
 A reviewer cannot turn an I2 source/test change green by merely dispatching the old matrix: the mandatory **automatic** archive tree guard must still pass. The old manually triggered suite cannot update the archive manifest, activate I2, or create scientific evidence. Any proposal to reopen I2 requires a **new explicit archival decision**, preservation of original SHAs and separate provenance.
 
@@ -24,10 +25,10 @@ A reviewer cannot turn an I2 source/test change green by merely dispatching the 
 
 - `.github/workflows/i2-proposal-safety.yml` now has **only** `workflow_dispatch`, preserving the full original 877-case-per-version historical test discovery and the independent proposal assessment. Its checkout is pinned to `github.sha` for the selected dispatch ref, not a now-absent PR head.
 - `.github/workflows/agent-context-static.yml` watches all frozen I2 paths and the shared guard/tooling paths, runs the I2 archive guard and executes `tests/test_engine_repository.py` as a lightweight structural boundary suite.
-- `tests/test_engine_repository.py` asserts that the archived matrix has no automatic PR trigger, still supports manual source-exact 3.11/3.12 verification, and that the static workflow covers every protected path and command. Original I1 trigger exclusions and live-workflow paths remain guarded.
+- `tests/test_engine_repository.py` asserts that the archived matrix has no automatic PR trigger, still supports manual source-exact 3.11/3.12 verification, and that the static workflow covers every protected path and command. Original I1 trigger exclusions and live-workflow paths remain guarded. It also checks that I3's own source/test paths retain the 3.11/3.12 matrices while these shared static files do not trigger them.
 - The historical [I2 portal](../../archive/i2/README.md) links to this policy. No file from the pinned `src/i2/` or `tests/i2/` tree is modified.
 
-**Measured impact:** the *automatic* I2 full matrix now launches **zero** times for matching PR changes because it has no `pull_request` trigger; its former 1,567-second median runtime remains available on manual dispatch. The static gate still consumes its ordinary (previously measured 17-second median) runtime plus the new structural tests; **the actual post-change duration must be observed on this PR**. No fabricated runner-minute saving or scientific verdict is inferred.
+**Measured impact:** the *automatic* I2 full matrix now launches **zero** times for matching PR changes because it has no `pull_request` trigger; its former 1,567-second median runtime remains available on manual dispatch. The static gate still consumes its ordinary (previously measured 17-second median) runtime plus the newly added structural tests; shared-only changes also avoid unnecessary I3 software matrices; **the actual post-change duration must be observed on this PR**. No fabricated runner-minute saving or scientific verdict is inferred.
 
 ## Safe scientific boundary
 
