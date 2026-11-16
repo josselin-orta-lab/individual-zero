@@ -10,8 +10,9 @@ on:
       - 'src/i3/ACTIVE_SURFACE.json'
       - 'tests/i3/**'
       - 'src/i3/docs/studies/stage2-replay-gate-selected-design/ENGINEERING_B1_PLAN.json'
-      - 'scripts/check_engine_repository.py'
-      - 'tests/test_engine_repository.py'
+      # Shared repository/generation policy is enforced by the mandatory
+      # lightweight agent-context-static.yml PR gate, not this I3 matrix.
+      # Retain both full 3.11/3.12 matrices on I3-owned source and tests.
       - '.github/workflows/i3-proposal-checks.yml'
 
   push:
