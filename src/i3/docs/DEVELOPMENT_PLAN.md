@@ -24,7 +24,7 @@
 | 6 | Inherit *generic learning dispositions* via genuinely independent lineage selection, not acquired memories | Proposed architecture; **distinct** from closed 16-population Stage6/Stage7 experiments |
 | Audit | Competition cost and switching thresholds | Lower priority; not a mandate to force survival actions |
 
-Prospective world families **F0–F6** in the [original scenario](DEVELOPMENT_PLAN_HISTORY_2026-11-16.md#world-family-progression-and-generalization) are *proposals*: F1 terrain, F2 seasons, F3 delayed toxicity/perceived attributes, F4 moving danger, F5 inventory transport, F6 multi-individual competition out of scope. No generator, family independence, power, source release or fresh World is established merely by listing a family.
+Future world families F0–F6 remain **unreleased proposals**, not evidence of transfer or authorized Worlds. See [their exact original specification](DEVELOPMENT_PLAN_HISTORY_2026-11-16.md#world-family-progression-and-generalization).
 
 ## Before proposing new work
 
@@ -32,6 +32,6 @@ Prospective world families **F0–F6** in the [original scenario](DEVELOPMENT_PL
 2. Identify true independent units, first-person observable effects, priced cognition and bodily consequences, a matched negative/random control, adverse and terminal-life handling, a practical margin and statistical/finite-population resolution. Distinguish **heredity** from shared environment and selection exposure.
 3. For a genuinely new prospective cohort, freeze the **run-specific** source, Worlds, separate index/seed/allocation, exposure order, engine rehearsal, reducer, sealed original artifact plan, non-retry conditions and exact scientific estimand **before** births. ADR-0022 does not convert old frozen plans into available allocations.
 4. Do not modify born policy to reach a desired result: no oracle, scripted drinking/eating, privileged next action, free cognition, inherited memory, resurrection or cross-generation live state. Any death/null result remains preserved.
-5. Use the concise [test plan](TEST_PLAN.md), source-specific studies, accepted ADRs and [canonical handoff](../../../docs/engineering/AGENT_HANDOFF.md). Record software vs science claims separately.
+5. Use the concise [test plan](TEST_PLAN.md) and [canonical handoff](../../../docs/engineering/AGENT_HANDOFF.md); separate software and science.
 
 For exact *historical* stage-by-stage rationales, family assumptions, originally proposed thresholds and previously dated World/index constraints, consult the [unaltered full plan](DEVELOPMENT_PLAN_HISTORY_2026-11-16.md) and its source-specific preregistrations. **Current authority comes from the registry, accepted ADRs, live source and later frozen studies**, never from an old paragraph labeled "next".
