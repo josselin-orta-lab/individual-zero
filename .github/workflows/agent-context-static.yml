@@ -9,6 +9,11 @@ on:
       - 'config/archives/i2-20261116.json'
       - 'archive/i2/**'
       - 'tools/check_i2_archive.py'
+      # I2 policy/CI tooling now routes to lightweight static checks, not the archived matrix.
+      - 'tools/i2_ci_shards.py'
+      - 'tools/assess_engine_proposal.py'
+      - 'scripts/check_engine_repository.py'
+      - 'tests/test_engine_repository.py'
       - 'tests/test_historical_generation_archive.py'
       - 'src/i2/**'
       - 'tests/i2/**'
@@ -199,6 +204,7 @@ jobs:
           PY
           python -m unittest discover -s tests -p test_agent_context.py -v
           python scripts/check_engine_repository.py --json
+          python -m unittest discover -s tests -p test_engine_repository.py -v
           python -m unittest discover -s tests -p test_repo_navigation.py -v
           python tools/check_repo_navigation.py --scope entrypoints
           python tools/check_repo_navigation.py --scope current
