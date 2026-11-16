@@ -152,7 +152,7 @@ class EngineToolingTests(unittest.TestCase):
                       "tests/test_engine_repository.py"):
             # No positive path in I1's expensive PR trigger.
             self.assertNotIn("      - '" + owned + "'", heavy_paths)
-            # Same static source changes must activate I2 proposal tests.
+            # Same changes must still activate I2's lightweight archival PR gate.
             self.assertIn("      - '" + owned + "'", light_paths)
         self.assertIn("      - 'scripts/**'", heavy_paths)
         self.assertIn("      - '!scripts/check_engine_repository.py'", heavy_paths)
@@ -166,6 +166,17 @@ class EngineToolingTests(unittest.TestCase):
             "python -m unittest discover -s tests -p test_engine_repository.py -v",
             light,
         )
+        # I2 is now a pinned historical generation: no routine pull request
+        # can launch the complete I2 paid synthetic test/replay matrix.
+        self.assertIn("  workflow_dispatch:", light)
+        self.assertIn("python tools/check_i2_archive.py --json", light)
+        self.assertIn("python -m unittest discover -s tests -p test_historical_generation_archive.py -v", light)
+        self.assertEqual(light.count("python tools/i2_ci_shards.py"), 1)
+        full_step = light.split("      - name: Full archived I2 test suite (explicit manual audit ONLY)", 1)[1]
+        self.assertIn("if: github.event_name == 'workflow_dispatch'", full_step)
+        self.assertIn("I2_EXPLICIT_HISTORICAL_TECHNICAL_AUDIT", full_step)
+        self.assertLess(light.index("python tools/check_i2_archive.py --json"),
+                        light.index("python tools/i2_ci_shards.py"))
         # Changes to real I1 source/engine contracts must still run full I1.
         for required in (
             "      - 'src/i1/**'",
