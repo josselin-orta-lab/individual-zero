@@ -17,6 +17,9 @@ on:
       - 'src/i3/AGENTS_HISTORY_2026-11-16.md'
       - 'src/i3/docs/STATUS.md'
       - 'src/i3/docs/STATUS_HISTORY_2026-11-16.md'
+      - 'src/i3/docs/README.md'
+      - 'src/i3/docs/README_HISTORY_2026-11-16.md'
+      - 'tests/test_agent_historical_sources.py'
       - 'config/research-program.json'
       - 'config/research-dossiers.json'
       - 'config/research-g0-artifacts.json'
@@ -98,6 +101,7 @@ jobs:
           python tools/agent_context.py audit --json
           python tools/check_i2_archive.py --json
           python -m unittest discover -s tests -p test_historical_generation_archive.py -v
+          python -m unittest discover -s tests -p test_agent_historical_sources.py -v
           python tools/research_coordinator.py audit --structure-only > /tmp/iz-research-audit.json
           python -m unittest discover -s tests -p test_research_coordinator.py -v
           python -m unittest discover -s tests -p test_research_knowledge.py -v
