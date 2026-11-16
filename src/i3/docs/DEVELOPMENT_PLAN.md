@@ -34,4 +34,4 @@ Future world families F0–F6 remain **unreleased proposals**, not evidence of t
 4. Do not modify born policy to reach a desired result: no oracle, scripted drinking/eating, privileged next action, free cognition, inherited memory, resurrection or cross-generation live state. Preserve deaths and null outcomes.
 5. Use the concise [test plan](TEST_PLAN.md) and [canonical handoff](../../../docs/engineering/AGENT_HANDOFF.md); separate software and science.
 
-For exact *historical* stage-by-stage rationales, family assumptions, originally proposed thresholds and previously dated World/index constraints, consult the [unaltered full plan](DEVELOPMENT_PLAN_HISTORY_2026-11-16.md) and its source-specific preregistrations. **Current authority comes from the registry, accepted ADRs, live source and later frozen studies**, never from an old paragraph labeled "next".
+For original stage rationales, assumptions and thresholds, consult the [unaltered full plan](DEVELOPMENT_PLAN_HISTORY_2026-11-16.md) and frozen preregistrations. Current authority comes from the registry, accepted ADRs, source and later studies.
