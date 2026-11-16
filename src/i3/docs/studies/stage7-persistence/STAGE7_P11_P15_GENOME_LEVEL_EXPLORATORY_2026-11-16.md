@@ -80,3 +80,13 @@ python per_genome_ancestry_diagnostic.py --root /path/to/three/github-artifact-z
 Original scientific ZIPs and original G0/G1/G2 lives are never changed. No `run_life`, World creation, mutation execution, or seed change occurs. Full original scientific retention currently has a finite expiration (GitHub metadata: 2027-02-14); retain provenance-aware copies for future reproduction. The script and CSV/JSON outputs are also delivered with the analysis conversation; review their SHA and archived source roots before reuse.
 
 **Next falsifiable work without new cohorts:** predefine a *purely descriptive* ancestry-cluster sensitivity check with genotype-family rank changes and per-gene response plots, and document omitted variables. A fresh causal test of `w.food` or `p.water` would need separately authorized, prospectively registered genotype interventions with independently held-out World opportunities; do not reinterpret this one-shot run.
+
+## Additional observed within-world survival thresholds (all original lives)
+
+A key safeguard against overinterpreting single-gene effects is that some source-frozen World exposures **collapse many different genotypes to identical death steps**:
+
+- **P11 / G2 / stable / repeat 0:** all **24 selected genotypes die at step 102**, all with recorded `zero_water`, **zero drinks**. The random-parent arm has **22 at step 102 and 2 censored at step 400**. Its apparent G2 deficit of **−24.8333 steps in this block** comes entirely from those two surviving random-parent genotypes relative to a common 102-step floor.
+- **P15 / G2 / pulse / repeat 0:** all **24 selected genotypes die at step 95**, all with `zero_water`, **zero drinks**. The random-parent arm has **22 at step 95, 1 dead at 273, and 1 censored at 400**. The **−20.1250-step difference** in this block is entirely due to those two late random-parent trajectories.
+- **P15 / G2 / pulse / repeat 1:** selected has **19/24 at step 124 and 0 censored at 400**; random-parent has **14/24 at step 124 and 5 censored at 400**. The arm difference here is **−50.5000 steps**, with a different discrete distribution.
+
+These are **descriptive original outcomes**, not evidence of an engine fault or proof of a gene mechanism. Their discreteness shows that genotype-outcome associations are partly driven by rare survivors under context-specific bottlenecks and strongly cautions against extrapolating a smooth genetic fitness response. In the two zero-variance blocks no within-block genotype rank correlation can be estimated, regardless of genetic differences. They also do not replace the fixed six-world population estimator.
