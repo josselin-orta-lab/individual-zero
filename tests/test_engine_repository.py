@@ -159,6 +159,16 @@ class EngineToolingTests(unittest.TestCase):
         self.assertIn("python tools/i2_ci_shards.py", archived)
         self.assertIn("python-version: ['3.11', '3.12']", archived)
         self.assertIn("python scripts/check_engine_repository.py --json", archived)
+        i3 = (ROOT / ".github/workflows/i3-proposal-checks.yml").read_text()
+        i3_paths = i3.split("  push:", 1)[0]
+        for shared in ("scripts/check_engine_repository.py",
+                       "tests/test_engine_repository.py"):
+            self.assertNotIn("      - '" + shared + "'", i3_paths)
+        for i3_owned in ("src/i3/**/*.py", "src/i3/engine.json",
+                         "src/i3/ACTIVE_SURFACE.json", "tests/i3/**",
+                         ".github/workflows/i3-proposal-checks.yml"):
+            self.assertIn("      - '" + i3_owned + "'", i3_paths)
+        self.assertIn("python-version: ['3.11', '3.12']", i3)
 
         for owned in ("src/i2/**", "tests/i2/**",
                       "config/archives/i2-20261116.json",
