@@ -13,7 +13,7 @@ The following six historical jobs were already disabled with the literal gate `i
 - `stage2-realstate-fork-24-exploratory-once`
 - `stage2-next-decision-24-exploratory-once`
 
-The [live workflow](../../../.github/workflows/i3-proposal-checks.yml) retains its original PR/push filters, permissions, cancellation behavior and **all 22 other jobs byte-identically**. The source-pinned [static test](../../../tests/test_i3_workflow_archive.py) rejects archive tampering, changed historical triggers, modifications of surviving jobs and restored one-shot jobs.
+The [live workflow](../../../.github/workflows/i3-proposal-checks.yml) retains its original PR/push filters, permissions, cancellation behavior and **all 22 other jobs byte-identically**. The source-pinned [static test](../../../tests/i3/test_workflow_archive.py) rejects archive tampering, changed historical triggers, modifications of surviving jobs and restored one-shot jobs.
 
 No job in this archive may be copied back to a live workflow to get another scientific life. An entirely new study would need its own preregistration, exact source/seed allocation, authority, technical gates, original evidence and non-retry contract.
 
