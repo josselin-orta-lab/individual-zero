@@ -60,6 +60,9 @@ def unexpected_workflows(paths, *, active_ci: str) -> list[str]:
         # ADR-0022: one exact, owner-authorized prospective Stage6 laboratory
         # workflow, separately source-locked and no I3 active-engine promotion.
         "i3-stage6-one-shot-20261115.yml",
+        # A separate ADR-0022 one-shot for NEW prospective inherited persistence:
+        # permit only this reviewed filename, not a wildcard scientific runner.
+        "i3-stage7-persistence-one-shot-20261116.yml",
     }
     return sorted(path.name for path in paths
                   if not path.name.startswith("i1-") and path.name not in allowed)
