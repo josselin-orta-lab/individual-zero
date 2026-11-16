@@ -12,10 +12,10 @@
 | Stage1 | Negative closure, [ADR-0018](../../../docs/decisions/ADR-0018-i3-cloture-etape-1.md); historical originals retained |
 | Stage2.1 engineering | `REPLAY_GATE_CAPACITY_SHOWN`, **software capacity only** |
 | Stage2 scientific | `NOT_ISSUED/HOLD_NO_VERDICT`, [ADR-0021](../../../docs/decisions/ADR-0021-i3-stage2-internal-hold-no-verdict.md); no Stage2.2/2.3 GO |
-
-**E3 exact source-locked stop:** [Stage 2 post-E3 scientific stop checkpoint](studies/stage2-replay-gate-selected-design/STAGE2_POST_E3_SCIENTIFIC_STOP_ASSESSMENT_2026-11-11.md) records `E3_FROZEN_NATIVE_ACTION_MEDIATION_NOT_SHOWN` (0/2 legal motor changes). P1.3 is retained; Stage2 scientific `NOT_ISSUED` remains separate from this candidate negative.
 | Prospective laboratory governance | [ADR-0022](../../../docs/decisions/ADR-0022-i3-owner-authorizes-prospective-experiments-internal-evidence.md) allows **new internally witnessed, separately frozen** prospective research. It does **not** establish independent external custody, native production M11 or engine promotion |
 | Earlier generation I2 | [Archived in place](../../../archive/i2/README.md) by ADR-0023; historical comparator, not a live runtime or default next-development target |
+
+**E3 exact source-locked stop:** [Stage 2 post-E3 scientific stop checkpoint](studies/stage2-replay-gate-selected-design/STAGE2_POST_E3_SCIENTIFIC_STOP_ASSESSMENT_2026-11-11.md) records `E3_FROZEN_NATIVE_ACTION_MEDIATION_NOT_SHOWN` (0/2 legal motor changes). P1.3 is retained; Stage2 scientific `NOT_ISSUED` remains separate from this candidate negative.
 
 ## Most recent source-locked scientific observations
 
