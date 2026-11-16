@@ -88,6 +88,9 @@ on:
       - 'docs/research/audits/I1_G0_PROVIDER_ARTIFACT_CUSTODY_2026-11-01.md'
       - '.github/workflows/i2-proposal-safety.yml'
       - '.github/workflows/agent-context-static.yml'
+      - '.github/workflows/i3-proposal-checks.yml'
+      - 'archive/i3/workflows/**'
+      - 'tests/test_i3_workflow_archive.py'
 
 permissions:
   contents: read
@@ -109,6 +112,7 @@ jobs:
           python tools/agent_context.py audit --json
           python tools/check_i2_archive.py --json
           python -m unittest discover -s tests -p test_historical_generation_archive.py -v
+          python -m unittest discover -s tests -p test_i3_workflow_archive.py -v
           python -m unittest discover -s tests -p test_agent_historical_sources.py -v
           # Pure documentation contract: no I3 runtime, World, motor or cohort.
           python -m unittest discover -s tests/i3 -p test_stage2_post_e3_agent_handoff.py -v
