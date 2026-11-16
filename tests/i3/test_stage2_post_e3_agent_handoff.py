@@ -67,8 +67,11 @@ class PostE3ScientificHandoffContract(unittest.TestCase):
             self.assertIn("P1.3", doc)
         self.assertIn("Stage 2 post-E3 scientific stop checkpoint", status)
         self.assertIn("E3_FROZEN_NATIVE_ACTION_MEDIATION_NOT_SHOWN", status)
-        self.assertLess(agents.index("Current Stage-2.1 E3 research handoff"),
-                        agents.index("Historical Stage-2.1 post-B1"))
+        historical_agents = (I3 / "AGENTS_HISTORY_2026-11-16.md").read_text(encoding="utf-8")
+        self.assertIn("AGENTS_HISTORY_2026-11-16.md", agents)
+        # Chronological order belongs to the preserved old agent ledger.
+        self.assertLess(historical_agents.index("Current Stage-2.1 E3 research handoff"),
+                        historical_agents.index("Historical Stage-2.1 post-B1"))
         self.assertNotIn("the frozen DEVELOPMENT 80/81 pilot may\nuse",
                          agents)
         self.assertNotIn("The cost-only, fixed-action\nsoftware campaigns through",
