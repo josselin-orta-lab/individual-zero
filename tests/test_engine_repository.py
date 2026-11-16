@@ -135,6 +135,18 @@ class EngineToolingTests(unittest.TestCase):
         self.assertEqual(unexpected_workflows(
             paths, active_ci="i1-current-ci.yml"), sorted(blocked))
 
+    def test_stage8a_mean_persistence_once_whitelist_is_not_wildcard(self):
+        from scripts.check_engine_repository import unexpected_workflows
+
+        accepted = "i3-stage8a-mean-persistence-once-20261116.yml"
+        denied = ("i3-stage8a-mean-persistence-once-20261116-retry.yml",
+                  "i3-stage8a-mean-persistence-once-20261117.yml",
+                  "i3-stage8a-fishing-seeds.yml")
+        entries = [Path(".github/workflows/" + x)
+                   for x in (accepted, *denied)]
+        self.assertEqual(unexpected_workflows(
+            entries, active_ci="i1-current-ci.yml"), sorted(denied))
+
     def test_static_agent_navigation_is_not_historical_runtime_ci(self):
         from scripts.check_engine_repository import unexpected_workflows
         paths = [Path(".github/workflows/agent-context-static.yml"),
