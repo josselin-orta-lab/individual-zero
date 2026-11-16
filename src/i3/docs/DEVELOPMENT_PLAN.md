@@ -1,6 +1,6 @@
 # I3 development plan: current navigation
 
-**Maintained entrypoint · 16 November 2026.** This is a concise *route through* the owner's accepted generalization scenario, not a replacement experimental protocol, scientific verdict or permission to open a World. The complete 6-November plan (23,488 Git bytes, blob `a0e19684c58636ffaec20cf914cbf20a0e96fe2e`) remains **byte-identical** at [DEVELOPMENT_PLAN_HISTORY_2026-11-16.md](DEVELOPMENT_PLAN_HISTORY_2026-11-16.md). Its dated "current" statements and next-step orders remain historical. The original French generalization source and its translation have separate [language custody](TRANSLATION_CUSTODY.md); [ADR-0016](../../../docs/decisions/ADR-0016-i3-generalization-without-imposed-rules.md) governs the accepted architectural intent.
+**Maintained entrypoint · 16 November 2026.** This is a concise *route through* the owner's accepted generalization scenario, not a replacement experimental protocol, scientific verdict or permission to open a World. The complete 6-November plan (23,488 Git bytes, blob `a0e19684c58636ffaec20cf914cbf20a0e96fe2e`) remains **byte-identical** at [DEVELOPMENT_PLAN_HISTORY_2026-11-16.md](DEVELOPMENT_PLAN_HISTORY_2026-11-16.md). Its dated "current" statements and next-step orders remain historical. [ADR-0016](../../../docs/decisions/ADR-0016-i3-generalization-without-imposed-rules.md) governs architecture; [source translations remain preserved](TRANSLATION_CUSTODY.md).
 
 ## What is actually active
 
