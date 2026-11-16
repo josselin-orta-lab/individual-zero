@@ -16,6 +16,7 @@
 - Freeze `src/i2/` and `tests/i2/` **byte for byte at the pinned Git tree identity**. A future correction or archival release needs a separately reviewed decision and explicit manifest/test updates; it is never automatic.
 - This is a *Git-addressed historical archive*, not a physical copy in `archive/i2/source`. Copying hundreds of tracked files would bloat the repository while preserving neither additional scientific evidence nor more original Git objects.
 - Keep all existing source-specific I2 results and research-program/dossier pins. Do not silently replace their cited SHA, paths, experiment cohorts or interpretation.
-- The existing `i2-proposal-safety` CI remains as a historical software verification route; its success is not scientific evidence and does not reactivate I2. For normal i3 work, do not run it.
+- **Automatic PR gate:** `agent-context-static.yml` checks the pinned I2 source and test Git trees and generation contracts without running I2; any source/test drift must **FAIL**. Common static engine-policy changes are checked there too.
+- **Manual historical reproduction only:** `.github/workflows/i2-proposal-safety.yml` retains the complete I2 Python 3.11/3.12 matrix under `workflow_dispatch`, not `pull_request`. This is an operator-controlled software reproduction, **not permission** to change archived source, birth a new research cohort or promote the generation. Its SUCCESS is not a scientific verdict. See [I2 archival CI policy](../../docs/engineering/I2_ARCHIVE_CI_POLICY_2026-11-16.md).
 
 This disposition concerns **repository and development priorities**, not the identity or experience of any born individual, and does not convert I2's original `proposal` engine contract into an activated engine.
