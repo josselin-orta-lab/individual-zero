@@ -57,12 +57,12 @@ class I3NavigationCustody(unittest.TestCase):
         for name in ("TEST_PLAN", "DEVELOPMENT_PLAN"):
             current = (ROOT / f"src/i3/docs/{name}.md").read_text(encoding="utf-8")
             self.assertIn(f"{name}_HISTORY_2026-11-16.md", current)
-            self.assertIn("NOT_ISSUED", current if name == "DEVELOPMENT_PLAN"
-                          else current.replace("Stage2", "NOT_ISSUED", 1))
+            self.assertIn("NOT_ISSUED", current)
             self.assertIn("12/16", current)
             self.assertIn("13/16", current)
-            self.assertIn("3.11", current if name == "TEST_PLAN"
-                          else "3.11" + current)
+            if name == "TEST_PLAN":
+                self.assertIn("3.11", current)
+                self.assertIn("3.12", current)
 
     def test_i3_reference_is_not_implicit_engine_activation(self):
         import json
