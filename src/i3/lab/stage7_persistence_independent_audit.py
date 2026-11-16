@@ -155,7 +155,7 @@ def _life_check(life: dict, identity: dict, plan: dict) -> tuple[int, bool]:
     if (type(step) is not int or not 1 <= step <= HORIZON or
             life.get("horizon") != HORIZON or
             terminal not in ("dead", "censored") or
-            (terminal == "censored") != (step == HORIZON) or
+            (terminal == "censored" and step != HORIZON) or
             type(trace) is not list or len(trace) != step or
             life.get("genome") != identity["genome_sha256"] or
             life.get("life_seed") != identity["life_seed"] or
