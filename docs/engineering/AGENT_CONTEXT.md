@@ -13,6 +13,8 @@ python tools/agent_context.py routes
 python tools/agent_context.py route --path src/i2/modules/lifecycle_external_witness.py
 python tools/agent_context.py route --task 'I2 external witness' --format json
 python tools/agent_context.py route --route i1-memory --generation I1
+python tools/agent_context.py route --route i3-current --generation I3
+python tools/agent_context.py route --path src/i3/modules/mind.py
 python tools/agent_context.py audit --json
 ```
 
