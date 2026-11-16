@@ -35,7 +35,7 @@ class ContextRouting(unittest.TestCase):
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(json.dumps({"generation": gen.upper(), "status": status,
                                           "entrypoints": {} if gen == "i2" else {"runtime": "stub"},
-                                          "activation": "NOT_REGISTERED_NOT_EXECUTABLE" if gen == "i2" else "active"}),
+                                          "activation": "NOT_REGISTERED_NOT_EXECUTABLE" if gen in ("i2", "i3") else "active"}),
                               encoding="utf-8")
         for route in context_map["routes"].values():
             for field in ("documents", "owners", "tests", "match_paths"):
@@ -71,6 +71,7 @@ class ContextRouting(unittest.TestCase):
         self.assertEqual(result["route"], "i3-current")
         self.assertEqual(result["generation"], "I3")
         self.assertEqual(result["contract_status"], "proposal")
+        self.assertEqual(result["activation"], "NOT_REGISTERED_NOT_EXECUTABLE")
         self.assertEqual(result["active_generation"], "I1")
         self.assertEqual(result["scientific_gate"], "NOT_EVALUATED")
         self.assertIn("src/i3/docs/STATUS.md", result["documents"])
