@@ -1,36 +1,25 @@
 name: I2 proposal-only safety (no engine execution)
 
+# Historical archived I2 verification. Run only via an explicit workflow dispatch.
+# Ordinary PRs are guarded by the fast, fail-closed I2 Git-tree archive check
+# in agent-context-static.yml, not by a 2-version 877-test legacy matrix.
+# Dispatch does not authorize I2 activation, new lives or scientific promotion.
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      # I2 source or fixtures still require the full inert-proposal checks.
-      # Pure documentation changes use agent-context-static.yml instead.
-      - 'src/i2/**'
-      - '!src/i2/docs/**'
-      - '!src/i2/README.md'
-      - '!src/i2/AGENTS.md'
-      - 'tests/i2/**'
-      - 'tools/i2_ci_shards.py'
-      - 'tools/assess_engine_proposal.py'
-      # Structural policy changes must be validated without an I1 birth.
-      - 'scripts/check_engine_repository.py'
-      - 'tests/test_engine_repository.py'
-      - '.github/workflows/i2-proposal-safety.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: i2-proposal-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  group: i2-archive-manual-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   inert-proposal:
     name: I2 inactive proposal (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     # Two processes per runner schedule ALL discovered tests exactly once.
-    # Preserve the full source-locked 3.11/3.12 suite and all gate checks.
+    # Keep the full historical 3.11/3.12 suite, available on explicit dispatch only.
     # Source-locked #985 second full attempt: Python 3.11 PASS 812/812
     # plus six boundaries and inert engine at ~27 min; Python 3.12
     # shard 0 PASS 384/384 in 1126 s but shard 1 still running at 30m.
@@ -44,7 +33,7 @@ jobs:
       - name: Exact reviewed PR source
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.sha }}
           persist-credentials: false
       - name: Python
         uses: actions/setup-python@v5
