@@ -9,7 +9,7 @@ on:
       - 'config/archives/i2-20261116.json'
       - 'archive/i2/**'
       - 'tools/check_i2_archive.py'
-      - 'tests/test_i2_archive.py'
+      - 'tests/test_historical_generation_archive.py'
       - 'src/i2/**'
       - 'tests/i2/**'
       # I3 current/historical split must retain links and unchanged originals.
@@ -97,7 +97,7 @@ jobs:
         run: |
           python tools/agent_context.py audit --json
           python tools/check_i2_archive.py --json
-          python -m unittest discover -s tests -p test_i2_archive.py -v
+          python -m unittest discover -s tests -p test_historical_generation_archive.py -v
           python tools/research_coordinator.py audit --structure-only > /tmp/iz-research-audit.json
           python -m unittest discover -s tests -p test_research_coordinator.py -v
           python -m unittest discover -s tests -p test_research_knowledge.py -v
