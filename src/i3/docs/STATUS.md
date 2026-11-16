@@ -15,6 +15,8 @@
 | Prospective laboratory governance | [ADR-0022](../../../docs/decisions/ADR-0022-i3-owner-authorizes-prospective-experiments-internal-evidence.md) allows **new internally witnessed, separately frozen** prospective research. It does **not** establish independent external custody, native production M11 or engine promotion |
 | Earlier generation I2 | [Archived in place](../../../archive/i2/README.md) by ADR-0023; historical comparator, not a live runtime or default next-development target |
 
+**E3 exact source-locked stop:** [Stage 2 post-E3 scientific stop checkpoint](studies/stage2-replay-gate-selected-design/STAGE2_POST_E3_SCIENTIFIC_STOP_ASSESSMENT_2026-11-11.md) records `E3_FROZEN_NATIVE_ACTION_MEDIATION_NOT_SHOWN` (0/2 legal motor changes). P1.3 is retained; Stage2 scientific `NOT_ISSUED` remains separate from this candidate negative.
+
 ## Most recent source-locked scientific observations
 
 - **Stage6-light `beta_u_eff`:** [single original run #43769581930](https://github.com/josselin-orta-lab/individual-zero/actions/runs/43769581930) completed technically. Its primary population sign criterion was **negative: 9 positive, 7 negative of 16**, with threshold 13. `CLOSED_NO_RETRY`.

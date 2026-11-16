@@ -99,9 +99,15 @@ class ActiveSurfaceContract(unittest.TestCase):
     def test_status_points_to_canonical_software_result(self):
         status = (I3 / "docs" / "STATUS.md").read_text()
         self.assertIn("REPLAY_GATE_CAPACITY_SHOWN", status)
-        self.assertIn("ADR-0017 OWNER LIFT: Stage-2.1 transport "
-                      "dcada9e221f79b9450a4f05fecd20e60ac6595bb306aa871f29e45aefea0b6f1",
-                      status)
+        # The current status is deliberately concise. Exact old owner-lift
+        # custody remains in the byte-identical historical status, not a
+        # newly reusable authorization in the current agent handoff.
+        historical = (I3 / "docs" / "STATUS_HISTORY_2026-11-16.md").read_text()
+        self.assertIn("STATUS_HISTORY_2026-11-16.md", status)
+        marker = ("ADR-0017 OWNER LIFT: Stage-2.1 transport "
+                  "dcada9e221f79b9450a4f05fecd20e60ac6595bb306aa871f29e45aefea0b6f1")
+        self.assertEqual(historical.count(marker), 1)
+        self.assertNotIn(marker, status)
 
     def test_archived_stage1_modules_resolve_and_active_paths_are_absent(self):
         archived = [
