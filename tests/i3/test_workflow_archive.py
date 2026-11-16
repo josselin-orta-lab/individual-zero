@@ -9,7 +9,7 @@ from pathlib import Path
 import re
 import unittest
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 LIVE = ROOT / ".github/workflows/i3-proposal-checks.yml"
 ARCHIVED = ROOT / "archive/i3/workflows/i3-proposal-checks-original-2026-11-16.yml"
 ORIGINAL_BLOB = "370f34867330bce828d5de03135bb4f801917641"
