@@ -30,7 +30,7 @@ jobs:
       matrix:
         python-version: ['3.11', '3.12']
     steps:
-      - name: Exact reviewed PR source
+      - name: Exact manually selected source SHA
         uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
