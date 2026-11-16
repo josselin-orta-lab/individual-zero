@@ -17,7 +17,7 @@ MAP = "config/agent-context-map.json"
 REGISTRY = "config/engine-registry.json"
 INVENTORY = "config/tool-inventory.json"
 SCHEMA = "individual-zero-agent-context/v1"
-GENERATIONS = {"I0", "I1", "I2", "any"}
+GENERATIONS = {"I0", "I1", "I2", "I3", "any"}
 SHA40 = re.compile(r"^[0-9a-fA-F]{40}$")
 
 
@@ -92,7 +92,7 @@ def inspect(root: Path = ROOT) -> dict:
                 elif not existing_selector(root, path):
                     errors.append(f"{route_name}: missing {field} reference: {path}")
         generation = route.get("generation")
-        if generation in ("I1", "I2"):
+        if generation in ("I1", "I2", "I3"):
             contract_path = root / f"src/{generation.lower()}/engine.json"
             try:
                 contract = json.loads(contract_path.read_text(encoding="utf-8"))
@@ -132,8 +132,10 @@ def choose_route(data: dict, paths: list[str], task: str, selected: str | None,
         if generation != "auto" and selected_generation not in (generation, "any"):
             raise ValueError(f"route {selected} does not belong to {generation}")
         if selected_generation != "any" and any(
-            path.startswith("src/i1/") if selected_generation == "I2" else
-            path.startswith("src/i2/") for path in paths
+            path.startswith(f"src/{other}/") or path.startswith(f"tests/{other}/")
+            for path in paths
+            for other in ("i1", "i2", "i3")
+            if other != selected_generation.lower()
         ):
             raise ValueError(f"route {selected} conflicts with requested generation paths")
         return selected, []
@@ -174,8 +176,8 @@ def choose_route(data: dict, paths: list[str], task: str, selected: str | None,
         top = max(scores.values())
         winners = sorted(name for name, score in scores.items() if score == top)
         return (winners[0], []) if len(winners) == 1 else (None, winners)
-    if generation in ("I1", "I2"):
-        return ("i1-core" if generation == "I1" else "i2-proposal"), []
+    if generation in ("I1", "I2", "I3"):
+        return {"I1": "i1-core", "I2": "i2-proposal", "I3": "i3-current"}[generation], []
     return data["default_route"], []
 
 
@@ -214,7 +216,7 @@ def route_context(root: Path = ROOT, *, paths: list[str] | None = None,
     entry = data["routes"][route]
     gen = entry["generation"] if entry["generation"] != "any" else (
         registry["active_generation"] if generation in ("auto", "any") else generation)
-    contract = load_json(root, f"src/{gen.lower()}/engine.json") if gen in ("I1", "I2") else None
+    contract = load_json(root, f"src/{gen.lower()}/engine.json") if gen in ("I1", "I2", "I3") else None
     execution_paths = [item for path in paths if (item := describe_path(path, data, inventory))]
     return {"status": "ROUTED", "route": route, "summary": entry["summary"],
             "requested_paths": paths, "generation": gen,
@@ -284,7 +286,7 @@ def main(argv: list[str] | None = None) -> int:
     commands = parser.add_subparsers(dest="command", required=True)
     route_parser = commands.add_parser("route", help="Select minimal context; never execute commands")
     route_parser.add_argument("--route", dest="selected")
-    route_parser.add_argument("--generation", choices=("auto", "I0", "I1", "I2"), default="auto")
+    route_parser.add_argument("--generation", choices=("auto", "I0", "I1", "I2", "I3"), default="auto")
     route_parser.add_argument("--path", action="append", default=[], help="Affected repository-relative path; repeatable")
     route_parser.add_argument("--task", default="", help="Task description; ambiguous matches require explicit --route")
     route_parser.add_argument("--format", choices=("markdown", "json"), default="markdown")

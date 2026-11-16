@@ -1,0 +1,35 @@
+{
+  "schema": "individual-zero-archived-research-proposal/v1",
+  "generation": "I2",
+  "disposition": "ARCHIVED_IN_PLACE",
+  "effective_date": "2026-11-16",
+  "baseline_main_commit": "9091387a24644865605520b4c42c3f997dce1e3d",
+  "source": {
+    "path": "src/i2",
+    "git_tree_sha": "bd5d4f42832192f223531e0afdecb813e210ef05",
+    "tracked_files": 141
+  },
+  "tests": {
+    "path": "tests/i2",
+    "git_tree_sha": "e0709f39dc96f820656bf8b3d7157b0f2a6b2948",
+    "tracked_files": 158
+  },
+  "contract": {
+    "path": "src/i2/engine.json",
+    "git_blob_sha": "4e04a1a89a91b617c659f9f2f3ee21d52b64b815"
+  },
+  "dated_status": {
+    "path": "src/i2/docs/STATUS.md",
+    "git_blob_sha": "23d6e907176bad93dcb29f45c080edb34fb6a9e0"
+  },
+  "registry_at_archive": {
+    "active_generation": "I1",
+    "reference_generation": "I3",
+    "i2_registered": false
+  },
+  "scientific_interpretation": "NOT_ESTABLISHED",
+  "retained_at_original_paths": true,
+  "executable_activation": "FORBIDDEN",
+  "archive_entrypoint": "archive/i2/README.md",
+  "governing_decision": "docs/decisions/ADR-0023-i2-archived-in-place-i3-context-focus.md"
+}

@@ -5,6 +5,18 @@ on:
     branches: [main]
     paths:
       - 'config/agent-context-map.json'
+      # I2 is now frozen at original source/test Git trees; do not delete or bypass.
+      - 'config/archives/i2-20261116.json'
+      - 'archive/i2/**'
+      - 'tools/check_i2_archive.py'
+      - 'tests/test_historical_generation_archive.py'
+      - 'src/i2/**'
+      - 'tests/i2/**'
+      # I3 current/historical split must retain links and unchanged originals.
+      - 'src/i3/AGENTS.md'
+      - 'src/i3/AGENTS_HISTORY_2026-11-16.md'
+      - 'src/i3/docs/STATUS.md'
+      - 'src/i3/docs/STATUS_HISTORY_2026-11-16.md'
       - 'config/research-program.json'
       - 'config/research-dossiers.json'
       - 'config/research-g0-artifacts.json'
@@ -84,6 +96,8 @@ jobs:
       - name: Check metadata and focused routing tests without running an engine
         run: |
           python tools/agent_context.py audit --json
+          python tools/check_i2_archive.py --json
+          python -m unittest discover -s tests -p test_historical_generation_archive.py -v
           python tools/research_coordinator.py audit --structure-only > /tmp/iz-research-audit.json
           python -m unittest discover -s tests -p test_research_coordinator.py -v
           python -m unittest discover -s tests -p test_research_knowledge.py -v
