@@ -1,0 +1,2323 @@
+name: I3 proposal software checks
+
+on:
+  pull_request:
+    # Keep the same software checks on generation-owned stacked PRs.
+    branches: [main, 'i3/**']
+    paths:
+      - 'src/i3/**/*.py'
+      - 'src/i3/engine.json'
+      - 'src/i3/ACTIVE_SURFACE.json'
+      - 'tests/i3/**'
+      - 'src/i3/docs/studies/stage2-replay-gate-selected-design/ENGINEERING_B1_PLAN.json'
+      - 'scripts/check_engine_repository.py'
+      - 'tests/test_engine_repository.py'
+      - '.github/workflows/i3-proposal-checks.yml'
+
+  push:
+    branches: [main]
+    # The single frozen archival trigger is deliberately never modified again.
+    paths:
+      - 'src/i3/docs/studies/stage2-replay-gate-selected-design/B1_ARCHIVE_ONCE.json'
+      - 'src/i3/docs/studies/stage2-replay-gate-selected-design/THREE_ARM_LAUNCH_ONCE.json'
+      - 'src/i3/docs/studies/stage2-replay-gate-selected-design/CONTENT_48_LAUNCH_ONCE.json'
+      - 'src/i3/docs/studies/stage2-replay-gate-selected-design/WATER_DIVERGENCE_24_LAUNCH_ONCE.json'
+      - 'src/i3/docs/studies/stage2-replay-gate-selected-design/REALSTATE_FORK_24_LAUNCH_ONCE.json'
+      - 'src/i3/docs/studies/stage2-replay-gate-selected-design/NEXT_DECISION_24_LAUNCH_ONCE.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  # Never cancel an irreversible source-claimed scientific main push because
+  # a separate push or PR arrived while its original lives were running.
+  group: i3-proposal-checks-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  software:
+    if: github.event_name == 'pull_request'
+    name: I3 software (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Checkout exact candidate, including history for generation guards
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install test-only Ed25519 receipt verifier dependency
+        run: python -m pip install --disable-pip-version-check -r tests/i3/requirements-attestation.txt
+      - name: Verify engine contracts and immutable generation ownership
+        run: |
+          python scripts/check_engine_contracts.py --json
+          python scripts/check_engine_repository.py --json
+          python -m unittest discover -s tests -p test_engine_repository.py -v
+      - name: Run I3 software tests, not scientific study entrypoints
+        run: python -m unittest discover -s tests/i3 -p 'test_*.py' -v
+      - name: Check current navigation
+        if: matrix.python-version == '3.11'
+        run: python tools/check_repo_navigation.py --scope entrypoints
+
+  b1-engineering:
+    # Keep expensive engineering replay separate from normal I3 software
+    # tests, only for explicitly named B1 survival-development branches.
+    if: startsWith(github.head_ref, 'research/i3-survival-')
+    name: I3 B1 G/R engineering (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    env:
+      PYTHONPATH: src
+      PLAN: src/i3/docs/studies/stage2-replay-gate-selected-design/ENGINEERING_B1_PLAN.json
+    steps:
+      - name: Checkout exact survival candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Verify engineering plan has zero scientific allocation
+        run: |
+          python - <<'PY'
+          import json, os
+          with open(os.environ["PLAN"]) as stream:
+              p = json.load(stream)
+          assert p["protocol_id"] == "I3_SURVIVAL_B1_NON_EVIDENTIARY_ENGINEERING_SMOKE"
+          assert p["scientific"]["indices"] == []
+          assert p["scientific"]["genome_seeds"] == []
+          assert p["engineering"]["cohort"] == "engineering"
+          assert p["arms"] == ["reference", "p13_replay_gate_v1"]
+          assert len(p["engineering"]["indices"]) == 4
+          assert len(p["engineering"]["genome_seeds"]) == 1
+          assert p["no_engineering_outcomes_publish"] is True
+          PY
+      - name: Execute pure synthetic exact paired power campaign
+        run: |
+          python -m unittest discover -s tests/i3 -p 'test_stage2_exact_paired_survival.py' -v
+          python -m i3.lab.stage2_exact_paired_survival > "$RUNNER_TEMP/b1-power-synthetic.json"
+          python - "$RUNNER_TEMP/b1-power-synthetic.json" <<'PY'
+          import json, sys
+          with open(sys.argv[1]) as stream:
+              data = json.load(stream)
+          assert data["conditions"] == "PURE_SYNTHETIC_IID_PAIRED_SURVIVAL_DRAWS"
+          assert data["no_actual_survival_data_read"]
+          assert len(data["simulated_cells"]) == 16
+          assert all(c["scientific_lives"] == 0 and c["worlds_opened"] == 0
+                     and c["scientific_verdict"] == "NOT_ISSUED"
+                     for c in data["simulated_cells"])
+          print("B1_SYNTHETIC_CALIBRATION_16_SCENARIOS_COMPLETE")
+          PY
+      - name: Run sealed G/R against 24 temporary engineering lives
+        run: |
+          python -m i3.lab.stage2_panel rehearse "$PLAN" > "$RUNNER_TEMP/b1-engineering-structure.json"
+          python - "$RUNNER_TEMP/b1-engineering-structure.json" <<'PY'
+          import json, sys
+          with open(sys.argv[1]) as stream:
+              report = json.load(stream)
+          allowed = {
+              "schema", "planned", "phase_G", "generated", "generation_failure",
+              "phase_R", "reduced", "reduction_failure", "invariant_failures",
+              "manifest_sha256", "mean_step_ms", "status", "runner",
+              "protocol_id", "transport_fingerprint", "plan_sha256", "namespace",
+          }
+          assert set(report) <= allowed, "non-structural engineering data cannot leave G/R"
+          # Only preallowed structural fields can appear in CI logs.
+          print(json.dumps(report, sort_keys=True))
+          assert report["status"] == "PASS", "engineering G/R FAIL, not a scientific death"
+          assert report["planned"] == report["generated"] == report["reduced"] == 24
+          assert report["phase_G"] == "GENERATED" and report["phase_R"] == "COMPLETE"
+          assert report["namespace"] == "engineering"
+          assert report["generation_failure"] is None
+          assert report["reduction_failure"] is None
+          assert report["invariant_failures"] and not any(report["invariant_failures"].values())
+          print("B1_ENGINEERING_STRUCTURAL_PASS_24_OF_24_NO_SCIENTIFIC_WORLD")
+          PY
+      - name: Archive allowlisted structural and synthetic data only
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-b1-non-evidentiary-py${{ matrix.python-version }}
+          path: |
+            ${{ runner.temp }}/b1-engineering-structure.json
+            ${{ runner.temp }}/b1-power-synthetic.json
+          if-no-files-found: error
+          retention-days: 30
+
+
+  b1-sampling-preflight:
+    # Pure future allocation *metadata*, not World generation or approval.
+    if: startsWith(github.head_ref, 'research/i3-survival-b1-')
+    name: I3 B1 prospective sample dry-run (Python 3.11)
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Checkout the exact candidate source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Prove metadata only and reject prospectively tampered pairs
+        run: |
+          python -m unittest discover -s tests/i3 -p 'test_stage2_survival_b1_sampling.py' -v
+          python -m i3.lab.stage2_survival_b1_sampling > "$RUNNER_TEMP/b1-sampling-preview-structure.json"
+          python - "$RUNNER_TEMP/b1-sampling-preview-structure.json" <<'PY'
+          import json, sys
+          with open(sys.argv[1]) as stream:
+              s = json.load(stream)
+          assert s["status"] == "DRY_RUN_ALLOCATION_ONLY_NO_WORLD_EXPOSURE"
+          assert s["pair_count"] == 1500
+          assert s["maximum_proposed_lives"] == 3000
+          assert s["maximum_horizon_steps"] == 1200000
+          assert sum(s["family_counts"].values()) == 1500
+          assert s["world_instances_created"] == 0
+          assert s["individual_lives_executed"] == 0
+          assert s["independent_iid_world_pairs_verified"] is False
+          assert s["witness_is_authorized_for_scientific_births"] is False
+          assert s["scientific_verdict"] == "NOT_ISSUED"
+          assert set(s) == {
+              "schema", "status", "witness_sha256", "pair_count",
+              "family_counts", "maximum_proposed_lives", "maximum_horizon_steps",
+              "allocation_sha256", "world_instances_created",
+              "individual_lives_executed", "scientific_verdict",
+              "independent_iid_world_pairs_verified",
+              "witness_is_authorized_for_scientific_births",
+          }
+          print("B1_PROPOSED_1500_PAIR_METADATA_ONLY_NO_WORLD_PASS")
+          PY
+      - name: Archive the synthetic structural metadata digest only
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-b1-prospective-sample-dryrun
+          path: ${{ runner.temp }}/b1-sampling-preview-structure.json
+          if-no-files-found: error
+          retention-days: 30
+
+
+  b1-worldspec-preflight:
+    # NON-EVIDENTIARY: create/validate only synthetic WorldSpecs,
+    # never a Mind, life, World step or scientific original archive.
+    if: startsWith(github.head_ref, 'research/i3-survival-b1-worldspec-')
+    name: I3 B1 WorldSpec structural preflight (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Checkout exact synthetic WorldSpec candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Verify frozen P2 parity and duplicate-name-independent worlds
+        run: |
+          python -m unittest discover -s tests/i3 -p 'test_stage2_survival_b1_worldspec_audit.py' -v
+          python -m i3.lab.stage2_survival_b1_worldspec_audit > "$RUNNER_TEMP/b1-synthetic-worldspec-audit.json"
+          python - "$RUNNER_TEMP/b1-synthetic-worldspec-audit.json" <<'PY'
+          import json, sys
+          with open(sys.argv[1]) as stream:
+              r = json.load(stream)
+          assert r["status"] == "SYNTHETIC_SPEC_PREFLIGHT_NOT_PROSPECTIVE_AUTHORITY"
+          assert r["worldspec_structures_generated"] == 1500
+          assert r["structural_world_validations"] == 1500
+          assert r["unique_full_worldspec_digests"] == 1500
+          assert r["unique_name_independent_worldspec_digests"] == 1500
+          assert sum(r["ecological_families"].values()) == 1500
+          assert r["worlds_stepped"] == r["scientific_lives_executed"] == 0
+          assert r["originals_written"] == 0
+          assert r["independent_world_sampling_verified"] is False
+          assert r["target_ecology_superpopulation_verified"] is False
+          assert r["scientific_margin_approved"] is False
+          assert r["external_witness_and_owner_admission"] is False
+          assert r["scientific_verdict"] == "NOT_ISSUED"
+          assert len(r["aggregate_worldspec_digest_sha256"]) == 64
+          assert set(r) == {
+              "schema", "status", "public_synthetic_allocation_sha256",
+              "aggregate_worldspec_digest_sha256", "worldspec_structures_generated",
+              "structural_world_validations", "unique_full_worldspec_digests",
+              "unique_name_independent_worldspec_digests", "ecological_families",
+              "worlds_stepped", "scientific_lives_executed", "originals_written",
+              "independent_world_sampling_verified",
+              "target_ecology_superpopulation_verified", "scientific_margin_approved",
+              "external_witness_and_owner_admission", "scientific_verdict",
+          }, "unexpected nonstructural audit field"
+          print("B1_SYNTHETIC_WORLDSPEC_1500_PARITY_AND_COLLISION_PASS")
+          PY
+      - name: Upload synthetic structural SHA/counts only
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-b1-synthetic-worldspecs-py${{ matrix.python-version }}
+          path: ${{ runner.temp }}/b1-synthetic-worldspec-audit.json
+          if-no-files-found: error
+          retention-days: 30
+
+
+  b1-newworld-paired-gr:
+    # Real new-world ENGINEERING actions and G/R receipt sealing only.
+    # This is not an inferential study or access to scientific cohorts.
+    if: startsWith(github.head_ref, 'research/i3-survival-b1-newworld-')
+    name: I3 B1 96-pair new-world engineering G/R (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Checkout exact prospective transport source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Check paired source admission and fail-closed science
+        run: |
+          python -m unittest discover -s tests/i3 -p 'test_stage2_survival_b1_engineering.py' -v
+      - name: Launch 192 new-world technical lives through sealed G/R
+        run: |
+          python -m i3.lab.stage2_survival_b1_engineering rehearse > "$RUNNER_TEMP/b1-newworld-gr-structural.json"
+          python - "$RUNNER_TEMP/b1-newworld-gr-structural.json" <<'PY'
+          import json, sys
+          with open(sys.argv[1]) as stream:
+              r = json.load(stream)
+          allowed = {
+              "schema", "planned", "phase_G", "generated", "generation_failure",
+              "phase_R", "reduced", "reduction_failure", "invariant_failures",
+              "manifest_sha256", "mean_step_ms", "status", "runner",
+              "source_fingerprint", "protocol_id", "cohort", "pair_count",
+              "unique_worlds_expected", "public_root_synthetic",
+              "world_source_external_attestation", "observed_survival_results_published",
+              "independent_pairs_proven", "scientific_lives", "scientific_admission",
+              "scientific_verdict"
+          }
+          assert set(r) <= allowed, "unexpected engineering life field in public report"
+          # Structural-only receipt is printed even if G/R has a failure.
+          print(json.dumps(r, sort_keys=True))
+          assert r["cohort"] == "engineering"
+          assert r["pair_count"] == r["unique_worlds_expected"] == 96
+          assert r["public_root_synthetic"] is True
+          assert r["world_source_external_attestation"] is False
+          assert r["observed_survival_results_published"] is False
+          assert r["independent_pairs_proven"] is False
+          assert r["scientific_lives"] == 0
+          assert r["scientific_admission"] == "BLOCKED"
+          assert r["scientific_verdict"] == "NOT_ISSUED"
+          assert r["status"] == "PASS", "new-world G/R engineering failure, NOT a death"
+          assert r["planned"] == r["generated"] == r["reduced"] == 192
+          assert r["phase_G"] == "GENERATED"
+          assert r["phase_R"] == "COMPLETE"
+          assert r["generation_failure"] is None
+          assert r["reduction_failure"] is None
+          assert r["invariant_failures"] and not any(r["invariant_failures"].values())
+          print("B1_NEW_WORLDS_FIXED_FIRST_96_PAIRS_ENGINEERING_PASS_192_LIVES")
+          PY
+      - name: Upload structural-only temporary engineering receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-b1-newworld-gr-structure-py${{ matrix.python-version }}
+          path: ${{ runner.temp }}/b1-newworld-gr-structural.json
+          if-no-files-found: warn
+          retention-days: 30
+
+
+  b1-exploratory-development:
+    # New, outcome-retaining DEVELOPMENT experiment ONLY. Never validation,
+    # selection, reserve or the exhausted 80/81. Single GitHub run attempt.
+    if: startsWith(github.head_ref, 'research/i3-b1-development-')
+    name: I3 B1 96-pair prospective exploratory DEVELOPMENT (Python 3.11)
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Checkout exact new B1 source with no credentials
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Reject reruns and verify prospective allocation, guarded tickets and analysis
+        run: |
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          python -m unittest discover -s tests/i3 -p 'test_stage2_b1_development.py' -v
+      - name: Execute first and only B1 96-pair DEVELOPMENT original G then R
+        run: |
+          mkdir -p "$RUNNER_TEMP/b1-development-archive"
+          python -m i3.lab.stage2_b1_development execute "$RUNNER_TEMP/b1-development-archive" > "$RUNNER_TEMP/b1-development-console.json"
+          python - "$RUNNER_TEMP/b1-development-archive/B1_EXECUTION_REPORT.json" <<'PY'
+          import json, sys
+          with open(sys.argv[1]) as stream:
+              report = json.load(stream)
+          assert report["status"] == "COMPLETE_EXPLORATORY_DEVELOPMENT"
+          assert report["planned"] == report["generated"] == report["reduced"] == 192
+          assert report["scientific_verdict"] == "NOT_ISSUED"
+          assert report["analysis"]["scientific_decision"] == "EXPLORATORY_ONLY_NOT_CONFIRMATORY"
+          print(json.dumps(report["analysis"], sort_keys=True))
+          PY
+      - name: Retain original sealed lives and non-favorable failures, even if G/R fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-b1-development-originals-${{ github.event.pull_request.head.sha }}
+          path: |
+            ${{ runner.temp }}/b1-development-archive/
+            ${{ runner.temp }}/b1-development-console.json
+          if-no-files-found: warn
+          retention-days: 90
+
+
+  b1-original-custody:
+    # Run only on trusted merged main, never on untrusted PR code or a rerun.
+    # Do NOT replay any life; retrieve the immutable existing Actions original.
+    # B1 original archive completed in run #42775154043; NEVER rerun.
+    if: false
+    name: Archive sealed B1 originals once, without World exposure
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      ARCHIVE_BRANCH: evidence/i3-b1-96pair-development-20261110-originals
+      ZIP_SHA256: 2aff70fff077be04042379355cda8c798ed9ec81745413563bc88e4320615361
+      MANIFEST_SHA256: 5a173d1ad2a7ea3980cb27f79fada44d4e9f7855af63d08a21d118acce21da9a
+      EXECUTION_SHA: 713d4621d28ed668bf5f5a37f2d105a38d19fb57
+      ORIGINAL_FINGERPRINT: 3a533ebcf8657716bcd759aaa0c0ec1c694aed82862abeb1eb175b593cd8ede3
+      PLAN_SHA: 37bee5deeb75e7e4ab481f3019b63c54b9d6f8bdabba6f7bb1de135e62f021dc
+      EVIDENCE_DIR: archive/i3/stage2-b1-development-2026-11-10
+    steps:
+      - name: Checkout trusted merged main without experimental execution
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Fail closed if custody was already attempted on a branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          test "$GITHUB_REF" = "refs/heads/main"
+          if git ls-remote --heads origin "$ARCHIVE_BRANCH" | grep -q .; then
+            echo "B1 evidence branch already exists; no overwriting or replacement."
+            exit 2
+          fi
+          test ! -e "$EVIDENCE_DIR"
+      - name: Download exactly the existing original artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/b1-evidence"
+          curl -fLSs --retry 2 --retry-delay 2 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/josselin-orta-lab/individual-zero/actions/artifacts/13725454291/zip" \
+            --output "$RUNNER_TEMP/b1-evidence/original.zip"
+          printf "%s  %s\n" "$ZIP_SHA256" "$RUNNER_TEMP/b1-evidence/original.zip" | sha256sum --check --status
+      - name: Verify all original gzip bytes, identities, terminal events and complete pairs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from collections import Counter
+          from hashlib import sha256
+          from pathlib import Path
+          import gzip, json, os
+          from zipfile import ZipFile
+          root=Path(os.environ["RUNNER_TEMP"])/"b1-evidence"
+          artifact=root/"original.zip"
+          prefix="b1-development-archive/"
+          def digest(b): return sha256(b).hexdigest()
+          with ZipFile(artifact) as z:
+              names=z.namelist()
+              files={prefix+"originals/life-%03d.json.gz"%i for i in range(192)}
+              other={prefix+x for x in ("ATTEMPT_CLAIM.json",
+                      "B1_EXECUTION_REPORT.json","REDUCED_ROWS.json",
+                      "originals/MANIFEST.json","originals/MANIFEST.sha256")}
+              other.add("b1-development-console.json")
+              assert len(names)==198 and set(names)==files|other
+              raw=z.read(prefix+"originals/MANIFEST.json")
+              assert digest(raw)==os.environ["MANIFEST_SHA256"]
+              assert z.read(prefix+"originals/MANIFEST.sha256").decode().strip()==digest(raw)
+              manifest=json.loads(raw)
+              assert manifest["status"]=="GENERATED" and manifest["planned"]==manifest["generated"]==192
+              assert manifest["failure"] is None and len(manifest["files"])==192
+              claim=json.loads(z.read(prefix+"ATTEMPT_CLAIM.json"))
+              report=json.loads(z.read(prefix+"B1_EXECUTION_REPORT.json"))
+              rows=json.loads(z.read(prefix+"REDUCED_ROWS.json"))
+              assert claim["status"]=="CONSUMED_BEFORE_FIRST_BIRTH" and claim["no_retry"] is True
+              assert claim["source_fingerprint"]==report["source_fingerprint"]==os.environ["ORIGINAL_FINGERPRINT"]
+              assert claim["plan_sha256"]==report["plan_sha256"]==os.environ["PLAN_SHA"]
+              assert report["status"]=="COMPLETE_EXPLORATORY_DEVELOPMENT"
+              assert report["generated"]==report["reduced"]==192 and len(rows)==192
+              original=[]
+              for i,entry in enumerate(manifest["files"]):
+                  assert entry["file"]=="life-%03d.json.gz"%i
+                  packed=z.read(prefix+"originals/"+entry["file"])
+                  assert digest(packed)==entry["sha256"]
+                  unpacked=gzip.decompress(packed)
+                  assert digest(unpacked)==entry["uncompressed_sha256"]
+                  life=json.loads(unpacked)
+                  assert life["identity"]==entry["identity"]
+                  m=life["life"]["manifest"]
+                  assert m["source"]["git_head"]==os.environ["EXECUTION_SHA"]
+                  assert m["source"]["working_tree_dirty"] is False
+                  assert m["world_sha256"]==life["life"]["admission_receipt"]["world_sha256"]
+                  assert life["life"]["admission_receipt"]["transport_fingerprint"]==os.environ["ORIGINAL_FINGERPRINT"]
+                  ca=life["life"]["cognitive_accounting"]
+                  assert ca["shortfall_steps"]==0 and ca["status"]=="SETTLED_FOR_DECLARED_WORK"
+                  for currency in ("energy","vigilance"): assert ca["totals"][currency]["unpaid"]<=1e-12
+                  assert life["life"]["terminal"] in ("dead","censored")
+                  assert life["life"]["terminal"]!="censored" or life["life"]["steps_lived"]==400
+                  r=rows[i]
+                  assert all(r[k]==life["identity"][k] for k in ("index","pair_id","policy","family","genome_seed","world_seed","life_seed","cohort"))
+                  assert r["terminal"]==life["life"]["terminal"] and r["steps_lived"]==life["life"]["steps_lived"]
+                  assert abs(r["paid_energy"]-ca["totals"]["energy"]["paid"])<1e-9
+                  assert abs(r["paid_vigilance"]-ca["totals"]["vigilance"]["paid"])<1e-9
+                  original.append(life)
+              pairs=Counter()
+              families=Counter()
+              for i in range(96):
+                  f,g=original[2*i:2*i+2]
+                  x,y=f["identity"],g["identity"]
+                  assert x["policy"]=="reference" and y["policy"]=="p13_replay_gate_v1"
+                  assert x["index"]==y["index"]==240000+i and x["cohort"]==y["cohort"]=="development"
+                  assert all(x[k]==y[k] for k in ("pair_id","family","world_seed","genome_seed","life_seed"))
+                  assert f["life"]["manifest"]["world_sha256"]==g["life"]["manifest"]["world_sha256"]
+                  families[x["family"]]+=1
+                  pairs[(f["life"]["terminal"]=="censored",g["life"]["terminal"]=="censored")]+=1
+              assert dict(families)=={"depletion":31,"stable":35,"pulse":30}
+              assert dict(pairs)=={(True,True):25,(True,False):5,(False,True):13,(False,False):53}
+          receipt={"schema":"i3-b1-evidence-archive/v1",
+                   "status":"ORIGINAL_192_OF_192_VERIFIED_NO_REEXECUTION",
+                   "source_commit":os.environ["EXECUTION_SHA"],
+                   "source_fingerprint":os.environ["ORIGINAL_FINGERPRINT"],
+                   "plan_sha256":os.environ["PLAN_SHA"],
+                   "original_artifact_id":13725454291,"actions_run_id":42735037051,
+                   "zip_sha256":os.environ["ZIP_SHA256"],
+                   "manifest_sha256":os.environ["MANIFEST_SHA256"],
+                   "originals_verified":192,"matched_pairs":96,
+                   "both_survive":25,"fixed_only":5,"gate_only":13,"neither":53,
+                   "independence_witnessed":False,"confirmatory_go":False}
+          (root/"VERIFICATION.json").write_text(json.dumps(receipt,sort_keys=True,indent=2)+"\n")
+          print(json.dumps(receipt,sort_keys=True))
+          PY
+      - name: Permanently preserve exact original ZIP on separate evidence branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Individual Zero scientific custody"
+          git config user.email "334698467+josselin-orta-lab@users.noreply.github.com"
+          git switch --create "$ARCHIVE_BRANCH"
+          mkdir -p "$EVIDENCE_DIR"
+          cp "$RUNNER_TEMP/b1-evidence/original.zip" "$EVIDENCE_DIR/b1-96-pairs-originals.zip"
+          cp "$RUNNER_TEMP/b1-evidence/VERIFICATION.json" "$EVIDENCE_DIR/VERIFICATION.json"
+          printf "%s  %s\n" "$ZIP_SHA256" "b1-96-pairs-originals.zip" > "$EVIDENCE_DIR/SHA256SUMS"
+          git add "$EVIDENCE_DIR"
+          git diff --cached --check
+          git diff --cached --stat
+          git commit -m "custody(i3): permanently preserve exactly 192 sealed B1 original lives"
+          git push origin "HEAD:refs/heads/$ARCHIVE_BRANCH"
+          echo "B1_ORIGINAL_EVIDENCE_BRANCH=$ARCHIVE_BRANCH"
+
+
+  stage2-three-arm-engineering:
+    # FIXED/GATE/paid-RANDOM on 24 NEW synthetic engineering units 96..119.
+    # 72 temporary, non-evidentiary real lives; no scientific admissions or
+    # original outcome publication. Does not touch the consumed B1 study.
+    if: startsWith(github.head_ref, 'research/i3-mechanism-three')
+    name: I3 3-arm funded replay G/R (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Checkout exact proposed three-arm engineering source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Test source, physical tickets, random receipts and closed scientific paths
+        run: python -m unittest discover -s tests/i3 -p 'test_stage2_three_arm_engineering.py' -v
+      - name: Execute 72 full-policy engineering lives, seal Phase G and reduce Phase R
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_three_arm_engineering rehearse > "$RUNNER_TEMP/three-arm-structure.json"
+          python - "$RUNNER_TEMP/three-arm-structure.json" <<'PY'
+          import json, sys
+          from pathlib import Path
+          report=json.loads(Path(sys.argv[1]).read_text())
+          allowed={
+            "schema","planned","phase_G","generated","generation_failure",
+            "phase_R","reduced","reduction_failure","invariant_failures",
+            "manifest_sha256","mean_step_ms","status","runner",
+            "protocol_id","cohort","source_fingerprint","pair_count",
+            "arms_per_pair","expected_worlds","public_synthetic_source",
+            "scientific_lives","survival_outcomes_disclosed",
+            "scientific_admission","scientific_verdict",
+          }
+          assert set(report) <= allowed, "unexpected biological field in structural public report"
+          print(json.dumps(report,sort_keys=True))
+          assert report["status"]=="PASS"
+          assert report["planned"]==report["generated"]==report["reduced"]==72
+          assert report["pair_count"]==report["expected_worlds"]==24
+          assert report["arms_per_pair"]==3
+          assert report["cohort"]=="engineering"
+          assert report["phase_G"]=="GENERATED" and report["phase_R"]=="COMPLETE"
+          assert report["generation_failure"] is None and report["reduction_failure"] is None
+          assert report["scientific_lives"]==0
+          assert report["public_synthetic_source"] is True
+          assert report["survival_outcomes_disclosed"] is False
+          assert report["scientific_admission"]=="CLOSED"
+          assert report["scientific_verdict"]=="NOT_ISSUED"
+          assert all(n==0 for n in report["invariant_failures"].values())
+          for category in ("random_receipt_present","random_count_bounds",
+                           "random_nominal_eligible_paid",
+                           "random_paid_equals_physical_replays",
+                           "random_draw_not_reached_unfunded_sleep",
+                           "random_declared_original_mean"):
+            assert category in report["invariant_failures"]
+          print("I3_THREE_ARM_ENGINEERING_G_R_PASS_NO_BIOLOGICAL_CLAIM")
+          PY
+      - name: Retain structural-only engineering G/R report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-three-arm-engineering-py${{ matrix.python-version }}
+          path: ${{ runner.temp }}/three-arm-structure.json
+          if-no-files-found: warn
+          retention-days: 30
+
+
+  stage2-three-arm-exploratory-once:
+    # SOURCE ALREADY CONSUMED: run 42781264127, claim ref and complete evidence
+    # branch published. Historical only: never create a new three-arm life.
+    if: false
+    name: I3 three-arm 64-unit exploratory G/R single exposure
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    permissions:
+      contents: write
+    concurrency:
+      group: i3-three-arm-dev-64-single-exposure
+      cancel-in-progress: false
+    env:
+      PYTHONPATH: src
+      SOURCE_SHA: ${{ github.sha }}
+      I3_THREE_ARM_CLAIM_BRANCH: custody/i3-three-arm-development-64-20261110-claimed
+      EVIDENCE_BRANCH: evidence/i3-three-arm-development-64-20261110-originals
+      ARCHIVE_SOURCE: /tmp/i3-three-arm-development-64-originals
+      EVIDENCE_DIR: archive/i3/stage2-three-arm-development-2026-11-10
+      PLAN: src/i3/docs/studies/stage2-replay-gate-selected-design/THREE_ARM_EXPLORATORY_DEV_PLAN.json
+    steps:
+      - name: Checkout exact merged main source with immutable history
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Python 3.11 for exploratory original custody
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: PRE-BIRTH closed-world scope, seed, source and claim preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          test -z "$(git status --porcelain)"
+          if git ls-remote --heads origin "$I3_THREE_ARM_CLAIM_BRANCH" | grep -q .; then
+            echo "Three-arm development already claimed. No retry or replacement."
+            exit 3
+          fi
+          if git ls-remote --heads origin "$EVIDENCE_BRANCH" | grep -q .; then
+            echo "Three-arm originals already archived. No new births."
+            exit 4
+          fi
+          python -m unittest discover -s tests/i3 -p 'test_stage2_three_arm_development.py' -v
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          from i3.lab import stage2_three_arm_development as D
+          p=Path(os.environ["PLAN"])
+          plan=D.load_plan()
+          cases=D.cases()
+          assert len(cases)==192
+          assert {r["cohort"] for r in cases}=={"development"}
+          assert {r["index"] for r in cases}==set(range(360000,360064))
+          assert plan["scientific_registration"] is False
+          assert plan["witness_independent_external_attestation"] is False
+          assert plan["scientific_go"] is False
+          assert set(r["policy"] for r in cases)==set(D.ARMS)
+          assert D.EVIDENCE_BRANCH==os.environ["EVIDENCE_BRANCH"]
+          assert D.CLAIM_BRANCH==os.environ["I3_THREE_ARM_CLAIM_BRANCH"]
+          print("THREE_ARM_EXPLORATORY_PRE_BIRTH_PASS source="+os.environ["SOURCE_SHA"]+
+                " plan="+hashlib.sha256(p.read_bytes()).hexdigest()+
+                " fingerprint="+D.SOURCE.source_fingerprint()+
+                " lives=192 scientific_confirmation=NO")
+          PY
+      - name: Claim unique prospective 64-unit source BEFORE first World
+        id: claim
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Individual Zero scientific custody"
+          git config user.email "334698467+josselin-orta-lab@users.noreply.github.com"
+          git switch --create "$I3_THREE_ARM_CLAIM_BRANCH" "$SOURCE_SHA"
+          git commit --allow-empty -m "custody(i3): consume three-arm 64-unit source $SOURCE_SHA run $GITHUB_RUN_ID; NO RETRY"
+          git push origin "HEAD:refs/heads/$I3_THREE_ARM_CLAIM_BRANCH"
+          git checkout --detach "$SOURCE_SHA"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          test -z "$(git status --porcelain)"
+          echo "THREE_ARM_EXPLORATORY_SOURCE_CLAIM_CONSUMED_BEFORE_FIRST_WORLD"
+      - name: Execute fixed 192-life G/R; preserve errors without reseeding or retry
+        id: original_run
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_three_arm_development execute "$ARCHIVE_SOURCE" > "$RUNNER_TEMP/i3-three-arm-development-console.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          root=Path(os.environ["ARCHIVE_SOURCE"])
+          report=json.loads((root/"EXECUTION_REPORT.json").read_text())
+          assert report["status"]=="COMPLETE_EXPLORATORY_DEVELOPMENT_ONLY"
+          assert report["planned"]==report["generated"]==report["reduced"]==192
+          assert report["phase_G"]=="GENERATED" and report["phase_R"]=="COMPLETE"
+          assert report["scientific_verdict"]=="NOT_ISSUED"
+          assert report["analysis"]["scientific_verdict"]=="NOT_ISSUED"
+          print("THREE_ARM_DEVELOPMENT_192_OF_192_G_R_COMPLETE_NO_CONFIRMATORY_CLAIM")
+          PY
+      - name: Preserve ALL original and partial results on immutable evidence ref
+        if: always() && steps.claim.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-remote --heads origin "$EVIDENCE_BRANCH" | grep -q .; then
+            echo "Scientific evidence ref already exists. Never overwrite."
+            exit 2
+          fi
+          git config user.name "Individual Zero scientific custody"
+          git config user.email "334698467+josselin-orta-lab@users.noreply.github.com"
+          git switch --create "$EVIDENCE_BRANCH" "$SOURCE_SHA"
+          mkdir -p "$EVIDENCE_DIR"
+          if [ -d "$ARCHIVE_SOURCE" ]; then
+            cp -a "$ARCHIVE_SOURCE"/. "$EVIDENCE_DIR"/
+          fi
+          if [ -f "$RUNNER_TEMP/i3-three-arm-development-console.json" ]; then
+            cp "$RUNNER_TEMP/i3-three-arm-development-console.json" "$EVIDENCE_DIR/CONSOLE_REPORT.json"
+          fi
+          if [ ! -e "$EVIDENCE_DIR/EXECUTION_REPORT.json" ]; then
+            printf '{"status":"RUNNER_EXCEPTION_PRESERVED","scientific_verdict":"NOT_ISSUED","no_retry":true}\n' > "$EVIDENCE_DIR/EXECUTION_FAILURE.json"
+          fi
+          git add "$EVIDENCE_DIR"
+          git diff --cached --check
+          git diff --cached --stat
+          git commit -m "custody(i3): retain all first-run three-arm original lives and failures; source $SOURCE_SHA"
+          git push origin "HEAD:refs/heads/$EVIDENCE_BRANCH"
+          echo "I3_THREE_ARM_SCIENTIFIC_ORIGINALS_PUBLISHED=$EVIDENCE_BRANCH"
+
+
+  stage2-three-arm-readonly-originals:
+    # Recompute existing 192 already archived original lives; no World is run,
+    # no ticket minted and no new science exposure or claim is possible.
+    if: startsWith(github.head_ref, 'research/i3-three-arm-64-results-')
+    name: I3 read-only archived 192 three-arm originals (Python 3.11)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      PYTHONPATH: src
+      ARCHIVE_REF: evidence/i3-three-arm-development-64-20261110-originals
+    steps:
+      - name: Checkout exact post-exposure reanalysis source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run regression-only archive integrity tests
+        run: python -m unittest discover -s tests/i3 -p 'test_stage2_three_arm_original_reanalysis.py' -v
+      - name: Materialize only original committed scientific evidence in detached worktree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "refs/heads/$ARCHIVE_REF:refs/remotes/origin/$ARCHIVE_REF"
+          git worktree add --detach "$RUNNER_TEMP/i3-three-arm-evidence" "refs/remotes/origin/$ARCHIVE_REF"
+          test "$(git -C "$RUNNER_TEMP/i3-three-arm-evidence" rev-parse HEAD)" = "aaff20234b8a4f9d11595d6eb852371d0ce00f97"
+      - name: Reverify 192 packed/unpacked original hashes and reproduce all finite contrasts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_three_arm_original_reanalysis "$RUNNER_TEMP/i3-three-arm-evidence/archive/i3/stage2-three-arm-development-2026-11-10" > "$RUNNER_TEMP/i3-three-arm-original-reanalysis.json"
+          python - "$RUNNER_TEMP/i3-three-arm-original-reanalysis.json" <<'PY'
+          import json,sys
+          from pathlib import Path
+          r=json.loads(Path(sys.argv[1]).read_text())
+          assert r["status"]=="ORIGINAL_192_OF_192_REVERIFIED_READ_ONLY"
+          assert r["originals_checked"]==192 and r["matched_units"]==64
+          assert r["gate_only_survivors"]==r["random_only_survivors"]==4
+          assert r["both_survive"]==23 and r["neither_survive"]==33
+          assert r["observed_primary_paired_risk_difference"]==0.0
+          assert r["source_sha"]=="11879c46a78697aa1d3f664f1a17f489a948667d"
+          assert r["manifest_sha256"]=="f493a30598c3dd82f56ab84653537286487bea61414cfc2226785209c724a50f"
+          assert r["scientific_verdict"]=="NOT_ISSUED"
+          assert r["lives_executed_by_verifier"]==r["worlds_executed_by_verifier"]==0
+          assert r["independent_iid_verified"] is False
+          print(json.dumps(r,sort_keys=True))
+          PY
+      - name: Retain only independent structural audit receipt
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-three-arm-originals-readonly-audit
+          path: ${{ runner.temp }}/i3-three-arm-original-reanalysis.json
+          if-no-files-found: error
+          retention-days: 30
+
+
+  stage2-three-arm-original-audit:
+    # Re-read the ORIGINAL 192 gzip histories on immutable evidence SHA.
+    # This is a read-only post-archive verification, never World execution.
+    if: startsWith(github.head_ref, 'research/i3-three-arm-original-audit-')
+    name: I3 read-only 192/192 source-pinned original audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      PYTHONPATH: src
+      EVIDENCE_SOURCE: aaff20234b8a4f9d11595d6eb852371d0ce00f97
+    steps:
+      - name: Checkout exact proposed audit script, not a study executor
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Checkout immutable original-only archive as reference data
+        uses: actions/checkout@v4
+        with:
+          repository: josselin-orta-lab/individual-zero
+          ref: aaff20234b8a4f9d11595d6eb852371d0ce00f97
+          path: evidence
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup read-only Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test audit failure modes without opening any World
+        run: python -m unittest discover -s tests/i3 -p 'test_stage2_three_arm_original_audit.py' -v
+      - name: Read and verify every ORIGINAL gzip and independently recount
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_three_arm_original_audit \
+            evidence/archive/i3/stage2-three-arm-development-2026-11-10 \
+            > "$RUNNER_TEMP/THREE_ARM_READ_ONLY_AUDIT.json"
+          python - "$RUNNER_TEMP/THREE_ARM_READ_ONLY_AUDIT.json" <<'PY'
+          import json,sys
+          from pathlib import Path
+          r=json.loads(Path(sys.argv[1]).read_text())
+          assert r["status"]=="READ_ONLY_ORIGINAL_REANALYSIS_PASS"
+          assert r["originals_compressed_verified"]==192
+          assert r["originals_uncompressed_verified"]==192
+          assert r["matched_triplets"]==64
+          assert r["scientific_go"] is False
+          assert r["iid_or_mechanism_identification_claimed"] is False
+          assert r["no_world_or_life_executed"] is True
+          assert r["gate_minus_random"]["target_only_survives"]==4
+          assert r["gate_minus_random"]["comparator_only_survives"]==4
+          assert r["gate_minus_random"]["paired_risk_difference"]==0
+          print(json.dumps(r,sort_keys=True))
+          PY
+      - name: Retain aggregate read-only attestation, never original copies
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-three-arm-post-archive-original-read-only-check
+          path: ${{ runner.temp }}/THREE_ARM_READ_ONLY_AUDIT.json
+          retention-days: 90
+          if-no-files-found: warn
+
+  stage2-replay-content-local-falsifier:
+    # New software-only priority-vs-random *memory identity* falsifier.
+    # Creates no World, steps no life, publishes no survival outcome.
+    if: startsWith(github.head_ref, 'research/i3-replay-content-local-')
+    name: I3 detached content-selection local probe (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Checkout exact software-only protocol source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Test matching physical tariff and detached memory identities
+        run: python -m unittest discover -s tests/i3 -p 'test_stage2_replay_content_local.py' -v
+      - name: Run all 48 fixed synthetic Mind snapshots without World
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_replay_content_local \
+            > "$RUNNER_TEMP/i3-content-local.json"
+          python - "$RUNNER_TEMP/i3-content-local.json" <<'PY'
+          import json,sys
+          from pathlib import Path
+          report=json.loads(Path(sys.argv[1]).read_text())
+          assert report["status"]=="COMPLETE_SYNTHETIC_MECHANISM_ONLY"
+          assert report["trial_count"]==48
+          assert report["equal_actual_replays_per_arm"]==3
+          assert len(report["observations"])==48
+          assert report["identical_replay_work_and_projected_physical_tariff"] is True
+          assert report["differing_memory_subsets"]>0
+          assert report["no_source_mutation"] is True
+          assert report["no_world_or_full_life_executed"] is True
+          assert report["physical_debit_applied_by_world"] is False
+          assert report["scientific_survival_verdict"]=="NOT_ISSUED"
+          assert report["family_or_ecology_generalization"] is False
+          print(json.dumps({k:v for k,v in report.items()
+                            if k!="observations"},sort_keys=True))
+          PY
+      - name: Retain complete synthetic-only local results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-replay-content-local-py${{ matrix.python-version }}
+          path: ${{ runner.temp }}/i3-content-local.json
+          retention-days: 30
+          if-no-files-found: warn
+
+
+  stage2-replay-content-full-life-engineering:
+    # 12 new public-synthetic matched F0 pairs, 24 real funded technical lives.
+    # Never a scientific survival cohort, selection or reserve; structural only.
+    if: startsWith(github.head_ref, 'research/i3-replay-content-full-life-')
+    name: I3 replay memory identity G/R (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Checkout exact experimental source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Test physically funded count, real TD selection and central admission
+        run: python -m unittest discover -s tests/i3 -p 'test_stage2_replay_content_full_life.py' -v
+      - name: Generate 24 actual technical lives, verify original G and reduce structural R
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_replay_content_engineering rehearse \
+            > "$RUNNER_TEMP/i3-content-full-life-engineering.json"
+          python - "$RUNNER_TEMP/i3-content-full-life-engineering.json" <<'PY'
+          import json,sys
+          from pathlib import Path
+          r=json.loads(Path(sys.argv[1]).read_text())
+          assert r["status"]=="PASS",r
+          assert r["planned"]==r["generated"]==r["reduced"]==24
+          assert r["phase_G"]=="GENERATED" and r["phase_R"]=="COMPLETE"
+          assert r["pair_count"]==12 and r["scientific_lives"]==0
+          assert r["cohort"]=="engineering"
+          assert r["scientific_verdict"]=="NOT_ISSUED"
+          assert r["no_world_outcomes_published"] is True
+          assert r["originals_temporary_only"] is True
+          assert r["scientific_registration"] is False
+          assert all(v==0 for v in r["invariant_failures"].values())
+          for key in ("random_content_receipt",
+                      "actual_content_replays_paid",
+                      "content_subset_bounds",
+                      "content_payment_bounded",
+                      "historical_gate_count_preserved"):
+              assert key in r["invariant_failures"]
+          forbidden=("analysis","survival","survivors","deaths","rows","lives")
+          assert all(key not in r for key in forbidden)
+          print(json.dumps(r,sort_keys=True))
+          print("I3_CONTENT_FULL_LIFE_G_R_ENGINEERING_PASS_NO_BIOLOGICAL_CLAIM")
+          PY
+      - name: Store structural receipts only; never temporary life histories
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-replay-content-engineering-py${{ matrix.python-version }}
+          path: ${{ runner.temp }}/i3-content-full-life-engineering.json
+          retention-days: 30
+          if-no-files-found: warn
+
+
+  stage2-content-48-exploratory-once:
+    # Permanently CLOSED after source-claimed run 42794047107 and evidence
+    # commit 459d0d9f90ea8edae95881d4e3110b91a24f85f5. NEVER rerun.
+    if: false
+    name: I3 content priority-vs-random 48-pair original-only DEVELOPMENT once
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    permissions:
+      contents: write
+    concurrency:
+      group: i3-content-48-scientific-source-one-shot
+      cancel-in-progress: false
+    env:
+      PYTHONPATH: src
+      SOURCE_SHA: ${{ github.sha }}
+      CLAIM_REF: custody/i3-content-48-development-20261110-claimed
+      EVIDENCE_REF: evidence/i3-content-48-development-20261110-originals
+      I3_CONTENT_CLAIM_BRANCH: custody/i3-content-48-development-20261110-claimed
+      ARCHIVE_SOURCE: /tmp/i3-content-48-development-originals
+      EVIDENCE_DIR: archive/i3/stage2-content-development-2026-11-10
+    steps:
+      - name: Checkout exact merged trusted main source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: PRE-BIRTH source/schedule/guards and no prior claim
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          test -z "$(git status --porcelain)"
+          if git ls-remote --heads origin "$CLAIM_REF" | grep -q .; then
+            echo "48-pair source already consumed: NO_RETRY"
+            exit 3
+          fi
+          if git ls-remote --heads origin "$EVIDENCE_REF" | grep -q .; then
+            echo "48-pair originals already published: NO_RETRY"
+            exit 4
+          fi
+          python -m unittest discover -s tests/i3 -p 'test_stage2_content_48_development.py' -v
+          python - <<'PY'
+          import json,os
+          from i3.lab import stage2_content_48_development as D
+          p=D.plan()
+          rows=D.cases()
+          assert len(rows)==96 and D.PAIRS==48
+          assert [rows[i]["index"] for i in range(0,96,2)]==list(range(480000,480048))
+          assert {r["cohort"] for r in rows}=={"development"}
+          assert {r["policy"] for r in rows}==set(D.POLICIES)
+          assert p["entropy_independently_attested"] is False
+          assert p["scientific_registration"] is False
+          assert p["scientific_go"] is False
+          print("CONTENT_48_PRE_BIRTH_FROZEN source="+os.environ["SOURCE_SHA"]+
+                " source_fingerprint="+D.SOURCE.source_fingerprint()+
+                " plan_sha="+D._sha(D.PLAN.read_bytes())+
+                " expected_lives=96 confirmatory=NO")
+          PY
+      - name: Irreversibly claim exact content source and all 48 units BEFORE first birth
+        id: claim
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Individual Zero scientific custody"
+          git config user.email "334698467+josselin-orta-lab@users.noreply.github.com"
+          git switch --create "$CLAIM_REF" "$SOURCE_SHA"
+          git commit --allow-empty -m "custody(i3): consume content-48 source $SOURCE_SHA run $GITHUB_RUN_ID NO_RETRY"
+          git push origin "HEAD:refs/heads/$CLAIM_REF"
+          git checkout --detach "$SOURCE_SHA"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          test -z "$(git status --porcelain)"
+          echo "CONTENT_48_SOURCE_EXHAUSTED_BEFORE_BIRTH"
+      - name: Execute 96 original lives once, G then verified R, no replacement
+        id: births
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_content_48_development execute "$ARCHIVE_SOURCE" \
+            > "$RUNNER_TEMP/i3-content-48-console.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          r=json.loads((Path(os.environ["ARCHIVE_SOURCE"])/"EXECUTION_REPORT.json").read_text())
+          assert r["status"]=="COMPLETE_EXPLORATORY_DEVELOPMENT_ONLY"
+          assert r["planned"]==r["generated"]==r["reduced"]==96
+          assert r["phase_G"]=="GENERATED" and r["phase_R"]=="COMPLETE"
+          assert r["scientific_verdict"]=="NOT_ISSUED"
+          assert r["analysis"]["scientific_verdict"]=="NOT_ISSUED"
+          assert r["analysis"]["independent_iid_ecology_attested"] is False
+          assert r["analysis"]["scientific_go"] is False
+          print("CONTENT_48_G_R_96_OF_96_EXPLORATORY_ONLY")
+          PY
+      - name: Preserve ALL originals and partial failures on separate permanent evidence ref
+        if: always() && steps.claim.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-remote --heads origin "$EVIDENCE_REF" | grep -q .; then
+            echo "Existing content original evidence must NEVER be overwritten"
+            exit 4
+          fi
+          git config user.name "Individual Zero scientific custody"
+          git config user.email "334698467+josselin-orta-lab@users.noreply.github.com"
+          git switch --create "$EVIDENCE_REF" "$SOURCE_SHA"
+          mkdir -p "$EVIDENCE_DIR"
+          if [ -d "$ARCHIVE_SOURCE" ]; then
+            cp -a "$ARCHIVE_SOURCE"/. "$EVIDENCE_DIR"/
+          fi
+          if [ -f "$RUNNER_TEMP/i3-content-48-console.json" ]; then
+            cp "$RUNNER_TEMP/i3-content-48-console.json" "$EVIDENCE_DIR/CONSOLE_REPORT.json"
+          fi
+          if [ ! -e "$EVIDENCE_DIR/EXECUTION_REPORT.json" ]; then
+            printf '{"status":"RUNNER_EXCEPTION_PRESERVED","no_retry":true,"scientific_verdict":"NOT_ISSUED"}\n' > "$EVIDENCE_DIR/EXECUTION_FAILURE.json"
+          fi
+          git add "$EVIDENCE_DIR"
+          git diff --cached --check
+          git diff --cached --stat
+          git commit -m "custody(i3): retain all content-48 original lives, source $SOURCE_SHA, failures if any"
+          git push origin "HEAD:refs/heads/$EVIDENCE_REF"
+          echo "CONTENT_48_ORIGINAL_EVIDENCE_STORED_ON=$EVIDENCE_REF"
+
+
+  stage2-content-48-post-archive-audit:
+    # Original-only read, exact evidence commit. No World and no new life.
+    if: startsWith(github.head_ref, 'research/i3-content-48-results-original-')
+    name: I3 content 96 original gzip read-only independent audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      PYTHONPATH: src
+      ORIGINAL_EVIDENCE_SHA: 459d0d9f90ea8edae95881d4e3110b91a24f85f5
+    steps:
+      - name: Checkout exact proposed read-only checker
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Checkout original unchanged evidence commit, never regeneration
+        uses: actions/checkout@v4
+        with:
+          repository: josselin-orta-lab/individual-zero
+          ref: 459d0d9f90ea8edae95881d4e3110b91a24f85f5
+          path: source-originals
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test fail-closed audit logic without a World
+        run: python -m unittest discover -s tests/i3 -p 'test_stage2_content_48_original_audit.py' -v
+      - name: Verify all 96 original compressed/uncompressed SHA and recompute all outcomes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_content_48_original_audit \
+            source-originals/archive/i3/stage2-content-development-2026-11-10 \
+            > "$RUNNER_TEMP/i3-content-48-original-audit.json"
+          python - "$RUNNER_TEMP/i3-content-48-original-audit.json" <<'PY'
+          import json,sys
+          from pathlib import Path
+          x=json.loads(Path(sys.argv[1]).read_text())
+          assert x["status"]=="READ_ONLY_ALL_ORIGINALS_AND_REDUCTIONS_PASS"
+          assert x["packed_sha_verified"]==x["unpacked_sha_verified"]==96
+          assert x["complete_matched_pairs"]==48
+          assert x["primary"]["both_survive"]==16
+          assert x["primary"]["priority_only_survives"]==1
+          assert x["primary"]["random_content_only_survives"]==7
+          assert x["primary"]["neither_survives"]==24
+          assert x["primary"]["paired_risk_difference_priority_minus_random"]==-0.125
+          assert x["no_new_World_or_life"] is True
+          assert x["iid_attested"] is False and x["scientific_go"] is False
+          print(json.dumps(x,sort_keys=True))
+          PY
+      - name: Retain read-only aggregate audit without duplicating original lives
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-content-48-post-archive-original-audit
+          path: ${{ runner.temp }}/i3-content-48-original-audit.json
+          retention-days: 90
+          if-no-files-found: warn
+
+
+  stage2-water-replay-observer-engineering:
+    # UNUSED public-synthetic F0 indices 180..181. Technical observer
+    # neutral on/off pairs ONLY, no scientific source or survival output.
+    if: startsWith(github.head_ref, 'research/i3-water-replay-causal-observer-')
+    name: I3 passive water replay observer engineering (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Checkout exact proposed source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Fail-closed exact source and replay-memory witness unit tests
+        run: python -m unittest discover -s tests/i3 -p 'test_stage2_water_replay_observer.py' -v
+      - name: Execute 8 technical lives; same policy observer-on and observer-off MUST match
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_water_replay_observer_engineering rehearse \
+            > "$RUNNER_TEMP/i3-water-replay-observer-engineering.json"
+          python - "$RUNNER_TEMP/i3-water-replay-observer-engineering.json" <<'PY'
+          import json,sys
+          from pathlib import Path
+          r=json.loads(Path(sys.argv[1]).read_text())
+          assert r["status"]=="OBSERVER_NEUTRALITY_PASS"
+          assert r["pairs"]==2 and r["physical_life_executions"]==8
+          assert r["identical_trace_and_funding_observer_on_off"] is True
+          assert r["observer_passive"] is True
+          assert r["zero_unpaid_replays"] is True
+          assert r["scientific_lives"]==0 and r["scientific_go"] is False
+          assert r["biological_outcomes_published"] is False
+          assert r["first_divergence_report_kept_out_of_public_engineering_receipt"] is True
+          forbidden=("survivors","death_causes","steps_lived","trace","first_differences",
+                     "water_uptake","first_water_divergence")
+          assert all(x not in r for x in forbidden)
+          print(json.dumps(r,sort_keys=True))
+          PY
+      - name: Retain structural-only observer-neutrality receipt, never full technical lives
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-water-replay-neutrality-py${{ matrix.python-version }}
+          path: ${{ runner.temp }}/i3-water-replay-observer-engineering.json
+          retention-days: 30
+          if-no-files-found: warn
+
+
+  stage2-water-divergence-24-once:
+    # Source CONSUMED exactly once in run 42808996045 and originals archived.
+    # Never reopen these 24 matched World/G0/life units or main-push job.
+    if: false
+    name: I3 first replay/water divergence 24-pair DEVELOPMENT once
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    permissions:
+      contents: write
+    concurrency:
+      group: i3-water-replay-divergence-24-one-shot
+      cancel-in-progress: false
+    env:
+      PYTHONPATH: src
+      SOURCE_SHA: ${{ github.sha }}
+      CLAIM_REF: custody/i3-water-divergence-24-20261110-claimed
+      EVIDENCE_REF: evidence/i3-water-divergence-24-20261110-originals
+      I3_WATER_DIVERGENCE_CLAIM_BRANCH: custody/i3-water-divergence-24-20261110-claimed
+      ARCHIVE_SOURCE: /tmp/i3-water-divergence-24-originals
+      EVIDENCE_DIR: archive/i3/stage2-water-divergence-2026-11-10
+    steps:
+      - name: Checkout exact trusted merged main source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Python 3.11 source custody
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: PRE-BIRTH test, allocation, source and no previous claim
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          test -z "$(git status --porcelain)"
+          if git ls-remote --heads origin "$CLAIM_REF" | grep -q .; then
+            echo "Water divergence scientific source was already consumed"
+            exit 3
+          fi
+          if git ls-remote --heads origin "$EVIDENCE_REF" | grep -q .; then
+            echo "Water divergence originals already exist: NO RETRY"
+            exit 4
+          fi
+          python -m unittest discover -s tests/i3 -p 'test_stage2_water_divergence_24_development.py' -v
+          python - <<'PY'
+          import os
+          from i3.lab import stage2_water_divergence_24_development as D
+          p=D.plan()
+          rows=D.cases()
+          assert p["matched_units"]==24 and len(rows)==48
+          assert [r["index"] for r in rows[::2]]==list(range(510000,510024))
+          assert {r["cohort"] for r in rows}=={"development"}
+          assert {r["policy"] for r in rows}==set(D.POLICIES)
+          assert p["independent_iid_ecology_attested"] is False
+          assert p["scientific_registration"] is False
+          assert p["scientific_go"] is False
+          print("I3_WATER_DIVERGENCE_PREBIRTH_FROZEN source="+os.environ["SOURCE_SHA"]+
+                " plan_sha256="+D._sha(D.PLAN.read_bytes())+
+                " fingerprint="+D.SOURCE.source_fingerprint()+
+                " lives=48 external_iid=NO")
+          PY
+      - name: Permanently claim 24 complete World/G0/life units BEFORE birth
+        id: claim
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Individual Zero scientific custody"
+          git config user.email "334698467+josselin-orta-lab@users.noreply.github.com"
+          git switch --create "$CLAIM_REF" "$SOURCE_SHA"
+          git commit --allow-empty -m "custody(i3): consume water-divergence-24 source $SOURCE_SHA run $GITHUB_RUN_ID NO_RETRY"
+          git push origin "HEAD:refs/heads/$CLAIM_REF"
+          git checkout --detach "$SOURCE_SHA"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          test -z "$(git status --porcelain)"
+          echo "I3_WATER_DIVERGENCE_SOURCE_CONSUMED_BEFORE_FIRST_WORLD"
+      - name: Execute 48 original full lives once, seal G, verify R and temporal outcomes
+        id: run
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_water_divergence_24_development execute "$ARCHIVE_SOURCE" \
+            > "$RUNNER_TEMP/water-divergence-24-console.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          r=json.loads((Path(os.environ["ARCHIVE_SOURCE"])/"EXECUTION_REPORT.json").read_text())
+          assert r["status"]=="COMPLETE_EXPLORATORY_DEVELOPMENT_ONLY"
+          assert r["planned"]==r["generated"]==r["reduced"]==48
+          assert r["phase_G"]=="GENERATED" and r["phase_R"]=="COMPLETE"
+          assert r["analysis"]["mechanism"]["assigned_pairs"]==24
+          assert r["analysis"]["mechanism"]["causal_mediation_claim"] is False
+          assert r["analysis"]["scientific_go"] is False
+          assert r["analysis"]["scientific_verdict"]=="NOT_ISSUED"
+          print("I3_WATER_DIVERGENCE_48_LIVES_G_R_COMPLETE_ORIGINALS_NO_CONFIRMATORY_CLAIM")
+          PY
+      - name: Preserve every original and any failure, never rerun, never overwrite
+        if: always() && steps.claim.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-remote --heads origin "$EVIDENCE_REF" | grep -q .; then
+            echo "Evidence already exists; never overwrite"
+            exit 4
+          fi
+          git config user.name "Individual Zero scientific custody"
+          git config user.email "334698467+josselin-orta-lab@users.noreply.github.com"
+          git switch --create "$EVIDENCE_REF" "$SOURCE_SHA"
+          mkdir -p "$EVIDENCE_DIR"
+          if [ -d "$ARCHIVE_SOURCE" ]; then
+            cp -a "$ARCHIVE_SOURCE"/. "$EVIDENCE_DIR"/
+          fi
+          if [ -f "$RUNNER_TEMP/water-divergence-24-console.json" ]; then
+            cp "$RUNNER_TEMP/water-divergence-24-console.json" "$EVIDENCE_DIR/CONSOLE_REPORT.json"
+          fi
+          if [ ! -f "$EVIDENCE_DIR/EXECUTION_REPORT.json" ]; then
+            printf '{"status":"RUNNER_EXCEPTION_PRESERVED","no_retry":true,"scientific_verdict":"NOT_ISSUED"}\n' > "$EVIDENCE_DIR/EXECUTION_FAILURE.json"
+          fi
+          git add "$EVIDENCE_DIR"
+          git diff --cached --check
+          git diff --cached --stat
+          git commit -m "custody(i3): store all first water-divergence originals and failures, source $SOURCE_SHA"
+          git push origin "HEAD:refs/heads/$EVIDENCE_REF"
+          echo "I3_WATER_DIVERGENCE_FIRST_ORIGINALS_ARCHIVED"
+
+
+  stage2-water-divergence-24-post-archive-audit:
+    # Audit exact 48 original histories at the preserved evidence SHA.
+    # Read only; no World, replay, individual or re-seeding.
+    if: startsWith(github.head_ref, 'research/i3-water-divergence-24-original-')
+    name: I3 independent water/replay 48 original gzip and first-divergence audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      PYTHONPATH: src
+      EXACT_ORIGINAL_EVIDENCE_SHA: 181940e18d8aaea84dfded2927dab302b2f7185b
+    steps:
+      - name: Checkout proposed pure original-only checker
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Checkout exact original SHA as independent archived data
+        uses: actions/checkout@v4
+        with:
+          repository: josselin-orta-lab/individual-zero
+          ref: 181940e18d8aaea84dfded2927dab302b2f7185b
+          path: original-evidence
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test original-only source, paired temporal and adverse mutation failures
+        run: python -m unittest discover -s tests/i3 -p 'test_stage2_water_divergence_24_original_audit.py' -v
+      - name: Verify all 48 packed/unpacked originals and recompute complete chronology
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_water_divergence_24_original_audit \
+            original-evidence/archive/i3/stage2-water-divergence-2026-11-10 \
+            > "$RUNNER_TEMP/i3-water-24-read-only-audit.json"
+          python - "$RUNNER_TEMP/i3-water-24-read-only-audit.json" <<'PY'
+          import json,sys
+          from pathlib import Path
+          r=json.loads(Path(sys.argv[1]).read_text())
+          assert r["status"]=="READ_ONLY_ALL_ORIGINALS_AND_REDUCTIONS_PASS"
+          assert r["packed_sha_verified"]==r["unpacked_sha_verified"]==48
+          assert r["complete_matched_pairs"]==24
+          assert r["primary_mechanism"]["assigned_pairs"]==24
+          assert r["primary_mechanism"]["pairs_with_same_state_first_replay_difference"]==18
+          assert r["primary_mechanism"]["belief_differences_after_first_replay_choice"]==16
+          assert r["primary_mechanism"]["decision_differences_after_first_replay_choice"]==16
+          assert r["primary"]["both_survive"]==7
+          assert r["primary"]["priority_only_survives"]==1
+          assert r["primary"]["random_content_only_survives"]==3
+          assert r["primary"]["neither_survives"]==13
+          assert r["no_new_World_or_life"] is True
+          assert r["iid_attested"] is False and r["scientific_go"] is False
+          print(json.dumps(r,sort_keys=True))
+          PY
+      - name: Retain aggregate-only read-only source custody receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-water-replay-24-original-read-only-audit
+          path: ${{ runner.temp }}/i3-water-24-read-only-audit.json
+          retention-days: 90
+          if-no-files-found: warn
+
+
+  stage2-realstate-replay-fork-engineering:
+    # Exactly two fresh PUBLIC technical units 182..183, observer ON/OFF.
+    # No biological result output and no new scientific source authority.
+    if: startsWith(github.head_ref, 'research/i3-realstate-content-fork-')
+    name: I3 realstate replay fork neutrality (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Checkout exact proposed observer and source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Python version
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Validate detached replay copy and strict engineering source guard
+        run: python -m unittest discover -s tests/i3 -p 'test_stage2_realstate_content_fork.py' -v
+      - name: Run exactly four on/off technical lives, publish structural only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_realstate_content_fork_engineering rehearse \
+            > "$RUNNER_TEMP/i3-realstate-content-fork.json"
+          python - "$RUNNER_TEMP/i3-realstate-content-fork.json" <<'PY'
+          import json,sys
+          from pathlib import Path
+          r=json.loads(Path(sys.argv[1]).read_text())
+          assert r["status"]=="OBSERVER_PHYSICAL_NEUTRALITY_PASS"
+          assert r["pairs"]==2 and r["observed_lives"]==2
+          assert r["real_full_life_executions"]==4
+          assert 0 <= r["first_fork_captures"] <= 2
+          assert r["physical_and_decision_trace_identical_on_off"] is True
+          assert r["prepaid_replay_count_unchanged"] is True
+          assert r["no_second_world"] is True
+          assert r["biological_outcomes_published"] is False
+          assert r["scientific_lives"]==0
+          assert r["scientific_verdict"]=="NOT_ISSUED"
+          assert all(x not in r for x in
+                     ("survivors","deaths","terminal","histories","water","actions"))
+          print(json.dumps(r,sort_keys=True))
+          PY
+      - name: Retain structural-only observer-neutrality receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-realstate-content-fork-py${{ matrix.python-version }}
+          path: ${{ runner.temp }}/i3-realstate-content-fork.json
+          retention-days: 30
+          if-no-files-found: warn
+
+  stage2-realstate-fork-24-exploratory-once:
+    # SOURCE CONSUMED: run 42819947791, claim 92cd0964c49a99b1d00c97a77f5af72cf0b0aada.
+    # Original archive e28211865fd1d1e17173a115e81772702fb8cef1.
+    # Never open a scientific World from this closed source again.
+    if: false
+    name: I3 realstate first-content-fork 24-pair original-only DEVELOPMENT once
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    permissions:
+      contents: write
+    concurrency:
+      group: i3-realstate-fork-24-scientific-source-one-shot
+      cancel-in-progress: false
+    env:
+      PYTHONPATH: src
+      SOURCE_SHA: ${{ github.sha }}
+      CLAIM_REF: custody/i3-realstate-fork-24-development-20261110-claimed
+      EVIDENCE_REF: evidence/i3-realstate-fork-24-development-20261110-originals
+      I3_REALSTATE_FORK_CLAIM_BRANCH: custody/i3-realstate-fork-24-development-20261110-claimed
+      ARCHIVE_SOURCE: /tmp/i3-realstate-fork-24-originals
+      EVIDENCE_DIR: archive/i3/stage2-realstate-fork-development-2026-11-10
+    steps:
+      - name: Checkout exact merged trusted main source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: PRE-BIRTH source/schedule/guards and no prior claim
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          test -z "$(git status --porcelain)"
+          if git ls-remote --heads origin "$CLAIM_REF" | grep -q .; then
+            echo "24-pair source already consumed: NO_RETRY"
+            exit 3
+          fi
+          if git ls-remote --heads origin "$EVIDENCE_REF" | grep -q .; then
+            echo "24-pair originals already published: NO_RETRY"
+            exit 4
+          fi
+          python -m unittest discover -s tests/i3 -p 'test_stage2_realstate_fork_24_development.py' -v
+          python - <<'PY'
+          import json,os
+          from i3.lab import stage2_realstate_fork_24_development as D
+          p=D.plan()
+          rows=D.cases()
+          assert len(rows)==48 and D.PAIRS==24
+          assert [rows[i]["index"] for i in range(0,48,2)]==list(range(540000,540024))
+          assert {r["cohort"] for r in rows}=={"development"}
+          assert {r["policy"] for r in rows}==set(D.POLICIES)
+          assert p["independent_iid_ecology_attested"] is False
+          assert p["scientific_registration"] is False
+          assert p["scientific_go"] is False
+          print("REALSTATE_FORK_24_PRE_BIRTH_FROZEN source="+os.environ["SOURCE_SHA"]+
+                " source_fingerprint="+D.SOURCE.source_fingerprint()+
+                " plan_sha="+D._sha(D.PLAN.read_bytes())+
+                " expected_lives=48 confirmatory=NO")
+          PY
+      - name: Irreversibly claim exact realstate fork source and all 24 units BEFORE first birth
+        id: claim
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Individual Zero scientific custody"
+          git config user.email "334698467+josselin-orta-lab@users.noreply.github.com"
+          git switch --create "$CLAIM_REF" "$SOURCE_SHA"
+          git commit --allow-empty -m "custody(i3): consume realstate-fork-24 source $SOURCE_SHA run $GITHUB_RUN_ID NO_RETRY"
+          git push origin "HEAD:refs/heads/$CLAIM_REF"
+          git checkout --detach "$SOURCE_SHA"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          test -z "$(git status --porcelain)"
+          echo "REALSTATE_FORK_24_SOURCE_EXHAUSTED_BEFORE_BIRTH"
+      - name: Execute 48 original lives once, G then verified R, no replacement
+        id: births
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_realstate_fork_24_development execute "$ARCHIVE_SOURCE" \
+            > "$RUNNER_TEMP/i3-realstate-fork-24-console.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          r=json.loads((Path(os.environ["ARCHIVE_SOURCE"])/"EXECUTION_REPORT.json").read_text())
+          assert r["status"]=="COMPLETE_EXPLORATORY_DEVELOPMENT_ONLY"
+          assert r["planned"]==r["generated"]==r["reduced"]==48
+          assert r["phase_G"]=="GENERATED" and r["phase_R"]=="COMPLETE"
+          assert r["scientific_verdict"]=="NOT_ISSUED"
+          assert r["analysis"]["scientific_verdict"]=="NOT_ISSUED"
+          assert r["analysis"]["independent_iid_ecology_attested"] is False
+          assert r["analysis"]["scientific_go"] is False
+          print("REALSTATE_FORK_24_G_R_48_OF_48_EXPLORATORY_ONLY")
+          PY
+      - name: Preserve ALL originals and partial failures on separate permanent evidence ref
+        if: always() && steps.claim.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-remote --heads origin "$EVIDENCE_REF" | grep -q .; then
+            echo "Existing realstate original evidence must NEVER be overwritten"
+            exit 4
+          fi
+          git config user.name "Individual Zero scientific custody"
+          git config user.email "334698467+josselin-orta-lab@users.noreply.github.com"
+          git switch --create "$EVIDENCE_REF" "$SOURCE_SHA"
+          mkdir -p "$EVIDENCE_DIR"
+          if [ -d "$ARCHIVE_SOURCE" ]; then
+            cp -a "$ARCHIVE_SOURCE"/. "$EVIDENCE_DIR"/
+          fi
+          if [ -f "$RUNNER_TEMP/i3-realstate-fork-24-console.json" ]; then
+            cp "$RUNNER_TEMP/i3-realstate-fork-24-console.json" "$EVIDENCE_DIR/CONSOLE_REPORT.json"
+          fi
+          if [ ! -e "$EVIDENCE_DIR/EXECUTION_REPORT.json" ]; then
+            printf '{"status":"RUNNER_EXCEPTION_PRESERVED","no_retry":true,"scientific_verdict":"NOT_ISSUED"}\n' > "$EVIDENCE_DIR/EXECUTION_FAILURE.json"
+          fi
+          git add "$EVIDENCE_DIR"
+          git diff --cached --check
+          git diff --cached --stat
+          git commit -m "custody(i3): retain all realstate-fork-24 original lives, source $SOURCE_SHA, failures if any"
+          git push origin "HEAD:refs/heads/$EVIDENCE_REF"
+          echo "REALSTATE_FORK_24_ORIGINAL_EVIDENCE_STORED_ON=$EVIDENCE_REF"
+
+
+
+
+  stage2-realstate-fork-24-postarchive-audit:
+    # Independent read of all 48 historical original compressed/uncompressed
+    # payloads. Immutable source SHA only; never instantiate World or Mind.
+    if: startsWith(github.head_ref, 'research/i3-realstate-fork-24-audit-')
+    name: I3 first realstate fork 48 original gzip independent audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Checkout exact proposed read-only audit script
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Checkout immutable original evidence commit without any rerun
+        uses: actions/checkout@v4
+        with:
+          repository: josselin-orta-lab/individual-zero
+          ref: e28211865fd1d1e17173a115e81772702fb8cef1
+          path: source-originals
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Prove archived-original audit fails closed on missing and altered cases
+        run: python -m unittest discover -s tests/i3 -p 'test_stage2_realstate_fork_24_original_audit.py' -v
+      - name: Read and verify all 48 gzip originals and the finite-panel TD fork report
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_realstate_fork_24_original_audit \
+            source-originals/archive/i3/stage2-realstate-fork-development-2026-11-10 \
+            > "$RUNNER_TEMP/i3-realstate-fork-24-independent-original-audit.json"
+          python - "$RUNNER_TEMP/i3-realstate-fork-24-independent-original-audit.json" <<'PY'
+          import json,sys
+          from pathlib import Path
+          r=json.loads(Path(sys.argv[1]).read_text())
+          assert r["status"]=="READ_ONLY_ALL_ORIGINALS_AND_REDUCTIONS_PASS"
+          assert r["packed_sha_verified"]==r["unpacked_sha_verified"]==48
+          assert r["complete_matched_pairs"]==24
+          assert r["primary"]["assigned_pairs"]==24
+          assert r["primary"]["first_fork_captured"]==17
+          assert r["primary"]["first_fork_absent"]==7
+          assert r["primary"]["positive_learned_value_difference"]==17
+          assert r["primary"]["zero_learned_value_difference"]==0
+          assert r["secondary_survival"]["both_survive"]==8
+          assert r["secondary_survival"]["priority_only_survives"]==0
+          assert r["secondary_survival"]["random_content_only_survives"]==2
+          assert r["secondary_survival"]["neither_survives"]==14
+          assert r["no_new_World_or_life"] is True
+          assert r["iid_attested"] is False
+          assert r["scientific_go"] is False
+          print(json.dumps(r,sort_keys=True))
+          PY
+      - name: Retain aggregate-only source-pinned postarchive attestation
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-realstate-fork-24-48-original-audit
+          path: ${{ runner.temp }}/i3-realstate-fork-24-independent-original-audit.json
+          retention-days: 90
+          if-no-files-found: warn
+
+
+  stage2-next-decision-replay-engineering:
+    # Two new PUBLIC F0 technical units 184-185; no scientific births.
+    if: startsWith(github.head_ref, 'research/i3-next-decision-replay-')
+    name: I3 next-decision replay shadow neutrality (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Checkout exact proposed observer source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Unit-test exact-source and noninterference contract
+        run: python -m unittest discover -s tests/i3 -p 'test_stage2_next_decision_replay_observer.py' -v
+      - name: Four original technical full lives on/off with structural receipt only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_next_decision_replay_engineering rehearse > "$RUNNER_TEMP/i3-next-decision-technical.json"
+          python - "$RUNNER_TEMP/i3-next-decision-technical.json" <<'PY'
+          import json,sys
+          from pathlib import Path
+          r=json.loads(Path(sys.argv[1]).read_text())
+          assert r["status"]=="OBSERVER_PHYSICAL_AND_DECISION_NEUTRALITY_PASS"
+          assert r["technical_units"]==2
+          assert r["actual_technical_life_executions"]==4
+          assert 0<=r["shared_action_residuals"]<=r["next_decisions_observed"]<=r["first_detached_forks"]<=2
+          assert r["identical_physical_and_decision_traces_on_off"] is True
+          assert r["no_observer_work_billed_to_organism"] is True
+          assert r["no_new_scientific_lives"] is True
+          assert r["no_survival_outcomes_published"] is True
+          assert r["scientific_verdict"]=="NOT_ISSUED"
+          assert all(field not in r for field in ("terminal","survivors","death_causes","body","actions"))
+          print(json.dumps(r,sort_keys=True))
+          PY
+      - name: Retain only the structural technical witness
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-next-decision-py${{ matrix.python-version }}
+          path: ${{ runner.temp }}/i3-next-decision-technical.json
+          retention-days: 30
+          if-no-files-found: warn
+
+  stage2-next-decision-24-exploratory-once:
+    # Source consumed first run 42837992463, original evidence commit
+    # 20ca7efbf7797fa7b1f12983ce68906b754b312c. Attempt
+    # 42838124872 correctly failed PRE-BIRTH against already claimed source.
+    # Permanently closed: no World may be born from these indices again.
+    if: false
+    name: I3 next-first-person decision 24-pair original-only DEVELOPMENT once
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    permissions:
+      contents: write
+    concurrency:
+      group: i3-next-decision-24-scientific-source-one-shot
+      cancel-in-progress: false
+    env:
+      PYTHONPATH: src
+      SOURCE_SHA: ${{ github.sha }}
+      CLAIM_REF: custody/i3-next-decision-24-development-20261110-claimed
+      EVIDENCE_REF: evidence/i3-next-decision-24-development-20261110-originals
+      I3_NEXT_DECISION_CLAIM_BRANCH: custody/i3-next-decision-24-development-20261110-claimed
+      ARCHIVE_SOURCE: /tmp/i3-next-decision-24-originals
+      EVIDENCE_DIR: archive/i3/stage2-next-decision-development-2026-11-10
+    steps:
+      - name: Checkout exact merged trusted main source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: PRE-BIRTH source/schedule/guards and no prior claim
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          test -z "$(git status --porcelain)"
+          if git ls-remote --heads origin "$CLAIM_REF" | grep -q .; then
+            echo "24-pair source already consumed: NO_RETRY"
+            exit 3
+          fi
+          if git ls-remote --heads origin "$EVIDENCE_REF" | grep -q .; then
+            echo "24-pair originals already published: NO_RETRY"
+            exit 4
+          fi
+          python -m unittest discover -s tests/i3 -p 'test_stage2_next_decision_24_development.py' -v
+          python - <<'PY'
+          import json,os
+          from i3.lab import stage2_next_decision_24_development as D
+          p=D.plan()
+          rows=D.cases()
+          assert len(rows)==48 and D.PAIRS==24
+          assert [rows[i]["index"] for i in range(0,48,2)]==list(range(560000,560024))
+          assert {r["cohort"] for r in rows}=={"development"}
+          assert {r["policy"] for r in rows}==set(D.POLICIES)
+          assert p["independent_iid_ecology_attested"] is False
+          assert p["scientific_registration"] is False
+          assert p["scientific_go"] is False
+          print("NEXT_DECISION_24_PRE_BIRTH_FROZEN source="+os.environ["SOURCE_SHA"]+
+                " source_fingerprint="+D.SOURCE.source_fingerprint()+
+                " plan_sha="+D._sha(D.PLAN.read_bytes())+
+                " expected_lives=48 confirmatory=NO")
+          PY
+      - name: Irreversibly claim exact next decision source and all 24 units BEFORE first birth
+        id: claim
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Individual Zero scientific custody"
+          git config user.email "334698467+josselin-orta-lab@users.noreply.github.com"
+          git switch --create "$CLAIM_REF" "$SOURCE_SHA"
+          git commit --allow-empty -m "custody(i3): consume next-decision-24 source $SOURCE_SHA run $GITHUB_RUN_ID NO_RETRY"
+          git push origin "HEAD:refs/heads/$CLAIM_REF"
+          git checkout --detach "$SOURCE_SHA"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          test -z "$(git status --porcelain)"
+          echo "NEXT_DECISION_24_SOURCE_EXHAUSTED_BEFORE_BIRTH"
+      - name: Execute 48 original lives once, G then verified R, no replacement
+        id: births
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_next_decision_24_development execute "$ARCHIVE_SOURCE" \
+            > "$RUNNER_TEMP/i3-next-decision-24-console.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          r=json.loads((Path(os.environ["ARCHIVE_SOURCE"])/"EXECUTION_REPORT.json").read_text())
+          assert r["status"]=="COMPLETE_EXPLORATORY_DEVELOPMENT_ONLY"
+          assert r["planned"]==r["generated"]==r["reduced"]==48
+          assert r["phase_G"]=="GENERATED" and r["phase_R"]=="COMPLETE"
+          assert r["scientific_verdict"]=="NOT_ISSUED"
+          assert r["analysis"]["scientific_verdict"]=="NOT_ISSUED"
+          assert r["analysis"]["independent_iid_ecology_attested"] is False
+          assert r["analysis"]["scientific_go"] is False
+          print("NEXT_DECISION_24_G_R_48_OF_48_EXPLORATORY_ONLY")
+          PY
+      - name: Preserve ALL originals and partial failures on separate permanent evidence ref
+        if: always() && steps.claim.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-remote --heads origin "$EVIDENCE_REF" | grep -q .; then
+            echo "Existing realstate original evidence must NEVER be overwritten"
+            exit 4
+          fi
+          git config user.name "Individual Zero scientific custody"
+          git config user.email "334698467+josselin-orta-lab@users.noreply.github.com"
+          git switch --create "$EVIDENCE_REF" "$SOURCE_SHA"
+          mkdir -p "$EVIDENCE_DIR"
+          if [ -d "$ARCHIVE_SOURCE" ]; then
+            cp -a "$ARCHIVE_SOURCE"/. "$EVIDENCE_DIR"/
+          fi
+          if [ -f "$RUNNER_TEMP/i3-next-decision-24-console.json" ]; then
+            cp "$RUNNER_TEMP/i3-next-decision-24-console.json" "$EVIDENCE_DIR/CONSOLE_REPORT.json"
+          fi
+          if [ ! -e "$EVIDENCE_DIR/EXECUTION_REPORT.json" ]; then
+            printf '{"status":"RUNNER_EXCEPTION_PRESERVED","no_retry":true,"scientific_verdict":"NOT_ISSUED"}\n' > "$EVIDENCE_DIR/EXECUTION_FAILURE.json"
+          fi
+          git add "$EVIDENCE_DIR"
+          git diff --cached --check
+          git diff --cached --stat
+          git commit -m "custody(i3): retain all next-decision-24 original lives, source $SOURCE_SHA, failures if any"
+          git push origin "HEAD:refs/heads/$EVIDENCE_REF"
+          echo "NEXT_DECISION_24_ORIGINAL_EVIDENCE_STORED_ON=$EVIDENCE_REF"
+
+
+
+
+
+
+  stage2-next-decision-24-original-independent-audit:
+    # Only read original 48 gzip files, no Mind/World generation.
+    if: startsWith(github.head_ref, 'research/i3-next-decision-24-original-audit-')
+    name: I3 next decision 48 original gzip independent audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Checkout exact independent read-only proposed checker
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Checkout exact already archived original lives commit
+        uses: actions/checkout@v4
+        with:
+          repository: josselin-orta-lab/individual-zero
+          ref: 20ca7efbf7797fa7b1f12983ce68906b754b312c
+          path: source-originals
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test original-only missing-case and null/adverse checks
+        run: python -m unittest discover -s tests/i3 -p 'test_stage2_next_decision_24_original_audit.py' -v
+      - name: Independently audit 48 packed/unpacked original SHA and next actual decision forks
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_next_decision_24_original_audit \
+            source-originals/archive/i3/stage2-next-decision-development-2026-11-10 \
+            > "$RUNNER_TEMP/i3-next-decision-original-audit.json"
+          python - "$RUNNER_TEMP/i3-next-decision-original-audit.json" <<'PY'
+          import json,sys
+          from pathlib import Path
+          r=json.loads(Path(sys.argv[1]).read_text())
+          assert r["status"]=="READ_ONLY_ALL_ORIGINALS_AND_REDUCTIONS_PASS"
+          assert r["packed_sha_verified"]==r["unpacked_sha_verified"]==48
+          assert r["complete_matched_pairs"]==24
+          m=r["primary"]
+          assert m["assigned_pairs"]==24
+          assert m["first_different_funded_memory_fork"]==20
+          assert m["no_different_funded_memory_fork"]==4
+          assert m["first_fork_with_next_common_perception"]==20
+          assert m["different_next_admitted_action_or_param"]==1
+          assert m["same_next_admitted_action_and_param"]==19
+          assert m["shared_action_nonterminal_bootstrapped_TD_receipts"]==19
+          assert m["calibrated_predictive_accuracy"] is False
+          assert r["secondary_survival"]["both_survive"]==10
+          assert r["secondary_survival"]["priority_only_survives"]==2
+          assert r["secondary_survival"]["random_content_only_survives"]==3
+          assert r["secondary_survival"]["neither_survives"]==9
+          assert r["per_assigned_life"]["p13_replay_gate_v1"]["survivors"]==12
+          assert r["per_assigned_life"]["p13_replay_gate_random_content_v1"]["survivors"]==13
+          assert r["no_new_World_or_life"] is True
+          assert r["scientific_go"] is False
+          print(json.dumps(r,sort_keys=True))
+          PY
+      - name: Retain aggregate-only original audit attestation
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-next-decision-24-original-audit
+          path: ${{ runner.temp }}/i3-next-decision-original-audit.json
+          retention-days: 90
+          if-no-files-found: warn
+
+
+  stage2-replay-predictive-negative-control:
+    # Software-only 48 synthetic pretrained-effect copies, NO World/life.
+    if: startsWith(github.head_ref, 'research/i3-replay-predictive-negative-control-')
+    name: I3 replay-effects negative control (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Checkout exact TD and effect-model negative-control source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Verify no-leak prequential lifecycle and actual TD negative control
+        run: python -m unittest discover -s tests/i3 -p 'test_stage2_replay_predictive_negative_control.py' -v
+      - name: Evaluate 48 synthetic contrasts and structural receipt only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_replay_predictive_negative_control rehearse \
+            > "$RUNNER_TEMP/i3-replay-predictive-control.json"
+          python - "$RUNNER_TEMP/i3-replay-predictive-control.json" <<'PY'
+          import json,sys
+          from pathlib import Path
+          r=json.loads(Path(sys.argv[1]).read_text())
+          assert r["status"]=="NEGATIVE_CONTROL_EFFECT_PREDICTION_NOT_REPLAY_SENSITIVE"
+          assert r["synthetic_cases"]==48
+          assert r["detached_td_replays_per_arm"]==3
+          assert r["different_memory_subset_cases"]>0
+          assert r["different_learned_value_cases"]>0
+          assert r["different_value_residual_readout_cases"]>0
+          assert r["different_one_step_effect_forecast_cases"]==0
+          assert r["effects_model_unchanged_in_every_case"] is True
+          assert r["original_mind_unchanged_in_every_case"] is True
+          assert r["no_world_or_life_executed"] is True
+          assert r["observer_cpu_is_external"] is True
+          assert r["scientific_lives"]==0
+          assert r["survival_claim"] is False
+          assert r["prospective_calibrated_predictive_utility"] is False
+          print(json.dumps(r,sort_keys=True))
+          PY
+      - name: Retain synthetic-only mechanism receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-replay-effects-negative-control-py${{ matrix.python-version }}
+          path: ${{ runner.temp }}/i3-replay-predictive-control.json
+          retention-days: 30
+          if-no-files-found: warn
+
+
+  stage2-personal-distress-forecast-shadow:
+    # 48 fixed synthetic no-World/zero-actual-cost replay-sensitive forecast tests.
+    if: startsWith(github.head_ref, 'research/i3-personal-distress-prequential-shadow-')
+    name: I3 replay-sensitive personal distress shadow (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11','3.12']
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Checkout exact personal shadow source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Unit-test direct observed distress, future seals, nulls and censored windows
+        run: python -m unittest discover -s tests/i3 -p 'test_stage2_personal_distress_forecast_shadow.py' -v
+      - name: Evaluate 48 new shadow-only prequential forecasts, structural-only evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_personal_distress_forecast_shadow rehearse \
+            > "$RUNNER_TEMP/i3-personal-distress-shadow.json"
+          python - "$RUNNER_TEMP/i3-personal-distress-shadow.json" <<'PY'
+          import json,sys
+          from pathlib import Path
+          r=json.loads(Path(sys.argv[1]).read_text())
+          assert r["status"]=="SYNTHETIC_SHADOW_REPLAY_SENSITIVE_PREQUENTIAL_CAPABILITY"
+          assert r["synthetic_cases"]==48
+          assert r["replays_per_detached_head"]==3
+          assert r["different_memory_subsets"]>0
+          assert r["different_frozen_predictions"]>0
+          assert r["scored_heldout_future_observations"]==48
+          assert (r["priority_lower_synthetic_sq_loss"]+
+                  r["random_lower_synthetic_sq_loss"]+
+                  r["tied_synthetic_sq_loss"])==48
+          assert r["all_future_forecasts_sealed_before_outcomes"] is True
+          assert r["no_world_or_live_policy_modification"] is True
+          assert r["no_physical_cognitive_debit"] is True
+          assert r["scientific_lives"]==0
+          assert r["no_independent_iid_ecology"] is True
+          assert r["no_survival_or_predictive_utility_generalization"] is True
+          print(json.dumps(r,sort_keys=True))
+          PY
+      - name: Retain synthetic-only structural forecast witness
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-personal-distress-shadow-py${{ matrix.python-version }}
+          path: ${{ runner.temp }}/i3-personal-distress-shadow.json
+          retention-days: 30
+          if-no-files-found: warn
+
+  next-action-old-original-readonly:
+    # Reads the 48 ALREADY-CONSUMED original archive bytes. No World is born,
+    # no old runner is imported, no new source is assigned or regenerated.
+    if: startsWith(github.head_ref, 'research/i3-next-action-original-readonly-bridge-')
+    name: I3 old original actual-vs-detached READ ONLY (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    env:
+      PYTHONPATH: src
+      ARCHIVED_BRANCH: evidence/i3-next-decision-24-development-20261110-originals
+      ARCHIVED_COMMIT: 20ca7efbf7797fa7b1f12983ce68906b754b312c
+      ARCHIVE_DIR: archive/i3/stage2-next-decision-development-2026-11-10
+    steps:
+      - name: Checkout exact proposed bridge with no write credential
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup Python for pure original archive verifier
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Read-only fetch of fixed previously consumed archival SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 \
+            "https://github.com/josselin-orta-lab/individual-zero.git" \
+            "refs/heads/$ARCHIVED_BRANCH"
+          test "$(git rev-parse FETCH_HEAD)" = "$ARCHIVED_COMMIT" || {
+            echo "EVIDENCE_BRANCH_MOVED__NO_ARCHIVE_VERDICT"
+            exit 1
+          }
+          mkdir -p "$RUNNER_TEMP/i3-old-originals"
+          git archive FETCH_HEAD "$ARCHIVE_DIR" | \
+            tar -xf - -C "$RUNNER_TEMP/i3-old-originals"
+      - name: Verify existing original packed and unpacked bytes before interpreting any action
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_next_action_original_archive_bridge \
+            "$RUNNER_TEMP/i3-old-originals/$ARCHIVE_DIR" \
+            > "$RUNNER_TEMP/i3-archived-next-action-summary.json"
+          python - "$RUNNER_TEMP/i3-archived-next-action-summary.json" <<'PY'
+          import json, sys
+          with open(sys.argv[1], encoding="utf-8") as stream:
+              line = stream.read().strip()
+          assert line.startswith("I3_ARCHIVED_NEXT_ACTION_BRIDGE_RESULT=")
+          result = json.loads(line.split("=", 1)[1])
+          assert result["status"] == (
+              "OLD_ORIGINALS_VERIFIED_ACTUAL_RANDOM_VS_DETACHED_PRIORITY")
+          assert result["archived_original_commit_expected"] == (
+              "20ca7efbf7797fa7b1f12983ce68906b754b312c")
+          assert result["existing_original_archive_content_verified"] is True
+          assert result["existing_original_packed_sha_verified"] == 48
+          assert result["existing_original_unpacked_sha_verified"] == 48
+          assert result["assigned_original_pairs"] == 24
+          assert result["different_funded_replay"] == 20
+          assert result["no_different_fork"] == 4
+          assert result["living_random_next_claim"] == 20
+          assert result["priority_detached_next_claim"] == 20
+          assert result["different_detached_priority_alternative"] == 1
+          assert result["priority_alternative_executed_in_world"] == 0
+          assert result["new_readout_delivered_into_living_decision"] is False
+          assert result["new_paid_discarded_readout_treatment"] is False
+          assert result["eligible_for_new_visible_discard_causal_comparison"] is False
+          assert result["new_worlds_opened"] == 0
+          assert result["new_born_originals"] == 0
+          assert result["scientific_lives"] == 0
+          assert result["causal_information_benefit"] is None
+          assert result["survival_mediation"] is None
+          assert result["scientific_verdict"] == "NOT_ISSUED"
+          assert result["stage2_2_go"] is False
+          print("I3_ARCHIVED_ACTUAL_VS_DETACHED_READONLY_24_PAIRS_PASS")
+          print("old_originals_verified=48, old_observed_next=20, "
+                "old_detached_alternative_differences=1, new_Worlds=0")
+          print("aggregate_report_sha256="+result["aggregate_report_sha256"])
+          PY
+
+  stage2-old-original-causal-readiness:
+    # Both historical cohorts are already consumed; pure original-only audit.
+    # No World, run_life, cohort source or mutation is permitted in this job.
+    if: startsWith(github.head_ref, 'research/i3-stage2-old-source-identifiability-')
+    name: I3 Stage 2 old 144-original causal-readiness READ ONLY
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      PYTHONPATH: src
+      CONTENT_BRANCH: evidence/i3-content-48-development-20261110-originals
+      CONTENT_COMMIT: 459d0d9f90ea8edae95881d4e3110b91a24f85f5
+      CONTENT_ROOT: archive/i3/stage2-content-development-2026-11-10
+      NEXT_BRANCH: evidence/i3-next-decision-24-development-20261110-originals
+      NEXT_COMMIT: 20ca7efbf7797fa7b1f12983ce68906b754b312c
+      NEXT_ROOT: archive/i3/stage2-next-decision-development-2026-11-10
+    steps:
+      - name: Checkout exact candidate with no write credentials
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup Python 3.11 for original-only audit
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Read-only fetch of exact old original archive commits
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL=https://github.com/josselin-orta-lab/individual-zero.git
+          git fetch --no-tags --depth=1 "$URL" "refs/heads/$CONTENT_BRANCH"
+          test "$(git rev-parse FETCH_HEAD)" = "$CONTENT_COMMIT" || {
+            echo "OLD_CONTENT_SOURCE_MOVED__NO_VERDICT"; exit 1;
+          }
+          mkdir -p "$RUNNER_TEMP/stage2-old-content"
+          git archive FETCH_HEAD "$CONTENT_ROOT" | tar -xf - -C "$RUNNER_TEMP/stage2-old-content"
+          git fetch --no-tags --depth=1 "$URL" "refs/heads/$NEXT_BRANCH"
+          test "$(git rev-parse FETCH_HEAD)" = "$NEXT_COMMIT" || {
+            echo "OLD_NEXT_SOURCE_MOVED__NO_VERDICT"; exit 1;
+          }
+          mkdir -p "$RUNNER_TEMP/stage2-old-next"
+          git archive FETCH_HEAD "$NEXT_ROOT" | tar -xf - -C "$RUNNER_TEMP/stage2-old-next"
+      - name: Reverify all 144 originals and test causal source sufficiency
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m i3.lab.stage2_old_original_causal_readiness \
+            "$RUNNER_TEMP/stage2-old-content/$CONTENT_ROOT" \
+            "$RUNNER_TEMP/stage2-old-next/$NEXT_ROOT" \
+            > "$RUNNER_TEMP/stage2-causal-readiness.json"
+          python - "$RUNNER_TEMP/stage2-causal-readiness.json" <<'PY'
+          import json,sys
+          from pathlib import Path
+          line=Path(sys.argv[1]).read_text().strip()
+          assert line.startswith("I3_STAGE2_OLD_SOURCE_CAUSAL_READINESS=")
+          r=json.loads(line.split("=",1)[1])
+          assert r["historical_source_commits"]["content_48"]==(
+              "459d0d9f90ea8edae95881d4e3110b91a24f85f5")
+          assert r["historical_source_commits"]["next_decision_24"]==(
+              "20ca7efbf7797fa7b1f12983ce68906b754b312c")
+          assert r["packed_and_unpacked_originals_verified"]==144
+          assert r["historical_born_lives_reverified"]==144
+          assert r["historical_complete_pairs"]==72
+          assert r["by_source"]["content_48"]["old_originals"]==96
+          assert r["by_source"]["next_decision_24"]["old_originals"]==48
+          assert r["by_source"]["next_decision_24"][
+              "historical_next_perception_with_shadow"]==20
+          assert r["by_source"]["next_decision_24"][
+              "detached_alternative_motor_differences"]==1
+          assert r["actual_alternative_after_same_capture_executed"]==0
+          assert r["new_equal_paid_visible_discard_source"] is False
+          assert r["new_action_relevant_paid_information_delivered"] is False
+          assert r["causal_net_information_gain_identifiable"] is False
+          assert r["eligibility"]==(
+              "OLD_ORIGINALS_INSUFFICIENT_FOR_PAID_INFORMATION_CAUSAL_TEST")
+          assert r["old_original_bytes_changed"] is False
+          assert r["new_worlds_opened"]==r["new_lives_created"]==0
+          assert r["scientific_verdict"]=="NOT_ISSUED"
+          assert r["stage2_2_go"] is False
+          print("I3_OLD_ORIGINALS_144_OF_144_READONLY_IDENTIFIABILITY_PASS")
+          print("aggregate_sha256="+r["aggregate_sha256"])
+          print("actual_paid_information_delivery=0, original_Worlds_new=0")
+          PY
+      - name: Retain aggregate-only structural attestation
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-stage2-old-original-causal-readiness-readonly
+          path: ${{ runner.temp }}/stage2-causal-readiness.json
+          retention-days: 30
+          if-no-files-found: warn
