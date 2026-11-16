@@ -158,6 +158,38 @@ class Stage8MeanProspectiveNoWorldTests(unittest.TestCase):
         self.assertFalse(Path(self.original).exists())
 
 
+
+    def test_exact_horizon_death_is_not_a_censored_survivor(self):
+        panel = self.sci["panels"][0]
+        identity = {"genome_sha256": "f"*64, "life_seed": 123456,
+                    "world_sha256": "e"*64}
+        life = {
+            "genome": identity["genome_sha256"],
+            "life_seed": identity["life_seed"],
+            "steps_lived": 400, "horizon": 400,
+            "terminal": "dead", "trace": [{}]*400,
+            "manifest": {
+                "protocol": panel["protocol"],
+                "world_sha256": identity["world_sha256"],
+                "source": {
+                    "git_head": panel["source_git_head"],
+                    "sha256": panel["source_files_sha256"]},
+            },
+            "cognitive_accounting": {
+                "status": "SETTLED_FOR_DECLARED_WORK",
+                "shortfall_steps": 0,
+            },
+        }
+        self.assertEqual(E._native_lifetime(life, identity, panel), (400, False))
+        life["terminal"] = "censored"
+        self.assertEqual(E._native_lifetime(life, identity, panel), (400, True))
+        life["steps_lived"] = 399
+        life["trace"] = [{}]*399
+        with self.assertRaises(ValueError):
+            E._native_lifetime(life, identity, panel)
+        life["terminal"] = "dead"
+        self.assertEqual(E._native_lifetime(life, identity, panel), (399, False))
+
     def test_mocked_one_shot_orchestrator_keeps_science_separate_without_worlds(self):
         # The entire native engine and science audit are mocked. A unit test
         # must never open a World or misrepresent a fixture as live evidence.

@@ -243,6 +243,33 @@ def reduce_population_mean(differences: list[float]) -> dict:
     }
 
 
+def _native_lifetime(life: dict, identity: dict, panel: dict) -> tuple[int, bool]:
+    """Preserve genuine deaths at step 400 distinctly from censored survivors."""
+    if type(life) is not dict:
+        raise ValueError("missing original native organism")
+    lived = life.get("steps_lived")
+    terminal = life.get("terminal")
+    meta = life.get("manifest", {})
+    source = meta.get("source", {})
+    funding = life.get("cognitive_accounting", {})
+    if (type(lived) is not int or not 1 <= lived <= S.HORIZON or
+            life.get("horizon") != S.HORIZON or
+            terminal not in ("dead", "censored") or
+            (terminal == "censored" and lived != S.HORIZON) or
+            life.get("genome") != identity["genome_sha256"] or
+            life.get("life_seed") != identity["life_seed"] or
+            meta.get("world_sha256") != identity["world_sha256"] or
+            meta.get("protocol") != panel["protocol"] or
+            source.get("git_head") != panel["source_git_head"] or
+            source.get("sha256") != panel["source_files_sha256"] or
+            funding.get("status") != "SETTLED_FOR_DECLARED_WORK" or
+            funding.get("shortfall_steps") != 0 or
+            type(life.get("trace")) is not list or
+            len(life["trace"]) != lived):
+        raise ValueError("native lifetime, death/censoring or cognition differs")
+    return lived, terminal == "censored"
+
+
 def _scan_panel(panel: dict, root: Path, offset: int) -> tuple[dict, dict]:
     """Read original gzip lives, verifying every enrolled coordinate and body.
 
@@ -278,30 +305,12 @@ def _scan_panel(panel: dict, root: Path, offset: int) -> tuple[dict, dict]:
             if opp in opportunities and opportunities[opp] != worldsha:
                 raise ValueError("unpaired WorldSpec across selected/random descendants")
             opportunities[opp] = worldsha
-            lived = life.get("steps_lived")
-            terminal = life.get("terminal")
-            meta = life.get("manifest", {})
-            source = meta.get("source", {})
-            totals = life.get("cognitive_accounting", {})
-            if (type(lived) is not int or not 1 <= lived <= S.HORIZON
-                    or life.get("horizon") != S.HORIZON or
-                    terminal not in ("dead", "censored") or
-                    (terminal == "censored") != (lived == S.HORIZON) or
-                    life.get("genome") != identity["genome_sha256"] or
-                    life.get("life_seed") != identity["life_seed"] or
-                    meta.get("world_sha256") != worldsha or
-                    meta.get("protocol") != panel["protocol"] or
-                    source.get("git_head") != panel["source_git_head"] or
-                    source.get("sha256") != panel["source_files_sha256"] or
-                    totals.get("status") != "SETTLED_FOR_DECLARED_WORK" or
-                    totals.get("shortfall_steps") != 0 or
-                    len(life.get("trace", [])) != lived):
-                raise ValueError("bad native body horizon, source or paid cognition")
+            lived, censored = _native_lifetime(life, identity, panel)
             selected = (pop + offset, g, arm)
             cell = by_arm[selected]
-            cell[0] += 1; cell[1] += lived; cell[2] += (terminal == "censored")
+            cell[0] += 1; cell[1] += lived; cell[2] += censored
             fcell = by_family[(pop+offset, g, arm, family)]
-            fcell[0] += 1; fcell[1] += lived; fcell[2] += (terminal == "censored")
+            fcell[0] += 1; fcell[1] += lived; fcell[2] += censored
         expected = 2304 if g == 0 else 4608
         if len(seen) != expected:
             raise ValueError("lost native life in original generation")
