@@ -19,6 +19,11 @@ on:
       - 'src/i3/docs/STATUS_HISTORY_2026-11-16.md'
       - 'src/i3/docs/README.md'
       - 'src/i3/docs/README_HISTORY_2026-11-16.md'
+      # Small agent-facing plans; preserve exact historical bytes on change.
+      - 'src/i3/docs/DEVELOPMENT_PLAN.md'
+      - 'src/i3/docs/DEVELOPMENT_PLAN_HISTORY_2026-11-16.md'
+      - 'src/i3/docs/TEST_PLAN.md'
+      - 'src/i3/docs/TEST_PLAN_HISTORY_2026-11-16.md'
       - 'src/i3/docs/ACTIVE_SURFACE.md'
       - 'src/i3/ACTIVE_SURFACE.json'
       - 'tests/i3/test_stage2_post_e3_agent_handoff.py'
