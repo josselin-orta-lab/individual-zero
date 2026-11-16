@@ -2,6 +2,22 @@
 
 A handoff makes an intervention reproducible and understandable without mining historical pull requests. It is **not** a substitute for the current registry, source, contracts, tests or scientific evidence.
 
+## Five-minute restart and validation levels
+
+Before exploring historical PRs, inspect the exact `main` or task-branch SHA, `config/engine-registry.json`, root and generation-owned `AGENTS.md`, and the **current handoff at the top** of the generation's `docs/STATUS.md`. For I3 Stage7, verify the source-locked run handoff, original receipts and live Actions **before** inferring whether science completed. For unspecific next-work selection, use `python tools/research_coordinator.py recommend` and confirm the original dossier. Use [agent navigation](AGENT_NAVIGATION.md), [context routing](AGENT_CONTEXT.md) and [test placement](../../tests/TEST_LAYOUT.md); do not create another competing quick-start or handoff authority.
+
+Select the smallest test tier that answers the current engineering question, without conflating tiers:
+
+| Tier | Scope | Permission conveyed |
+| --- | --- | --- |
+| **T0** | Static navigation, metadata and repository layout | No engine or scientific validation |
+| **T1** | Focused generation tests and boundary failures | Software evidence for the named contract only |
+| **T2** | Integrated, paid, generation-owned source and replay contracts | Integrated engineering evidence, not a scientific verdict |
+| **T3** | Full-scale frozen engineering rehearsal, including both versions and seals if required | Only the protocol's specified technical gate |
+| **T4** | Separately preregistered prospective scientific cohort | Requires its exact T3 and release gates; conclusion depends on original results |
+
+For maintenance proposals, consult the [measured 16-Nov documentation/test/CI baseline](AGENT_CONTEXT_CI_REDUNDANCY_BASELINE_2026-11-16.md) **before** merging guides, deleting tests or changing workflow triggers. It distinguishes 0 exact file duplicates from navigational overlap, expected version checks and materially expensive I2 runner time. No performance measurement alone authorizes omission of a frozen case, preservation step or scientific gate.
+
 Create a starter template with `python tools/agent_context.py handoff --route <route-id> --sha <40-hex-SHA>`. The SHA must identify the *actual code used for the handoff*, not merely a branch name. If the exact SHA is unknown, leave it marked as required.
 
 A usable handoff records:
