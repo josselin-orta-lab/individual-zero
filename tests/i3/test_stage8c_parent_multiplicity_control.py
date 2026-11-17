@@ -68,7 +68,7 @@ class Stage8CParentMultiplicityControlTests(unittest.TestCase):
         selected = [0]*7 + [4]*5 + [17]*3 + list(range(9))
         manifest = "a" * 64
         children, receipts = C.build_matched_offspring(
-            selected, parents, seeds, population=2, generation=1,
+            selected, parents, seeds, parent_generation_arm="shared", population=2, generation=1,
             key=KEY, prior_manifest_sha256=manifest)
         self.assertEqual(parents, frozen)
         self.assertEqual(set(children), set(range(24)))
@@ -78,6 +78,9 @@ class Stage8CParentMultiplicityControlTests(unittest.TestCase):
         for slot, claim in enumerate(receipts):
             parent_slot = claim["parent_slot"]
             self.assertEqual(claim["arm"], "matched_multiplicity")
+            self.assertEqual(claim["parent_generation_arm"], "shared")
+            self.assertEqual(claim["selected_reference_slots_sha256"],
+                             hashlib.sha256(str(selected).replace(" ", "").encode()).hexdigest())
             self.assertEqual(claim["parent_genome_sha256"], G.digest(parents[parent_slot]))
             self.assertEqual(claim["offspring_genome_sha256"], G.digest(children[slot]))
             self.assertEqual(claim["prior_generation_manifest_sha256"], manifest)
@@ -86,7 +89,7 @@ class Stage8CParentMultiplicityControlTests(unittest.TestCase):
                 children[slot], G.mutate(parents[parent_slot], seeds[slot], scale=0.1))
         # Same sealed plan, mutation and control ancestry must reproduce bitwise.
         again, witnesses = C.build_matched_offspring(
-            selected, parents, seeds, population=2, generation=1,
+            selected, parents, seeds, parent_generation_arm="shared", population=2, generation=1,
             key=KEY, prior_manifest_sha256=manifest)
         self.assertEqual((children, receipts), (again, witnesses))
 
@@ -96,7 +99,7 @@ class Stage8CParentMultiplicityControlTests(unittest.TestCase):
         parents = {slot: G.generation_zero(2000 + slot) for slot in range(24)}
         seeds = tuple((6 << 60) + slot + 4000 for slot in range(24))
         inputs = ([0]*24, parents, seeds)
-        opts = dict(population=0, generation=2, key=KEY,
+        opts = dict(parent_generation_arm="matched_multiplicity", population=0, generation=2, key=KEY,
                     prior_manifest_sha256="b"*64)
         failures = (
             (([0]*23, parents, seeds), opts),
@@ -107,6 +110,8 @@ class Stage8CParentMultiplicityControlTests(unittest.TestCase):
             (([0]*24, parents, tuple([True]+list(seeds[1:]))), opts),
             (inputs, {**opts, "prior_manifest_sha256": "not-a-digest"}),
             (inputs, {**opts, "key": b"x"}),
+            (inputs, {**opts, "parent_generation_arm": "selected"}),
+            (inputs, {**opts, "generation": 1}),
         )
         for args, kwargs in failures:
             with self.subTest(args=str(args[0])[:28], kw=str(kwargs)[:40]):
