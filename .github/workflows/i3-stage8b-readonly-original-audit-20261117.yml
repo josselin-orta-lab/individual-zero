@@ -1,0 +1,101 @@
+# READ ONLY: verification of already-closed Stage8-B original gzip evidence.
+# IMPORTANT: do not merge until run #44060101150 has published all
+# science-preexposure, science-originals, and science-result artifacts.
+name: I3 Stage8-B independent 23040-original heldout ecology audit
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/i3-stage8b-readonly-original-audit-20261117.yml']
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: i3-stage8b-independent-original-audit-44060101150
+  cancel-in-progress: false
+
+jobs:
+  independent_original_audit:
+    if: ${{ github.run_attempt == 1 && github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      PYTHONPATH: src
+      CUSTODY: /tmp/i3-stage8b-original-readonly
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Pure independent reducer preflight, zero births
+        run: |
+          python -m unittest discover -s tests/i3 -p 'test_stage8b_independent_original_audit.py' -v
+          python - <<'PY'
+          from i3.lab import stage8b_independent_original_audit as U
+          from i3.lab import stage8b_independent_reduced_audit as R
+          assert U.SOURCE_HEAD == R.SOURCE_HEAD
+          assert U.RUN_ID == 44060101150
+          assert U.ORIGINALS == 23040
+          assert U.ALPHA == .025
+          print("STAGE8B_READONLY_23040_ORIGINALS_AUDIT_NO_BIRTH")
+          PY
+          mkdir -p "$CUSTODY"
+      - name: Download original Stage8-B scientific PRE-exposure source plan
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8b-science-preexposure-44060101150
+          run-id: 44060101150
+          repository: josselin-orta-lab/individual-zero
+          github-token: ${{ github.token }}
+          path: /tmp/i3-stage8b-original-readonly/preexposure
+      - name: Download all 23040 original Stage8-B native gzip lives
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8b-science-originals-44060101150
+          run-id: 44060101150
+          repository: josselin-orta-lab/individual-zero
+          github-token: ${{ github.token }}
+          path: /tmp/i3-stage8b-original-readonly/originals
+      - name: Download pre-registered Stage8-B scientific result
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8b-science-result-44060101150
+          run-id: 44060101150
+          repository: josselin-orta-lab/individual-zero
+          github-token: ${{ github.token }}
+          path: /tmp/i3-stage8b-original-readonly/result
+      - name: Rehash originals and independently recompute G2 ecology omnibus, NO lives
+        run: |
+          python -m i3.lab.stage8b_independent_original_audit \
+            "$CUSTODY/preexposure/SCIENCE_PLAN.json" \
+            "$CUSTODY/originals" \
+            "$CUSTODY/result/SCIENCE_RESULT.json" > "$CUSTODY/READ_ONLY_ORIGINAL_AUDIT.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          r=json.loads((Path(os.environ["CUSTODY"])/"READ_ONLY_ORIGINAL_AUDIT.json").read_text())
+          assert r["status"] == "READ_ONLY_ORIGINALS_REPRODUCED"
+          assert r["native_original_lives_rehashed"] == 23040
+          assert r["g2_family_lives_rehashed_again"] == 9216
+          assert r["populations_verified"] == 32
+          assert len(r["phase_chains_verified"]) == 2
+          assert r["new_worlds"] == r["new_lives"] == 0
+          print(json.dumps({k:r[k] for k in (
+            "status","scientific_status","native_original_lives_rehashed",
+            "g2_family_lives_rehashed_again","populations_verified",
+            "ecology_mean_effect_steps","ecology_positive_population_counts",
+            "omnibus_p","new_lives")},sort_keys=True))
+          PY
+      - name: Preserve actual read-only audit, negative verdicts included
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8b-original-level-independent-audit-${{ github.run_id }}
+          path: /tmp/i3-stage8b-original-readonly/READ_ONLY_ORIGINAL_AUDIT.json
+          if-no-files-found: error
+          retention-days: 90
