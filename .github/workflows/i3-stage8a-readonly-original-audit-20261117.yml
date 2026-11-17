@@ -1,0 +1,94 @@
+# Pure, read-only forensic audit of CLOSED Stage8-A first-attempt original lives.
+# Does not allocate seeds, instantiate World, run_life, or change the frozen verdict.
+name: I3 Stage8-A read-only independent original archive re-reduction
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/i3-stage8a-readonly-original-audit-20261117.yml']
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: stage8a-independent-original-audit-43950098410
+  cancel-in-progress: false
+
+jobs:
+  independent_audit:
+    if: ${{ github.run_attempt == 1 && github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      PYTHONPATH: src
+      CUSTODY: /tmp/i3-stage8a-readonly-audit
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify independent student-mean reducer and read-only source pins WITHOUT births
+        run: |
+          python -m unittest discover -s tests/i3 -p 'test_stage8a_independent_original_audit.py' -v
+          python - <<'PY'
+          from i3.lab import stage8a_independent_original_audit as A
+          assert A.SOURCE_HEAD == "ac353a9c4206ee3ecfd90bb101e26d092103958b"
+          assert A.SCIENCE_PLAN_SHA == "dcd93550453541273c940f78fc459dd3f4deaa807911cb89992c4d1eb7d3b660"
+          assert A.POP == 32 and A.LIVES_TOTAL == 23040
+          print("READ_ONLY_STAGE8A_ORIGINAL_AUDIT_NO_NEW_WORLD_OR_LIFE")
+          PY
+          mkdir -p "$CUSTODY"
+      - name: Download closed science source plan (artifact 14278546177)
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8a-science-preexposure-43950098410
+          run-id: 43950098410
+          repository: josselin-orta-lab/individual-zero
+          github-token: ${{ github.token }}
+          path: /tmp/i3-stage8a-readonly-audit/preexposure
+      - name: Download original source-bound 23,040 native lives (artifact 14289668087)
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8a-science-originals-43950098410
+          run-id: 43950098410
+          repository: josselin-orta-lab/individual-zero
+          github-token: ${{ github.token }}
+          path: /tmp/i3-stage8a-readonly-audit/originals
+      - name: Download original prospectively frozen result (artifact 14289613177)
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8a-science-result-43950098410
+          run-id: 43950098410
+          repository: josselin-orta-lab/individual-zero
+          github-token: ${{ github.token }}
+          path: /tmp/i3-stage8a-readonly-audit/result
+      - name: Independently rehash ALL gzip lives and recompute mean + 97.5 percent bound
+        run: |
+          python -m i3.lab.stage8a_independent_original_audit \
+            "$CUSTODY/preexposure/SCIENCE_PLAN.json" \
+            "$CUSTODY/originals" \
+            "$CUSTODY/result/SCIENCE_RESULT.json" > "$CUSTODY/READ_ONLY_AUDIT.json"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          record=json.loads((Path(os.environ["CUSTODY"])/"READ_ONLY_AUDIT.json").read_text())
+          assert record["status"] == "READ_ONLY_REPRODUCTION_OK"
+          assert record["original_lives_rehashed"] == 23040
+          assert record["new_worlds"] == record["new_lives"] == 0
+          print(json.dumps({key:record[key] for key in (
+              "status", "science_status", "original_lives_rehashed",
+              "populations_reduced", "independent_mean_difference_steps",
+              "independent_lower_bound_steps", "positive", "negative", "zero",
+              "new_lives")},sort_keys=True))
+          PY
+      - name: Publish posthoc independent READ ONLY report (even if negative original)
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8a-independent-original-audit-43950098410-${{ github.run_id }}
+          path: /tmp/i3-stage8a-readonly-audit/READ_ONLY_AUDIT.json
+          if-no-files-found: error
+          retention-days: 90

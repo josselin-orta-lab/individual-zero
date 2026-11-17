@@ -147,6 +147,19 @@ class EngineToolingTests(unittest.TestCase):
         self.assertEqual(unexpected_workflows(
             entries, active_ci="i1-current-ci.yml"), sorted(denied))
 
+    def test_stage8a_posthoc_readonly_audit_allowance_is_exact(self):
+        from scripts.check_engine_repository import unexpected_workflows
+
+        allowed = "i3-stage8a-readonly-original-audit-20261117.yml"
+        rejected = ("i3-stage8a-readonly-original-audit-retry.yml",
+                    "i3-stage8a-readonly-original-audit-20261118.yml",
+                    "i3-stage8a-new-lives-masquerading-as-audit.yml")
+        paths = [Path(".github/workflows/" + file)
+                 for file in (allowed, *rejected)]
+        self.assertEqual(
+            unexpected_workflows(paths,active_ci="i1-current-ci.yml"),
+            sorted(rejected))
+
     def test_static_agent_navigation_is_not_historical_runtime_ci(self):
         from scripts.check_engine_repository import unexpected_workflows
         paths = [Path(".github/workflows/agent-context-static.yml"),
