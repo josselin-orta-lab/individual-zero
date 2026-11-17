@@ -78,6 +78,7 @@ def build_matched_offspring(
     control_parent_genomes: dict[int, dict],
     mutation_seeds: tuple[int, ...] | list[int],
     *,
+    parent_generation_arm: str,
     population: int,
     generation: int,
     key: bytes,
@@ -91,12 +92,17 @@ def build_matched_offspring(
     independent mutation seeds before invoking it. No parent object mutates.
     """
     from i3.modules.genome import digest, mutate, validate
+    import hashlib
+    import json
     import re
 
     # Validate all inputs before deriving any offspring genotypes.
     if (type(prior_manifest_sha256) is not str or
             re.fullmatch(r"[0-9a-f]{64}", prior_manifest_sha256) is None):
         raise ValueError("missing or invalid sealed parental manifest digest")
+    if (type(generation) is not int or generation not in (1, 2) or
+            parent_generation_arm != ("shared" if generation == 1 else "matched_multiplicity")):
+        raise ValueError("control parent generation/arm provenance mismatch")
     if (type(control_parent_genomes) is not dict or
             len(control_parent_genomes) != PARENT_SLOTS or
             any(type(s) is not int for s in control_parent_genomes) or
@@ -113,6 +119,8 @@ def build_matched_offspring(
         parent_digests[slot] = digest(validate(control_parent_genomes[slot]))
     matched = matched_parent_draws(
         reference_slots, population=population, generation=generation, key=key)
+    stream_sha256 = hashlib.sha256(json.dumps(
+        reference_slots, separators=(",", ":")).encode("ascii")).hexdigest()
     children, receipts = {}, []
     for child_slot, parent_slot in enumerate(matched):
         parent = control_parent_genomes[parent_slot]
@@ -123,6 +131,8 @@ def build_matched_offspring(
             "population": population,
             "generation": generation,
             "arm": "matched_multiplicity",
+            "parent_generation_arm": parent_generation_arm,
+            "selected_reference_slots_sha256": stream_sha256,
             "slot": child_slot,
             "parent_slot": parent_slot,
             "parent_genome_sha256": parent_digests[parent_slot],
