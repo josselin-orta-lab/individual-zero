@@ -58,5 +58,64 @@ class Stage8CParentMultiplicityControlTests(unittest.TestCase):
                          {"population", "generation", "key"})
 
 
+    def test_control_offspring_v4_own_ancestry_and_mutation_receipts(self):
+        from copy import deepcopy
+        from i3.modules import genome as G
+
+        parents = {slot: G.generation_zero(10000 + slot) for slot in range(24)}
+        frozen = deepcopy(parents)
+        seeds = tuple((6 << 60) + slot + 1000 for slot in range(24))
+        selected = [0]*7 + [4]*5 + [17]*3 + list(range(9))
+        manifest = "a" * 64
+        children, receipts = C.build_matched_offspring(
+            selected, parents, seeds, population=2, generation=1,
+            key=KEY, prior_manifest_sha256=manifest)
+        self.assertEqual(parents, frozen)
+        self.assertEqual(set(children), set(range(24)))
+        self.assertEqual(len(receipts), 24)
+        self.assertEqual(sorted(Counter(r["parent_slot"] for r in receipts).values()),
+                         sorted(Counter(selected).values()))
+        for slot, claim in enumerate(receipts):
+            parent_slot = claim["parent_slot"]
+            self.assertEqual(claim["arm"], "matched_multiplicity")
+            self.assertEqual(claim["parent_genome_sha256"], G.digest(parents[parent_slot]))
+            self.assertEqual(claim["offspring_genome_sha256"], G.digest(children[slot]))
+            self.assertEqual(claim["prior_generation_manifest_sha256"], manifest)
+            self.assertEqual(claim["mutation_seed"], seeds[slot])
+            self.assertEqual(
+                children[slot], G.mutate(parents[parent_slot], seeds[slot], scale=0.1))
+        # Same sealed plan, mutation and control ancestry must reproduce bitwise.
+        again, witnesses = C.build_matched_offspring(
+            selected, parents, seeds, population=2, generation=1,
+            key=KEY, prior_manifest_sha256=manifest)
+        self.assertEqual((children, receipts), (again, witnesses))
+
+    def test_control_offspring_rejects_bad_ancestry_before_mutation(self):
+        from i3.modules import genome as G
+
+        parents = {slot: G.generation_zero(2000 + slot) for slot in range(24)}
+        seeds = tuple((6 << 60) + slot + 4000 for slot in range(24))
+        inputs = ([0]*24, parents, seeds)
+        opts = dict(population=0, generation=2, key=KEY,
+                    prior_manifest_sha256="b"*64)
+        failures = (
+            (([0]*23, parents, seeds), opts),
+            ((([0]*23)+[24], parents, seeds), opts),
+            (([0]*24, {s:g for s,g in parents.items() if s != 23}, seeds), opts),
+            (([0]*24, parents, seeds[:-1]), opts),
+            (([0]*24, parents, seeds[:-1]+(seeds[0],)), opts),
+            (([0]*24, parents, tuple([True]+list(seeds[1:]))), opts),
+            (inputs, {**opts, "prior_manifest_sha256": "not-a-digest"}),
+            (inputs, {**opts, "key": b"x"}),
+        )
+        for args, kwargs in failures:
+            with self.subTest(args=str(args[0])[:28], kw=str(kwargs)[:40]):
+                with self.assertRaises(ValueError):
+                    C.build_matched_offspring(*args, **kwargs)
+        self.assertNotIn("fitness", inspect.signature(C.build_matched_offspring).parameters)
+        self.assertNotIn("score", inspect.signature(C.build_matched_offspring).parameters)
+
+
+
 if __name__ == "__main__":
     unittest.main()
