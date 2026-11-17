@@ -72,3 +72,62 @@ def matched_parent_draws(
             sorted(Counter(reference_slots).values())):
         raise AssertionError("parent multiplicity invariant violated")
     return matched
+
+def build_matched_offspring(
+    reference_slots: tuple[int, ...] | list[int],
+    control_parent_genomes: dict[int, dict],
+    mutation_seeds: tuple[int, ...] | list[int],
+    *,
+    population: int,
+    generation: int,
+    key: bytes,
+    prior_manifest_sha256: str,
+) -> tuple[dict[int, dict], list[dict]]:
+    """Construct only genotype-v4 descendants for the blind CONTROL arm.
+
+    This is a pure pre-exposure engineering adapter, NOT a native birth:
+    no World is opened, no survival score is read, no run_life is called.
+    The caller must authenticate the parental generation and plan's
+    independent mutation seeds before invoking it. No parent object mutates.
+    """
+    from i3.modules.genome import digest, mutate, validate
+    import re
+
+    # Validate all inputs before deriving any offspring genotypes.
+    if (type(prior_manifest_sha256) is not str or
+            re.fullmatch(r"[0-9a-f]{64}", prior_manifest_sha256) is None):
+        raise ValueError("missing or invalid sealed parental manifest digest")
+    if (type(control_parent_genomes) is not dict or
+            len(control_parent_genomes) != PARENT_SLOTS or
+            any(type(s) is not int for s in control_parent_genomes) or
+            set(control_parent_genomes) != set(range(PARENT_SLOTS))):
+        raise ValueError("control arm needs exactly its own 24 parent slots")
+    if (type(mutation_seeds) not in (list, tuple) or
+            len(mutation_seeds) != CHILDREN or
+            any(type(s) is not int or not (6 << 60) <= s < (7 << 60)
+                for s in mutation_seeds) or
+            len(set(mutation_seeds)) != CHILDREN):
+        raise ValueError("24 distinct precommitted native mutation seeds required")
+    parent_digests = {}
+    for slot in range(PARENT_SLOTS):
+        parent_digests[slot] = digest(validate(control_parent_genomes[slot]))
+    matched = matched_parent_draws(
+        reference_slots, population=population, generation=generation, key=key)
+    children, receipts = {}, []
+    for child_slot, parent_slot in enumerate(matched):
+        parent = control_parent_genomes[parent_slot]
+        child = validate(mutate(parent, mutation_seeds[child_slot], scale=0.1))
+        children[child_slot] = child
+        receipts.append({
+            "schema": "i3-stage8c-multiplicity-matched-parent-receipt/v0",
+            "population": population,
+            "generation": generation,
+            "arm": "matched_multiplicity",
+            "slot": child_slot,
+            "parent_slot": parent_slot,
+            "parent_genome_sha256": parent_digests[parent_slot],
+            "offspring_genome_sha256": digest(child),
+            "mutation_seed": mutation_seeds[child_slot],
+            "prior_generation_manifest_sha256": prior_manifest_sha256,
+        })
+    return children, receipts
