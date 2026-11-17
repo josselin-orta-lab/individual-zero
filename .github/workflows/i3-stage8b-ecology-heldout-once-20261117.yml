@@ -1,0 +1,195 @@
+# Distinct new Stage8-B one-shot ecological interaction F0.
+# No Stage6/7/8A root, original, or scientific verdict may be reused.
+name: I3 Stage8-B prospective heldout ecological interaction G2
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/i3-stage8b-ecology-heldout-once-20261117.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: i3-stage8b-ecology-heldout-20261117-one-shot
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    if: ${{ github.run_attempt == 1 && github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Pure frozen ecological interaction falsification, zero births
+        run: |
+          python -m unittest discover -s tests/i3 -p 'test_stage8b_ecology_interaction.py' -v
+          python - <<'PY'
+          import os, subprocess
+          from i3.lab import stage8b_ecology_interaction as B
+          from i3.runtime.provenance import source_snapshot
+          assert B.G0._pins()
+          provenance = source_snapshot()
+          assert provenance["git_head"] == os.environ["GITHUB_SHA"]
+          assert provenance["working_tree_dirty"] is False
+          assert provenance["sha256"]
+          assert not subprocess.check_output(
+              ["git", "status", "--porcelain", "--untracked-files=all"]).strip()
+          workflow = ".github/workflows/i3-stage8b-ecology-heldout-once-20261117.yml"
+          history = subprocess.check_output(
+              ["git", "log", "--format=%H", "--", workflow], text=True
+          ).splitlines()
+          assert history == [os.environ["GITHUB_SHA"]], (
+              "Stage8B cannot reopen after first workflow source commit")
+          creation = subprocess.check_output(
+              ["git", "diff-tree", "--no-commit-id", "--name-status",
+               "-r", os.environ["GITHUB_SHA"], "--", workflow], text=True
+          ).strip()
+          assert creation.split() == ["A", workflow], (
+              "Stage8B requires one initial workflow ADD on main")
+          assert B.METHOD["n_population_units"] == 32
+          assert B.METHOD["alpha_omnibus"] == 0.025
+          assert B.METHOD["G2_worlds_precommitted_and_blind_to_parent_fitness"]
+          assert B.METHOD["null"] == "mean_G2_selection_effect_equal_in_all_three_F0_families"
+          print("STAGE8B_SOURCE_EXACT_HELDOUT_OMNIBUS_FROZEN_NO_BIRTH_PASS")
+          PY
+
+  engineering:
+    if: ${{ github.run_attempt == 1 }}
+    needs: preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        python-version: ['3.11', '3.12']
+    env:
+      PYTHONPATH: src
+      PYVERSION: ${{ matrix.python-version }}
+      CUSTODY: /tmp/i3-stage8b-technical-${{ matrix.python-version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Mint fresh heldout ecological engineering allocation, ZERO lives
+        run: |
+          mkdir -p "$CUSTODY"
+          SOURCE=$(python -c 'from i3.runtime.provenance import source_snapshot; print(source_snapshot()["sha256"])')
+          python -m i3.lab.stage8b_ecology_interaction allocate "$GITHUB_SHA" "$SOURCE" "$CUSTODY/PLAN.json" "$CUSTODY/originals"
+          python -m i3.lab.stage8b_ecology_interaction verify "$CUSTODY/PLAN.json"
+      - name: Publish all 192 reserved G2 Worlds and seeds BEFORE any life
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8b-technical-preexposure-${{ matrix.python-version }}-${{ github.run_id }}
+          path: /tmp/i3-stage8b-technical-${{ matrix.python-version }}/PLAN.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Run one 32-population original native G0/G1/G2 technical rehearsal
+        run: |
+          PLAN_SHA=$(python -c 'import os,json; print(json.load(open(os.environ["CUSTODY"]+"/PLAN.json"))["allocation_sha256"])')
+          python -m i3.lab.stage8b_ecology_interaction run-engineering "$CUSTODY/PLAN.json" "$CUSTODY/originals" "$PLAN_SHA" > "$CUSTODY/CORE.json"
+      - name: Verify all 23,040 original lives, 18 phases, parentage and custody
+        run: |
+          python -m i3.lab.stage8b_ecology_interaction rehearsal-receipt "$CUSTODY/PLAN.json" "$CUSTODY/originals" "$CUSTODY/CORE.json" "$CUSTODY/TECH_RECEIPT.json" "$PYVERSION" "$GITHUB_RUN_ID"
+      - name: Publish source-exact successful technical receipt without effects
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8b-technical-receipt-${{ matrix.python-version }}-${{ github.run_id }}
+          path: /tmp/i3-stage8b-technical-${{ matrix.python-version }}/TECH_RECEIPT.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Preserve all technical gzip originals, deaths and failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8b-technical-originals-${{ matrix.python-version }}-${{ github.run_id }}
+          path: /tmp/i3-stage8b-technical-${{ matrix.python-version }}/originals
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 90
+
+  science:
+    if: ${{ github.run_attempt == 1 }}
+    needs: engineering
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    env:
+      PYTHONPATH: src
+      CUSTODY: /tmp/i3-stage8b-prospective-science
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Create science custody outside the source checkout
+        run: mkdir -p "$CUSTODY"
+      - name: Import complete source-specific Python 3.11 technical receipt
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8b-technical-receipt-3.11-${{ github.run_id }}
+          path: /tmp/i3-stage8b-prospective-science/receipts/311
+      - name: Import complete source-specific Python 3.12 technical receipt
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8b-technical-receipt-3.12-${{ github.run_id }}
+          path: /tmp/i3-stage8b-prospective-science/receipts/312
+      - name: Admit only two sealed NEW Stage8B rehearsals and reserve new G2 worlds
+        run: |
+          python -m i3.lab.stage8b_ecology_interaction combine "$CUSTODY/receipts/311/TECH_RECEIPT.json" "$CUSTODY/receipts/312/TECH_RECEIPT.json" "$CUSTODY/REHEARSALS.json"
+          SOURCE=$(python -c 'from i3.runtime.provenance import source_snapshot; print(source_snapshot()["sha256"])')
+          python -m i3.lab.stage8b_ecology_interaction allocate-science "$GITHUB_SHA" "$SOURCE" "$CUSTODY/SCIENCE_PLAN.json" "$CUSTODY/originals" "$CUSTODY/REHEARSALS.json"
+          python -m i3.lab.stage8b_ecology_interaction verify "$CUSTODY/SCIENCE_PLAN.json"
+      - name: Publish 32-population holdouts and omnibus method BEFORE science births
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8b-science-preexposure-${{ github.run_id }}
+          path: |
+            /tmp/i3-stage8b-prospective-science/SCIENCE_PLAN.json
+            /tmp/i3-stage8b-prospective-science/REHEARSALS.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Run separate source-exact 32-population native science ONCE
+        run: |
+          PLAN_SHA=$(python -c 'import os,json; print(json.load(open(os.environ["CUSTODY"]+"/SCIENCE_PLAN.json"))["allocation_sha256"])')
+          python -m i3.lab.stage8b_ecology_interaction run-science "$CUSTODY/SCIENCE_PLAN.json" "$CUSTODY/originals" "$PLAN_SHA" > "$CUSTODY/SCIENCE_CORE.json"
+      - name: Reverify 23,040 original lives, 3,072 parent draws, frozen omnibus
+        run: |
+          python -m i3.lab.stage8b_ecology_interaction science-receipt "$CUSTODY/SCIENCE_PLAN.json" "$CUSTODY/originals" "$CUSTODY/SCIENCE_CORE.json" "$CUSTODY/SCIENCE_RESULT.json"
+      - name: Publish ecological interaction negative or positive and 32-by-3 contrasts
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8b-science-result-${{ github.run_id }}
+          path: |
+            /tmp/i3-stage8b-prospective-science/SCIENCE_RESULT.json
+            /tmp/i3-stage8b-prospective-science/originals/SCIENCE_FINAL.json
+            /tmp/i3-stage8b-prospective-science/originals/NATIVE_ORIGINALS/PANEL_0/PHASES.jsonl
+            /tmp/i3-stage8b-prospective-science/originals/NATIVE_ORIGINALS/PANEL_1/PHASES.jsonl
+          if-no-files-found: error
+          retention-days: 90
+      - name: Preserve all scientific original gzip lives, nulls and failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8b-science-originals-${{ github.run_id }}
+          path: /tmp/i3-stage8b-prospective-science/originals
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 90

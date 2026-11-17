@@ -160,6 +160,20 @@ class EngineToolingTests(unittest.TestCase):
             unexpected_workflows(paths,active_ci="i1-current-ci.yml"),
             sorted(rejected))
 
+    def test_stage8b_heldout_ecology_once_is_only_allowed_exact_workflow(self):
+        from scripts.check_engine_repository import unexpected_workflows
+
+        name = "i3-stage8b-ecology-heldout-once-20261117.yml"
+        blocked = (
+            "i3-stage8b-ecology-heldout-once-20261117-retry.yml",
+            "i3-stage8b-ecology-heldout-once-20261118.yml",
+            "i3-stage8b-select-favorable-ecologies.yml",
+        )
+        candidates = [Path(".github/workflows/" + x)
+                      for x in (name, *blocked)]
+        self.assertEqual(unexpected_workflows(
+            candidates, active_ci="i1-current-ci.yml"), sorted(blocked))
+
     def test_static_agent_navigation_is_not_historical_runtime_ci(self):
         from scripts.check_engine_repository import unexpected_workflows
         paths = [Path(".github/workflows/agent-context-static.yml"),
