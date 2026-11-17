@@ -1,6 +1,6 @@
 # I3: current status and agent handoff
 
-**Updated:** 16 November 2026. This is the **short current entrypoint**. The complete, byte-identical former 2,362-line status and its dated decisions are preserved in [STATUS_HISTORY_2026-11-16.md](STATUS_HISTORY_2026-11-16.md) (original Git blob `3d4f934904ed1c5e129279a672adb6b3a52aa0cd`). This page is a navigation summary, **not a scientific receipt**. Recheck live branch HEAD, artifacts and original protocols.
+**Updated:** 17 November 2026. This is the **short current entrypoint**. The complete, byte-identical former 2,362-line status and its dated decisions are preserved in [STATUS_HISTORY_2026-11-16.md](STATUS_HISTORY_2026-11-16.md) (original Git blob `3d4f934904ed1c5e129279a672adb6b3a52aa0cd`). This page is a navigation summary, **not a scientific receipt**. Recheck live branch HEAD, artifacts and original protocols.
 
 ## Authority and current boundaries
 
@@ -19,9 +19,10 @@
 
 ## Most recent source-locked scientific observations
 
+- **Stage8-A mean persistence:** [one-shot #43950098410](https://github.com/josselin-orta-lab/individual-zero/actions/runs/43950098410), 32 new populations; two complete technical rehearsals before science. Mean G2 **+14.4874 steps**, lower t one-sided 97.5% **+7.9933**, **23+/9−**. Prespecified `STAGE8A_MEAN_PERSISTENCE_ADVANTAGE_F0`, **`CLOSED_NO_RETRY`**. F0 only; Stage7 sign negative unchanged. [Full result and SHA hashes](studies/stage8-mean-persistence/STAGE8A_PROSPECTIVE_SCIENTIFIC_RESULT_2026-11-17.md).
 - **Stage6-light `beta_u_eff`:** [single original run #43769581930](https://github.com/josselin-orta-lab/individual-zero/actions/runs/43769581930) completed technically. Its primary population sign criterion was **negative: 9 positive, 7 negative of 16**, with threshold 13. `CLOSED_NO_RETRY`.
 - **Stage7 inherited bodily persistence:** [single run #43830174125](https://github.com/josselin-orta-lab/individual-zero/actions/runs/43830174125) on source `06cfcf9cc9414e0f139b39a42d05177ddb813782` completed **both sealed 3.11/3.12 engineering rehearsals**, uploaded its separate pre-exposure science plan, and completed the prospective science job. [Receipt artifact 14217357887](https://github.com/josselin-orta-lab/individual-zero/actions/runs/43830174125) reports `PERSISTENCE_G2_NO_REPRODUCIBLE_ADVANTAGE_F0`: **12 positive, 4 negative, 0 zero population G2 contrasts**. Preregistered success required **at least 13 of 16 strictly positive and an overall positive mean**; it did **not** pass. Separate original-science archive artifact 14218795289; [frozen protocol](studies/stage7-persistence/STAGE7_PERSISTENCE_PROTOCOL_2026-11-16.md) and [dated execution handoff](studies/stage7-persistence/STAGE7_EXECUTION_LIVE_HANDOFF_2026-11-16.md). Do not convert a technical workflow PASS into a scientific positive or rerun the one-shot allocation.
-- These two tests address **different estimands**. Failure of their prespecified criteria does not establish that all natural selection, learning or heritable adaptation is impossible. Cross-generation raw trends alone are not causal because Worlds differ.
+- **These three studies address different estimands** (Stage6 gene direction, Stage7 sign reproducibility, Stage8-A mean persistence). The negative Stage6/Stage7 outcomes are preserved; the positive Stage8-A result does not demonstrate universal success (9/32 groups are disadvantaged), a specific genetic cause, or adaptation outside F0. Cross-generation raw trends alone are not causal because Worlds differ.
 
 ## Current agent procedure (task-scoped)
 
