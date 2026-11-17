@@ -51,7 +51,7 @@ class Stage8BReducedIndependentAuditTests(unittest.TestCase):
         self.assertEqual(x["status"],V.PASS)
         self.assertLess(x["p_value_two_sided_omnibus"],.025)
         self.assertTrue(x["primary_success"])
-        self.assertEqual(x["family_positive_counts"]["stable"],32)
+        self.assertEqual(x["positive_counts"]["stable"],32)
 
     def test_no_heterogeneity_and_singular_covariance_never_pass(self):
         self.assertEqual(V.reduce_omnibus(matrix(False))["status"],V.NO)
