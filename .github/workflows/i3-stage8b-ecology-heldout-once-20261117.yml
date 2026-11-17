@@ -43,6 +43,18 @@ jobs:
           assert provenance["sha256"]
           assert not subprocess.check_output(
               ["git", "status", "--porcelain", "--untracked-files=all"]).strip()
+          workflow = ".github/workflows/i3-stage8b-ecology-heldout-once-20261117.yml"
+          history = subprocess.check_output(
+              ["git", "log", "--format=%H", "--", workflow], text=True
+          ).splitlines()
+          assert history == [os.environ["GITHUB_SHA"]], (
+              "Stage8B cannot reopen after first workflow source commit")
+          creation = subprocess.check_output(
+              ["git", "diff-tree", "--no-commit-id", "--name-status",
+               "-r", os.environ["GITHUB_SHA"], "--", workflow], text=True
+          ).strip()
+          assert creation.split() == ["A", workflow], (
+              "Stage8B requires one initial workflow ADD on main")
           assert B.METHOD["n_population_units"] == 32
           assert B.METHOD["alpha_omnibus"] == 0.025
           assert B.METHOD["G2_worlds_precommitted_and_blind_to_parent_fitness"]
