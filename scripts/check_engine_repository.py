@@ -66,6 +66,9 @@ def unexpected_workflows(paths, *, active_ci: str) -> list[str]:
         # ADR-0022: separate NEW Stage8-A mean-persistence full laboratory
         # experiment. Only one exactly named workflow, never a wildcard.
         "i3-stage8a-mean-persistence-once-20261116.yml",
+        # Independent forensic read-only re-reduction of CLOSED Stage8-A ZIPs.
+        # This exact name is allowed; no wildcard or new native cohort.
+        "i3-stage8a-readonly-original-audit-20261117.yml",
     }
     return sorted(path.name for path in paths
                   if not path.name.startswith("i1-") and path.name not in allowed)
