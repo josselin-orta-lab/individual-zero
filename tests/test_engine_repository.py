@@ -174,6 +174,20 @@ class EngineToolingTests(unittest.TestCase):
         self.assertEqual(unexpected_workflows(
             candidates, active_ci="i1-current-ci.yml"), sorted(blocked))
 
+    def test_stage8b_readonly_original_audit_is_exact_only(self):
+        from scripts.check_engine_repository import unexpected_workflows
+
+        approved = "i3-stage8b-readonly-original-audit-20261117.yml"
+        forbidden = (
+            "i3-stage8b-readonly-original-audit-20261118.yml",
+            "i3-stage8b-readonly-original-audit-20261117-retry.yml",
+            "i3-stage8b-original-sample-relaunch.yml",
+        )
+        candidates=[Path(".github/workflows/" + name)
+                    for name in (approved,*forbidden)]
+        self.assertEqual(unexpected_workflows(
+            candidates,active_ci="i1-current-ci.yml"),sorted(forbidden))
+
     def test_static_agent_navigation_is_not_historical_runtime_ci(self):
         from scripts.check_engine_repository import unexpected_workflows
         paths = [Path(".github/workflows/agent-context-static.yml"),

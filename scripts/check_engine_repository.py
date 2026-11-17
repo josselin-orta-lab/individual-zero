@@ -72,6 +72,9 @@ def unexpected_workflows(paths, *, active_ci: str) -> list[str]:
         # ADR-0022 separate Stage8-B source-locked ecological interaction
         # on NEW heldout worlds: one exact path, never a workflow wildcard.
         "i3-stage8b-ecology-heldout-once-20261117.yml",
+        # Posthoc read-only full original-life audit of CLOSED Stage8-B.
+        # Exact filename only: no retry experiment or wildcard.
+        "i3-stage8b-readonly-original-audit-20261117.yml",
     }
     return sorted(path.name for path in paths
                   if not path.name.startswith("i1-") and path.name not in allowed)
