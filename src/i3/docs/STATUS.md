@@ -15,7 +15,7 @@
 | Prospective laboratory governance | [ADR-0022](../../../docs/decisions/ADR-0022-i3-owner-authorizes-prospective-experiments-internal-evidence.md) allows **new internally witnessed, separately frozen** prospective research. It does **not** establish independent external custody, native production M11 or engine promotion |
 | Earlier generation I2 | [Archived in place](../../../archive/i2/README.md) by ADR-0023; historical comparator, not a live runtime or default next-development target |
 
-**E3 stop:** [source-locked report](studies/stage2-replay-gate-selected-design/STAGE2_POST_E3_SCIENTIFIC_STOP_ASSESSMENT_2026-11-11.md): 0/2 legal motor changes; P1.3 retained, Stage2 `NOT_ISSUED`.
+**Stage 2 post-E3 scientific stop checkpoint:** [source-locked report](studies/stage2-replay-gate-selected-design/STAGE2_POST_E3_SCIENTIFIC_STOP_ASSESSMENT_2026-11-11.md): `E3_FROZEN_NATIVE_ACTION_MEDIATION_NOT_SHOWN` (0/2 legal motor changes); P1.3 retained, Stage2 `NOT_ISSUED`.
 
 ## Most recent source-locked scientific observations
 
