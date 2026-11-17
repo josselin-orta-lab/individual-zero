@@ -1,5 +1,7 @@
 # i3 Stage8-C : contrôle score-parent indépendant de la concentration parentale
 
+[Mission scientifique et critères d'admission Stage8-C](https://github.com/josselin-orta-lab/individual-zero/issues/1438).
+
 **Statut au 17 novembre 2026 : `ENGINEERING_CONTROL_ONLY / NOT_PREREGISTERED / NO_WORLD / NO_NEW_LIVES`.** Ce document ne constitue ni une autorisation d'admission, ni un résultat d'expérience. Il succède au [Stage8-B conclu négatif sur l'interaction écologique](../stage8-ecology-interaction/STAGE8B_PROSPECTIVE_SCIENTIFIC_RESULT_2026-11-17.md), tout en conservant le gain moyen Stage8-A et les négatifs Stage7.
 
 ## Question falsifiable
@@ -16,7 +18,7 @@ Les trois bras partagent G0, les mêmes six occasions écologiques F0 par géné
 
 ## Petit composant logiciel livré, sans naissance
 
-`src/i3/lab/stage8c_parent_multiplicity_control.py` implémente une permutation Fisher–Yates par HMAC-SHA256, avec tirage sans biais de modulo, domaine distinct par population et génération et **clé de 32 octets à préallouer par une future étude**. `matched_parent_draws` reçoit seulement les 24 indices, population, génération et clé ; il n'accède ni aux scores, ni au moteur, ni au World. Il refuse les indices malformés et conserve exactement les multiplicités. Les tests de `tests/i3/test_stage8c_parent_multiplicity_control.py` exercent déterminisme, domaines indépendants, deux cas extrêmes, erreurs de coordonnées et API sans scores ; ce sont des **tests de logiciel**, pas des résultats biologiques.
+`src/i3/lab/stage8c_parent_multiplicity_control.py` implémente une permutation Fisher–Yates par HMAC-SHA256, avec tirage sans biais de modulo, domaine distinct par population et génération et **clé de 32 octets à préallouer par une future étude**. `matched_parent_draws` reçoit seulement les 24 indices, population, génération et clé ; il n'accède ni aux scores, ni au moteur, ni au World. Il refuse les indices malformés et conserve exactement les multiplicités. `build_matched_offspring` matérialise séparément les **24 descendants génomiques v4 du bras M**, à partir de **ses propres 24 parents**, de **24 graines de mutation distinctes préallouées** et du SHA du manifeste parental scellé. Il émet les SHA parent/enfant et refuse les parents manquants, les clés malformées ou les mutations dupliquées. Aucune vie, World, politique motrice ni score de persistance n'est accessible à cette fonction. Les tests de `tests/i3/test_stage8c_parent_multiplicity_control.py` vérifient déterminisme, domaines séparés, multiplicité exacte, mutation native reproductible, provenance et rejets ; ce sont des **tests logiciels**, pas un résultat biologique.
 
 ## Estimand et falsificateur proposés, non figés
 
