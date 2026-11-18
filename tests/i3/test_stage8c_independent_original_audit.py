@@ -5,6 +5,7 @@ from collections import Counter
 from copy import deepcopy
 import gzip
 from hashlib import sha256
+import hmac
 import inspect
 import json
 import math
@@ -126,6 +127,75 @@ class Stage8CIndependentOriginalAuditTests(unittest.TestCase):
         tampered["result"]["primary"]["one_sided_97_5_percent_lower_bound_steps"]=0
         with self.assertRaises(ValueError):
             A._confirm_publication(actual, tampered)
+
+    def test_original_method_sha_and_source_pinned_third_root(self):
+        self.assertEqual(
+            A.FROZEN_METHOD_SHA256,
+            "c63ef4730795f54d6fba282010a70e7fa32760717967af280ac4169d9bced8c4")
+        science_root = "1234567890abcdef" * 4
+        native_root = hmac.new(
+            bytes.fromhex(science_root),
+            b"i3-stage8c-new-prospective-science-data-generator/v1",
+            sha256).hexdigest()
+        panel_roots = [
+            hmac.new(bytes.fromhex(native_root),
+                     f"i3-stage8c-disjoint-panel-v1/{i}".encode("ascii"),
+                     sha256).hexdigest()
+            for i in range(2)
+        ]
+        native = {
+            "root_hex": native_root,
+            "g2_heldout_worlds_sha256": "a"*64,
+            "panels": [{"root_hex": root} for root in panel_roots],
+        }
+        claims = {
+            "3.11": {"g2_holdout_worlds_sha256": "b"*64,
+                     "root_commitment_sha256": "c"*64,
+                     "archive_root": "/tmp/stage8c-tech-311"},
+            "3.12": {"g2_holdout_worlds_sha256": "d"*64,
+                     "root_commitment_sha256": "e"*64,
+                     "archive_root": "/tmp/stage8c-tech-312"},
+        }
+        A.verify_new_science_entropy(science_root, native, claims,
+                                     "/tmp/stage8c-new-science")
+        with self.assertRaises(ValueError):
+            A.verify_new_science_entropy("f"*64, native, claims,
+                                         "/tmp/stage8c-new-science")
+        with self.assertRaises(ValueError):
+            bad = deepcopy(native)
+            bad["panels"][1]["root_hex"] = "0"*64
+            A.verify_new_science_entropy(science_root, bad, claims,
+                                         "/tmp/stage8c-new-science")
+        with self.assertRaises(ValueError):
+            bad = deepcopy(claims)
+            bad["3.11"]["g2_holdout_worlds_sha256"] = "a"*64
+            A.verify_new_science_entropy(science_root, native, bad,
+                                         "/tmp/stage8c-new-science")
+        with self.assertRaises(ValueError):
+            bad = deepcopy(claims)
+            bad["3.12"]["root_commitment_sha256"] = A.digest(panel_roots)
+            A.verify_new_science_entropy(science_root, native, bad,
+                                         "/tmp/stage8c-new-science")
+        with self.assertRaises(ValueError):
+            bad = deepcopy(claims)
+            bad["3.11"]["archive_root"] = "/tmp/stage8c-new-science/originals"
+            A.verify_new_science_entropy(science_root, native, bad,
+                                         "/tmp/stage8c-new-science")
+        with self.assertRaises(ValueError):
+            A.verify_new_science_entropy("bad", native, claims,
+                                         "/tmp/stage8c-new-science")
+
+    def test_independent_founder_genome_rebuilt_from_allocation_seed(self):
+        from i3.modules.genome import generation_zero
+        seed = (4 << 60) + 1234
+        founder = generation_zero(seed)
+        A.verify_seeded_founder(seed, founder)
+        with self.assertRaises(ValueError):
+            A.verify_seeded_founder(seed+1, founder)
+        with self.assertRaises(ValueError):
+            A.verify_seeded_founder(-1, founder)
+        with self.assertRaises(ValueError):
+            A.verify_seeded_founder(seed, {"schema": "i3-genome-v4", "genes": {}})
 
     def test_auditor_has_no_original_physics_or_science_reducer(self):
         src=inspect.getsource(A)
