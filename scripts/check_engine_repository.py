@@ -75,6 +75,10 @@ def unexpected_workflows(paths, *, active_ci: str) -> list[str]:
         # Posthoc read-only full original-life audit of CLOSED Stage8-B.
         # Exact filename only: no retry experiment or wildcard.
         "i3-stage8b-readonly-original-audit-20261117.yml",
+        # ADR-0022: one exact new source-locked Stage8-C three-arm experiment.
+        # Two new full engineering rehearsals before the third SCIENCE cohort.
+        # Remove this exception and archive workflow after first consumption.
+        "i3-stage8c-prospective-science-once-20261118.yml",
     }
     return sorted(path.name for path in paths
                   if not path.name.startswith("i1-") and path.name not in allowed)
