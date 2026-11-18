@@ -132,8 +132,9 @@ def _plan_controls(plan: dict, originals: Path) -> tuple[dict, list[dict]]:
             native.get("g2_heldout_worlds_sha256")
             or plan.get("nested_plan_sha256") != native["allocation_sha256"]
             or plan.get("no_retry") is not True or
-            plan.get("archive_root") != str(originals)
-            or native.get("archive_root") != str(originals / "NATIVE_ORIGINALS")):
+            type(plan.get("archive_root")) is not str
+            or not plan["archive_root"].startswith("/")
+            or native.get("archive_root") != plan["archive_root"] + "/NATIVE_ORIGINALS"):
         raise ValueError("science was not admitted on source-locked full allocation")
     method = plan.get("frozen_method")
     inference = plan.get("frozen_scientific_inference")
@@ -159,7 +160,7 @@ def _plan_controls(plan: dict, originals: Path) -> tuple[dict, list[dict]]:
     perms = set()
     for i, panel in enumerate(native["panels"]):
         require_plan(panel, "i3-stage8c-three-arm-native-panel-engineering/v1")
-        if (panel["archive_root"] != str(originals/"NATIVE_ORIGINALS"/f"PANEL_{i}")
+        if (panel["archive_root"] != native["archive_root"] + f"/PANEL_{i}"
                 or panel["source_git_head"] != ORIGINAL_HEAD
                 or panel["source_files_sha256"] != plan["source_files_sha256"]
                 or panel["lives_per_generation"] != list(GEN_COUNTS)
@@ -186,6 +187,42 @@ def _plan_controls(plan: dict, originals: Path) -> tuple[dict, list[dict]]:
             perms.add(key)
     if len(known) != 11712 or len(perms) != 64:
         raise ValueError("wrong preexposure native seed/perm entropy budget")
+    receipts = plan.get("engineering_receipts")
+    if type(receipts) is not dict or set(receipts) != {"3.11", "3.12"}:
+        raise ValueError("missing two source-exact technical receipts")
+    for version, claim in receipts.items():
+        if (type(claim) is not dict or
+                claim.get("python_version") != version or
+                claim.get("status") != TECH_PASS or
+                claim.get("source_git_head") != ORIGINAL_HEAD or
+                claim.get("source_files_sha256") != plan["source_files_sha256"] or
+                claim.get("native_original_lives_rehashed") != LIVES or
+                claim.get("native_mutations_reproduced") != MUTATIONS or
+                claim.get("phase_count") != 18 or
+                claim.get("scientific_admission") is not False):
+            raise ValueError("technical precondition not source exact")
+    if (receipts["3.11"]["allocation_sha256"] ==
+            receipts["3.12"]["allocation_sha256"] or
+            receipts["3.11"]["g2_holdout_worlds_sha256"] ==
+            receipts["3.12"]["g2_holdout_worlds_sha256"] or
+            receipts["3.11"]["archive_root"] ==
+            receipts["3.12"]["archive_root"]):
+        raise ValueError("reused engineering allocation")
+    joint_receipt = {
+        "schema": "i3-stage8c-both-complete-technical-rehearsals/v1",
+        "status": "STAGE8C_TWO_TECHNICAL_REPETITIONS_COMPLETE_NO_SCIENCE",
+        "source_git_head": ORIGINAL_HEAD,
+        "source_files_sha256": plan["source_files_sha256"],
+        "workflow_run_id": receipts["3.11"]["workflow_run_id"],
+        "engineering_rehearsal_receipts_sha256": digest(receipts),
+        "native_original_lives_rehashed": 64512,
+        "scientific_admission": False,
+        "science_lives_generated": 0,
+        "stage2_scientific_verdict": "NOT_ISSUED",
+        "provenance": "INTERNAL_PROSPECTIVE_NOT_EXTERNALLY_ATTESTED",
+    }
+    if plan.get("engineering_gate_sha256") != digest(joint_receipt):
+        raise ValueError("incomplete sealed double-technical gate")
     g2 = {(r["panel"], r["population"], r["family"], r["repeat"])
           for r in hold}
     if len(g2) != 192:
@@ -643,7 +680,9 @@ def audit(science_plan_path: str, science_originals_path: str) -> dict:
     calculated = primary_from_population_counts(all_g2)
     final = parse(root / "SCIENCE_FINAL.json")
     _confirm_publication(calculated, final)
-    if (final.get("source_git_head") != ORIGINAL_HEAD or
+    if (final.get("both_engineering_receipts_sha256") !=
+            digest(plan["engineering_receipts"]) or
+            final.get("source_git_head") != ORIGINAL_HEAD or
             final.get("source_files_sha256") != plan["source_files_sha256"] or
             final.get("original_native_lives") != LIVES or
             final.get("preexposure_g2_worlds_sha256") !=
