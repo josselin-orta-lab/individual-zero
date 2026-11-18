@@ -9,6 +9,7 @@ import hmac
 import inspect
 import json
 import math
+from pathlib import Path
 import unittest
 
 from i3.lab import stage8c_independent_original_audit as A
@@ -196,6 +197,22 @@ class Stage8CIndependentOriginalAuditTests(unittest.TestCase):
             A.verify_seeded_founder(-1, founder)
         with self.assertRaises(ValueError):
             A.verify_seeded_founder(seed, {"schema": "i3-genome-v4", "genes": {}})
+
+    def test_readonly_audit_workflow_pins_immutable_reviewed_git_revision(self):
+        workflow = (Path(__file__).resolve().parents[2] /
+                    ".github/workflows/i3-stage8c-readonly-original-audit-20261118.yml")
+        body = workflow.read_text(encoding="utf-8")
+        reviewed = "23d0e3eabff0042123c84f4b292a2e4c72cfcc8f"
+        self.assertIn("ref: " + reviewed, body)
+        self.assertIn('assert audit_head == "' + reviewed + '"', body)
+        self.assertIn("workflow_run:", body)
+        self.assertIn("github.event.workflow_run.id == 44320492293", body)
+        self.assertIn("github.event.workflow_run.run_attempt == 1", body)
+        self.assertIn("github.event.workflow_run.conclusion == 'success'", body)
+        self.assertIn("github.run_attempt == 1", body)
+        self.assertNotIn("ref: main", body)
+        self.assertNotIn("run-science", body)
+        self.assertNotIn("run_life(", body)
 
     def test_auditor_has_no_original_physics_or_science_reducer(self):
         src=inspect.getsource(A)
