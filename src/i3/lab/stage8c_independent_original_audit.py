@@ -99,6 +99,13 @@ def original_packet(packed: bytes, entry: dict) -> tuple[dict, dict]:
     return packet["identity"], packet["life"]
 
 
+def verify_seeded_founder(seed: int, genome: dict) -> None:
+    """Verify a G0 genome against its committed RNG seed, not a receipt claim."""
+    if (type(seed) is not int or not 0 <= seed < 2**63 or
+            G.generation_zero(seed) != genome):
+        raise ValueError("G0 genome not reconstructed from allocated founder seed")
+
+
 def _worlds(panel: dict) -> dict:
     p = {}
     for row in panel["worlds"]:
@@ -707,9 +714,9 @@ def audit(science_plan_path: str, science_originals_path: str) -> dict:
                     raise ValueError("one source-locked founder missing")
                 for key,genome in genotypes.items():
                     f, src = found[key], srcfound[key]
+                    verify_seeded_founder(src["genome_seed"], genome)
                     if (f["genome"] != genome or
                             f["genome_seed"] != src["genome_seed"] or
-                            G.generation_zero(src["genome_seed"]) != genome or
                             f["genome_sha256"] != G.digest(genome)):
                         raise ValueError("G0 genome differs from its precommitted founder seed")
             else:
