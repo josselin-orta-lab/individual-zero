@@ -40,6 +40,8 @@ POPULATIONS = 32
 LIVES = 32256
 MUTATIONS = 4608
 T_CRIT_31 = 2.0395134463964077
+# SHA-256 of the exact Stage8-C METHOD committed BEFORE both engineering campaigns.
+FROZEN_METHOD_SHA256 = "c63ef4730795f54d6fba282010a70e7fa32760717967af280ac4169d9bced8c4"
 HEX = re.compile(r"[0-9a-f]{64}\Z")
 NAME = re.compile(r"life-[0-9]{3,5}\.json\.gz\Z")
 MAX_RAW_LIFE = 2_000_000
@@ -97,6 +99,13 @@ def original_packet(packed: bytes, entry: dict) -> tuple[dict, dict]:
     return packet["identity"], packet["life"]
 
 
+def verify_seeded_founder(seed: int, genome: dict) -> None:
+    """Verify a G0 genome against its committed RNG seed, not a receipt claim."""
+    if (type(seed) is not int or not 0 <= seed < 2**63 or
+            G.generation_zero(seed) != genome):
+        raise ValueError("G0 genome not reconstructed from allocated founder seed")
+
+
 def _worlds(panel: dict) -> dict:
     p = {}
     for row in panel["worlds"]:
@@ -110,6 +119,56 @@ def _worlds(panel: dict) -> dict:
     if set(p) != expected:
         raise ValueError("incomplete frozen World opportunities")
     return p
+
+
+def verify_new_science_entropy(
+        science_root_hex: str, native: dict, receipts: dict,
+        science_archive: str) -> None:
+    """Rebuild domain-separated planned roots without opening a World.
+
+    Engineering receipts cannot provide science's third root, World holdouts
+    or a parent archive root.  A prepublished plan cannot rewrite these roots.
+    """
+    if (type(science_root_hex) is not str or
+            not HEX.fullmatch(science_root_hex) or
+            type(science_archive) is not str or
+            not science_archive.startswith("/") or
+            type(native) is not dict or
+            type(receipts) is not dict or
+            set(receipts) != {"3.11", "3.12"}):
+        raise ValueError("invalid third-root evidence")
+    root = hmac.new(
+        bytes.fromhex(science_root_hex),
+        b"i3-stage8c-new-prospective-science-data-generator/v1",
+        sha256).hexdigest()
+    if native.get("root_hex") != root:
+        raise ValueError("science native root not derived from allocated third root")
+    panels = native.get("panels")
+    if type(panels) is not list or len(panels) != 2:
+        raise ValueError("two science panels not frozen")
+    expected_panels = [
+        hmac.new(bytes.fromhex(root),
+                 f"i3-stage8c-disjoint-panel-v1/{i}".encode("ascii"),
+                 sha256).hexdigest()
+        for i in range(2)
+    ]
+    if [p.get("root_hex") for p in panels] != expected_panels:
+        raise ValueError("science panel root domain or ordering changed")
+    science_holdout = native.get("g2_heldout_worlds_sha256")
+    parent_root_sha = digest(expected_panels)
+    for receipt in receipts.values():
+        if (type(receipt) is not dict or
+                receipt.get("g2_holdout_worlds_sha256") == science_holdout or
+                receipt.get("root_commitment_sha256") == parent_root_sha):
+            raise ValueError("science root or G2 World holdout reused from engineering")
+        previous = receipt.get("archive_root")
+        if type(previous) is not str or not previous.startswith("/"):
+            raise ValueError("missing previous technical archive root")
+        old = Path(previous)
+        new = Path(science_archive)
+        if (old == new or old.is_relative_to(new)
+                or new.is_relative_to(old)):
+            raise ValueError("science and technical archive roots overlap")
 
 
 def _plan_controls(plan: dict, originals: Path) -> tuple[dict, list[dict]]:
@@ -141,6 +200,7 @@ def _plan_controls(plan: dict, originals: Path) -> tuple[dict, list[dict]]:
     if (method != native.get("frozen_method") or
             method.get("population_units") != POPULATIONS or
             method.get("alpha_one_sided") != 0.025 or
+            digest(method) != FROZEN_METHOD_SHA256 or
             method.get("t_critical") != T_CRIT_31 or
             method.get("primary_estimand") !=
             "mean_over_32_population_G2_mean_steps_selected_minus_matched" or
@@ -162,6 +222,7 @@ def _plan_controls(plan: dict, originals: Path) -> tuple[dict, list[dict]]:
         require_plan(panel, "i3-stage8c-three-arm-native-panel-engineering/v1")
         if (panel["archive_root"] != native["archive_root"] + f"/PANEL_{i}"
                 or panel["source_git_head"] != ORIGINAL_HEAD
+                or panel.get("frozen_method_sha256") != FROZEN_METHOD_SHA256
                 or panel["source_files_sha256"] != plan["source_files_sha256"]
                 or panel["lives_per_generation"] != list(GEN_COUNTS)
                 or panel["planned_lives"] != sum(GEN_COUNTS)
@@ -194,6 +255,8 @@ def _plan_controls(plan: dict, originals: Path) -> tuple[dict, list[dict]]:
         if (type(claim) is not dict or
                 claim.get("python_version") != version or
                 claim.get("status") != TECH_PASS or
+                claim.get("workflow_run_id") != ORIGINAL_RUN_ID or
+                claim.get("no_retry") is not True or
                 claim.get("source_git_head") != ORIGINAL_HEAD or
                 claim.get("source_files_sha256") != plan["source_files_sha256"] or
                 claim.get("native_original_lives_rehashed") != LIVES or
@@ -223,6 +286,8 @@ def _plan_controls(plan: dict, originals: Path) -> tuple[dict, list[dict]]:
     }
     if plan.get("engineering_gate_sha256") != digest(joint_receipt):
         raise ValueError("incomplete sealed double-technical gate")
+    verify_new_science_entropy(
+        plan.get("root_hex"), native, receipts, plan["archive_root"])
     g2 = {(r["panel"], r["population"], r["family"], r["repeat"])
           for r in hold}
     if len(g2) != 192:
@@ -649,10 +714,11 @@ def audit(science_plan_path: str, science_originals_path: str) -> dict:
                     raise ValueError("one source-locked founder missing")
                 for key,genome in genotypes.items():
                     f, src = found[key], srcfound[key]
+                    verify_seeded_founder(src["genome_seed"], genome)
                     if (f["genome"] != genome or
                             f["genome_seed"] != src["genome_seed"] or
                             f["genome_sha256"] != G.digest(genome)):
-                        raise ValueError("G0 native genotype not frozen by founder receipt")
+                        raise ValueError("G0 genome differs from its precommitted founder seed")
             else:
                 seal = file_sha(folder / f"G{g-1}" / "MANIFEST.json")
                 all_mutations += verify_parentage(
