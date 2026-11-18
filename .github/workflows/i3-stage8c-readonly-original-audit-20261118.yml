@@ -26,9 +26,11 @@ jobs:
       ORIGINAL_HEAD: a32b7bf50981e0bbaf688e3caf9973525888c05d
       CUSTODY: /tmp/i3-stage8c-science-independent-readonly
     steps:
+      # Pin the independently reviewed auditor before any scientific verdict.
+      # No later main branch movement can alter the algorithm post-exposure.
       - uses: actions/checkout@v4
         with:
-          ref: main
+          ref: 23d0e3eabff0042123c84f4b292a2e4c72cfcc8f
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-python@v5
@@ -47,6 +49,7 @@ jobs:
           assert not subprocess.check_output(
               ["git","status","--porcelain","--untracked-files=all"]).strip()
           audit_head=subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip()
+          assert audit_head == "23d0e3eabff0042123c84f4b292a2e4c72cfcc8f", "auditor SHA changed after review"
           print("READ_ONLY_AUDIT_SOURCE_HEAD="+audit_head)
           print("ORIGINAL_SCIENCE_SOURCE_HEAD="+A.ORIGINAL_HEAD)
           print("NO_NEW_LIVES_NO_WORLD_NO_SOURCE_REPLAY")
