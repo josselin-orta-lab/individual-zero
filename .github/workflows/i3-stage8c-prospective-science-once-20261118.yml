@@ -1,0 +1,246 @@
+# ONE source-frozen Stage8-C science experiment, never reuse older allocations.
+# Stage8-A and B, Stage7 and previous Stage8-C technical roots are CLOSED.
+name: I3 Stage8-C prospective G2 matched-parent persistence science
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/i3-stage8c-prospective-science-once-20261118.yml']
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: i3-stage8c-prospective-science-g2-first-and-only-20261118
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    if: ${{ github.run_attempt == 1 && github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify exact NEW source/method and first workflow ADD; ZERO lives
+        run: |
+          python -m unittest discover -s tests/i3 -p 'test_stage8c_prospective_science.py' -v
+          python -m unittest discover -s tests/i3 -p 'test_stage8c_three_arm_transport.py' -v
+          python -m unittest discover -s tests/i3 -p 'test_stage8c_parent_multiplicity_control.py' -v
+          python - <<'PY'
+          import os,subprocess
+          from pathlib import Path
+          from i3.lab import stage8c_prospective_science as C
+          from i3.lab import stage8c_three_arm_transport as T
+          from i3.runtime.provenance import source_snapshot
+          h=os.environ["GITHUB_SHA"]
+          snap=source_snapshot()
+          assert snap["git_head"]==h and snap["working_tree_dirty"] is False
+          assert snap["sha256"] and not subprocess.check_output(
+              ["git","status","--porcelain","--untracked-files=all"]).strip()
+          path=".github/workflows/i3-stage8c-prospective-science-once-20261118.yml"
+          assert subprocess.check_output(
+              ["git","log","--format=%H","--",path],text=True).splitlines()==[h], (
+              "science workflow already used or altered")
+          assert subprocess.check_output(
+              ["git","diff-tree","--no-commit-id","--name-status",
+               "-r",h,"--",path],text=True).strip().split()==["A",path], (
+               "not the first science workflow ADD")
+          consumed=Path("archive/i3/workflows/i3-stage8c-three-arm-technical-once-20261118.yml")
+          assert consumed.is_file()
+          assert subprocess.check_output(["git","hash-object",str(consumed)],
+                                         text=True).strip()=="ef56b69663ad984ee7b719a973ac111b46591f32"
+          assert not Path(".github/workflows/i3-stage8c-three-arm-technical-once-20261118.yml").exists()
+          assert T.TOTAL_LIVES==32256 and T.POPULATIONS==32 and T.MUTATIONS==4608
+          assert T.HOLDOUT_WORLDS==192 and T.METHOD["alpha_one_sided"]==0.025
+          assert C.PRIMARY["alpha_one_sided"]==0.025
+          assert C.PRIMARY["t_critical_df31"]==2.0395134463964077
+          assert C.PRIMARY["primary_estimand"]==T.METHOD["primary_estimand"]
+          assert C.PROVENANCE=="INTERNAL_PROSPECTIVE_NOT_EXTERNALLY_ATTESTED"
+          print("STAGE8C_NEW_SOURCE_FROZEN_ONE_SHOT_PREEXPOSURE_PASS_ZERO_LIVES")
+          PY
+
+  engineering:
+    if: ${{ github.run_attempt == 1 }}
+    needs: preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        python-version: ['3.11','3.12']
+    env:
+      PYTHONPATH: src
+      PYVERSION: ${{ matrix.python-version }}
+      CUSTODY: /tmp/i3-stage8c-science-source-technical-${{ matrix.python-version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Mint NEW exact-science-source technical allocation, ZERO births
+        run: |
+          mkdir -p "$CUSTODY"
+          SOURCE=$(python -c 'from i3.runtime.provenance import source_snapshot; print(source_snapshot()["sha256"])')
+          python -m i3.lab.stage8c_three_arm_transport allocate-engineering "$GITHUB_SHA" "$SOURCE" "$CUSTODY/PLAN.json" "$CUSTODY/originals"
+          python -m i3.lab.stage8c_three_arm_transport verify "$CUSTODY/PLAN.json"
+      - name: PUBLISH all 192 G2 World reservations, selections and roots BEFORE G0
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8c-new-source-technical-preexposure-${{ matrix.python-version }}-${{ github.run_id }}
+          path: /tmp/i3-stage8c-science-source-technical-${{ matrix.python-version }}/PLAN.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Execute ONE full new-source 32256-native-life G0-G1-G2 technical rehearsal
+        run: |
+          PLAN_SHA=$(python -c 'import os,json; print(json.load(open(os.environ["CUSTODY"]+"/PLAN.json"))["allocation_sha256"])')
+          python -m i3.lab.stage8c_three_arm_transport run-engineering "$CUSTODY/PLAN.json" "$CUSTODY/originals" "$PLAN_SHA" > "$CUSTODY/CORE.json"
+      - name: Rehash all 32256 gzip originals, 4608 mutations and 18 sealed phases
+        run: |
+          python -m i3.lab.stage8c_three_arm_transport rehearsal-receipt "$CUSTODY/PLAN.json" "$CUSTODY/originals" "$CUSTODY/CORE.json" "$CUSTODY/TECH_RECEIPT.json" "$PYVERSION" "$GITHUB_RUN_ID"
+      - name: Publish COMPLETE science-blind source-matched technical receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8c-new-source-technical-receipt-${{ matrix.python-version }}-${{ github.run_id }}
+          path: /tmp/i3-stage8c-science-source-technical-${{ matrix.python-version }}/TECH_RECEIPT.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Preserve all engineering original gzip lives and failures, even if aborted
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8c-new-source-technical-originals-${{ matrix.python-version }}-${{ github.run_id }}
+          path: /tmp/i3-stage8c-science-source-technical-${{ matrix.python-version }}/originals
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 90
+
+  technical_gate:
+    if: ${{ github.run_attempt == 1 }}
+    needs: engineering
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PYTHONPATH: src
+      CUSTODY: /tmp/i3-stage8c-science-rehearsals
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Import only this run's new-source complete Python 3.11 receipt
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8c-new-source-technical-receipt-3.11-${{ github.run_id }}
+          path: /tmp/i3-stage8c-science-rehearsals/311
+      - name: Import only this run's new-source complete Python 3.12 receipt
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8c-new-source-technical-receipt-3.12-${{ github.run_id }}
+          path: /tmp/i3-stage8c-science-rehearsals/312
+      - name: VERIFY both 32256 original-life technical receipts on SAME SCIENCE HEAD
+        run: |
+          python -m i3.lab.stage8c_prospective_science combine "$CUSTODY/311/TECH_RECEIPT.json" "$CUSTODY/312/TECH_RECEIPT.json" "$CUSTODY/REHEARSALS.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          from i3.lab import stage8c_prospective_science as C
+          from i3.runtime.provenance import source_snapshot
+          r=json.loads((Path(os.environ["CUSTODY"])/"REHEARSALS.json").read_bytes())
+          g=C._technical_gate(r,os.environ["GITHUB_SHA"],source_snapshot()["sha256"])
+          assert g["native_original_lives_rehashed"]==64512
+          assert g["science_lives_generated"]==0
+          assert g["workflow_run_id"]==int(os.environ["GITHUB_RUN_ID"])
+          print("STAGE8C_TWO_NEW_EXACT_SCIENCE_SOURCE_REHEARSALS_SEALED")
+          PY
+      - name: Archive complete TWO-RECEIPT gate before future science allocation
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8c-new-source-two-complete-rehearsals-${{ github.run_id }}
+          path: /tmp/i3-stage8c-science-rehearsals/REHEARSALS.json
+          if-no-files-found: error
+          retention-days: 90
+
+  science:
+    if: ${{ github.run_attempt == 1 }}
+    needs: technical_gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    env:
+      PYTHONPATH: src
+      CUSTODY: /tmp/i3-stage8c-new-prospective-science
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Mint new science custody AFTER both technical receipts, no Worlds yet
+        run: mkdir -p "$CUSTODY"
+      - name: Import the gate from TWO COMPLETE new-source technical repetitions
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8c-new-source-two-complete-rehearsals-${{ github.run_id }}
+          path: /tmp/i3-stage8c-new-prospective-science
+      - name: Allocate independent third science root and source-frozen S/M/U G2 plan
+        run: |
+          SOURCE=$(python -c 'from i3.runtime.provenance import source_snapshot; print(source_snapshot()["sha256"])')
+          python -m i3.lab.stage8c_prospective_science allocate-science "$GITHUB_SHA" "$SOURCE" "$CUSTODY/SCIENCE_PLAN.json" "$CUSTODY/originals" "$CUSTODY/REHEARSALS.json"
+          python -m i3.lab.stage8c_prospective_science verify "$CUSTODY/SCIENCE_PLAN.json"
+      - name: PUBLISH 32-population frozen n/alpha, 192 G2 Worlds and BOTH receipts BEFORE G0
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8c-new-science-preexposure-${{ github.run_id }}
+          path: |
+            /tmp/i3-stage8c-new-prospective-science/SCIENCE_PLAN.json
+            /tmp/i3-stage8c-new-prospective-science/REHEARSALS.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Execute ONE new 32256-life native G0-G1-G2 S/M/U SCIENCE cohort, no retry
+        run: |
+          PLAN_SHA=$(python -c 'import os,json; print(json.load(open(os.environ["CUSTODY"]+"/SCIENCE_PLAN.json"))["allocation_sha256"])')
+          python -m i3.lab.stage8c_prospective_science run-science "$CUSTODY/SCIENCE_PLAN.json" "$CUSTODY/originals" "$PLAN_SHA" > "$CUSTODY/SCIENCE_CORE.json"
+      - name: Rehash ALL scientific originals, reconstruct 4608 parents, frozen Student G2 S-M
+        run: |
+          python -m i3.lab.stage8c_prospective_science science-receipt "$CUSTODY/SCIENCE_PLAN.json" "$CUSTODY/originals" "$CUSTODY/SCIENCE_CORE.json" "$CUSTODY/SCIENCE_RECEIPT.json"
+      - name: Publish positive OR negative scientific verdict with all 32 population contrasts
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8c-new-prospective-scientific-result-${{ github.run_id }}
+          path: |
+            /tmp/i3-stage8c-new-prospective-science/SCIENCE_RECEIPT.json
+            /tmp/i3-stage8c-new-prospective-science/SCIENCE_CORE.json
+            /tmp/i3-stage8c-new-prospective-science/originals/SCIENCE_FINAL.json
+            /tmp/i3-stage8c-new-prospective-science/originals/NATIVE_ORIGINALS/PANEL_0/PHASES.jsonl
+            /tmp/i3-stage8c-new-prospective-science/originals/NATIVE_ORIGINALS/PANEL_1/PHASES.jsonl
+          if-no-files-found: error
+          retention-days: 90
+      - name: Preserve ALL scientific original gzip lives, adverse/null/censored/dead, failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8c-new-prospective-original-science-lives-${{ github.run_id }}
+          path: /tmp/i3-stage8c-new-prospective-science/originals
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 90
