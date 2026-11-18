@@ -1,0 +1,99 @@
+# Read-only Stage8-C original gzip audit. No native birth or workflow retry.
+# This workflow is first observed after the single science run closes.
+name: I3 Stage8-C independent read-only 32256 original gzip audit
+on:
+  workflow_run:
+    workflows:
+      - I3 Stage8-C prospective G2 matched-parent persistence science
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: i3-stage8c-science-originals-independent-audit-one-20261118
+  cancel-in-progress: false
+
+jobs:
+  independent_original_audit:
+    if: ${{ github.event.workflow_run.id == 44320492293 && github.event.workflow_run.run_attempt == 1 && github.event.workflow_run.head_sha == 'a32b7bf50981e0bbaf688e3caf9973525888c05d' && github.event.workflow_run.conclusion == 'success' && github.run_attempt == 1 }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 160
+    env:
+      PYTHONPATH: src
+      ORIGINAL_RUN_ID: '44320492293'
+      ORIGINAL_HEAD: a32b7bf50981e0bbaf688e3caf9973525888c05d
+      CUSTODY: /tmp/i3-stage8c-science-independent-readonly
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Standalone score/SHA/permutation falsifiers, no World
+        run: |
+          python -m unittest discover -s tests/i3 -p 'test_stage8c_independent_original_audit.py' -v
+          python - <<'PY'
+          import os,subprocess
+          from i3.lab import stage8c_independent_original_audit as A
+          assert A.ORIGINAL_HEAD == os.environ["ORIGINAL_HEAD"]
+          assert A.ORIGINAL_RUN_ID == int(os.environ["ORIGINAL_RUN_ID"])
+          assert A.LIVES == 32256 and A.MUTATIONS == 4608
+          assert A.T_CRIT_31 == 2.0395134463964077
+          assert not subprocess.check_output(
+              ["git","status","--porcelain","--untracked-files=all"]).strip()
+          audit_head=subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip()
+          print("READ_ONLY_AUDIT_SOURCE_HEAD="+audit_head)
+          print("ORIGINAL_SCIENCE_SOURCE_HEAD="+A.ORIGINAL_HEAD)
+          print("NO_NEW_LIVES_NO_WORLD_NO_SOURCE_REPLAY")
+          PY
+      - name: Download unique science preexposure plan and original tech receipts
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          name: stage8c-new-science-preexposure-44320492293
+          path: /tmp/i3-stage8c-science-independent-readonly/plan
+      - name: Download ALL 32256 real science gzip lives, original ZIP only
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          name: stage8c-new-prospective-original-science-lives-44320492293
+          path: /tmp/i3-stage8c-science-independent-readonly/originals
+      - name: Independently check every gzip SHA, lineage and frozen 32-pop G2 S-minus-M test
+        run: |
+          python -m i3.lab.stage8c_independent_original_audit \
+            "$CUSTODY/plan/SCIENCE_PLAN.json" \
+            "$CUSTODY/originals" > "$CUSTODY/INDEPENDENT_ORIGINAL_AUDIT.json"
+          python - <<'PY'
+          import json,os,subprocess
+          from pathlib import Path
+          root=Path(os.environ["CUSTODY"])
+          record=json.loads((root/"INDEPENDENT_ORIGINAL_AUDIT.json").read_bytes())
+          assert record["status"] == "READ_ONLY_32K_ORIGINALS_REPRODUCED"
+          assert record["source_git_head"] == os.environ["ORIGINAL_HEAD"]
+          assert record["run_id"] == int(os.environ["ORIGINAL_RUN_ID"])
+          assert record["native_original_lives_rehashed"] == 32256
+          assert record["mutated_parentage_reconstructed"] == 4608
+          assert record["population_units"] == 32
+          assert len(record["all_population_contrasts"]) == 32
+          assert record["new_worlds"] == 0 and record["new_lives"] == 0
+          record["independent_audit_git_head"] = subprocess.check_output(
+              ["git","rev-parse","HEAD"], text=True).strip()
+          (root/"INDEPENDENT_ORIGINAL_AUDIT.json").write_text(
+              json.dumps(record,sort_keys=True,separators=(",",":"))+"\n")
+          print("STAGE8C_INDEPENDENT_ORIGINAL_GZIP_ALL_32256_REHASHED")
+          print("PRIMARY_REPRODUCED="+record["scientific_status"])
+          PY
+      - name: Publish independent read-only audit report, not another cohort
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8c-independent-original-gzip-audit-44320492293
+          path: /tmp/i3-stage8c-science-independent-readonly/INDEPENDENT_ORIGINAL_AUDIT.json
+          if-no-files-found: error
+          retention-days: 90
