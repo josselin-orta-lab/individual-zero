@@ -43,7 +43,7 @@ class Stage8CIndependentOriginalAuditTests(unittest.TestCase):
         for bad in (
             {k: v for k,v in d.items() if k != (31, "selected")},
             {**d, (32,"selected"): (1,140*144,144)},
-            {**d, (0,"selected"): (1,1200,144)},
+            {**d, (0,"selected"): (1,120,144)},
             {**d, (0,"selected"): (1,1200,143)},
             {**d, (0,"selected"): (145,200*144,144)},
             {**d, (0,"selected"): (0,float("nan"),144)},
