@@ -92,7 +92,9 @@ def generation_cases(root: str, generation: int, genomes: dict,
 def execute_technical_generation(*, root: str, generation: int,
                                  genomes: dict, source_git_head: str,
                                  source_files_sha256: str, preflight: dict,
-                                 custody_dir: str) -> dict:
+                                 custody_dir: str,
+                                 published_plan_path: str,
+                                 published_plan_file_sha256: str) -> dict:
     """Run authentic I3 P1.3 reference lives and archive original JSON gzip.
 
     Each generation is a separately claimed, irreversible directory. This is
@@ -103,6 +105,55 @@ def execute_technical_generation(*, root: str, generation: int,
         raise PermissionError("native technical Python 3.11/3.12 required")
     _check_source(source_git_head, source_files_sha256)
     N.verify_native_preflight(root, expected=preflight)
+    # A direct caller cannot silently bypass the complete prepublished source,
+    # root, World and previous-generation custody chain.
+    from i3.lab import stage8e2_technical_transport as T
+    source_path = Path(published_plan_path)
+    archived_root = Path(custody_dir).parent
+    if (type(published_plan_path) is not str or not source_path.is_absolute()
+            or source_path.is_symlink() or not source_path.is_file()
+            or type(published_plan_file_sha256) is not str
+            or not SHA64.fullmatch(published_plan_file_sha256)
+            or not Path(custody_dir).name == f"PHYSICAL_G{generation}"
+            or not archived_root.is_dir()
+            or source_path.resolve().is_relative_to(archived_root.resolve())):
+        raise PermissionError("missing externally frozen one-shot generation plan")
+    published_raw = source_path.read_bytes()
+    if sha256(published_raw).hexdigest() != published_plan_file_sha256:
+        raise PermissionError("preexposure file SHA diverged before native birth")
+    frozen = T.verify_plan(json.loads(published_raw))
+    if (T._canonical(frozen) != published_raw
+            or frozen["root_hex"] != root
+            or frozen["source_git_head"] != source_git_head
+            or frozen["source_files_sha256"] != source_files_sha256
+            or frozen["archive_root"] != str(archived_root)
+            or frozen["native_preflight"] != preflight
+            or (archived_root / "FROZEN_PLAN.json").read_bytes() != published_raw):
+        raise PermissionError("generation not bound to prepublished World/seed source")
+    claim = json.loads((archived_root / "CLAIM.json").read_bytes())
+    if (claim.get("plan_sha256") != frozen["allocation_sha256"]
+            or claim.get("preexposure_file_sha256") != published_plan_file_sha256
+            or claim.get("status") != "CLAIMED_NO_RETRY_EVEN_IF_PARTIAL"):
+        raise PermissionError("missing irreversible technical generation claim")
+    phases_file = archived_root / "PHASES.jsonl"
+    expected_prefix = {0: (), 1: T.PHASES[:3], 2: T.PHASES[:6]}[generation]
+    previous = [] if not phases_file.exists() else [
+        json.loads(row) for row in phases_file.read_bytes().splitlines()]
+    if tuple(row.get("phase") for row in previous) != expected_prefix:
+        raise PermissionError("previous generation not fully sealed and independently audited")
+    last_sha = None
+    for i, row in enumerate(previous):
+        artifact = archived_root / row["artifact"]
+        if (not artifact.is_file() or artifact.is_symlink()
+                or not artifact.resolve().is_relative_to(archived_root.resolve())
+                or row.get("sequence") != i
+                or row.get("previous_chain_sha256") != last_sha
+                or row.get("file_sha256") != sha256(artifact.read_bytes()).hexdigest()
+                or row.get("chain_sha256") != T._digest({
+                    k: v for k, v in row.items() if k != "chain_sha256"
+                })):
+            raise PermissionError("prior generation phase chain has been changed")
+        last_sha = row["chain_sha256"]
     from i3.lab import two_phase_panel as TP
     from i3.runtime.life import run_life
 
