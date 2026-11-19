@@ -1,0 +1,121 @@
+# Separate one-shot read-only Stage8-E: original archived Stage8-C genes, NO births.
+# Merge ONLY after Stage8-E pure tests are green and the exact source is on main.
+name: I3 Stage8-E one-shot read-only gene associations
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/i3-stage8e-readonly-locus-associations-20261119.yml']
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: i3-stage8e-existing-originals-44320492293-once
+  cancel-in-progress: false
+
+jobs:
+  sealed_locus_associations:
+    if: ${{ github.event_name == 'push' && github.run_attempt == 1 }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      PYTHONPATH: src
+      CUSTODY: /tmp/i3-stage8e-stage8c-original-gene-associations-readonly
+    steps:
+      - name: Checkout exact reviewed Stage8-E source
+        uses: actions/checkout@v4
+        with:
+          ref: b39395bd7a22892b050a39a7c9ad7d3642e574e7
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Pure, no-World tests and exact source/provenance gates
+        run: |
+          python -m unittest discover -s tests/i3 -p 'test_stage8e_*.py' -v
+          python - <<'PY'
+          import subprocess
+          from i3.lab import stage8c_independent_original_audit as A
+          from i3.lab import stage8d_genomic_diversity_readonly as D
+          from i3.lab import stage8e_gene_associations_readonly as E
+          from i3.lab import stage8e_reciprocal_locus_swap as S
+          head=subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip()
+          assert head == "b39395bd7a22892b050a39a7c9ad7d3642e574e7"
+          assert A.ORIGINAL_HEAD == "a32b7bf50981e0bbaf688e3caf9973525888c05d"
+          assert A.ORIGINAL_RUN_ID == 44320492293 and A.LIVES == 32256
+          assert D.PREVERDICT_AUDITOR == "23d0e3eabff0042123c84f4b292a2e4c72cfcc8f"
+          assert E.SOURCE == A.ORIGINAL_HEAD and E.RUN_ID == 44320492293
+          assert E.POPULATIONS == 32 and E.SLOTS == 24
+          assert S.SCHEMA == "i3-stage8e-reciprocal-single-locus-swap-design/v0"
+          assert not subprocess.check_output(
+              ["git","status","--porcelain","--untracked-files=all"]).strip()
+          print("STAGE8E_SOURCE_PINNED_READONLY_NO_WORLD_OR_BIRTH")
+          PY
+          mkdir -p "$CUSTODY"
+      - name: Download Stage8-C original scientific pre-exposure plan
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8c-new-science-preexposure-44320492293
+          run-id: 44320492293
+          repository: josselin-orta-lab/individual-zero
+          github-token: ${{ github.token }}
+          path: /tmp/i3-stage8e-stage8c-original-gene-associations-readonly/plan
+      - name: Download ALL previously born 32256 Stage8-C original gzip lives
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8c-new-prospective-original-science-lives-44320492293
+          run-id: 44320492293
+          repository: josselin-orta-lab/individual-zero
+          github-token: ${{ github.token }}
+          path: /tmp/i3-stage8e-stage8c-original-gene-associations-readonly/originals
+      - name: Download prior pre-verdict 32256-original independent audit
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8c-independent-original-gzip-audit-44320492293
+          run-id: 44406977082
+          repository: josselin-orta-lab/individual-zero
+          github-token: ${{ github.token }}
+          path: /tmp/i3-stage8e-stage8c-original-gene-associations-readonly/previous-audit
+      - name: Independently rehash original lives and describe ALL gene associations
+        run: |
+          python -m i3.lab.stage8e_gene_associations_readonly \
+            "$CUSTODY/plan/SCIENCE_PLAN.json" \
+            "$CUSTODY/originals" \
+            "$CUSTODY/previous-audit/INDEPENDENT_ORIGINAL_AUDIT.json" \
+            > "$CUSTODY/STAGE8E_READONLY_GENE_ASSOCIATIONS.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          r=json.loads((Path(os.environ["CUSTODY"])/
+                        "STAGE8E_READONLY_GENE_ASSOCIATIONS.json").read_bytes())
+          assert r["status"]=="STAGE8E_POSTHOC_LOCI_DESCRIBED_NO_CAUSAL_VERDICT"
+          assert r["scientific_status_unchanged"]=="STAGE8C_G2_SCORE_IDENTITY_ADVANTAGE_F0"
+          assert r["native_original_lives_reverified"]==32256
+          assert r["mutated_parentage_reconstructed"]==4608
+          assert r["population_units"]==32
+          assert r["gene_count"]==len(r["gene_order_declared"])
+          assert len(r["ranked_gene_associations"])==r["gene_count"]
+          assert len(r["all_32_population_gene_profiles"])==32
+          assert r["adverse_population_ids"]==[0,1,3,11,16,18,19,24,28,31]
+          assert r["new_lives"]==r["new_worlds"]==0
+          top=[{"gene":x["gene"],
+                "r":x["G2_population_delta_vs_persistence_Pearson"],
+                "G2_shift":x["G2_mean_S_minus_M_normalized"],
+                "leave_one_out_sign_fraction":
+                    x["leave_one_population_out_sign_agreement_fraction"]}
+               for x in r["ranked_gene_associations"][:10]]
+          print(json.dumps({"status":r["status"],"gene_count":r["gene_count"],
+             "top_ten_EXPLORATORY_ONLY":top,"originals":r["native_original_lives_reverified"],
+             "negative_populations":r["adverse_population_ids"],
+             "new_lives":r["new_lives"]},sort_keys=True))
+          PY
+      - name: Preserve every locus and all 32 population profiles, including losses
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8e-existing-originals-all-gene-associations-44320492293
+          path: /tmp/i3-stage8e-stage8c-original-gene-associations-readonly/STAGE8E_READONLY_GENE_ASSOCIATIONS.json
+          if-no-files-found: error
+          retention-days: 90
