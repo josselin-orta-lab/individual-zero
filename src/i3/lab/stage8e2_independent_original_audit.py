@@ -34,6 +34,61 @@ def _read_limited_gzip(packed: bytes) -> bytes:
     return raw
 
 
+
+TRACE_BASE = frozenset(("t", "action", "param", "option", "body", "pos", "dead"))
+TRACE_EXTRAS = frozenset(("cognitive_work", "cognitive_accounting",
+                          "funding_phases", "info"))
+
+
+def _digest_canonical(value: object) -> str:
+    return sha256(json.dumps(value, sort_keys=True, separators=(",", ":"),
+                             allow_nan=False, ensure_ascii=False).encode("utf-8")).hexdigest()
+
+
+def verify_first_person_chains(life: dict) -> None:
+    """Independently recompute the native bodily trace and paid-work chains.
+
+    No engine replay: the original first-person records supply the applied
+    actions, body, position and work. The unchained diagnostic info field
+    remains original-gzip protected, but is not covered by native trace_head.
+    """
+    trace = life.get("trace")
+    if (type(trace) is not list or
+            type(life.get("genome")) is not str or
+            type(life.get("world")) is not str or
+            type(life.get("life_seed")) is not int or
+            type(life.get("horizon")) is not int or
+            type(life.get("manifest_id")) is not str):
+        raise ValueError("missing first-person cryptographic trace seed")
+    seed = [life["genome"], life["world"], life["life_seed"], life["horizon"]]
+    trace_head = sha256(json.dumps(
+        seed, separators=(",", ":")).encode("utf-8")).hexdigest()
+    evidence_head = life["manifest_id"]
+    for i, step in enumerate(trace, start=1):
+        if (type(step) is not dict or set(step) != TRACE_BASE | TRACE_EXTRAS
+                or type(step.get("t")) is not int or step["t"] != i
+                or type(step.get("cognitive_work")) is not dict
+                or type(step.get("cognitive_accounting")) is not dict
+                or type(step.get("funding_phases")) not in (list, tuple)):
+            raise ValueError("foreign or out-of-order native paid-work step")
+        core = {field: step[field] for field in TRACE_BASE}
+        trace_head = sha256((
+            trace_head + json.dumps(
+                core, separators=(",", ":"), sort_keys=True,
+            )
+        ).encode("utf-8")).hexdigest()
+        evidence_head = _digest_canonical({
+            "previous": evidence_head, "record": core,
+            "work": step["cognitive_work"],
+            "accounting": step["cognitive_accounting"],
+            "funding_phases": step["funding_phases"],
+        })
+    if (len(trace) != life.get("steps_lived")
+            or trace_head != life.get("trace_head")
+            or evidence_head != life.get("evidence_head")):
+        raise ValueError("body trace or paid cognitive evidence chain was modified")
+
+
 def audit_original_generation(archive_dir: str | Path, expected_cases: list[dict],
                               *, source_pin: str, source_head: str,
                               protocol: str, generation: int) -> dict:
@@ -105,6 +160,7 @@ def audit_original_generation(archive_dir: str | Path, expected_cases: list[dict
         if (type(life.get("trace")) is not list
                 or len(life["trace"]) != life["steps_lived"]):
             raise ValueError("native first-person trace lost")
+        verify_first_person_chains(life)
         observed.add(k)
         scores.append({
             "population": identity["population"],
