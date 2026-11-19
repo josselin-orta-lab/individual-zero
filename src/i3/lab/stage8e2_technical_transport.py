@@ -220,6 +220,8 @@ def run_technical(plan_path: str, expected_plan_sha256: str) -> dict:
     if sha256(raw).hexdigest() != expected_plan_sha256:
         raise PermissionError("plan bytes differ from prepublished SHA256")
     plan = verify_plan(json.loads(raw))
+    if raw != _canonical(plan):
+        raise PermissionError("published preexposure plan must use canonical bytes")
     if plan_path == plan["archive_root"]:
         raise PermissionError("plan source must be outside native archive")
     _assert_technical_environment(plan)
@@ -252,6 +254,8 @@ def run_technical(plan_path: str, expected_plan_sha256: str) -> dict:
                 source_files_sha256=plan["source_files_sha256"],
                 preflight=plan["native_preflight"],
                 custody_dir=str(destination / f"PHYSICAL_G{g}"),
+                published_plan_path=plan_path,
+                published_plan_file_sha256=expected_plan_sha256,
             )
             gen_dir = destination / f"PHYSICAL_G{g}"
             phases = _append_phase(destination, f"G{g}", gen_dir / "RECEIPT.json", phases)
