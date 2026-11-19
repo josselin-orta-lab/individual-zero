@@ -1,0 +1,393 @@
+# Stage8-E2 ONE prospective gamma123-block scientific cohort, no retry.
+# Engine checkout remains EXACTLY the successful dual technical source HEAD.
+# This workflow must be introduced to main as a FIRST git ADD in a single commit.
+name: I3 Stage8-E2 first-only prospective gamma123 causal test and cold original audit
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/i3-stage8e2-prospective-science-once-20261120.yml']
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: i3-stage8e2-gamma123-science-one-shot-20261120
+  cancel-in-progress: false
+
+env:
+  PYTHONPATH: ${{ github.workspace }}/engine/src:${{ github.workspace }}/protocol
+  TECH_RUN: '44536464441'
+  SC_BASE: /tmp/i3-stage8e2-science-${{ github.run_id }}
+  SC_ARCHIVE: /tmp/i3-stage8e2-science-native-${{ github.run_id }}
+
+jobs:
+  scientific_source_preflight:
+    if: ${{ github.run_attempt == 1 }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout precommitted science protocol, not engine
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: protocol
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Checkout EXACT successful technical engine source
+        uses: actions/checkout@v4
+        with:
+          ref: 03faff4b9c194a5288b92e394f6a75cbe62cd095
+          path: engine
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify dual-technical SAME engine source, frozen method, first-add only, ZERO births
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s protocol/tests/i3 -p 'test_stage8e2_prospective_science.py' -v
+          python - <<'PY'
+          import os, subprocess
+          from pathlib import Path
+          from i3.runtime.provenance import source_snapshot
+          from tools import stage8e2_prospective_science as S
+          h = os.environ["GITHUB_SHA"]
+          p = ".github/workflows/i3-stage8e2-prospective-science-once-20261120.yml"
+          assert source_snapshot()["git_head"] == S.ENGINE_HEAD
+          assert source_snapshot()["sha256"] == S.ENGINE_SHA
+          assert source_snapshot()["working_tree_dirty"] is False
+          S.verify_wrapper_head(h, __import__("hashlib").sha256(Path(S.__file__).read_bytes()).hexdigest())
+          changed = subprocess.check_output(
+              ["git", "-C", "protocol", "diff", "--name-only",
+               S.ENGINE_HEAD, h, "--", "src/i3"], text=True)
+          assert not changed.strip(), "native engine drift invalidates previous rehearsal receipts"
+          history = subprocess.check_output(
+              ["git", "-C", "protocol", "log", "--format=%H", "--", p], text=True)
+          assert history.splitlines() == [h], "one-shot science workflow already consumed"
+          addition = subprocess.check_output(
+              ["git", "-C", "protocol", "diff-tree", "--no-commit-id", "--name-status",
+               "-r", h, "--", p], text=True).strip().split()
+          assert addition == ["A", p], "science workflow not first source-exact ADD"
+          assert S.ENGINE_HEAD == "03faff4b9c194a5288b92e394f6a75cbe62cd095"
+          assert S.PRIMARY["two_sided_alpha"] == 0.025
+          assert S.PRIMARY["population_units"] == 64
+          assert S.PRIMARY["G2_lives_per_arm_population"] == 144
+          assert S.PRIMARY["t_critical_df63"] == 2.2962367715148795
+          print("STAGE8E2_FIRST_ONLY_SCIENTIFIC_SOURCE_FROZEN_NO_LIVES")
+          PY
+
+  science_preexposure:
+    if: ${{ github.run_attempt == 1 }}
+    needs: scientific_source_preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: protocol
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 03faff4b9c194a5288b92e394f6a75cbe62cd095
+          path: engine
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Retrieve previously published two-original technical gate
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8e2-TECHNICAL-GATE-NO-SCIENCE-44536464441
+          run-id: 44536464441
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: /tmp/i3-stage8e2-technical-evidence/gate
+      - name: Retrieve previously published full cold audit Python 3.11
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8e2-cold-audit-3.11-44536464441
+          run-id: 44536464441
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: /tmp/i3-stage8e2-technical-evidence/cold311
+      - name: Retrieve previously published full cold audit Python 3.12
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8e2-cold-audit-3.12-44536464441
+          run-id: 44536464441
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: /tmp/i3-stage8e2-technical-evidence/cold312
+      - name: Retrieve original published technical preexposure Python 3.11
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8e2-preexposure-3.11-44536464441
+          run-id: 44536464441
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: /tmp/i3-stage8e2-technical-evidence/plan311
+      - name: Retrieve original published technical preexposure Python 3.12
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8e2-preexposure-3.12-44536464441
+          run-id: 44536464441
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: /tmp/i3-stage8e2-technical-evidence/plan312
+      - name: Blind technical outcomes, source-check two 64512-life cold seals, allocate ONE new science root WITHOUT any birth
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$SC_BASE"
+          python -m tools.stage8e2_prospective_science allocate \
+            /tmp/i3-stage8e2-technical-evidence \
+            "$GITHUB_SHA" "$SC_ARCHIVE" \
+            "$SC_BASE/SCIENCE_PLAN.json" "$SC_BASE/NATIVE_PLAN.json" \
+            > "$SC_BASE/ALLOCATION_RECEIPT.json"
+          sha256sum "$SC_BASE/SCIENCE_PLAN.json" | cut -d' ' -f1 > "$SC_BASE/SCIENCE_PLAN.sha256"
+          sha256sum "$SC_BASE/NATIVE_PLAN.json" | cut -d' ' -f1 > "$SC_BASE/NATIVE_PLAN.sha256"
+          python - <<'PY'
+          import os, json
+          from pathlib import Path
+          from tools import stage8e2_prospective_science as S
+          base=Path(os.environ["SC_BASE"])
+          plan=json.loads((base/"SCIENCE_PLAN.json").read_bytes())
+          S.verify_science_plan(plan)
+          assert plan["scientific_admission"] is True
+          assert plan["science_lives_created_at_preexposure"] == 0
+          assert plan["planned_original_lives"] == 64512
+          assert plan["planned_g2_original_lives"] == 36864
+          assert plan["source_protocol_head"] == os.environ["GITHUB_SHA"]
+          assert not Path(plan["outer_archive_root"]).exists()
+          print("STAGE8E2_NEW_THIRD_ROOT_SCIENCE_PREEXPOSURE_NO_LIVES")
+          PY
+      - name: PUBLISH source-locked third-root SCIENCE preexposure BEFORE any G0 World
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8e2-third-root-science-preexposure-${{ github.run_id }}
+          path: |
+            /tmp/i3-stage8e2-science-${{ github.run_id }}/SCIENCE_PLAN.json
+            /tmp/i3-stage8e2-science-${{ github.run_id }}/NATIVE_PLAN.json
+            /tmp/i3-stage8e2-science-${{ github.run_id }}/SCIENCE_PLAN.sha256
+            /tmp/i3-stage8e2-science-${{ github.run_id }}/NATIVE_PLAN.sha256
+            /tmp/i3-stage8e2-science-${{ github.run_id }}/ALLOCATION_RECEIPT.json
+          if-no-files-found: error
+          retention-days: 90
+
+  scientific_native_births:
+    if: ${{ github.run_attempt == 1 }}
+    needs: science_preexposure
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: protocol
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 03faff4b9c194a5288b92e394f6a75cbe62cd095
+          path: engine
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Import externally published SCIENCE allocation
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8e2-third-root-science-preexposure-${{ github.run_id }}
+          path: /tmp/i3-stage8e2-science-${{ github.run_id }}
+      - name: Execute ONE 64512-life native science cohort, NO statistical analysis or retry
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m tools.stage8e2_prospective_science run \
+            "$SC_BASE/SCIENCE_PLAN.json" "$(cat "$SC_BASE/SCIENCE_PLAN.sha256")" \
+            "$SC_BASE/NATIVE_PLAN.json" > "$SC_BASE/SCIENCE_CORE.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          p=Path(os.environ["SC_BASE"])/"SCIENCE_CORE.json"
+          r=json.loads(p.read_bytes())
+          assert r["status"]=="STAGE8E2_NEW_SCIENCE_NATIVE_COMPLETE_AWAIT_INDEPENDENT_GZIP_AUDIT"
+          assert r["native_originals_claimed"]==64512
+          assert r["scientific_verdict"]=="NOT_ISSUED_AWAIT_COLD_GZIP"
+          print("STAGE8E2_ALL_NATIVE_ORIGINALS_SEALED_NO_SCIENTIFIC_RESULT_YET")
+          PY
+      - name: Preserve G0/G1/G2 ORIGINAL gzip and custody metadata even on failure
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p "$SC_BASE"
+          if test -d "$SC_ARCHIVE/native-originals"; then
+            for g in 0 1 2; do
+              if test -d "$SC_ARCHIVE/native-originals/PHYSICAL_G$g"; then
+                tar -cf "$SC_BASE/G$g.tar" -C "$SC_ARCHIVE/native-originals" "PHYSICAL_G$g"
+              fi
+            done
+            tar --exclude='life-*.json.gz' -cf "$SC_BASE/METADATA.tar" -C "$SC_ARCHIVE" .
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage8e2-science-G0-original-gzip-${{ github.run_id }}
+          path: /tmp/i3-stage8e2-science-${{ github.run_id }}/G0.tar
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 90
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage8e2-science-G1-original-gzip-${{ github.run_id }}
+          path: /tmp/i3-stage8e2-science-${{ github.run_id }}/G1.tar
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 90
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage8e2-science-G2-original-gzip-${{ github.run_id }}
+          path: /tmp/i3-stage8e2-science-${{ github.run_id }}/G2.tar
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 90
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage8e2-science-native-metadata-${{ github.run_id }}
+          path: |
+            /tmp/i3-stage8e2-science-${{ github.run_id }}/METADATA.tar
+            /tmp/i3-stage8e2-science-${{ github.run_id }}/SCIENCE_CORE.json
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 90
+
+  cold_scientific_original_audit:
+    if: ${{ github.run_attempt == 1 }}
+    needs: scientific_native_births
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: protocol
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 03faff4b9c194a5288b92e394f6a75cbe62cd095
+          path: engine
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/download-artifact@v4
+        with:
+          name: stage8e2-third-root-science-preexposure-${{ github.run_id }}
+          path: /tmp/i3-stage8e2-science-${{ github.run_id }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: stage8e2-science-native-metadata-${{ github.run_id }}
+          path: /tmp/i3-stage8e2-science-${{ github.run_id }}/metadata
+      - uses: actions/download-artifact@v4
+        with:
+          name: stage8e2-science-G0-original-gzip-${{ github.run_id }}
+          path: /tmp/i3-stage8e2-science-${{ github.run_id }}/G0
+      - uses: actions/download-artifact@v4
+        with:
+          name: stage8e2-science-G1-original-gzip-${{ github.run_id }}
+          path: /tmp/i3-stage8e2-science-${{ github.run_id }}/G1
+      - uses: actions/download-artifact@v4
+        with:
+          name: stage8e2-science-G2-original-gzip-${{ github.run_id }}
+          path: /tmp/i3-stage8e2-science-${{ github.run_id }}/G2
+      - name: Reconstitute archive in NEW cold-audit runner, rehash EVERY original, then and ONLY then compute 64-population DID
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$SC_ARCHIVE/native-originals"
+          tar -xf "$SC_BASE/metadata/METADATA.tar" -C "$SC_ARCHIVE"
+          for g in 0 1 2; do
+            tar -xf "$SC_BASE/G$g/G$g.tar" -C "$SC_ARCHIVE/native-originals"
+          done
+          python -m tools.stage8e2_prospective_science audit \
+            "$SC_BASE/SCIENCE_PLAN.json" "$(cat "$SC_BASE/SCIENCE_PLAN.sha256")" \
+            "$SC_BASE/NATIVE_PLAN.json" "$SC_ARCHIVE" \
+            > "$SC_BASE/SCIENCE_FINAL.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          p=Path(os.environ["SC_BASE"])/"SCIENCE_FINAL.json"
+          x=json.loads(p.read_bytes())
+          assert x["status"] in (
+              "STAGE8E2_CAUSAL_GAMMA_BLOCK_MODULATION_F0",
+              "STAGE8E2_CAUSAL_GAMMA_BLOCK_NOT_DEMONSTRATED_F0")
+          assert x["scientific_admission"] is True
+          assert x["original_native_lives_rehashed"] == 64512
+          assert x["G2_original_lives_scored"] == 36864
+          assert x["population_units"] == 64
+          assert len(x["original_population_means"]) == 64
+          assert len(x["primary"]["all_64_population_did"]) == 64
+          (Path(os.environ["SC_BASE"])/"COLD_AUDIT.json").write_text(
+              json.dumps(x["cold_audit"],sort_keys=True,separators=(",",":")))
+          print("STAGE8E2_SCIENCE_64512_ORIGINALS_INDEPENDENTLY_AUDITED_VERDICT_FIXED")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage8e2-science-original-cold-audit-and-primary-${{ github.run_id }}
+          path: |
+            /tmp/i3-stage8e2-science-${{ github.run_id }}/SCIENCE_FINAL.json
+            /tmp/i3-stage8e2-science-${{ github.run_id }}/COLD_AUDIT.json
+          if-no-files-found: warn
+          retention-days: 90
+
+  scientific_statistical_gate:
+    if: ${{ github.run_attempt == 1 }}
+    needs: cold_scientific_original_audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: protocol
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 03faff4b9c194a5288b92e394f6a75cbe62cd095
+          path: engine
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/download-artifact@v4
+        with:
+          name: stage8e2-science-original-cold-audit-and-primary-${{ github.run_id }}
+          path: /tmp/i3-stage8e2-science-${{ github.run_id }}/results
+      - uses: actions/download-artifact@v4
+        with:
+          name: stage8e2-third-root-science-preexposure-${{ github.run_id }}
+          path: /tmp/i3-stage8e2-science-${{ github.run_id }}/preexposure
+      - name: Independently reconstruct the prespecified Student statistic from all 64 published population outcomes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m tools.stage8e2_independent_primary_verification \
+            "$SC_BASE/preexposure/SCIENCE_PLAN.json" \
+            "$SC_BASE/preexposure/SCIENCE_PLAN.sha256" \
+            "$SC_BASE/results/SCIENCE_FINAL.json" \
+            "$SC_BASE/INDEPENDENT_STATISTICS.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage8e2-science-independent-confirmatory-gate-${{ github.run_id }}
+          path: /tmp/i3-stage8e2-science-${{ github.run_id }}/INDEPENDENT_STATISTICS.json
+          if-no-files-found: error
+          retention-days: 90
