@@ -38,7 +38,9 @@ def _evidence():
             "source_git_head": S.ENGINE_HEAD,
             "source_files_sha256": S.ENGINE_SHA,
             "allocation_sha256": plans[version]["allocation_sha256"],
-            "g0_g1_g2_manifest_sha256": ["b"*64, "c"*64, "d"*64],
+            "g0_g1_g2_manifest_sha256": (["b"*64, "c"*64, "d"*64]
+                                              if version == "3.11"
+                                              else ["1"*64, "2"*64, "3"*64]),
             "parentage_audit_sha256": ["e"*64, "f"*64],
             "phase_chain_sha256": ("7" if version == "3.11" else "8") * 64,
         }
