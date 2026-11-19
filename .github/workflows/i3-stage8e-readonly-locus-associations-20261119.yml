@@ -26,7 +26,7 @@ jobs:
       - name: Checkout exact reviewed Stage8-E source
         uses: actions/checkout@v4
         with:
-          ref: b39395bd7a22892b050a39a7c9ad7d3642e574e7
+          ref: 65dd488c5e76594163efeaa82fd524050e47e5c5
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-python@v5
@@ -42,7 +42,7 @@ jobs:
           from i3.lab import stage8e_gene_associations_readonly as E
           from i3.lab import stage8e_reciprocal_locus_swap as S
           head=subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip()
-          assert head == "b39395bd7a22892b050a39a7c9ad7d3642e574e7"
+          assert head == "65dd488c5e76594163efeaa82fd524050e47e5c5"
           assert A.ORIGINAL_HEAD == "a32b7bf50981e0bbaf688e3caf9973525888c05d"
           assert A.ORIGINAL_RUN_ID == 44320492293 and A.LIVES == 32256
           assert D.PREVERDICT_AUDITOR == "23d0e3eabff0042123c84f4b292a2e4c72cfcc8f"
