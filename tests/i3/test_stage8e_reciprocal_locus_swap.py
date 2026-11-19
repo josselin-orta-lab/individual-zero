@@ -63,6 +63,44 @@ class Stage8ESingleLocusSwapTests(unittest.TestCase):
             C.reciprocal_allele_swap(bad,m,gene="omega")
         self.assertEqual(s,old)
 
+    def test_gamma_horizon_block_is_valid_and_preserves_all_other_loci(self):
+        s=G.generation_zero(72001)
+        m=G.generation_zero(72002)
+        old_s,old_m=deepcopy(s),deepcopy(m)
+        r=C.reciprocal_gamma_horizon_block_swap(s,m)
+        self.assertEqual((s,m),(old_s,old_m))
+        self.assertEqual(r["loci_jointly_intervened"],["gamma1","gamma2","gamma3"])
+        self.assertEqual(r["S_sham"],s)
+        self.assertEqual(r["M_sham"],m)
+        for k in G.GENE_ORDER:
+            if k in C.GAMMA_HORIZONS:
+                self.assertEqual(r["S_swap"]["genes"][k],m["genes"][k])
+                self.assertEqual(r["M_swap"]["genes"][k],s["genes"][k])
+            else:
+                self.assertEqual(r["S_swap"]["genes"][k],s["genes"][k])
+                self.assertEqual(r["M_swap"]["genes"][k],m["genes"][k])
+        for arm in ("S_sham","M_sham","S_swap","M_swap"):
+            G.validate(r[arm])
+            self.assertEqual(G.digest(r[arm]),r["sha256"][arm])
+        self.assertTrue(r["no_births"])
+
+    def test_gamma_horizon_block_swap_is_reversible_and_ordered(self):
+        s=G.generation_zero(7915)
+        m=G.generation_zero(7916)
+        a=C.reciprocal_gamma_horizon_block_swap(s,m)
+        b=C.reciprocal_gamma_horizon_block_swap(a["S_swap"],a["M_swap"])
+        self.assertEqual(b["S_swap"],s)
+        self.assertEqual(b["M_swap"],m)
+        self.assertEqual(C.GAMMA_HORIZONS,("gamma1","gamma2","gamma3"))
+
+    def test_gamma_horizon_block_refuses_invalid_v4(self):
+        s,m=pair()
+        bad=deepcopy(s)
+        bad["genes"]["gamma3"]=bad["genes"]["gamma1"]-0.01
+        with self.assertRaises(ValueError):
+            C.reciprocal_gamma_horizon_block_swap(bad,m)
+        self.assertEqual(s["genes"]["omega"],0.8)
+
     def test_no_fabricated_replacement_when_equal_alleles(self):
         s=G.midpoint()
         m=deepcopy(s)
