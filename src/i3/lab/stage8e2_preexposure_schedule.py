@@ -40,7 +40,7 @@ def derive(root_hex: str, domain: str, *indices: object) -> str:
     """Separate deterministic HMAC namespace for each kind of future entropy."""
     root = _root(root_hex)
     if type(domain) is not str or domain not in (
-        "world-g0", "world-g1", "world-g2", "identity", "motor",
+        "world-g0", "world-g1", "world-g2", "founder", "identity", "motor",
         "mutation", "selection", "parent-permutation"
     ):
         raise ValueError("unregistered randomness domain")
