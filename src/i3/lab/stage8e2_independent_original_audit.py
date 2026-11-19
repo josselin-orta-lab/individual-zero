@@ -69,7 +69,7 @@ def verify_first_person_chains(life: dict) -> None:
                 or type(step.get("t")) is not int or step["t"] != i
                 or type(step.get("cognitive_work")) is not dict
                 or type(step.get("cognitive_accounting")) is not dict
-                or type(step.get("funding_phases")) not in (list, tuple)):
+                or type(step.get("funding_phases")) is not dict):
             raise ValueError("foreign or out-of-order native paid-work step")
         core = {field: step[field] for field in TRACE_BASE}
         trace_head = sha256((
