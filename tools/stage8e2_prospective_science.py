@@ -46,6 +46,11 @@ TECHNICAL_PLAN_ALLOCATIONS = {
 TECHNICAL_PLAN_ARTIFACT_IDS = {"3.11": 14535268998, "3.12": 14535124704}
 TECHNICAL_COLD_ARTIFACT_IDS = {"3.11": 14566382506, "3.12": 14564879336}
 TECHNICAL_GATE_ARTIFACT_ID = 14566511727
+TECHNICAL_GATE_FILE_SHA256 = "5d66fbe5aee219e3b2e3b1a32a575280c6bfb52320f5cb1908421f4352c01011"
+TECHNICAL_COLD_FILE_SHA256 = {
+    "3.11": "11a194e7e69af209b4daa535c99fffc7299fce437d240aaead1e3431175e6642",
+    "3.12": "f15589712f02eef97690449dd978aa69ab7aafeb6b34ddc4447c7879877c78f6",
+}
 TECH_PASS = "TWO_TECHNICAL_RECEIPTS_STRUCTURALLY_ACCEPTED_NO_SCIENCE"
 COLD_PASS = "ALL_64512_NATIVE_ORIGINAL_GZIP_REAUDITED_NO_SCIENCE"
 SCIENCE_PASS = "STAGE8E2_CAUSAL_GAMMA_BLOCK_MODULATION_F0"
@@ -133,7 +138,14 @@ def _read_technical_evidence(root: str) -> dict:
     expected = ("gate", "cold311", "cold312", "plan311", "plan312")
     if not all((path / k).is_dir() for k in expected):
         raise ValueError("two technical preexposures and cold audits not downloaded")
-    gate = read_json(path / "gate/TECHNICAL_GATE.json")
+    gate_raw = (path / "gate/TECHNICAL_GATE.json").read_bytes()
+    if sha256(gate_raw).hexdigest() != TECHNICAL_GATE_FILE_SHA256:
+        raise ValueError("technical final gate does not match previously published bytes")
+    gate = json.loads(gate_raw)
+    for version, directory in (("3.11", "cold311"), ("3.12", "cold312")):
+        cold_raw = (path / directory / "COLD_AUDIT.json").read_bytes()
+        if sha256(cold_raw).hexdigest() != TECHNICAL_COLD_FILE_SHA256[version]:
+            raise ValueError("independent technical cold-audit artifact was replaced")
     audits = {
         "3.11": read_json(path / "cold311/COLD_AUDIT.json"),
         "3.12": read_json(path / "cold312/COLD_AUDIT.json"),
@@ -154,6 +166,8 @@ def _read_technical_evidence(root: str) -> dict:
         "schema": EVIDENCE_SCHEMA,
         "technical_run_id": TECHNICAL_RUN_ID,
         "technical_gate_artifact_id": TECHNICAL_GATE_ARTIFACT_ID,
+        "technical_gate_file_sha256": TECHNICAL_GATE_FILE_SHA256,
+        "technical_cold_file_sha256": TECHNICAL_COLD_FILE_SHA256,
         "technical_plan_artifact_ids": TECHNICAL_PLAN_ARTIFACT_IDS,
         "technical_cold_artifact_ids": TECHNICAL_COLD_ARTIFACT_IDS,
         "technical_gate": gate, "cold_audits": audits,
@@ -166,12 +180,15 @@ def _read_technical_evidence(root: str) -> dict:
 def verify_technical_evidence(evidence: object) -> dict:
     if (type(evidence) is not dict or set(evidence) != {
             "schema", "technical_run_id", "technical_gate_artifact_id",
+            "technical_gate_file_sha256", "technical_cold_file_sha256",
             "technical_plan_artifact_ids", "technical_cold_artifact_ids",
             "technical_gate", "cold_audits", "technical_plans",
             "technical_plan_file_sha256"}
             or evidence["schema"] != EVIDENCE_SCHEMA
             or evidence["technical_run_id"] != TECHNICAL_RUN_ID
             or evidence["technical_gate_artifact_id"] != TECHNICAL_GATE_ARTIFACT_ID
+            or evidence["technical_gate_file_sha256"] != TECHNICAL_GATE_FILE_SHA256
+            or evidence["technical_cold_file_sha256"] != TECHNICAL_COLD_FILE_SHA256
             or evidence["technical_plan_artifact_ids"] != TECHNICAL_PLAN_ARTIFACT_IDS
             or evidence["technical_cold_artifact_ids"] != TECHNICAL_COLD_ARTIFACT_IDS):
         raise PermissionError("foreign Stage8-E2 original-gzip technical evidence")
@@ -520,7 +537,7 @@ def reduce_after_independent_cold_audit(
 
 def main() -> None:
     args = sys.argv
-    if len(args) == 7 and args[1] == "allocate":
+    if len(args) == 6 and args[1] == "allocate":
         _, _, evidence_dir, wrapper_head, original_root, out_plan, out_native = args
         print(json.dumps(allocate(evidence_dir, wrapper_head,
                                   original_root, out_plan, out_native),
