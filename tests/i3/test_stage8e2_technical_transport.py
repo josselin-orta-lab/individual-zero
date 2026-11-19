@@ -88,5 +88,35 @@ class Stage8E2TechnicalTransportTests(unittest.TestCase):
             self.assertEqual(len((root / "PHASES.jsonl").read_bytes().splitlines()), 2)
 
 
+    def test_native_g1_cannot_start_before_g0_seal_and_parent_selection(self):
+        from i3.lab import stage8e2_native_original_generation as GEN
+        with TemporaryDirectory() as temp:
+            archive = Path(temp) / "native-campaign"
+            plan_path = Path(temp) / "frozen-before-g0.json"
+            plan = T.make_plan(ROOT, HEAD, SOURCE, str(archive))
+            frozen = T._canonical(plan)
+            plan_path.write_bytes(frozen)
+            archive.mkdir()
+            (archive / "FROZEN_PLAN.json").write_bytes(frozen)
+            T._write_new(archive / "CLAIM.json", {
+                "schema": T.PLAN_SCHEMA + "/claim",
+                "preexposure_file_sha256": sha256(frozen).hexdigest(),
+                "plan_sha256": plan["allocation_sha256"],
+                "status": "CLAIMED_NO_RETRY_EVEN_IF_PARTIAL",
+            })
+            with patch.object(GEN, "_check_source", return_value=None), (
+                    patch.object(GEN.N, "verify_native_preflight",
+                                 return_value=plan["native_preflight"])):
+                with self.assertRaises(PermissionError):
+                    GEN.execute_technical_generation(
+                        root=ROOT, generation=1, genomes={},
+                        source_git_head=HEAD, source_files_sha256=SOURCE,
+                        preflight=plan["native_preflight"],
+                        custody_dir=str(archive / "PHYSICAL_G1"),
+                        published_plan_path=str(plan_path),
+                        published_plan_file_sha256=sha256(frozen).hexdigest())
+            self.assertFalse((archive / "PHYSICAL_G1").exists())
+
+
 if __name__ == "__main__":
     unittest.main()
