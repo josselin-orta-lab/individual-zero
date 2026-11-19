@@ -83,6 +83,13 @@ def verify_first_person_chains(life: dict) -> None:
             "accounting": step["cognitive_accounting"],
             "funding_phases": step["funding_phases"],
         })
+    # The native engine extends evidence_head with a FINAL terminal/funding
+    # digest after the last physically applied step.
+    evidence_head = _digest_canonical({
+        "previous": evidence_head,
+        "terminal": life.get("terminal"),
+        "accounting": life.get("cognitive_accounting"),
+    })
     if (len(trace) != life.get("steps_lived")
             or trace_head != life.get("trace_head")
             or evidence_head != life.get("evidence_head")):
