@@ -22,8 +22,8 @@ from i3.modules import genome as G
 
 SCHEMA = "i3-stage8e2-native-technical-generation/v0"
 PROTOCOL = "i3-stage8e2-gamma-factorial-P1.3-funded-v2-technical/v0"
-SHA40 = re.compile(r"[0-9a-f]{40}\\Z")
-SHA64 = re.compile(r"[0-9a-f]{64}\\Z")
+SHA40 = re.compile(r"[0-9a-f]{40}\Z")
+SHA64 = re.compile(r"[0-9a-f]{64}\Z")
 
 
 def _check_source(head: str, source_sha: str) -> None:
