@@ -55,8 +55,14 @@ def synthetic_trace_sealed_life():
             "cognitive_accounting": accounts,
             "funding_phases": phases, "info": {},
         })
+    totals = {"status": "synthetic-only", "totals": accounts}
+    evidence = sha256(json.dumps({
+        "previous": evidence, "terminal": "dead", "accounting": totals,
+    }, sort_keys=True, separators=(",", ":"),
+        ensure_ascii=False, allow_nan=False).encode("utf-8")).hexdigest()
     return {
         "steps_lived": 2, "terminal": "dead", "trace": trace,
+        "cognitive_accounting": totals,
         "genome": genome, "world": world, "life_seed": life_seed,
         "horizon": horizon, "manifest_id": manifest_id,
         "trace_head": head, "evidence_head": evidence,
