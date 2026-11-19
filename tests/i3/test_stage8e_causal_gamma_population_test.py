@@ -9,7 +9,7 @@ def profiles(contrast=10.):
     return [{
         "population": p,
         "mean_G2_steps": {
-            "S_sham": 250. + contrast/2 + (p%3-1),
+            "S_sham": 250. + contrast/2 + (p%4-1.5),
             "M_sham": 250.,
             "S_swap": 250. - contrast/2,
             "M_swap": 250.,
