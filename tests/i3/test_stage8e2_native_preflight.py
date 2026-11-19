@@ -36,8 +36,8 @@ class NativePreflightTests(unittest.TestCase):
 
     def test_g2_four_branches_share_physics_not_rng_identity(self):
         key = (0, 2, 0, "stable", 0)
-        assert N._world_row(ROOT, *key)["world_sha256"] == (
-            N._world_row(ROOT, *key)["world_sha256"])
+        assert N._world_row(ROOT, 0, 2, "stable", 0)["world_sha256"] == (
+            N._world_row(ROOT, 0, 2, "stable", 0)["world_sha256"])
         ids = [(seed, motor) for identity, seed, motor in N._identities(ROOT)
                if (identity[0], identity[1], identity[3],
                    identity[4], identity[5]) == key]
