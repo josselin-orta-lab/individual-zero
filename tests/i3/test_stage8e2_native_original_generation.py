@@ -51,5 +51,22 @@ class Stage8E2NativeOriginalTests(unittest.TestCase):
             self.assertFalse(Path(target).exists())
 
 
+    def test_direct_birth_without_prepublished_plan_fails_before_claim(self):
+        with tempfile.TemporaryDirectory() as temp:
+            target = str(Path(temp) / "PHYSICAL_G0")
+            with patch.object(N, "_check_source", return_value=None), (
+                    patch.object(N.N, "verify_native_preflight",
+                                 return_value={"manifest_sha256": "a"*64})):
+                with self.assertRaises(PermissionError):
+                    N.execute_technical_generation(
+                        root=ROOT, generation=0, genomes=self.founders,
+                        source_git_head="0"*40, source_files_sha256=SOURCE,
+                        preflight={"manifest_sha256": "a"*64},
+                        custody_dir=target,
+                        published_plan_path=str(Path(temp) / "missing-plan.json"),
+                        published_plan_file_sha256="a"*64)
+            self.assertFalse(Path(target).exists())
+
+
 if __name__ == "__main__":
     unittest.main()
