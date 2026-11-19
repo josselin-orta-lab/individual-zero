@@ -4,6 +4,7 @@ Synthetic technical receipts used here are structural fixtures only. They do
 not replace the actual previously published hashes and original gzip audit.
 """
 from copy import deepcopy
+from hashlib import sha256 as _real_sha256
 from unittest import TestCase
 from unittest.mock import patch
 
@@ -77,6 +78,24 @@ def _native_plan():
 class Stage8E2SciencePreexposureTests(TestCase):
     def setUp(self):
         self.evidence = _evidence()
+        # Mock only the artifact SHA of the synthetic technical plan fixture;
+        # production always checks the REAL published immutable plan bytes.
+        fake_canonical = {
+            v: S.dump(_technical_plan(v)) for v in ("3.11", "3.12")
+        }
+        class _FakeHash:
+            def __init__(self, value):
+                self.value = value
+            def hexdigest(self):
+                return self.value
+        def _synthetic_sha(raw):
+            for version, data in fake_canonical.items():
+                if raw == data:
+                    return _FakeHash(S.TECHNICAL_PLAN_SHAS[version])
+            return _real_sha256(raw)
+        self.patcher_sha = patch.object(S, "sha256", side_effect=_synthetic_sha)
+        self.patcher_sha.start()
+        self.addCleanup(self.patcher_sha.stop)
         self.patcher_verify = patch.object(S.T, "verify_plan", side_effect=lambda p: p)
         self.patcher_native = patch.object(S.T, "make_plan",
                                           side_effect=lambda *x: _native_plan())
