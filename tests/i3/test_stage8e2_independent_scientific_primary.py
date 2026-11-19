@@ -30,7 +30,7 @@ def _fixture(positive: bool = True):
         "native_generator_plan": {"allocation_sha256": "2"*64},
         "technical_evidence_sha256": "a"*64,
         "no_retry": True,
-        "primary": SCIENCE.PRIMARY,
+        "primary": deepcopy(SCIENCE.PRIMARY),
         "primary_sha256": sha256(_canonical(SCIENCE.PRIMARY)).hexdigest(),
     }
     plan["allocation_sha256"] = sha256(_canonical(plan)).hexdigest()
