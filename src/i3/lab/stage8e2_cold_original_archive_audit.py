@@ -165,7 +165,7 @@ def cold_audit(plan_path: str, plan_file_sha256: str, original_root: str) -> dic
             or plan.get("planned_lives") != P.EXPECTED_TOTAL
             or plan.get("planned_mutations") != 6144):
         raise ValueError("foreign frozen prospective allocation")
-    if (root / "FROZEN_PLAN.json").read_bytes() != data
+    if ((root / "FROZEN_PLAN.json").read_bytes() != data
             or load(root / "CLAIM.json").get("plan_sha256") != plan["allocation_sha256"]):
         raise ValueError("original custody not bound to frozen allocation")
     N.verify_native_preflight(plan["root_hex"], expected=plan["native_preflight"])
