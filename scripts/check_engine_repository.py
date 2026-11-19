@@ -81,6 +81,10 @@ def unexpected_workflows(paths, *, active_ci: str) -> list[str]:
         "i3-stage8c-prospective-science-once-20261118.yml",
         # Standalone Stage8-C science ORIGINAL-GZIP audit. No native World or births.
         "i3-stage8c-readonly-original-audit-20261118.yml",
+        # ADR-0022: owner-approved NEW Stage8-E2 causal gamma-block research.
+        # Exactly one 2x full native TECHNICAL workflow, no scientific lives;
+        # first-add exact-source + independent original-level re-audit gates.
+        "i3-stage8e2-two-native-technical-once-20261119.yml",
     }
     return sorted(path.name for path in paths
                   if not path.name.startswith("i1-") and path.name not in allowed)

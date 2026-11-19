@@ -188,6 +188,22 @@ class EngineToolingTests(unittest.TestCase):
         self.assertEqual(unexpected_workflows(
             candidates,active_ci="i1-current-ci.yml"),sorted(forbidden))
 
+    def test_stage8e2_one_shot_technical_allowance_is_exact_not_wildcard(self):
+        from scripts.check_engine_repository import unexpected_workflows
+
+        allowed = "i3-stage8e2-two-native-technical-once-20261119.yml"
+        blocked = (
+            "i3-stage8e2-two-native-technical-once-20261119-retry.yml",
+            "i3-stage8e2-two-native-technical-once-20261120.yml",
+            "i3-stage8e2-gamma-causal-science.yml",
+        )
+        entries = [Path(".github/workflows/" + name)
+                   for name in (allowed, *blocked)]
+        self.assertEqual(
+            unexpected_workflows(entries, active_ci="i1-current-ci.yml"),
+            sorted(blocked),
+        )
+
     def test_static_agent_navigation_is_not_historical_runtime_ci(self):
         from scripts.check_engine_repository import unexpected_workflows
         paths = [Path(".github/workflows/agent-context-static.yml"),
