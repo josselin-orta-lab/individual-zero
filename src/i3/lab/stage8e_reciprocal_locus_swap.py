@@ -60,3 +60,46 @@ def reciprocal_allele_swap(selected: dict, matched: dict, *, gene: str) -> dict:
         },
         "no_births": True,
     }
+
+# A jointly exchanged triple retains gamma1 <= gamma2 <= gamma3 exactly.
+# This is one *block* intervention, never evidence about gamma3 alone.
+GAMMA_HORIZONS = ("gamma1", "gamma2", "gamma3")
+BLOCK_SCHEMA = "i3-stage8e-reciprocal-gamma-horizon-block-design/v0"
+
+
+def reciprocal_gamma_horizon_block_swap(selected: dict, matched: dict) -> dict:
+    """Joint gamma1/gamma2/gamma3 swap; no selectively invalid G2 child.
+
+    The ordered triple is one coherent intervention. Each sham is an exact
+    copy of its born genotype, whereas its swapped sibling differs only by
+    all three gamma horizons copied from the opposite arm. This may isolate
+    an effect of the BLOCK in a future randomized, source-sealed study but
+    cannot identify gamma3 as the unique causal contributor.
+    """
+    G.validate(selected)
+    G.validate(matched)
+    shams = (deepcopy(selected), deepcopy(matched))
+    swaps = (deepcopy(selected), deepcopy(matched))
+    for gene in GAMMA_HORIZONS:
+        swaps[0]["genes"][gene] = shams[1]["genes"][gene]
+        swaps[1]["genes"][gene] = shams[0]["genes"][gene]
+    for g in (*shams, *swaps):
+        G.validate(g)
+    for gene in G.GENE_ORDER:
+        if gene in GAMMA_HORIZONS:
+            if (swaps[0]["genes"][gene] != shams[1]["genes"][gene]
+                    or swaps[1]["genes"][gene] != shams[0]["genes"][gene]):
+                raise AssertionError("gamma block was only partially exchanged")
+        elif (swaps[0]["genes"][gene] != shams[0]["genes"][gene]
+                or swaps[1]["genes"][gene] != shams[1]["genes"][gene]):
+            raise AssertionError("non-gamma gene changed by horizon block")
+    return {
+        "schema": BLOCK_SCHEMA,
+        "loci_jointly_intervened": list(GAMMA_HORIZONS),
+        "S_sham": shams[0], "M_sham": shams[1],
+        "S_swap": swaps[0], "M_swap": swaps[1],
+        "sha256": {name:G.digest(genome) for name,genome in (
+            ("S_sham",shams[0]),("M_sham",shams[1]),
+            ("S_swap",swaps[0]),("M_swap",swaps[1]))},
+        "no_births": True,
+    }
