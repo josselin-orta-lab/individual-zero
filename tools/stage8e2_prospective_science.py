@@ -537,7 +537,7 @@ def reduce_after_independent_cold_audit(
 
 def main() -> None:
     args = sys.argv
-    if len(args) == 6 and args[1] == "allocate":
+    if len(args) == 7 and args[1] == "allocate":
         _, _, evidence_dir, wrapper_head, original_root, out_plan, out_native = args
         print(json.dumps(allocate(evidence_dir, wrapper_head,
                                   original_root, out_plan, out_native),
