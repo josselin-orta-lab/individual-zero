@@ -29,6 +29,7 @@ from i3.lab import stage8e2_technical_transport as T
 from i3.lab import stage8e2_two_technical_receipts as R
 from i3.lab import stage8e2_cold_original_archive_audit as C
 from i3.lab import stage8e_causal_gamma_population_test as ANALYSIS
+from i3.lab import stage6_light_native_g0_transport as OWNER
 from i3.runtime.provenance import source_snapshot
 
 SCHEMA = "i3-stage8e2-new-prospective-science-over-frozen-technical-source/v0"
@@ -131,6 +132,24 @@ def verify_native_source() -> None:
     if (snap.get("git_head") != ENGINE_HEAD or snap.get("sha256") != ENGINE_SHA
             or snap.get("working_tree_dirty") is not False):
         raise PermissionError("science cannot change or substitute the two-rehearsal engine")
+
+
+
+def verify_owner_science_scope() -> None:
+    """ADR-0022 permits NEW science, never a replay of consumed cohorts."""
+    OWNER._pins()
+    direction = json.loads(OWNER.DIRECTION.read_bytes())
+    applies = direction.get("applies_to", {})
+    requirements = direction.get("prospective_execution_requirements", {})
+    if (applies.get("scientific_prospective_experiments_authorized") is not True
+            or applies.get("previously_consumed_worlds_allowed") is not False
+            or applies.get("legacy_cohort_replay_allowed") is not False
+            or requirements.get("run_specific_admission_manifest_required") is not True
+            or requirements.get("all_originals_favorable_adverse_null_required") is not True
+            or requirements.get(
+                "complete_source_exact_engineering_rehearsal_for_stage6_science_required"
+            ) is not True):
+        raise PermissionError("missing owner scope for prospective science on NEW root")
 
 
 def _read_technical_evidence(root: str) -> dict:
@@ -248,6 +267,7 @@ def make_science_plan(root_hex: str, wrapper_head: str, wrapper_sha: str,
                       outer_archive_root: str, evidence: dict) -> dict:
     """Bind an OS-generated *third* root to sealed science before birth."""
     P._root(root_hex)
+    verify_owner_science_scope()
     verify_technical_evidence(evidence)
     if type(wrapper_head) is not str or not HEX40.fullmatch(wrapper_head):
         raise ValueError("source-locked scientific wrapper HEAD required")
