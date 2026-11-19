@@ -45,7 +45,9 @@ class Stage8E2NativeOriginalTests(unittest.TestCase):
                     N.execute_technical_generation(
                         root=ROOT, generation=0, genomes=self.founders,
                         source_git_head="0"*40, source_files_sha256=SOURCE,
-                        preflight={}, custody_dir=target)
+                        preflight={}, custody_dir=target,
+                        published_plan_path=str(Path(path) / "plan.json"),
+                        published_plan_file_sha256="a"*64)
             self.assertFalse(Path(target).exists())
 
 
