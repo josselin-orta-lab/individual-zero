@@ -206,6 +206,18 @@ class EngineToolingTests(unittest.TestCase):
             sorted(blocked),
         )
 
+    def test_stage8f1b_matched_native_funding_one_shot_only(self):
+        from scripts.check_engine_repository import unexpected_workflows
+        allowed="i3-stage8f1b-matched-native-funding-once-20261120.yml"
+        forbidden=(
+            "i3-stage8f1b-matched-native-funding-once-20261120-retry.yml",
+            "i3-stage8f1b-matched-native-funding-once-20261121.yml",
+            "i3-stage8f1b-new-native-scientific-cohort.yml",
+        )
+        paths=[Path(".github/workflows/"+n) for n in (allowed,*forbidden)]
+        self.assertEqual(unexpected_workflows(paths,active_ci="i1-current-ci.yml"),
+                         sorted(forbidden))
+
     def test_stage8e3d_original_energy_aggregate_one_shot_only(self):
         from scripts.check_engine_repository import unexpected_workflows
         allowed="i3-stage8e3d-readonly-energy-ledger-once-20261120.yml"

@@ -1,0 +1,139 @@
+# F1B: source-exact one-time SYNTHETIC one-tick native evidence only.
+# No native life / World cohort, no historical science retry, no run_life.
+name: I3 Stage8-F1B original first-person matched native cognitive funding
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/i3-stage8f1b-matched-native-funding-once-20261120.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: i3-stage8f1b-paid-native-funding-falsifier-20261120
+  cancel-in-progress: false
+
+jobs:
+  source_and_synthetic_preflight:
+    if: ${{ github.run_attempt == 1 }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Reject rerun, source edits and every native-life allocation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os, subprocess
+          from tools import stage8f1_matched_native_funding as A
+          from tools import stage8f1_independent_native_funding_audit as B
+          path=".github/workflows/i3-stage8f1b-matched-native-funding-once-20261120.yml"
+          sha=os.environ["GITHUB_SHA"]
+          hist=subprocess.check_output(["git","log","--format=%H","--",path],text=True).splitlines()
+          assert hist==[sha], "not first-source-only"
+          change=subprocess.check_output(["git","diff-tree","--no-commit-id","--name-status","-r",sha,"--",path],text=True).split()
+          assert change==["A",path], "must be first addition of this exact workflow"
+          assert not subprocess.check_output(["git","status","--porcelain","--untracked-files=all"]).strip()
+          assert A.F1_HEAD==B.SOURCE=="4014a59027cc53bcfb6e7a9c6e6c827e017711b9"
+          assert A.REFERENCE_HEAD==B.P13=="03faff4b9c194a5288b92e394f6a75cbe62cd095"
+          assert A.FROZEN_CAUSAL==B.NEGATIVE=="STAGE8E2_CAUSAL_GAMMA_BLOCK_NOT_DEMONSTRATED_F0"
+          assert len(A.STATES)==8 and len(B.CASES)==8
+          assert A.MICRO_WORK.cycles==1 and A.MICRO_WORK.memory_items==64
+          assert A.CANDIDATE=="stage8f1-paid-learnt-local-effect-microdecision/v0"
+          assert A.EVIDENCE=="STAGE8_F1_DEVELOPMENT_ONLY_NOT_NATIVE_ADMISSION"
+          print("F1B_EXACT_FIRST_SOURCE_NO_LIVES_RETRY_ORIGINAL_P13_PRESERVED_PASS")
+          PY
+          python -m unittest discover -s tests/i3 -p 'test_stage8f1_matched_native_funding_evidence.py' -v
+          python -m unittest discover -s tests -p 'test_engine_repository.py' -v
+          python scripts/check_engine_repository.py --json
+
+  matched_real_world_step_receipts:
+    if: ${{ github.run_attempt == 1 }}
+    needs: source_and_synthetic_preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Execute 8 times 3 genuinely identical synthetic starting states
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1_matched_native_funding --output /tmp/STAGE8F1B_MATCHED_NATIVE_FULL.json > /tmp/STAGE8F1B_NATIVE_RECEIPT.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path("/tmp/STAGE8F1B_MATCHED_NATIVE_FULL.json").read_bytes())
+          assert x["evidence_class"]=="SYNTHETIC_MATCHED_WORLD_STEP_ONE_TICK_NOT_A_LIFE"
+          assert x["full_lives_generated"]==0 and x["new_scientific_cohorts"]==0
+          assert x["synthetic_native_world_step_calls"]==24
+          assert x["source_f1_baseline_head"]=="4014a59027cc53bcfb6e7a9c6e6c827e017711b9"
+          assert x["frozen_negative_causal_stage8e2"]=="STAGE8E2_CAUSAL_GAMMA_BLOCK_NOT_DEMONSTRATED_F0"
+          print("F1B_REAL_WORLD_STEP_ALL_24_SYNTHETIC_NATIVE_BILLS_PASS")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: i3-stage8f1b-matched-native-24-step-receipts-${{ github.run_id }}
+          path: |
+            /tmp/STAGE8F1B_MATCHED_NATIVE_FULL.json
+            /tmp/STAGE8F1B_NATIVE_RECEIPT.json
+          if-no-files-found: error
+          retention-days: 90
+
+  independent_physics_two_currency_validation:
+    if: ${{ github.run_attempt == 1 }}
+    needs: matched_real_world_step_receipts
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: i3-stage8f1b-matched-native-24-step-receipts-${{ github.run_id }}
+          path: /tmp/i3-f1b-independent
+      - name: Independently reconstruct the entire native physical/cognitive 24-step ledger
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1_independent_native_funding_audit \
+            /tmp/i3-f1b-independent/STAGE8F1B_MATCHED_NATIVE_FULL.json \
+            /tmp/STAGE8F1B_SECOND_PHYSICS.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path("/tmp/STAGE8F1B_SECOND_PHYSICS.json").read_bytes())
+          assert x["pairs_checked"]==8 and x["native_world_step_receipts_checked"]==24
+          assert x["matched_positive_bill_pairs"]==5
+          assert x["unaffordable_micros"]==2
+          assert x["fully_funded_reference_cases"]==1
+          assert x["no_native_lives"] is True
+          assert x["historical_causal_status"]=="STAGE8E2_CAUSAL_GAMMA_BLOCK_NOT_DEMONSTRATED_F0"
+          print("F1B_INDEPENDENT_ALL_MATCHED_NATIVE_FUNDING_RECEIPTS_PASS")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: i3-stage8f1b-independent-native-physical-funding-${{ github.run_id }}
+          path: /tmp/STAGE8F1B_SECOND_PHYSICS.json
+          if-no-files-found: error
+          retention-days: 90

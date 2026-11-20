@@ -94,6 +94,8 @@ def unexpected_workflows(paths, *, active_ci: str) -> list[str]:
         "i3-stage8e3c-readonly-first-energy-gate-once-20261120.yml",
         # Stage8-E3D: source exact E3C aggregate energy bookkeeping, no gzip reread/birth.
         "i3-stage8e3d-readonly-energy-ledger-once-20261120.yml",
+        # F1B: first-only SYNTHETIC matched native one-tick funding receipts; no births.
+        "i3-stage8f1b-matched-native-funding-once-20261120.yml",
     }
     return sorted(path.name for path in paths
                   if not path.name.startswith("i1-") and path.name not in allowed)
