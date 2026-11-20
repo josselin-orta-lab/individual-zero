@@ -1,0 +1,55 @@
+{
+  "schema": "i3-stage8f1c-native-learning-provenance-manifest/v0",
+  "status": "SOFTWARE_ONLY_NATIVE_POSTACTION_PAID_LEARNING_RETENTION_PASS",
+  "base_main_sha": "dd0d36a61cfce44c38efc2846a8c25f978da7266",
+  "source_pr": "https://github.com/josselin-orta-lab/individual-zero/pull/1485",
+  "source_git_head_sha": "0f4b77dd9ba309eff0bd6b8f1fea239cfa80af7e",
+  "merge_commit_sha": "3628f2c36a81c53cb7193c058a04d176c2f4fcb2",
+  "github_actions_run": "https://github.com/josselin-orta-lab/individual-zero/actions/runs/44837981694",
+  "native_originals_artifact": {
+    "id": 14679910820,
+    "name": "F1C_PAID_NATIVE_ORIGINAL.json",
+    "reproduced_name": "F1C_PAID_NATIVE_REPRODUCED.json",
+    "bytes_each": 125436,
+    "identical_bytes": true,
+    "sha256": "e46ad5f54af49796da65f48d603595544116aa6e73632546b0935d2178c5e91d",
+    "zip_sha256": "bb253b2e29f353270d7ebf72a23519cc45c174510f8062fecbefdbd22d349f1d"
+  },
+  "cold_audit_artifact": {
+    "id": 14679421943,
+    "name": "F1C_INDEPENDENT_COLD_AUDIT.json",
+    "bytes": 889,
+    "sha256": "754a4c06eeae546f1fe8900375323752056c1b660e1af89d6b4688419a8e1588",
+    "zip_sha256": "1bf5239a35c1260f13e46bb659d77bf6671ab10ccc5f15cf9b31788bdb4f6383"
+  },
+  "portable_archive": {
+    "name": "F1C_native_paid_learning_evidence_20261121.tar.gz",
+    "bytes": 16042,
+    "sha256": "14860b14521ae670f58640e5862de22ac9f9369518690892d2cb0073f4987b3a",
+    "availability": "conversation_attachment_not_published_to_git"
+  },
+  "counters": {
+    "native_one_tick_receipts": 3,
+    "paired_native_action_learning": 1,
+    "paid_postaction_calculations": 2,
+    "retained_learned_updates": 1,
+    "discarded_learned_updates": 1,
+    "scientific_lives": 0
+  },
+  "paid_learning": {
+    "work": {
+      "cycles": 2,
+      "simulated_steps": 32,
+      "memory_items": 3,
+      "replays": 1
+    },
+    "energy": 0.10960000000000002,
+    "vigilance": 0.17400000000000002
+  },
+  "historical_g2_experience_memory": "NOT_RECONSTRUCTED",
+  "whole_life_chain": "NOT_CLAIMED",
+  "next_decision_benefit": "NOT_TESTED",
+  "scientific_promotion": false,
+  "stage8e2_causal_status": "STAGE8E2_CAUSAL_GAMMA_BLOCK_NOT_DEMONSTRATED_F0 / CLOSED_NO_RETRY",
+  "retention_limit": "GitHub Actions 90 days; originals also delivered as conversation archive, durable custody separate"
+}
