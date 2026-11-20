@@ -206,6 +206,19 @@ class EngineToolingTests(unittest.TestCase):
             sorted(blocked),
         )
 
+    def test_stage8e3c_original_timecourse_one_shot_only(self):
+        from scripts.check_engine_repository import unexpected_workflows
+        allowed="i3-stage8e3c-readonly-first-energy-gate-once-20261120.yml"
+        forbidden=(
+            "i3-stage8e3c-readonly-first-energy-gate-once-20261121.yml",
+            "i3-stage8e3c-readonly-first-energy-gate-once-20261120-retry.yml",
+            "i3-stage8e3c-new-gamma-science-once-20261120.yml",
+        )
+        workflows=[Path(".github/workflows/"+name) for name in (allowed,*forbidden)]
+        self.assertEqual(
+            unexpected_workflows(workflows,active_ci="i1-current-ci.yml"),
+            sorted(forbidden))
+
     def test_stage8e3b_funding_original_readonly_allowance_is_exact_only(self):
         from scripts.check_engine_repository import unexpected_workflows
 
