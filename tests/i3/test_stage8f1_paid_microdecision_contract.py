@@ -129,6 +129,43 @@ class Stage8F1UnwiredPaidMicrodecisionTests(unittest.TestCase):
         with self.assertRaises(CognitiveFundingError):
             transition(c["body"],"se_deplacer",BodyLaws(),work)
 
+    def test_local_drink_is_possible_only_with_observed_water_and_paid_motor(self):
+        m=self.mind()
+        # Direct microbranch unit fixture: reference P1.3 would normally use
+        # its larger policy at this generous energy level.
+        m._read_plan_prediction=lambda key: (
+            ((0.,0.,40.,0.,0.),0.) if key==("boire",)
+            else ((0.,0.,0.,0.,0.),1.))
+        c=cap(energy=1.,water=20.,at_water=True)
+        b=CognitiveBudget(c["body"],BodyLaws())
+        action,param,work,info=m._development_microdecision(c,b)
+        self.assertEqual(action,"boire")
+        self.assertIsNone(param)
+        self.assertGreaterEqual(b.remaining[0],ACTION_COSTS["boire"])
+        self.assertEqual(info["funding"],"F1_PAID_SELF_SELECTED_ACTION")
+        self.assertEqual(work,MICRO_WORK)
+        # The exact same thought cannot drink water that it did not perceive.
+        m2=self.mind()
+        m2._read_plan_prediction=m._read_plan_prediction
+        c2=cap(energy=1.,water=20.,at_water=False)
+        a2,p2,w2,info2=m2._development_microdecision(
+            c2,CognitiveBudget(c2["body"],BodyLaws()))
+        self.assertIsNone(a2)
+        self.assertEqual(info2["funding"],"F1_PAID_VOLUNTARY_ABSTENTION")
+
+    def test_adjacent_movement_is_available_only_from_first_person_capture(self):
+        m=self.mind()
+        m._read_plan_prediction=lambda key: (
+            ((0.,0.,15.,0.,0.),.01) if key==("se_deplacer",)
+            else ((0.,0.,0.,0.,0.),1.))
+        c=cap(energy=3.,water=25.,open_neighbors=1)
+        b=CognitiveBudget(c["body"],BodyLaws())
+        a,p,work,info=m._development_microdecision(c,b)
+        self.assertEqual((a,p),("se_deplacer","N"))
+        self.assertEqual(work,MICRO_WORK)
+        self.assertGreaterEqual(b.remaining[0],ACTION_COSTS["se_deplacer"])
+        self.assertEqual(info["funding"],"F1_PAID_SELF_SELECTED_ACTION")
+
     def test_mismatched_body_allowance_never_admits_a_choice(self):
         m=self.mind()
         c=cap()
