@@ -1,6 +1,6 @@
 # I3: current status and agent handoff
 
-**Updated:** 19 November 2026. This is the **short current entrypoint**. The complete, byte-identical former 2,362-line status and its dated decisions are preserved in [STATUS_HISTORY_2026-11-16.md](STATUS_HISTORY_2026-11-16.md) (original Git blob `3d4f934904ed1c5e129279a672adb6b3a52aa0cd`). This page is a navigation summary, **not a scientific receipt**. Recheck live branch HEAD, artifacts and original protocols.
+**Updated:** 20 November 2026. This is the **short current entrypoint**. The complete, byte-identical former 2,362-line status and its dated decisions are preserved in [STATUS_HISTORY_2026-11-16.md](STATUS_HISTORY_2026-11-16.md) (original Git blob `3d4f934904ed1c5e129279a672adb6b3a52aa0cd`). This page is a navigation summary, **not a scientific receipt**. Recheck live branch HEAD, artifacts and original protocols.
 
 ## Authority and current boundaries
 
@@ -18,6 +18,8 @@
 **Stage 2 post-E3 scientific stop checkpoint:** [source-locked report](studies/stage2-replay-gate-selected-design/STAGE2_POST_E3_SCIENTIFIC_STOP_ASSESSMENT_2026-11-11.md): `E3_FROZEN_NATIVE_ACTION_MEDIATION_NOT_SHOWN` (0/2 legal motor changes); P1.3 retained, Stage2 `NOT_ISSUED`.
 
 ## Most recent source-locked scientific observations
+
+- **Stage8-E2, causal gamma123 block NOT demonstrated:** [science one-shot #44637950471](https://github.com/josselin-orta-lab/individual-zero/actions/runs/44637950471), **64 newly allocated F0 populations**, 64 512 native G0/G1/G2 original lives, third independent root; two source-exact **64 512-life** technical repetitions Python 3.11/3.12 and **two cold audits** passed first [#44536464441](https://github.com/josselin-orta-lab/individual-zero/actions/runs/44536464441). Independent cold science original-gzip audit **64 512/64 512 PASS** plus independent primary reduction: DID mean **−0.0907118056 steps**, two-sided 97.5% CI **[−4.5894, +4.4079]**, Student t63 **−0.0463** vs |t|>2.2962 required, **31+/33−** populations; `STAGE8E2_CAUSAL_GAMMA_BLOCK_NOT_DEMONSTRATED_F0 / CLOSED_NO_RETRY`. Not evidence of absence, equivalence, gamma3-specific causality or generalization outside F0. [Full scientific result, proofs and original-archive retention limit](../../../docs/research/studies/stage8e2-gamma-block/STAGE8E2_PROSPECTIVE_SCIENTIFIC_RESULT_2026-11-20.md). **193 536 original technical+science gzip lives** were generated and cold-audited across three disjoint roots. General Stage2 remains `NOT_ISSUED`; I3 unregistered.
 
 - **Stage8-D:** [post hoc read-only](studies/stage8-parent-concentration/STAGE8D_POSTHOC_GENOMIC_DIVERSITY_RESULT_2026-11-19.md): 32 256 originals, r=-0.05955; no births.
 - **Stage8-C, S−M matched-parent advantage:** [science #44320492293](https://github.com/josselin-orta-lab/individual-zero/actions/runs/44320492293), 32 populations, 32 256 original G0/G1/G2 lives. Mean **+8.676** steps, one-sided 97.5% bound **+1.468 >0**, **22+/10−**, `STAGE8C_G2_SCORE_IDENTITY_ADVANTAGE_F0 / CLOSED_NO_RETRY`. [Independent 32 256-gzip audit #44406977082](https://github.com/josselin-orta-lab/individual-zero/actions/runs/44406977082) PASS, 4 608 mutations verified, zero births. [Original evidence and adverse cases](studies/stage8-parent-concentration/STAGE8C_PROSPECTIVE_SCIENTIFIC_RESULT_2026-11-19.md).
