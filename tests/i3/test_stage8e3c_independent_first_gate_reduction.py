@@ -32,9 +32,16 @@ def synthetic_full():
     e3b={"lived_steps":g["lived_steps"],"original_lives":144}
     for r in C.REASONS:
         e3b["original_count_"+r]=g["reasons"][r]
+        e3b["early20_per_observed_step_"+r] = (
+            g["windows"]["t001_020"]["reasons"][r]/
+            g["windows"]["t001_020"]["observed_steps"])
     e3a={
         "action_"+a+"_per_step":g["actions"][a]/g["lived_steps"] for a in C.A.ACTIONS
     }
+    for action in C.A.ACTIONS:
+        e3a["early20_action_"+action+"_per_step"]=(
+            g["windows"]["t001_020"]["actions"][action]/
+            g["windows"]["t001_020"]["observed_steps"])
     e3a["decision_energy_paid_per_step"]=sum(
         w["decision_energy_paid"] for w in g["windows"].values())/g["lived_steps"]
     e3a["learning_energy_paid_per_step"]=sum(
