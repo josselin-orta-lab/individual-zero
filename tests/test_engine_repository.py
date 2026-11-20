@@ -206,6 +206,18 @@ class EngineToolingTests(unittest.TestCase):
             sorted(blocked),
         )
 
+    def test_stage8f1b_corrected_pythonpath_proof_only_once(self):
+        from scripts.check_engine_repository import unexpected_workflows
+        allowed="i3-stage8f1b-matched-native-funding-proof-once-20261121.yml"
+        forbidden=(
+            "i3-stage8f1b-matched-native-funding-proof-once-20261121-retry.yml",
+            "i3-stage8f1b-matched-native-funding-proof-once-20261122.yml",
+            "i3-stage8f1b-new-native-births-once-20261121.yml",
+        )
+        names=[Path(".github/workflows/"+n) for n in (allowed,*forbidden)]
+        self.assertEqual(unexpected_workflows(names,active_ci="i1-current-ci.yml"),
+                         sorted(forbidden))
+
     def test_stage8f1b_matched_native_funding_one_shot_only(self):
         from scripts.check_engine_repository import unexpected_workflows
         allowed="i3-stage8f1b-matched-native-funding-once-20261120.yml"
