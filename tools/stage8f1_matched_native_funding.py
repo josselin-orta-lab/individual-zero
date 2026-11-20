@@ -49,7 +49,7 @@ STATES = (
      ((("dormir",), (-.4, -.3, -4., 0., 0.)),
       (("boire",), (0., 0., 35., 0., 0.))), True, None, "F1"),
     ("terminal_food_not_rescued", (.052, .15, 60., 90., 95.),
-     ((("dormir",), (3., -.15, -.4, .2, 4.)),), False, "dormir", "F1"),
+     ((("dormir",), (3., -.15, -.4, .2, 4.)),), False, None, "F1"),
     ("reference_funded_unchanged", (85., 75., 60., 90., 95.),
      ((("dormir",), (3., -.15, -.4, .2, 4.)),), False, None, "REFERENCE"),
 )
