@@ -206,6 +206,19 @@ class EngineToolingTests(unittest.TestCase):
             sorted(blocked),
         )
 
+    def test_stage8e3d_original_energy_aggregate_one_shot_only(self):
+        from scripts.check_engine_repository import unexpected_workflows
+        allowed="i3-stage8e3d-readonly-energy-ledger-once-20261120.yml"
+        foreign=(
+            "i3-stage8e3d-readonly-energy-ledger-once-20261120-retry.yml",
+            "i3-stage8e3d-readonly-energy-ledger-once-20261121.yml",
+            "i3-stage8e3d-new-native-gamma-simulation.yml",
+        )
+        workflows=[Path(".github/workflows/"+name) for name in (allowed,*foreign)]
+        self.assertEqual(
+            unexpected_workflows(workflows, active_ci="i1-current-ci.yml"),
+            sorted(foreign))
+
     def test_stage8e3c_original_timecourse_one_shot_only(self):
         from scripts.check_engine_repository import unexpected_workflows
         allowed="i3-stage8e3c-readonly-first-energy-gate-once-20261120.yml"
