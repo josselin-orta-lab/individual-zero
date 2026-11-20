@@ -123,3 +123,36 @@ class PaidMicrodecisionMind(Mind):
             "experimental":EVIDENCE,
             "offered_motor_options":len(offered),
             "paid_model_cycles":MICRO_WORK.cycles}
+
+
+class PaidMicrodecisionEqualPaidDiscardMind(PaidMicrodecisionMind):
+    """Development comparator: pay and compute SAME microchoice; discard output.
+
+    The control does NOT invent a free physical action, cannot change a fully
+    funded P1.3 reference decision, and is NOT a native runtime policy.
+    Its sole intervention is suppressing the result of the cheap branch AFTER
+    that branch has genuinely been evaluated and charged in both currencies.
+    """
+
+    def decide(self, cap, budget: CognitiveBudget):
+        prior_intention=self.intention
+        action,param,work,info=super().decide(cap,budget)
+        if info.get("candidate") != CANDIDATE:
+            return action,param,work,info
+        if info["funding"] == "NO_PROCESSING_BUDGET":
+            return action,param,work,info
+        if info["funding"] not in ("F1_PAID_SELF_SELECTED_ACTION",
+                                   "F1_PAID_VOLUNTARY_ABSTENTION"):
+            raise RuntimeError("unexpected microdecision control branch")
+        original_option=info["option"]
+        if work != MICRO_WORK or budget.work != MICRO_WORK:
+            raise RuntimeError("discard requires identical real prepaid work")
+        self.last=None
+        self.intention=prior_intention
+        return None,None,work,{
+            "funding":"F1_EQUAL_PAID_MICRO_RESULT_DISCARDED",
+            "option":"abstain",
+            "computed_and_discarded_option":original_option,
+            "candidate":CANDIDATE,
+            "experimental":EVIDENCE,
+            "paid_model_cycles":MICRO_WORK.cycles}
