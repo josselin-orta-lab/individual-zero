@@ -1,0 +1,64 @@
+{
+  "schema": "i3-stage8f1b-synthetic-native-matched-provenance-manifest/v0",
+  "status": "SOFTWARE_ONLY_MATCHED_NATIVE_DECISION_BILL_PARITY_PASS",
+  "no_scientific_births": 0,
+  "original_historical_p13_head": "03faff4b9c194a5288b92e394f6a75cbe62cd095",
+  "f1_source_head": "4014a59027cc53bcfb6e7a9c6e6c827e017711b9",
+  "f1b_synthetic_one_tick_source_head": "7719f4d3997daedb25fff6eb8b339e6760f541c0",
+  "actual_native_one_step_producer": {
+    "run_id": 44834616307,
+    "job": "matched_real_world_step_receipts",
+    "job_conclusion": "success",
+    "artifact_id": 14677558926,
+    "exact_artifact_name": "i3-stage8f1b-corrected-matched-native-24-step-receipts-44834616307",
+    "file": "STAGE8F1B_MATCHED_NATIVE_FULL.json",
+    "sha256": "9e645b8aed70c5cf68047c2cd25ddd50d4d9a5441a147d9c6a11531aec91c65a",
+    "byte_count": 31957
+  },
+  "native_readonly_independent_reduction": {
+    "source_head": "7d9ba45d08abbee3bf04dc5f8e6551295c72bc3f",
+    "run_id": 44835603856,
+    "run_attempt": 1,
+    "conclusion": "success",
+    "artifact_id": 14677359874,
+    "file": "STAGE8F1B_SECOND_NATIVE_PHYSICS.json",
+    "sha256": "77b4b130d5a5294b232919452828e340b6fbc6e6d0357a4553424da6776b0ac2",
+    "byte_count": 4220
+  },
+  "third_offline_reduction": {
+    "status": "OFFLINE_24_NATIVE_RECEIPTS_INDEPENDENT_PHYSICS_PARITY_PASS",
+    "file": "OFFLINE_NATIVE_FUNDING_RECHECK.json",
+    "sha256": "4d1d7fe7cca67f1bd7e3eadefc98d13b6e5cbbf99170a0f08cf0c294cfdf9bbc",
+    "byte_count": 3660,
+    "recalculated_native_original_sha256": "9e645b8aed70c5cf68047c2cd25ddd50d4d9a5441a147d9c6a11531aec91c65a",
+    "total_counts_match_independent_ci": true
+  },
+  "counts": {
+    "matched_population_units": null,
+    "matched_synthetic_states": 8,
+    "native_one_tick_receipts": 24,
+    "paired_native_cost_equal": 8,
+    "paid_microdecision_pairs": 5,
+    "unfunded_microdecision_pairs": 2,
+    "intact_reference_cases": 1,
+    "self_chosen_sleep_cases": 1,
+    "paid_abstention_cases": 4,
+    "native_terminal_death_receipts": 3
+  },
+  "original_only_status": "SYNTHETIC_FIRST_PERSON_STATE_NOT_RECONSTRUCTED_FROM_G2_MEMORY",
+  "strict_native_whole_life_evidence_chain": "NOT_CLAIMED",
+  "cognitive_budget_candidate_vs_discard": "EXACTLY_MATCHED_IN_BOTH_CURRENCIES",
+  "physical_outcome_candidate_vs_discard": "NOT_COST_MATCHED_AFTER_ACTION",
+  "original_stage8e2_causal_status": "STAGE8E2_CAUSAL_GAMMA_BLOCK_NOT_DEMONSTRATED_F0 / CLOSED_NO_RETRY",
+  "first_failed_source_run": {
+    "run_id": 44833916451,
+    "root_cause": "PYTHONPATH_IMPORT_MISSING",
+    "native_receipts_produced": 0
+  },
+  "second_failed_independent_job": {
+    "run_id": 44834616307,
+    "root_cause": "INDEPENDENT_JOB_ARTIFACT_NAME_MISMATCH",
+    "native_original_receipt_job": "PASS"
+  },
+  "archive_retention_note": "github_actions_90_days; long_term_artifact_custody_separate"
+}
