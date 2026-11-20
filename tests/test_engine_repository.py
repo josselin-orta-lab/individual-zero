@@ -11,6 +11,21 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class EngineToolingTests(unittest.TestCase):
 
+    def test_stage8f1c_pr_only_synthetic_learning_workflow_is_exact(self):
+        from scripts.check_engine_repository import unexpected_workflows
+        allowed = "i3-stage8f1c-paid-postaction-learning-proof.yml"
+        rejected = (
+            "i3-stage8f1c-paid-postaction-learning-cohort.yml",
+            "i3-stage8f1c-paid-postaction-learning-proof-retry.yml",
+            "i3-stage8f1c-g2-native-life-generator.yml",
+        )
+        workflows = [Path(".github/workflows/" + name)
+                     for name in (allowed, *rejected)]
+        self.assertEqual(
+            unexpected_workflows(workflows, active_ci="i1-current-ci.yml"),
+            sorted(rejected))
+
+
     def test_i0_archive_manifest_is_closed_over_tracked_paths(self):
         from scripts.check_engine_repository import archive_inventory_errors
 
