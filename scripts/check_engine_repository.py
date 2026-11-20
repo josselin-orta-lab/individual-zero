@@ -96,6 +96,9 @@ def unexpected_workflows(paths, *, active_ci: str) -> list[str]:
         "i3-stage8e3d-readonly-energy-ledger-once-20261120.yml",
         # F1B: first-only SYNTHETIC matched native one-tick funding receipts; no births.
         "i3-stage8f1b-matched-native-funding-once-20261120.yml",
+        # First technical attempt failed at import before proofs. New distinct,
+        # source-first-only proof has the explicit src Python module path.
+        "i3-stage8f1b-matched-native-funding-proof-once-20261121.yml",
     }
     return sorted(path.name for path in paths
                   if not path.name.startswith("i1-") and path.name not in allowed)
