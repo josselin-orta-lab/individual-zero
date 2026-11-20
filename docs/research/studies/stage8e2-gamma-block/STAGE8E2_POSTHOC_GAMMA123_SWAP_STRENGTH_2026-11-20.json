@@ -1,0 +1,38 @@
+{
+  "schema": "i3-stage8e2-posthoc-independent-gamma123-manipulation-strength/v0",
+  "status": "READONLY_EXPLORATORY_NO_NEW_LIVES_NO_CONFIRMATORY_PROMOTION",
+  "source_science_run_id": 44637950471,
+  "source_selection_g2_sha256": "b830e9e8500bdc32fa56d02bbbdac50fe1e475dad7c648ee532fb2ff57ffe3a7",
+  "source_science_result_sha256": "18ad42a1e68a0a7c1c2390bd397ee90e7872bdf398f0f5bac37d06bbfff8af45",
+  "gamma_genes": [
+    "gamma1",
+    "gamma2",
+    "gamma3"
+  ],
+  "G2_genome_records_checked": 6144,
+  "reciprocal_background_and_block_equalities_verified": true,
+  "matched_S_M_genome_pairs": 1536,
+  "identical_gamma123_triplets": 0,
+  "gamma123_triplets_changed": 1536,
+  "gamma123_pairs_all_three_genes_changed": 1518,
+  "gamma123_pair_absolute_L1_mean": 0.13285871223958334,
+  "gamma123_pair_absolute_L1_median": 0.1188475,
+  "gamma123_pair_absolute_L1_min": 0.005518000000000023,
+  "gamma123_pair_absolute_L1_max": 0.36746999999999996,
+  "gamma1_absolute_delta_mean": 0.10028854231770834,
+  "gamma2_absolute_delta_mean": 0.026500041015624996,
+  "gamma3_absolute_delta_mean": 0.006070128906250001,
+  "mean_population_gamma_L1_vs_primary_DID_pearson_exploratory": -0.0966985769981454,
+  "mean_population_gamma_L1_vs_absolute_primary_DID_pearson_exploratory": -0.10623686804293607,
+  "baseline_selected_matched_mean_diff_steps": 7.274522569444446,
+  "swapped_selected_matched_mean_diff_steps": 7.365234375,
+  "mean_primary_DID_steps": -0.09071180555555358,
+  "scientific_claim_authorized": false,
+  "interpretation_limits": [
+    "ASSOCIATION_ONLY_POSTHOC",
+    "ONE_F0_SAMPLE",
+    "NO_REANALYSIS_OF_PRIMARY_THRESHOLD",
+    "NO_NEW_BIRTHS",
+    "CANNOT_ATTRIBUTE_GAMMA3_ALONE"
+  ]
+}
