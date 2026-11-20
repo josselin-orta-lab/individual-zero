@@ -10,7 +10,8 @@ from i3.modules.body import (ACTION_COSTS, BodyLaws, CognitiveBudget,
 from i3.modules.genome import midpoint
 from i3.modules.mind import Mind
 from i3.modules.stage8f1_paid_microdecision_mind import (
-    CANDIDATE, EVIDENCE, MICRO_WORK, PaidMicrodecisionMind)
+    CANDIDATE, EVIDENCE, MICRO_WORK, PaidMicrodecisionMind,
+    PaidMicrodecisionEqualPaidDiscardMind)
 
 
 def cap(energy=.052, food=75., water=75., integrity=90., vigilance=95.,
@@ -146,6 +147,41 @@ class Stage8F1UnwiredPaidMicrodecisionTests(unittest.TestCase):
         # Paying the microdecision is separate and not a sleep-action debit.
         paid,_=transition(start,"dormir",laws,MICRO_WORK)
         self.assertAlmostEqual(paid[0],23.-cognitive_cost(laws,MICRO_WORK)[0])
+
+    def test_equal_paid_discard_computes_learned_choice_but_never_motors(self):
+        c=cap()
+        real=self.mind()
+        shadow=PaidMicrodecisionEqualPaidDiscardMind(midpoint(),1234)
+        real._read_plan_prediction=prediction(sleep_energy=3.)
+        shadow._read_plan_prediction=prediction(sleep_energy=3.)
+        rb=CognitiveBudget(c["body"],BodyLaws())
+        sb=CognitiveBudget(c["body"],BodyLaws())
+        action,_,real_work,ri=real.decide(c,rb)
+        control_action,_,control_work,si=shadow.decide(c,sb)
+        self.assertEqual(action,"dormir")
+        self.assertIsNone(control_action)
+        self.assertEqual(real_work,control_work)
+        self.assertEqual(real_work,MICRO_WORK)
+        self.assertEqual(rb.remaining,sb.remaining)
+        self.assertEqual(sb.work,real_work)
+        self.assertEqual(si["funding"],"F1_EQUAL_PAID_MICRO_RESULT_DISCARDED")
+        self.assertEqual(si["computed_and_discarded_option"],ri["option"])
+        self.assertIsNone(shadow.last)
+        self.assertIsNone(shadow.intention)
+        slept,_=transition(c["body"],action,BodyLaws(),real_work)
+        inactive,_=transition(c["body"],control_action,BodyLaws(),control_work)
+        self.assertGreater(slept[0],inactive[0])
+        self.assertAlmostEqual(inactive[0],sb.remaining[0])
+
+    def test_equal_paid_discard_cannot_restore_work_if_micro_unfunded(self):
+        m=PaidMicrodecisionEqualPaidDiscardMind(midpoint(),1234)
+        c=cap(energy=.03)
+        b=CognitiveBudget(c["body"],BodyLaws())
+        action,_,work,info=m.decide(c,b)
+        self.assertIsNone(action)
+        self.assertEqual(info["funding"],"NO_PROCESSING_BUDGET")
+        self.assertEqual(work,CognitiveWork())
+        self.assertEqual(b.work,CognitiveWork())
 
     def test_micro_work_is_positive_two_currency_and_native_law_dependent(self):
         cost=cognitive_cost(BodyLaws(),MICRO_WORK)
