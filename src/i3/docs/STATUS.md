@@ -19,6 +19,7 @@
 
 ## Most recent source-locked scientific observations
 
+- **Stage8-E3A:** [36 864 gzip G2 : motricité et coûts post hoc](../../../docs/research/studies/stage8e3a-original-motor-cost/STAGE8E3A_ORIGINAL_G2_MOTOR_COST_RESULT_2026-11-20.md), sans causalité nouvelle.
 - **Stage8-E2 gamma123 causal, negative:** [science #44637950471](https://github.com/josselin-orta-lab/individual-zero/actions/runs/44637950471) **64 512 cold-audited native lives** after [2 technical runs #44536464441](https://github.com/josselin-orta-lab/individual-zero/actions/runs/44536464441) (**129 024**); **64 F0 populations**, DID **−0.0907** steps, t63 **−0.0463**, IC bilatéral 97,5 % **[−4.589,+4.408]**, **31+/33−**. `STAGE8E2_CAUSAL_GAMMA_BLOCK_NOT_DEMONSTRATED_F0 / CLOSED_NO_RETRY`. [Report, full evidence and 90-day artifact retention](../../../docs/research/studies/stage8e2-gamma-block/STAGE8E2_PROSPECTIVE_SCIENTIFIC_RESULT_2026-11-20.md). Not an absence/equivalence proof; Stage2 `NOT_ISSUED`.
 - **Stage8-D:** [read-only genomic diversity](studies/stage8-parent-concentration/STAGE8D_POSTHOC_GENOMIC_DIVERSITY_RESULT_2026-11-19.md), 32 256 originals, r=−0.05955, no births.
 - **Stage8-C:** S−M **+8.676**, borne 97.5 % **+1.468**, **22+/10−** ; [32 256-original audit PASS](https://github.com/josselin-orta-lab/individual-zero/actions/runs/44406977082), [report](studies/stage8-parent-concentration/STAGE8C_PROSPECTIVE_SCIENTIFIC_RESULT_2026-11-19.md).
