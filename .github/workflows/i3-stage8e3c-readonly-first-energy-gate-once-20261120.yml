@@ -1,0 +1,225 @@
+# First-only source-pinned Stage8-E3C historical-G2 original cold read.
+# No native World, no life generation, no gamma manipulation, no causal test.
+name: I3 Stage8-E3C read-only first energy gate and original G2 temporal trajectory
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/i3-stage8e3c-readonly-first-energy-gate-once-20261120.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: i3-stage8e3c-closed-g2-original-timecourse-20261120
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    if: ${{ github.run_attempt == 1 }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Require exact fresh first source and preserved Stage8-E2 negative science
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os,subprocess
+          from tools import stage8e3c_first_energy_gate_timecourse as C
+          from tools import stage8e3c_independent_first_gate_reduction as I
+          path=".github/workflows/i3-stage8e3c-readonly-first-energy-gate-once-20261120.yml"
+          sha=os.environ["GITHUB_SHA"]
+          hist=subprocess.check_output(["git","log","--format=%H","--",path],text=True).splitlines()
+          assert hist==[sha], "no amendment or second one-shot source"
+          change=subprocess.check_output(["git","diff-tree","--no-commit-id","--name-status","-r",sha,"--",path],text=True).split()
+          assert change==["A",path], "only original first-add source is executable"
+          assert not subprocess.check_output(["git","status","--porcelain","--untracked-files=all"]).strip()
+          assert C.A.RUN_ID==44637950471 and C.A.ORIGINALS==36864
+          assert C.SOURCE_E3B_SHA==I.SOURCE_B
+          assert C.SOURCE_E3B_SECOND_SHA=="9ab20385db8529b2596d54d931a5107edf34b7cfb7287af8a805afda6e7e6f84"
+          assert C.A.ENGINE_HEAD=="03faff4b9c194a5288b92e394f6a75cbe62cd095"
+          assert C.B.SOURCE_E3A_SHA=="16e69fdcb664f73b7d67fa6e620017dc30e78bec834ddb148a2c58c6b0939d8b"
+          assert C.PRIOR==I.PRIOR
+          assert C.WINDOWS==((1,20),(21,100),(101,200),(201,400))
+          print("E3C_EXACT_FIRST_SOURCE_FROZEN_READONLY_G2_PASS")
+          PY
+          python -m unittest discover -s tests/i3 -p 'test_stage8e3c_*.py' -v
+          python -m unittest discover -s tests -p 'test_engine_repository.py' -v
+          python scripts/check_engine_repository.py --json
+
+  read_only_all_g2_lives:
+    needs: preflight
+    if: ${{ github.run_attempt == 1 }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    env:
+      S: /tmp/stage8e3c-original-readonly
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Download original 36,864 G2 native lives (not aggregated/replayed)
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8e2-science-G2-original-gzip-44637950471
+          repository: josselin-orta-lab/individual-zero
+          run-id: 44637950471
+          github-token: ${{ github.token }}
+          path: /tmp/stage8e3c-original-readonly/G2
+      - name: Download exact native G2 manifest in original science custody
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8e2-science-native-metadata-44637950471
+          repository: josselin-orta-lab/individual-zero
+          run-id: 44637950471
+          github-token: ${{ github.token }}
+          path: /tmp/stage8e3c-original-readonly/metadata
+      - name: Download fixed original science outcome + cold full original audit
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8e2-science-original-cold-audit-and-primary-44637950471
+          repository: josselin-orta-lab/individual-zero
+          run-id: 44637950471
+          github-token: ${{ github.token }}
+          path: /tmp/stage8e3c-original-readonly/science
+      - name: Download independently reduced original scientific primary
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8e2-science-independent-confirmatory-gate-44637950471
+          repository: josselin-orta-lab/individual-zero
+          run-id: 44637950471
+          github-token: ${{ github.token }}
+          path: /tmp/stage8e3c-original-readonly/primary
+      - name: Download historical Stage8-E3A original action and cognition descriptors
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8e3a-36864-original-g2-readonly-telemetry-44706318958
+          repository: josselin-orta-lab/individual-zero
+          run-id: 44706318958
+          github-token: ${{ github.token }}
+          path: /tmp/stage8e3c-original-readonly/e3a
+      - name: Download independent Stage8-E3A reduction
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8e3a-independent-motor-and-cost-population-report-44706318958
+          repository: josselin-orta-lab/individual-zero
+          run-id: 44706318958
+          github-token: ${{ github.token }}
+          path: /tmp/stage8e3c-original-readonly/e3a-independent
+      - name: Download Stage8-E3B original funding-gate cause full report
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8e3b-36864-original-decision-funding-causes-44715847132
+          repository: josselin-orta-lab/individual-zero
+          run-id: 44715847132
+          github-token: ${{ github.token }}
+          path: /tmp/stage8e3c-original-readonly/e3b
+      - name: Download independent Stage8-E3B gate reduction
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8e3b-independent-funding-cause-populations-44715847132
+          repository: josselin-orta-lab/individual-zero
+          run-id: 44715847132
+          github-token: ${{ github.token }}
+          path: /tmp/stage8e3c-original-readonly/e3b-independent
+      - name: Cold rehash all 36,864 original gzip and original cognitive chains, then time-window audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in \
+            "$S/G2/G2.tar" "$S/metadata/METADATA.tar" \
+            "$S/science/SCIENCE_FINAL.json" "$S/science/COLD_AUDIT.json" \
+            "$S/primary/INDEPENDENT_STATISTICS.json" \
+            "$S/e3a/STAGE8E3A_FULL.json" "$S/e3a-independent/SECOND_REDUCTION.json" \
+            "$S/e3b/STAGE8E3B_FULL.json" "$S/e3b-independent/SECOND_E3B_REDUCTION.json"; do
+            test -s "$file" || exit 1
+          done
+          python -m tools.stage8e3c_first_energy_gate_timecourse \
+            --metadata-tar "$S/metadata/METADATA.tar" \
+            --g2-tar "$S/G2/G2.tar" \
+            --science-final "$S/science/SCIENCE_FINAL.json" \
+            --cold-audit "$S/science/COLD_AUDIT.json" \
+            --independent-statistics "$S/primary/INDEPENDENT_STATISTICS.json" \
+            --old-e3a-full "$S/e3a/STAGE8E3A_FULL.json" \
+            --old-e3a-second "$S/e3a-independent/SECOND_REDUCTION.json" \
+            --old-e3b-full "$S/e3b/STAGE8E3B_FULL.json" \
+            --old-e3b-second "$S/e3b-independent/SECOND_E3B_REDUCTION.json" \
+            --output "$S/STAGE8E3C_FULL.json" > "$S/ORIGINAL_E3C_RECEIPT.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          x=json.loads((Path(os.environ["S"])/"STAGE8E3C_FULL.json").read_bytes())
+          assert x["original_g2_compressed_and_decoded_sha256_rechecked"]==36864
+          assert x["original_full_trace_and_funding_chains_rechecked"]==36864
+          assert len(x["population_rows"])==64
+          assert x["new_native_lives"]==0
+          assert x["stage8e2_frozen_primary"]=="STAGE8E2_CAUSAL_GAMMA_BLOCK_NOT_DEMONSTRATED_F0"
+          print("E3C_ALL_ORIGINAL_FIRST_ENERGY_FAILURE_WINDOWS_AUDITED")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage8e3c-original-first-energy-gate-timecourse-${{ github.run_id }}
+          path: |
+            /tmp/stage8e3c-original-readonly/STAGE8E3C_FULL.json
+            /tmp/stage8e3c-original-readonly/ORIGINAL_E3C_RECEIPT.json
+          if-no-files-found: error
+          retention-days: 90
+
+  independent_64_population_timecourse:
+    if: ${{ github.run_attempt == 1 }}
+    needs: read_only_all_g2_lives
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      S: /tmp/stage8e3c-independent
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: stage8e3c-original-first-energy-gate-timecourse-${{ github.run_id }}
+          path: /tmp/stage8e3c-independent
+      - name: Recalculate 64-population temporal windows and observed first-failure incidence from raw numerators
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m tools.stage8e3c_independent_first_gate_reduction \
+            "$S/STAGE8E3C_FULL.json" "$S/STAGE8E3C_SECOND.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          x=json.loads((Path(os.environ["S"])/"STAGE8E3C_SECOND.json").read_bytes())
+          assert x["population_units"]==64
+          assert x["original_g2_lives_checked_prior_job"]==36864
+          assert x["new_native_lives"]==0
+          assert x["original_stage8e2_negative_primary_unchanged"]=="STAGE8E2_CAUSAL_GAMMA_BLOCK_NOT_DEMONSTRATED_F0"
+          assert x["pure_descriptive_no_statistical_significance"] is True
+          print("E3C_INDEPENDENT_ORIGINAL_TEMPORAL_REDUCTION_POSTHOC_PASS")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage8e3c-independent-64-population-first-gate-${{ github.run_id }}
+          path: /tmp/stage8e3c-independent/STAGE8E3C_SECOND.json
+          if-no-files-found: error
+          retention-days: 90
