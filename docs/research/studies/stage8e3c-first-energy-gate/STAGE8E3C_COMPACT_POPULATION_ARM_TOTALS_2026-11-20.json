@@ -1,0 +1,164 @@
+{
+  "schema": "i3-stage8e3c-published-original-g2-compact-counts/v0",
+  "date": "2026-11-20",
+  "scope": "POSTHOC_DESCRIPTIVE_ONLY",
+  "run_id": 44737606261,
+  "run_attempt": 1,
+  "engine_git_head": "03faff4b9c194a5288b92e394f6a75cbe62cd095",
+  "audit_git_head": "93775dba3979911468aecaa1898c9328a0d604b5",
+  "historical_g2_manifest_sha256": "61eb74a1f429c2f9189ee13da5c52593776d2b6f9d2b2d8ac41bfdea31a6ba00",
+  "original_full_report_sha256": "c99011ff4dc2bc7d57eb4edea5e68fa3a273777d984ddae8073777c38e5e4e23",
+  "independent_report_sha256": "b3ed0a35f4b51d9b77e8d34edb7f48b7d5858de05036018868da237ecffd2fd0",
+  "g2_originals_verified": 36864,
+  "population_units": 64,
+  "study_origin_first_failures": 17560,
+  "motor_recovery_lives_after_first_failure": 0,
+  "negative_stage8e2_causal_primary_preserved": "STAGE8E2_CAUSAL_GAMMA_BLOCK_NOT_DEMONSTRATED_F0",
+  "descriptive_incidence_DID_mean": -0.03472222222222222,
+  "descriptive_DID_population_signs": {
+    "positive": 23,
+    "negative": 37,
+    "zero": 4
+  },
+  "arms": {
+    "S_sham": {
+      "original_lives": 9216,
+      "lived_steps": 2335876,
+      "first_failure_lives": 4028,
+      "never_observed_first_failure": 5188,
+      "recovery_lives": 0,
+      "paid_actions_after_first_failure": 0,
+      "dead_after_first_failure": 3472,
+      "censored_after_first_failure": 556,
+      "mean_first_failure_tick_observed": 128.8,
+      "windows": {
+        "t001_020": {
+          "steps": 184320,
+          "at_risk_start": 9216,
+          "first_failures": 0
+        },
+        "t021_100": {
+          "steps": 733041,
+          "at_risk_start": 9216,
+          "first_failures": 2201
+        },
+        "t101_200": {
+          "steps": 629125,
+          "at_risk_start": 6650,
+          "first_failures": 850
+        },
+        "t201_400": {
+          "steps": 789390,
+          "at_risk_start": 4283,
+          "first_failures": 977
+        }
+      }
+    },
+    "S_swap": {
+      "original_lives": 9216,
+      "lived_steps": 2337208,
+      "first_failure_lives": 4293,
+      "never_observed_first_failure": 4923,
+      "recovery_lives": 0,
+      "paid_actions_after_first_failure": 0,
+      "dead_after_first_failure": 3737,
+      "censored_after_first_failure": 556,
+      "mean_first_failure_tick_observed": 126.08,
+      "windows": {
+        "t001_020": {
+          "steps": 184320,
+          "at_risk_start": 9216,
+          "first_failures": 0
+        },
+        "t021_100": {
+          "steps": 733105,
+          "at_risk_start": 9216,
+          "first_failures": 2400
+        },
+        "t101_200": {
+          "steps": 634888,
+          "at_risk_start": 6485,
+          "first_failures": 896
+        },
+        "t201_400": {
+          "steps": 784895,
+          "at_risk_start": 4127,
+          "first_failures": 997
+        }
+      }
+    },
+    "M_sham": {
+      "original_lives": 9216,
+      "lived_steps": 2268834,
+      "first_failure_lives": 4647,
+      "never_observed_first_failure": 4569,
+      "recovery_lives": 0,
+      "paid_actions_after_first_failure": 0,
+      "dead_after_first_failure": 4094,
+      "censored_after_first_failure": 553,
+      "mean_first_failure_tick_observed": 119.52,
+      "windows": {
+        "t001_020": {
+          "steps": 184320,
+          "at_risk_start": 9216,
+          "first_failures": 0
+        },
+        "t021_100": {
+          "steps": 732980,
+          "at_risk_start": 9216,
+          "first_failures": 2749
+        },
+        "t101_200": {
+          "steps": 616526,
+          "at_risk_start": 6113,
+          "first_failures": 923
+        },
+        "t201_400": {
+          "steps": 735008,
+          "at_risk_start": 3774,
+          "first_failures": 975
+        }
+      }
+    },
+    "M_swap": {
+      "original_lives": 9216,
+      "lived_steps": 2269330,
+      "first_failure_lives": 4592,
+      "never_observed_first_failure": 4624,
+      "recovery_lives": 0,
+      "paid_actions_after_first_failure": 0,
+      "dead_after_first_failure": 4018,
+      "censored_after_first_failure": 574,
+      "mean_first_failure_tick_observed": 119.66,
+      "windows": {
+        "t001_020": {
+          "steps": 184320,
+          "at_risk_start": 9216,
+          "first_failures": 0
+        },
+        "t021_100": {
+          "steps": 733019,
+          "at_risk_start": 9216,
+          "first_failures": 2748
+        },
+        "t101_200": {
+          "steps": 616322,
+          "at_risk_start": 6136,
+          "first_failures": 886
+        },
+        "t201_400": {
+          "steps": 735669,
+          "at_risk_start": 3805,
+          "first_failures": 958
+        }
+      }
+    }
+  },
+  "limitations": [
+    "OBSERVATIONAL_NOT_CAUSAL_MEDIATION",
+    "POSTHOC_MULTIPLE_DESCRIPTORS",
+    "RIGHT_CENSORED_NO_FAILURE_OBSERVED",
+    "TIME_WINDOW_SURVIVOR_SELECTION",
+    "NO_NEW_NATIVE_LIVES"
+  ]
+}
