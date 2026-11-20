@@ -1,0 +1,28 @@
+# Stage8-E3C · frozen exploratory read-only temporal protocol
+
+**20 November 2026, before opening the G2 time-course results.** This is a NEW descriptive reduction of the **SAME** closed G2 originals, not a fresh cohort, confirmatory mediation test, rerun or retry. Stage8-E2's original precommitted negative finding **`STAGE8E2_CAUSAL_GAMMA_BLOCK_NOT_DEMONSTRATED_F0 / CLOSED_NO_RETRY`** is preserved unconditionally.
+
+## Falsifiable question and source pins
+
+The [Stage8-E3B cold original-gzip finding](../stage8e3b-funding-gates/STAGE8E3B_ORIGINAL_G2_FUNDING_GATE_RESULT_2026-11-20.md) identifies low decision-time energy, not vigilance, as the direct reason for `NO_PROCESSING_BUDGET`. Here we distinguish upstream **observed time ordering**: what motor actions, paid cognition and physical reserves appear before the first gate failure, and can a life issue a funded motor action afterward?
+
+Original data: [science #44637950471](https://github.com/josselin-orta-lab/individual-zero/actions/runs/44637950471), G2 gzip artifact `14601222013`, original metadata `14601206944`, cold audit/negative primary `14601838862`, independent primary `14601778656`. Fixed native engine HEAD `03faff4b9c194a5288b92e394f6a75cbe62cd095` and source SHA256 `e816ff5f5ee679253fc57f6e9ee79d21dff73dd72d6adf3c7f55ba7aa0f3e7f6`. G2 manifest SHA256 `61eb74a1f429c2f9189ee13da5c52593776d2b6f9d2b2d8ac41bfdea31a6ba00`.
+
+Required existing posthoc invariants, independently published before this read:
+- [E3A #44706318958](https://github.com/josselin-orta-lab/individual-zero/actions/runs/44706318958), native full telemetry report SHA256 `16e69fdcb664f73b7d67fa6e620017dc30e78bec834ddb148a2c58c6b0939d8b` and independent reducer SHA256 `16040d0da069ac25bb3be014729a129f1202d2f7812b13c688466013f45be027`.
+- [E3B #44715847132](https://github.com/josselin-orta-lab/individual-zero/actions/runs/44715847132), gate report SHA256 `c0709ad5ff8491538eab5fcb4f93bd854502d3aec9714878550426a88a179720` and independent reducer SHA256 `9ab20385db8529b2596d54d931a5107edf34b7cfb7287af8a805afda6e7e6f84`.
+
+## Method locked before temporal results
+
+1. Re-open **every one of 36,864 G2 original gzip** as its original compressed/decoded bytes. Rehash both SHA256; verify precise birth identity, WorldSpec, source, genome, all first-person body trace and cognitive-payment terminal chain. Fail closed if any original missing, duplicate, altered or foreign. No new native worlds, brains or offspring.
+2. For each life, record the **first observed t** of `trace[t].info.funding=NO_PROCESSING_BUDGET`, or **NEVER_OBSERVED** if death/horizon comes first; do not interpret NEVER_OBSERVED as impossibility of a future failure. Record pre-gate energy/vigilance, up to the **10 preceding observed steps** (not padded), actions, real paid energy/vigilance, terminal type, any subsequent funded action and subsequent observed lifetime. A return to a funded action is **measured rather than forbidden**.
+3. Fixed disjoint windows: **t=1–20**, **21–100**, **101–200**, **201–400**, original absolute World time, not time since first failure. For each window report observed step exposure, alive lives entering window, lives entering before first failure, first failures, physical actions and funding reasons, decision/learning energy/vigilance paid, predecision energy and end-step energy/water/food. If a denominator is absent: **NULL**, never zero or imputed. No steps after terminal death.
+4. Reduce **64 populations × four G2 arms**, 144 original lives each. The 64 populations, not 36,864 lives or 9.2m steps, remain the only independent comparison units. For every descriptor report four arm means over populations and the already familiar exploratory `(S_sham−M_sham)−(S_swap−M_swap)`, but **never a new p-value, subgroup significance, mediation coefficient or scientific GO**. Label any conditional first-failure time as **observed-only**, with appropriate survivor selection.
+5. Each population-arm's original motor counts, time-window exposures and funding reasons **must exactly reconstruct** published E3A and E3B rows, especially all 1,796,231 `NO_PROCESSING_BUDGET` steps; first-failure windows must partition every observed gate onset once, and costs must reproduce published decision/learning paid-energy rates.
+6. A **separate source-independent reducer** checks the raw 64×4×4 window ledger and numerators/denominators and reproduces all descriptive four-arm comparisons from those rows, without importing the streaming reader. Tests must reject altered timestamps, missing exposure, fabricated recovery/first failure, bill drift, absent original evidence and a changed historical primary.
+
+## Claim boundaries
+
+Observing a terminal decision-funding trap would identify an **architectural loss of motor choice once energy is depleted**. It would not demonstrate that gamma123 **causes the depletion**, that a particular gamma gene mediates survival, or that the effect generalizes outside F0. The genotype/World pairing shares specifications, not the identical life's random motor stream; this is NOT an individually paired motor counterfactual. Long-lived individuals contribute more late steps; rates per observed step have survival selection. Death and censoring remain visible. Original Stage8-E2 evidence and no-retry roots are not modified.
+
+**Stop:** any conflicting manifest/chain/E3A/E3B number → `NO_DESCRIPTIVE_VERDICT`, no correction by rerunning simulation. Storage of the nine existing gzip archives beyond GitHub Actions' **90-day** lifetime is separate [#1463](https://github.com/josselin-orta-lab/individual-zero/issues/1463).
