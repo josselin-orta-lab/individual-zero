@@ -235,7 +235,7 @@ def inspect_case(case):
         "branch":branch,
         "synthetic_predecision_state":{
             "body":list(body),
-            "capture":prior_capture,
+            "capture":json.loads(canonical(prior_capture)),
             "capture_sha256":shared_capture_sha,
             "learned_effect_observations":[{"key":list(k),"delta":list(delta)}
                                             for k,delta in experiences],
