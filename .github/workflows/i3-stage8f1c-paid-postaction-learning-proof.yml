@@ -1,0 +1,104 @@
+# Development-only synthetic native payment/learning audit. No run_life,
+# birth, scientific cohort, G2 historical replay, or Stage8-E2 retry.
+name: I3 Stage8-F1C synthetic native paid postaction learning
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/stage8f1c_paid_postaction_learning.py'
+      - 'tools/stage8f1c_independent_postaction_audit.py'
+      - 'tests/i3/test_stage8f1c_paid_postaction_learning.py'
+      - '.github/workflows/i3-stage8f1c-paid-postaction-learning-proof.yml'
+permissions:
+  contents: read
+
+jobs:
+  source_anchored_reproducible_native_microsteps:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: "src:."
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Fail-closed dedicated F1C synthetic falsifiers
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests/i3 -p 'test_stage8f1c_paid_postaction_learning.py' -v
+          python scripts/check_engine_repository.py --json
+      - name: Two separate deterministic source-matched producer processes
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1c_paid_postaction_learning --output "$RUNNER_TEMP/F1C_PAID_NATIVE_ORIGINAL.json"
+          python -m tools.stage8f1c_paid_postaction_learning --output "$RUNNER_TEMP/F1C_PAID_NATIVE_REPRODUCED.json"
+          cmp "$RUNNER_TEMP/F1C_PAID_NATIVE_ORIGINAL.json" "$RUNNER_TEMP/F1C_PAID_NATIVE_REPRODUCED.json"
+          python - <<'PY'
+          import json, os, pathlib
+          p = pathlib.Path(os.environ["RUNNER_TEMP"]) / "F1C_PAID_NATIVE_ORIGINAL.json"
+          r = json.loads(p.read_bytes())
+          assert r["native_world_step_calls_per_report"] == 3
+          assert r["native_full_lives_created"] == r["new_scientific_cohorts"] == 0
+          assert r["frozen_negative_stage8e2"].endswith("CLOSED_NO_RETRY")
+          print("F1C_TWO_BYTE_IDENTICAL_NATIVE_SYNTHETIC_PROOFS_NO_BIRTH_PASS")
+          PY
+          sha256sum "$RUNNER_TEMP/F1C_PAID_NATIVE_ORIGINAL.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: i3-stage8f1c-native-original-and-reproduced-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/F1C_PAID_NATIVE_ORIGINAL.json
+            ${{ runner.temp }}/F1C_PAID_NATIVE_REPRODUCED.json
+          if-no-files-found: error
+          retention-days: 90
+
+  cold_independent_two_currency_and_memory_reduction:
+    needs: source_anchored_reproducible_native_microsteps
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: i3-stage8f1c-native-original-and-reproduced-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1c-original
+      - name: Independent standard-library arithmetic over cold original bytes
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1c_independent_postaction_audit \
+            "$RUNNER_TEMP/f1c-original/F1C_PAID_NATIVE_ORIGINAL.json" \
+            "$RUNNER_TEMP/F1C_INDEPENDENT_COLD_AUDIT.json"
+          python - <<'PY'
+          import json, os, pathlib, hashlib
+          base=pathlib.Path(os.environ["RUNNER_TEMP"])
+          p=base/"f1c-original"/"F1C_PAID_NATIVE_ORIGINAL.json"
+          q=base/"f1c-original"/"F1C_PAID_NATIVE_REPRODUCED.json"
+          a=json.loads((base/"F1C_INDEPENDENT_COLD_AUDIT.json").read_bytes())
+          assert p.read_bytes() == q.read_bytes()
+          assert a["source_report_sha256"] == hashlib.sha256(p.read_bytes()).hexdigest()
+          assert a["status"] == "SOFTWARE_ONLY_NATIVE_POSTACTION_PAID_LEARNING_RETENTION_PASS"
+          assert a["paired_native_action_and_learning_cases"] == 1
+          assert a["native_world_step_receipts_verified"] == 3
+          assert a["paid_learning_computations"] == 2
+          assert a["retained_paid_updates"] == a["equal_paid_discarded_updates"] == 1
+          assert a["full_lives"] == a["scientific_cohorts"] == 0
+          assert a["historical_g2_memory_equivalence"] == "NOT_DEMONSTRATED"
+          print("F1C_COLD_INDEPENDENT_REAL_PAYMENT_AND_PERSONAL_LEARNING_PASS")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: i3-stage8f1c-independent-cold-learning-audit-${{ github.run_id }}
+          path: ${{ runner.temp }}/F1C_INDEPENDENT_COLD_AUDIT.json
+          if-no-files-found: error
+          retention-days: 90
