@@ -1,6 +1,6 @@
 # I3: current status and agent handoff
 
-**Updated:** 19 November 2026. This is the **short current entrypoint**. The complete, byte-identical former 2,362-line status and its dated decisions are preserved in [STATUS_HISTORY_2026-11-16.md](STATUS_HISTORY_2026-11-16.md) (original Git blob `3d4f934904ed1c5e129279a672adb6b3a52aa0cd`). This page is a navigation summary, **not a scientific receipt**. Recheck live branch HEAD, artifacts and original protocols.
+**Updated:** 20 November 2026. This is the **short current entrypoint**. The complete, byte-identical former 2,362-line status and its dated decisions are preserved in [STATUS_HISTORY_2026-11-16.md](STATUS_HISTORY_2026-11-16.md) (original Git blob `3d4f934904ed1c5e129279a672adb6b3a52aa0cd`). This page is a navigation summary, **not a scientific receipt**. Recheck live branch HEAD, artifacts and original protocols.
 
 ## Authority and current boundaries
 
@@ -19,13 +19,14 @@
 
 ## Most recent source-locked scientific observations
 
-- **Stage8-D:** [post hoc read-only](studies/stage8-parent-concentration/STAGE8D_POSTHOC_GENOMIC_DIVERSITY_RESULT_2026-11-19.md): 32 256 originals, r=-0.05955; no births.
-- **Stage8-C, S−M matched-parent advantage:** [science #44320492293](https://github.com/josselin-orta-lab/individual-zero/actions/runs/44320492293), 32 populations, 32 256 original G0/G1/G2 lives. Mean **+8.676** steps, one-sided 97.5% bound **+1.468 >0**, **22+/10−**, `STAGE8C_G2_SCORE_IDENTITY_ADVANTAGE_F0 / CLOSED_NO_RETRY`. [Independent 32 256-gzip audit #44406977082](https://github.com/josselin-orta-lab/individual-zero/actions/runs/44406977082) PASS, 4 608 mutations verified, zero births. [Original evidence and adverse cases](studies/stage8-parent-concentration/STAGE8C_PROSPECTIVE_SCIENTIFIC_RESULT_2026-11-19.md).
-- **Stage8-B, ecology interaction negative:** [science #44060101150](https://github.com/josselin-orta-lab/individual-zero/actions/runs/44060101150), 32 populations, Hotelling **p=0.6577705** vs alpha 0.025: `STAGE8B_NO_INTERACTION_DEMONSTRATED_F0 / CLOSED_NO_RETRY`. [23 040-gzip audit PASS](https://github.com/josselin-orta-lab/individual-zero/actions/runs/44126032148); [report](studies/stage8-ecology-interaction/STAGE8B_PROSPECTIVE_SCIENTIFIC_RESULT_2026-11-17.md).
-- **Stage8-A, positive mean:** [science #43950098410](https://github.com/josselin-orta-lab/individual-zero/actions/runs/43950098410), G2 mean **+14.4874**, lower 97.5% bound **+7.9933**, **23+/9−**, `STAGE8A_MEAN_PERSISTENCE_ADVANTAGE_F0 / CLOSED_NO_RETRY`. [Original-gzip audit PASS](studies/stage8-mean-persistence/STAGE8A_INDEPENDENT_READONLY_AUDIT_RESULT_2026-11-17.md).
-- **Stage6-light, negative:** [science #43769581930](https://github.com/josselin-orta-lab/individual-zero/actions/runs/43769581930), `beta_u_eff` signs **9+/7−** vs 13+/16 required; `CLOSED_NO_RETRY`.
-- **Stage7, negative strict sign rule:** [science #43830174125](https://github.com/josselin-orta-lab/individual-zero/actions/runs/43830174125), **12+/4−** vs 13+/16 required, `PERSISTENCE_G2_NO_REPRODUCIBLE_ADVANTAGE_F0 / CLOSED_NO_RETRY`; [protocol](studies/stage7-persistence/STAGE7_PERSISTENCE_PROTOCOL_2026-11-16.md).
-- **Distinct estimands:** Stage6 direction, Stage7 sign threshold, Stage8-A G2 mean, Stage8-B F0 interaction, Stage8-C S−M mean. No gene mechanism or out-of-F0 adaptation demonstrated.
+- **Stage8-E2 gamma123 causal, negative:** [science #44637950471](https://github.com/josselin-orta-lab/individual-zero/actions/runs/44637950471) **64 512 cold-audited native lives** after [2 technical runs #44536464441](https://github.com/josselin-orta-lab/individual-zero/actions/runs/44536464441) (**129 024**); **64 F0 populations**, DID **−0.0907** steps, t63 **−0.0463**, IC bilatéral 97,5 % **[−4.589,+4.408]**, **31+/33−**. `STAGE8E2_CAUSAL_GAMMA_BLOCK_NOT_DEMONSTRATED_F0 / CLOSED_NO_RETRY`. [Report, full evidence and 90-day artifact retention](../../../docs/research/studies/stage8e2-gamma-block/STAGE8E2_PROSPECTIVE_SCIENTIFIC_RESULT_2026-11-20.md). Not an absence/equivalence proof; Stage2 `NOT_ISSUED`.
+- **Stage8-D:** [read-only genomic diversity](studies/stage8-parent-concentration/STAGE8D_POSTHOC_GENOMIC_DIVERSITY_RESULT_2026-11-19.md), 32 256 originals, r=−0.05955, no births.
+- **Stage8-C:** S−M **+8.676**, borne 97.5 % **+1.468**, **22+/10−** ; [32 256-original audit PASS](https://github.com/josselin-orta-lab/individual-zero/actions/runs/44406977082), [report](studies/stage8-parent-concentration/STAGE8C_PROSPECTIVE_SCIENTIFIC_RESULT_2026-11-19.md).
+- **Stage8-B:** interaction NON démontrée, **p=0.65777**, [cold audit PASS](https://github.com/josselin-orta-lab/individual-zero/actions/runs/44126032148), [report](studies/stage8-ecology-interaction/STAGE8B_PROSPECTIVE_SCIENTIFIC_RESULT_2026-11-17.md).
+- **Stage8-A:** mean **+14.4874**, lower 97.5 % **+7.9933**, **23+/9−** ; [audit](studies/stage8-mean-persistence/STAGE8A_INDEPENDENT_READONLY_AUDIT_RESULT_2026-11-17.md).
+- **Stage6-light:** negative **9+/7− vs 13+/16** ; [science](https://github.com/josselin-orta-lab/individual-zero/actions/runs/43769581930).
+- **Stage7:** negative **12+/4− vs 13+/16** ; [science](https://github.com/josselin-orta-lab/individual-zero/actions/runs/43830174125), closed.
+- **Different questions remain separate:** Stage6 direction, Stage7 sign, Stage8-A mean, Stage8-B ecology, Stage8-C S−M, Stage8-E2 gamma123 difference-in-differences. No general cognition/AGI or out-of-F0 causal claim.
 
 ## Current agent procedure (task-scoped)
 
