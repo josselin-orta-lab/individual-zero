@@ -1,0 +1,103 @@
+# COLD READ-ONLY FIRST ONLY: existing 24 original synthetic World.step receipts.
+# Do NOT run World.step, no Mind, run_life, WorldSpec, cohort or new archive.
+name: I3 Stage8-F1B independent cold native proof custody only
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/i3-stage8f1b-cold-existing-native-receipts-once-20261121.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: i3-stage8f1b-native-funding-cold-receipts-20261121
+  cancel-in-progress: false
+
+jobs:
+  exact_original_receipt_and_source_preflight:
+    if: ${{ github.run_attempt == 1 }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Require untouched failed history and exactly one fresh read-only source
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os,subprocess
+          name=".github/workflows/i3-stage8f1b-cold-existing-native-receipts-once-20261121.yml"
+          sha=os.environ["GITHUB_SHA"]
+          history=subprocess.check_output(["git","log","--format=%H","--",name],text=True).splitlines()
+          assert history==[sha], "not a first-added independent source"
+          change=subprocess.check_output(["git","diff-tree","--no-commit-id","--name-status","-r",sha,"--",name],text=True).split()
+          assert change==["A",name], "archive must be first-only and unchanged"
+          assert not subprocess.check_output(["git","status","--porcelain","--untracked-files=all"]).strip()
+          from tools import stage8f1_independent_native_funding_audit as I
+          assert I.SOURCE=="4014a59027cc53bcfb6e7a9c6e6c827e017711b9"
+          assert I.P13=="03faff4b9c194a5288b92e394f6a75cbe62cd095"
+          assert I.NEGATIVE=="STAGE8E2_CAUSAL_GAMMA_BLOCK_NOT_DEMONSTRATED_F0"
+          assert len(I.CASES)==8
+          print("FIRST_ONLY_READ_OLD_24_RECEIPTS_NO_NEW_WORLD_OR_LIFE_PASS")
+          PY
+          python -m unittest discover -s tests -p 'test_engine_repository.py' -v
+          python scripts/check_engine_repository.py --json
+
+  independently_reconstruct_existing_24_native_physical_receipts:
+    if: ${{ github.run_attempt == 1 }}
+    needs: exact_original_receipt_and_source_preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Read the ALREADY PRODUCED native F1B proof artifact, not a new experiment
+        uses: actions/download-artifact@v4
+        with:
+          name: i3-stage8f1b-corrected-matched-native-24-step-receipts-44834616307
+          repository: josselin-orta-lab/individual-zero
+          run-id: 44834616307
+          github-token: ${{ github.token }}
+          path: /tmp/stage8f1b-original-real-world-receipts
+      - name: SHA-pinned cold second reduction using arithmetic ONLY
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s /tmp/stage8f1b-original-real-world-receipts/STAGE8F1B_MATCHED_NATIVE_FULL.json
+          printf '%s\n' '9e645b8aed70c5cf68047c2cd25ddd50d4d9a5441a147d9c6a11531aec91c65a  /tmp/stage8f1b-original-real-world-receipts/STAGE8F1B_MATCHED_NATIVE_FULL.json' | sha256sum -c -
+          python -m tools.stage8f1_independent_native_funding_audit \
+            /tmp/stage8f1b-original-real-world-receipts/STAGE8F1B_MATCHED_NATIVE_FULL.json \
+            /tmp/STAGE8F1B_SECOND_NATIVE_PHYSICS.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path("/tmp/STAGE8F1B_SECOND_NATIVE_PHYSICS.json").read_bytes())
+          assert x["status"]=="ALL_MATCHED_NATIVE_RECEIPTS_INDEPENDENTLY_ACCOUNTED_SOFTWARE_ONLY"
+          assert x["report_sha256"]=="9e645b8aed70c5cf68047c2cd25ddd50d4d9a5441a147d9c6a11531aec91c65a"
+          assert x["pairs_checked"]==8 and x["native_world_step_receipts_checked"]==24
+          assert x["positive_micros"]==5 and x["unaffordable_micros"]==2
+          assert x["fully_funded_reference_cases"]==1 and x["matched_positive_bill_pairs"]==5
+          assert x["no_native_lives"] is True
+          assert x["historical_causal_status"]=="STAGE8E2_CAUSAL_GAMMA_BLOCK_NOT_DEMONSTRATED_F0"
+          print("ALL_24_PREEXISTING_NATIVE_RECEIPTS_REDUCED_NO_NEW_WORLD_PASS")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: i3-stage8f1b-existing-real-world-native-proof-independent-${{ github.run_id }}
+          path: /tmp/STAGE8F1B_SECOND_NATIVE_PHYSICS.json
+          if-no-files-found: error
+          retention-days: 90

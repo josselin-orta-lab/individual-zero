@@ -99,6 +99,8 @@ def unexpected_workflows(paths, *, active_ci: str) -> list[str]:
         # First technical attempt failed at import before proofs. New distinct,
         # source-first-only proof has the explicit src Python module path.
         "i3-stage8f1b-matched-native-funding-proof-once-20261121.yml",
+        # Cold independent re-read of preexisting 24 native F1B receipts ONLY.
+        "i3-stage8f1b-cold-existing-native-receipts-once-20261121.yml",
     }
     return sorted(path.name for path in paths
                   if not path.name.startswith("i1-") and path.name not in allowed)
