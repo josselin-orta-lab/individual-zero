@@ -1,0 +1,9 @@
+# Stage8-F1B · échec du premier préflight et nouveau contrôle d'environnement
+
+**21 novembre 2026, audit logiciel uniquement.** [Run #44833916451](https://github.com/josselin-orta-lab/individual-zero/actions/runs/44833916451), source Git de première publication `7719f4d3997daedb25fff6eb8b339e6760f541c0`, a été **arrêté au préflight** (job `source_and_synthetic_preflight` FAIL) par `ModuleNotFoundError: No module named 'i3'`. La source Python habite `src/i3` mais le workflow standalone n'avait pas `PYTHONPATH=src:.`. Les jobs de production et de vérification indépendante ont été **SKIPPED** ; **aucune des 24 preuves natives n'a été exécutée**, aucun artefact n'a été produit, aucune vie n'a été créée.
+
+La suite générale [I3 proposal software checks #44833222704](https://github.com/josselin-orta-lab/individual-zero/actions/runs/44833222704) a pourtant réussi en Python 3.11 et 3.12, avec **1 802 tests sous 3.12**, car ce workflow dispose déjà des imports du package. Cette réussite logicielle ne remplace **pas** la preuve scellée prévue par F1B.
+
+La source du premier workflow reste **inchangée, épuisée et non relancée**, conformément à sa garantie « first-only ». La nouvelle source distincte `i3-stage8f1b-matched-native-funding-proof-once-20261121.yml` fixe explicitement `PYTHONPATH: src:.` et conserve les mêmes huit états, les mêmes fichiers d'audit, les mêmes deux monnaies et les mêmes règles d'arrêt. Elle doit elle aussi être première-addition sur une seule racine de commit ; aucune cohorte ni nouveau `run_life` ne sont autorisés.
+
+**Interprétation :** c'est un incident de packaging CI, non une réfutation ou confirmation scientifique. La parité native F1B reste **NON SCELLÉE** tant que le nouveau workflow et ses deux réductions n'ont pas réussi. Stage8-E2 reste `STAGE8E2_CAUSAL_GAMMA_BLOCK_NOT_DEMONSTRATED_F0 / CLOSED_NO_RETRY` et les archives historiques demeurent intouchées.
