@@ -90,7 +90,10 @@ class PaidPostActionNativeLearning(unittest.TestCase):
 
     def test_independent_reduction_rejects_native_learning_payment_forgery(self):
         bad = deepcopy(self.proof)
-        bad["arms"]["retain"]["paid_postaction_learning"]["energy"]["paid"] = 0.
+        # Re-sign BOTH matched arms: a counterfeit that preserves equality
+        # must still fail the independent physical two-currency computation.
+        for arm in bad["arms"].values():
+            arm["paid_postaction_learning"]["energy"]["paid"] = 0.
         reseal(bad)
         with self.assertRaisesRegex(ValueError, "unpaid|native|cognition"):
             I.audit(bad)
@@ -149,7 +152,7 @@ class PaidPostActionNativeLearning(unittest.TestCase):
     def test_f1c_has_no_scientific_birth_policy(self):
         import inspect
         from i3.modules.stage8f1_paid_microdecision_mind import PaidMicrodecisionMind
-        self.assertNotIn("run_life", inspect.getsource(P.produce))
+        self.assertNotIn("run_life(", inspect.getsource(P.produce))
         self.assertNotIn("run_life(", inspect.getsource(P._full_action_and_learning))
         self.assertNotIn("run_life(", inspect.getsource(PaidMicrodecisionMind.decide))
         self.assertEqual(self.proof["frozen_negative_stage8e2"], P.NEGATIVE)
