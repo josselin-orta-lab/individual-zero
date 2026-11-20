@@ -250,6 +250,19 @@ def population_arm(group, old_e3b, old_e3a):
     if (sum(w[n]["observed_steps"] for n in w) != group["lived_steps"]
             or sum(w[n]["first_failures"] for n in w) != fail):
         raise ValueError("first-gate temporal partition does not exhaust original exposure")
+    # The first time window MUST reproduce the previously sealed E3A/E3B
+    # early-20 independent descriptions, not only full-life totals.
+    early=w["t001_020"]
+    if not early["observed_steps"]:
+        raise ValueError("missing original first twenty observed steps")
+    for reason in REASONS:
+        if not A.close(early["reasons"][reason]/early["observed_steps"],
+                       old_e3b["early20_per_observed_step_"+reason]):
+            raise ValueError("first-window funding reasons differ from sealed E3B")
+    for action in A.ACTIONS:
+        if not A.close(early["actions"][action]/early["observed_steps"],
+                       old_e3a["early20_action_"+action+"_per_step"]):
+            raise ValueError("first-window motor choices differ from sealed E3A")
     if not A.close(
         sum(w[n]["decision_energy_paid"] for n in w)/group["lived_steps"],
         old_e3a["decision_energy_paid_per_step"]
