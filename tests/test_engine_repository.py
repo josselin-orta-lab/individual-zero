@@ -206,6 +206,22 @@ class EngineToolingTests(unittest.TestCase):
             sorted(blocked),
         )
 
+    def test_stage8e3a_original_readonly_allowance_is_exact_only(self):
+        from scripts.check_engine_repository import unexpected_workflows
+
+        allowed = "i3-stage8e3a-readonly-native-g2-originals-once-20261120.yml"
+        forbidden = (
+            "i3-stage8e3a-readonly-native-g2-originals-once-20261120-retry.yml",
+            "i3-stage8e3a-scientific-new-gamma-cohort.yml",
+            "i3-stage8e3a-readonly-native-g2-originals-once-20261121.yml",
+        )
+        workflows = [Path(".github/workflows/" + name)
+                     for name in (allowed, *forbidden)]
+        self.assertEqual(
+            unexpected_workflows(workflows, active_ci="i1-current-ci.yml"),
+            sorted(forbidden),
+        )
+
     def test_static_agent_navigation_is_not_historical_runtime_ci(self):
         from scripts.check_engine_repository import unexpected_workflows
         paths = [Path(".github/workflows/agent-context-static.yml"),

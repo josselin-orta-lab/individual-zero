@@ -85,6 +85,9 @@ def unexpected_workflows(paths, *, active_ci: str) -> list[str]:
         # Only the separate EXACT FIRST-ADD prospective gamma123 SCIENCE workflow
         # may run once, after 129024 source-exact cold-audited technical lives.
         "i3-stage8e2-prospective-science-once-20261120.yml",
+        # Stage8-E3A: one exact read-only original-G2 telemetry inspection,
+        # 36,864 already-lived gzip, no Worlds and no scientific retrial.
+        "i3-stage8e3a-readonly-native-g2-originals-once-20261120.yml",
     }
     return sorted(path.name for path in paths
                   if not path.name.startswith("i1-") and path.name not in allowed)
