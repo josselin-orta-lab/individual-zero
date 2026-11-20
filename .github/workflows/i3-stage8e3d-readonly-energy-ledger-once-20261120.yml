@@ -1,0 +1,182 @@
+# First-only posthoc source-locked energy arithmetic on OLD Stage8-E3C reports.
+# No native I3 Worlds, no new lives, no G2 gzip download or engine physics replay.
+name: I3 Stage8-E3D read-only original G2 executed energy ledger from E3C
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/i3-stage8e3d-readonly-energy-ledger-once-20261120.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: i3-stage8e3d-existing-original-energy-ledger-once
+  cancel-in-progress: false
+
+jobs:
+  source_and_synthetic_falsifier:
+    if: ${{ github.run_attempt == 1 }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify exactly one new read-only workflow and frozen original evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os,subprocess
+          from tools import stage8e3d_native_energy_ledger as L
+          from tools import stage8e3d_independent_energy_ledger as I
+          workflow=".github/workflows/i3-stage8e3d-readonly-energy-ledger-once-20261120.yml"
+          sha=os.environ["GITHUB_SHA"]
+          hist=subprocess.check_output(["git","log","--format=%H","--",workflow],text=True).splitlines()
+          assert hist==[sha], "workflow must be first-added and never retried"
+          changes=subprocess.check_output(
+              ["git","diff-tree","--no-commit-id","--name-status","-r",sha,"--",workflow],
+              text=True).split()
+          assert changes==["A",workflow]
+          assert not subprocess.check_output(
+              ["git","status","--porcelain","--untracked-files=all"]).strip()
+          assert L.SOURCE_E3C_SHA==I.SOURCE_FULL
+          assert L.SOURCE_E3C_SECOND_SHA==I.SOURCE_SECOND
+          assert L.CLOSED==I.CLOSED=="STAGE8E2_CAUSAL_GAMMA_BLOCK_NOT_DEMONSTRATED_F0"
+          assert L.WINDOWS==I.WINDOWS and len(L.WINDOWS)==4
+          assert L.ACTION_COSTS_ACTUALLY_APPLIED["dormir"]==0.
+          print("E3D_FIRST_ONLY_OLD_SOURCE_READONLY_ENERGY_LEDGER_NO_NATIVE_BIRTH")
+          PY
+          python -m unittest discover -s tests/i3 -p 'test_stage8e3d_*.py' -v
+          python -m unittest discover -s tests -p 'test_engine_repository.py' -v
+          python scripts/check_engine_repository.py --json
+
+  exact_source_energy_accounting:
+    if: ${{ github.run_attempt == 1 }}
+    needs: source_and_synthetic_falsifier
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      S: /tmp/stage8e3d-physically-accounted
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Download sealed E3C full 256 original-population/arm trajectories only
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8e3c-original-first-energy-gate-timecourse-44737606261
+          repository: josselin-orta-lab/individual-zero
+          run-id: 44737606261
+          github-token: ${{ github.token }}
+          path: /tmp/stage8e3d-physically-accounted/e3c
+      - name: Download independent E3C population-level receipt only
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8e3c-independent-64-population-first-gate-44737606261
+          repository: josselin-orta-lab/individual-zero
+          run-id: 44737606261
+          github-token: ${{ github.token }}
+          path: /tmp/stage8e3d-physically-accounted/e3c-second
+      - name: Reconstruct actual paid cognition, motor debit and sleep recovery
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s "$S/e3c/STAGE8E3C_FULL.json"
+          test -s "$S/e3c-second/STAGE8E3C_SECOND.json"
+          python -m tools.stage8e3d_native_energy_ledger \
+            "$S/e3c/STAGE8E3C_FULL.json" \
+            "$S/e3c-second/STAGE8E3C_SECOND.json" \
+            "$S/STAGE8E3D_FULL.json" > "$S/STAGE8E3D_RECEIPT.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          obj=json.loads((Path(os.environ["S"])/"STAGE8E3D_FULL.json").read_bytes())
+          assert obj["new_native_lives"]==0
+          assert obj["native_g2_originals_independently_rehashed_in_prior_E3C_job"]==36864
+          assert obj["new_original_gzip_rehashed_in_this_step"]==0
+          assert len(obj["population_rows"])==64
+          assert obj["original_stage8e2_causal_primary_unchanged"]=="STAGE8E2_CAUSAL_GAMMA_BLOCK_NOT_DEMONSTRATED_F0"
+          print("E3D_ALL_1024_NATIVE_ENERGY_WINDOWS_PHYSICALLY_ACCOUNTED")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage8e3d-1024-population-arm-time-energy-ledgers-${{ github.run_id }}
+          path: |
+            /tmp/stage8e3d-physically-accounted/STAGE8E3D_FULL.json
+            /tmp/stage8e3d-physically-accounted/STAGE8E3D_RECEIPT.json
+          if-no-files-found: error
+          retention-days: 90
+
+  independent_exact_energy_reduction:
+    if: ${{ github.run_attempt == 1 }}
+    needs: exact_source_energy_accounting
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      S: /tmp/stage8e3d-independent-physical
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: stage8e3d-1024-population-arm-time-energy-ledgers-${{ github.run_id }}
+          path: /tmp/stage8e3d-independent-physical
+      - uses: actions/download-artifact@v4
+        with:
+          name: stage8e3c-original-first-energy-gate-timecourse-44737606261
+          repository: josselin-orta-lab/individual-zero
+          run-id: 44737606261
+          github-token: ${{ github.token }}
+          path: /tmp/stage8e3d-independent-physical/e3c
+      - uses: actions/download-artifact@v4
+        with:
+          name: stage8e3c-independent-64-population-first-gate-44737606261
+          repository: josselin-orta-lab/individual-zero
+          run-id: 44737606261
+          github-token: ${{ github.token }}
+          path: /tmp/stage8e3d-independent-physical/e3c-second
+      - name: Independently recompute every physical energy numerator and population DID
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m tools.stage8e3d_independent_energy_ledger \
+            "$S/STAGE8E3D_FULL.json" \
+            "$S/e3c/STAGE8E3C_FULL.json" \
+            "$S/e3c-second/STAGE8E3C_SECOND.json" \
+            "$S/STAGE8E3D_SECOND.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          obj=json.loads((Path(os.environ["S"])/"STAGE8E3D_SECOND.json").read_bytes())
+          assert obj["population_arm_windows_checked"]==1024
+          assert obj["descriptive_metric_windows_recomputed"]==28
+          assert obj["new_native_lives"]==0
+          assert obj["historical_stage8e2_negative_unchanged"]=="STAGE8E2_CAUSAL_GAMMA_BLOCK_NOT_DEMONSTRATED_F0"
+          assert obj["no_causal_gamma_mediation"] is True
+          print("E3D_SOURCE_EXACT_POSTHOC_ENERGY_SECOND_REDUCER_PASS_NO_CAUSAL_PROMOTION")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage8e3d-independent-physical-energy-windows-${{ github.run_id }}
+          path: /tmp/stage8e3d-independent-physical/STAGE8E3D_SECOND.json
+          if-no-files-found: error
+          retention-days: 90
