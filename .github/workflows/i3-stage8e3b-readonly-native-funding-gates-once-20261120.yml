@@ -1,0 +1,217 @@
+# FIRST-ONLY READ-ONLY: original closed Stage8-E2 gamma123 G2 first-person funding.
+# Reject incomplete originals; no run_life, no new science, no retry.
+name: I3 Stage8-E3B original G2 native funded decision failure causes
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/i3-stage8e3b-readonly-native-funding-gates-once-20261120.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: stage8e3b-funding-gates-originals-20261120
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    if: ${{ github.run_attempt == 1 }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Demand exact first source-added one-shot, no new native research
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os, subprocess
+          from tools import stage8e3b_readonly_funding_gates as G
+          from tools import stage8e3b_independent_funding_reduction as I
+          name=".github/workflows/i3-stage8e3b-readonly-native-funding-gates-once-20261120.yml"
+          sha=os.environ["GITHUB_SHA"]
+          hist=subprocess.check_output(["git","log","--format=%H","--",name],text=True).splitlines()
+          assert hist==[sha], "exact new source first time only"
+          change=subprocess.check_output(["git","diff-tree","--no-commit-id","--name-status","-r",
+                                         sha,"--",name],text=True).strip().split()
+          assert change==["A",name], "an archived or modified source is not an allocation"
+          assert not subprocess.check_output(["git","status","--porcelain","--untracked-files=all"]).strip()
+          assert G.SOURCE_E3A_SHA == I.E3A_SHA
+          assert G.SOURCE_E3A_SECOND_SHA == I.E3A_SECOND_SHA
+          assert G.N == 36864 and G.A.RUN_ID == 44637950471
+          assert G.A.SCIENCE_RESULT_SHA == "18ad42a1e68a0a7c1c2390bd397ee90e7872bdf398f0f5bac37d06bbfff8af45"
+          assert G.A.ENGINE_HEAD == "03faff4b9c194a5288b92e394f6a75cbe62cd095"
+          assert I.PRIMARY == "STAGE8E2_CAUSAL_GAMMA_BLOCK_NOT_DEMONSTRATED_F0"
+          print("E3B_SOURCE_FIRST_ONLY_ORIGINAL_CLOSED_NEGATIVE_NO_LIVES_PASS")
+          PY
+          python -m unittest discover -s tests/i3 -p 'test_stage8e3b_*.py' -v
+          python -m unittest discover -s tests -p 'test_engine_repository.py' -v
+          python scripts/check_engine_repository.py --json
+
+  read_original_funding:
+    if: ${{ github.run_attempt == 1 }}
+    needs: preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    env:
+      SOURCE: /tmp/i3-stage8e3b-readonly-originals
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Download ALL existing 36864 G2 ORIGINAL gzip bytes
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8e2-science-G2-original-gzip-44637950471
+          repository: josselin-orta-lab/individual-zero
+          run-id: 44637950471
+          github-token: ${{ github.token }}
+          path: /tmp/i3-stage8e3b-readonly-originals/G2
+      - name: Download G0 G1 G2 original metadata and exact G2 manifest
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8e2-science-native-metadata-44637950471
+          repository: josselin-orta-lab/individual-zero
+          run-id: 44637950471
+          github-token: ${{ github.token }}
+          path: /tmp/i3-stage8e3b-readonly-originals/metadata
+      - name: Download original frozen negative science and cold original audit
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8e2-science-original-cold-audit-and-primary-44637950471
+          repository: josselin-orta-lab/individual-zero
+          run-id: 44637950471
+          github-token: ${{ github.token }}
+          path: /tmp/i3-stage8e3b-readonly-originals/science
+      - name: Download independent frozen Stage8-E2 64-population primary
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8e2-science-independent-confirmatory-gate-44637950471
+          repository: josselin-orta-lab/individual-zero
+          run-id: 44637950471
+          github-token: ${{ github.token }}
+          path: /tmp/i3-stage8e3b-readonly-originals/independent
+      - name: Download prior 36864-original Stage8-E3A motor and cognition audit
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8e3a-36864-original-g2-readonly-telemetry-44706318958
+          repository: josselin-orta-lab/individual-zero
+          run-id: 44706318958
+          github-token: ${{ github.token }}
+          path: /tmp/i3-stage8e3b-readonly-originals/e3a
+      - name: Download independent Stage8-E3A 50-descriptor verification
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8e3a-independent-motor-and-cost-population-report-44706318958
+          repository: josselin-orta-lab/individual-zero
+          run-id: 44706318958
+          github-token: ${{ github.token }}
+          path: /tmp/i3-stage8e3b-readonly-originals/e3a-second
+      - name: Rehash full source G2 and explain EVERY null motor choice from original info
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s "$SOURCE/G2/G2.tar"
+          test -s "$SOURCE/metadata/METADATA.tar"
+          test -s "$SOURCE/science/SCIENCE_FINAL.json"
+          test -s "$SOURCE/science/COLD_AUDIT.json"
+          test -s "$SOURCE/independent/INDEPENDENT_STATISTICS.json"
+          test -s "$SOURCE/e3a/STAGE8E3A_FULL.json"
+          test -s "$SOURCE/e3a-second/SECOND_REDUCTION.json"
+          python -m tools.stage8e3b_readonly_funding_gates \
+            --metadata-tar "$SOURCE/metadata/METADATA.tar" \
+            --g2-tar "$SOURCE/G2/G2.tar" \
+            --science-final "$SOURCE/science/SCIENCE_FINAL.json" \
+            --cold-audit "$SOURCE/science/COLD_AUDIT.json" \
+            --independent-statistics "$SOURCE/independent/INDEPENDENT_STATISTICS.json" \
+            --old-e3a-full "$SOURCE/e3a/STAGE8E3A_FULL.json" \
+            --old-e3a-second "$SOURCE/e3a-second/SECOND_REDUCTION.json" \
+            --output "$SOURCE/STAGE8E3B_FULL.json" > "$SOURCE/ORIGINAL_LEVEL_RECEIPT.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          root=Path(os.environ["SOURCE"])
+          x=json.loads((root/"STAGE8E3B_FULL.json").read_bytes())
+          assert x["native_originals_rehashed"]==36864
+          assert x["originals_body_and_funding_chains_verified"]==36864
+          assert len(x["per_population_arm"])==64
+          assert x["native_lives_generated"]==0
+          assert x["closed_stage8e2_primary"]=="STAGE8E2_CAUSAL_GAMMA_BLOCK_NOT_DEMONSTRATED_F0"
+          print("E3B_ALL_36864_ORIGINAL_DECISION_FUNDING_CAUSES_CHECKED_POSTHOC_ONLY")
+          PY
+      - name: Publish complete population-level native reasons and first-person source SHA
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8e3b-36864-original-decision-funding-causes-${{ github.run_id }}
+          path: |
+            /tmp/i3-stage8e3b-readonly-originals/STAGE8E3B_FULL.json
+            /tmp/i3-stage8e3b-readonly-originals/ORIGINAL_LEVEL_RECEIPT.json
+          if-no-files-found: error
+          retention-days: 90
+
+  independent_64_population_reduction:
+    if: ${{ github.run_attempt == 1 }}
+    needs: read_original_funding
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      SOURCE: /tmp/i3-stage8e3b-second-audit
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: stage8e3b-36864-original-decision-funding-causes-${{ github.run_id }}
+          path: /tmp/i3-stage8e3b-second-audit
+      - uses: actions/download-artifact@v4
+        with:
+          name: stage8e3a-36864-original-g2-readonly-telemetry-44706318958
+          repository: josselin-orta-lab/individual-zero
+          run-id: 44706318958
+          github-token: ${{ github.token }}
+          path: /tmp/i3-stage8e3b-second-audit/e3a
+      - name: Recompute every original funding cause and exhausted inactivity contrast
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m tools.stage8e3b_independent_funding_reduction \
+            "$SOURCE/STAGE8E3B_FULL.json" "$SOURCE/e3a/STAGE8E3A_FULL.json" \
+            "$SOURCE/SECOND_E3B_REDUCTION.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          p=Path(os.environ["SOURCE"])
+          x=json.loads((p/"SECOND_E3B_REDUCTION.json").read_bytes())
+          assert x["population_units"]==64
+          assert x["g2_originals_rehashed_prior_job"]==36864
+          assert x["native_lives_generated"]==0
+          assert x["historical_primary_unchanged"]=="STAGE8E2_CAUSAL_GAMMA_BLOCK_NOT_DEMONSTRATED_F0"
+          assert x["no_p_value_no_causal_mediation_inference"] is True
+          print("E3B_ALL_NATIVE_FUNDING_REASONS_ACCOUNTED_FOR_NO_CAUSAL_PROMOTION")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage8e3b-independent-funding-cause-populations-${{ github.run_id }}
+          path: /tmp/i3-stage8e3b-second-audit/SECOND_E3B_REDUCTION.json
+          if-no-files-found: error
+          retention-days: 90
