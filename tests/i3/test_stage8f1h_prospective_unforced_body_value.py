@@ -174,11 +174,9 @@ class F1HProspectiveBodyValue(unittest.TestCase):
 
     def test_falsified_survival_result_resigned_is_rejected(self):
         bad=deepcopy(self.proof)
-        bad["mixed_primary_survival_verdict"]=
-            "LOCAL_T12_SURVIVAL_ADVANTAGE_OF_MEMORY_READOUT_OBSERVED"
+        bad["mixed_primary_survival_verdict"]="LOCAL_T12_SURVIVAL_ADVANTAGE_OF_MEMORY_READOUT_OBSERVED"
         if bad["mixed_primary_survival_verdict"]==self.proof["mixed_primary_survival_verdict"]:
-            bad["mixed_primary_survival_verdict"]=
-                "NO_SURVIVAL_ADVANTAGE_OF_THE_MEMORY_INFLUENCED_DECISION_AT_T12"
+            bad["mixed_primary_survival_verdict"]="NO_SURVIVAL_ADVANTAGE_OF_THE_MEMORY_INFLUENCED_DECISION_AT_T12"
         reseal(bad)
         with self.assertRaises(ValueError):
             self.cold(bad)
