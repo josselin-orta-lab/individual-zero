@@ -20,13 +20,30 @@ def main():
     # not only a locally copied claim or a self-signed report.
     receipt=R.load_receipt(args.input_dir/"F1K_RESERVATION.json")
     claim=R.verify_remote(receipt)
+    # Genuine first exposure is exclusively claimed before any K World.step.
+    # Merely finding the remote reservation is insufficient to claim that
+    # all 16 lives have only ever been launched once.
+    lock_path=args.input_dir/"F1K_RESERVATION.NATIVE_START_LOCK"
+    start_lock=json.loads(lock_path.read_bytes())
+    expected_lock={
+        "schema":"i3-stage8f1k-first-native-exposure-lock/v0",
+        "reservation_run_id":claim["workflow_run_id"],
+        "reserved_source_sha":claim["head_sha"],
+        "origin_ids":claim["root_ids"],
+        "no_native_second_attempt":True,
+    }
+    if start_lock!=expected_lock:
+        raise ValueError("F1K native start was not exclusively locked before K source")
     root=args.input_dir/"f1k-originals"
     proof=E.verify_bundle(root)
     case_index=json.loads((root/"F1K_CUSTODY_MANIFEST.json").read_bytes())
     if case_index.get("reservation_sha256")!=E.digest(E.canonical(receipt)):
         raise ValueError("raw native custody is not bound to the original pre-step GitHub claim")
     if (proof["phase"]!="F1K_HELDOUT_RELEASE" or
-            proof["roots"]!=16 or proof["original_native_gzips"]!=64):
+            proof["roots"]!=16 or proof["original_native_gzips"]!=64
+            or proof["same_bytes_technical_reproduction"] is not False
+            or proof["same_bytes_canonical_readback"] is not True
+            or proof["heldout_native_passes"]!=1):
         raise ValueError("scientific release incomplete despite source consumption")
     original=gzip.decompress((root/"F1K_ORIGINAL_NATIVE.json.gz").read_bytes())
     report=json.loads(original)
