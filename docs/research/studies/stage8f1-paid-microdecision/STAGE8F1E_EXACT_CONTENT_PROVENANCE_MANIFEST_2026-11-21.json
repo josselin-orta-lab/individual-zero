@@ -1,0 +1,90 @@
+{
+  "schema": "i3-stage8f1e-native-original-exact-cost-provenance/v0",
+  "preregistered_source_main": "3dd12c94843ca2cadf1af5c885b9eb215db31553",
+  "preregistration_commit": "e2b8e8f80a68cc5b0ddeeb87fac4ac45cd1ac007",
+  "source_pr": "https://github.com/josselin-orta-lab/individual-zero/pull/1489",
+  "source_pr_head": "f27734320902b9bb88861a9cfd1896d10bf4524b",
+  "ci_run": "https://github.com/josselin-orta-lab/individual-zero/actions/runs/44891088978",
+  "ci_dedicated_jobs_passed": 2,
+  "ci_dedicated_jobs_total": 2,
+  "dedicated_falsifier_tests_passed": 16,
+  "original_f1c": {
+    "run_id": 44837981694,
+    "artifact_id": 14679910820,
+    "file": "F1C_PAID_NATIVE_ORIGINAL.json",
+    "bytes": 125436,
+    "sha256": "e46ad5f54af49796da65f48d603595544116aa6e73632546b0935d2178c5e91d"
+  },
+  "original_f1e": {
+    "run_id": 44891088978,
+    "artifact_id": 14702585042,
+    "source_file": "F1E_NATIVE_CONTENT_ORIGINAL.json",
+    "reproduced_file": "F1E_NATIVE_CONTENT_REPRODUCED.json",
+    "bytes_each": 332967,
+    "sha256": "22cef70784ce7f7f1c3478ee12c269dfedfa8041930b9811b27fd18c4d6d3b6a",
+    "bitidentical": true,
+    "original_zip_sha256": "1bb4be0c32b62b7fc95603f7ba82e4bcaf31c37a668bf950b3119ce8cd2ebdbd"
+  },
+  "independent_cold": {
+    "run_id": 44891088978,
+    "artifact_id": 14702240563,
+    "file": "F1E_INDEPENDENT_COLD_AUDIT.json",
+    "bytes": 1371,
+    "sha256": "c2d829537a4a2dd21ed4b62aac785f195da493434b4ecab1e6350e92cd9b1a63",
+    "artifact_zip_sha256": "47553687e22aca12e2eaf9fdb44df00cf48a68675ffa0a7617cdd1e220b5298e"
+  },
+  "portable_conversation_archive": {
+    "file": "F1E_equal_cost_memory_content_evidence_20261121.tar.gz",
+    "bytes": 163318,
+    "sha256": "36e58444d303b67e796e14a7fbc3b03c70cbea1cb477c25c37c85742192dd7b5",
+    "repository_storage": "NOT_IN_GIT_CONVERSATION_ARTIFACT"
+  },
+  "experiment": {
+    "modes": [
+      "full",
+      "sham",
+      "mask_both",
+      "mask_sleep_only",
+      "mask_global_only"
+    ],
+    "primary_pair": [
+      "full",
+      "mask_both"
+    ],
+    "same_authentic_trained_f1c_memory": true,
+    "alteration": "TEMPORARY_PERSONAL_EFFECT_MEAN_READOUT_ONLY",
+    "memory_count_equal": true,
+    "work_exactly_equal": {
+      "cycles": 4,
+      "simulated_steps": 72,
+      "memory_items": 33,
+      "replays": 0
+    },
+    "real_paid_cognition_each": {
+      "energy": 0.23060000000000003,
+      "vigilance": 0.34400000000000003
+    },
+    "paid_f1c_learning_preceded_readout": true,
+    "completed_native_world_steps_per_producer": 6,
+    "native_second_step_receipts": 5,
+    "executed_motor": [
+      "se_deplacer",
+      "E"
+    ],
+    "primary_verdict": "NO_EQUAL_COST_CONTENT_EFFECT_ON_NEXT_MOTOR_COMMAND_IN_THIS_CASE",
+    "learned_energy_sleep_mean": 2.9288,
+    "prior_energy_sleep_mean": 3,
+    "full_score": -0.652133,
+    "masked_both_score": -0.64895,
+    "sham_neutral": true,
+    "ecological_worlds_sampled": 1,
+    "scientific_lives": 0,
+    "scientific_cohorts": 0,
+    "motor_content_effect_demonstrated": false,
+    "historical_g2_memory_equivalence": false,
+    "survival_heritability_gamma_causality_demonstrated": false
+  },
+  "historical_causal_stage8e2": "STAGE8E2_CAUSAL_GAMMA_BLOCK_NOT_DEMONSTRATED_F0 / CLOSED_NO_RETRY",
+  "artifact_retention_days": 90,
+  "limitations": "Native cognitive-work model parity, not measured equal CPU time. The only intervention is the EffectsModel running means. First prior is synthetic, no actual G2 Mind snapshots."
+}
