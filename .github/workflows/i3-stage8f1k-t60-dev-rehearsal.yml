@@ -1,0 +1,80 @@
+# F1K rehearsal is 16 DEVELOPMENT seeds DEV_R01..DEV_R16, NEVER K01..K16.
+name: I3 Stage8-F1K full T60 DEV-only one-shot rehearsal and engine-free cold
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/stage8f1k_one_shot_*.py'
+      - 'tools/stage8f1k_policy_cost_value_prospective.py'
+      - 'tools/stage8f1k_independent_policy_value_cold_audit.py'
+      - 'tests/i3/test_stage8f1k_one_shot_safety.py'
+      - '.github/workflows/i3-stage8f1k-heldout-science-manual-once.yml'
+      - '.github/workflows/i3-stage8f1k-t60-dev-rehearsal.yml'
+      - 'scripts/check_engine_repository.py'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  dev_rehearsal_full_sixteen_sources:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      PYTHONPATH: 'src:.'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Static non-exposure, malicious rerun and custody falsifier tests
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests/i3 -p 'test_stage8f1k_one_shot_safety.py' -v
+          python scripts/check_engine_repository.py --json
+      - name: Full first-only release rehearsal on disjoint DEV_R 16 sources to T60
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1k_one_shot_evidence --rehearsal --output-dir "$RUNNER_TEMP/F1K_DEV_R_REHEARSAL"
+          python -c 'import json,os,pathlib; from tools.stage8f1k_policy_cost_value_prospective import rehearsal_grid; p=pathlib.Path(os.environ["RUNNER_TEMP"])/"F1K_DEV_R_REHEARSAL/F1K_DEV_R_GRID.json"; p.write_text(json.dumps(rehearsal_grid(),sort_keys=True,separators=(",",":"))+"\n")'
+          python -c 'import os,pathlib; from tools.stage8f1k_one_shot_evidence import verify_bundle; x=verify_bundle(pathlib.Path(os.environ["RUNNER_TEMP"])/"F1K_DEV_R_REHEARSAL"); assert x["roots"]==16 and x["original_native_gzips"]==64; print("F1K_T60_DEV_REHEARSAL_ORIGINALS_PASS",x)'
+      - if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-f1k-t60-dev-rehearsal-${{ github.run_id }}
+          path: ${{ runner.temp }}/F1K_DEV_R_REHEARSAL/
+          if-no-files-found: warn
+          retention-days: 14
+
+  dev_rehearsal_independent_python312:
+    needs: dev_rehearsal_full_sixteen_sources
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      PYTHONPATH: '.'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: i3-f1k-t60-dev-rehearsal-${{ github.run_id }}
+          path: ${{ runner.temp }}/F1K_DEV_R
+      - name: Byte custody audit then engine-free physiology and funding T60
+        run: |
+          set -euo pipefail
+          python -c 'import os,pathlib,gzip; from tools.stage8f1k_one_shot_evidence import verify_bundle; p=pathlib.Path(os.environ["RUNNER_TEMP"])/"F1K_DEV_R"; r=verify_bundle(p); assert r["original_native_gzips"]==64; (p/"F1K_DEV_R_ORIGINAL_COLD_INPUT.json").write_bytes(gzip.decompress((p/"F1K_ORIGINAL_NATIVE.json.gz").read_bytes()))'
+          python -m tools.stage8f1k_independent_policy_value_cold_audit "$RUNNER_TEMP/F1K_DEV_R/F1K_DEV_R_ORIGINAL_COLD_INPUT.json" "$RUNNER_TEMP/F1K_DEV_R/F1K_DEV_R_GRID.json" "$RUNNER_TEMP/F1K_DEV_R/F1K_DEV_R_COLD.json"
+          python -c 'import os,pathlib,json; p=pathlib.Path(os.environ["RUNNER_TEMP"])/"F1K_DEV_R/F1K_DEV_R_COLD.json"; r=json.loads(p.read_bytes()); assert r["cold_verdict"]=="DEV_ONLY_NOT_SCIENTIFIC" and r["phase"]=="REHEARSAL_ONLY" and r["all_16_origins_retained"] is False; print("F1K_T60_16_DEV_SEEDS_3_ARMS_ENGINE_FREE_COLD_PASS",r["native_paid_steps_verified"])'
+      - if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: i3-f1k-t60-dev-cold-${{ github.run_id }}
+          path: ${{ runner.temp }}/F1K_DEV_R/F1K_DEV_R_COLD.json
+          if-no-files-found: warn
+          retention-days: 14
