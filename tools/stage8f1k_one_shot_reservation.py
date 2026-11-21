@@ -40,6 +40,8 @@ SOURCE_PATHS = (
     "tools/stage8f1k_independent_policy_value_cold_audit.py",
     "tools/stage8f1k_one_shot_reservation.py",
     "tools/stage8f1k_one_shot_evidence.py",
+    "tools/stage8f1k_one_shot_cold_entry.py",
+    "tools/stage8f1k_one_shot_publish_status.py",
     ".github/workflows/i3-stage8f1k-heldout-science-manual-once.yml",
 )
 ENGINE_PINS = {
