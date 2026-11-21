@@ -373,7 +373,10 @@ def early_stopping_competition(step):
                 crossed.append(((acc[x]-thresholds[x])/thresholds[x],x))
         if crossed:
             m=max(p for p,_ in crossed)
-            ties=sorted(x for p,x in crossed if p==m)
+            # Cross-Python libm tanh can change an exact floating tie by
+            # ~1e-16. Accept only a near-optimal numeric tie (1e-11), not
+            # a differently ranked winner or an invented extra cycle.
+            ties=sorted(x for p,x in crossed if p>=m-1e-11)
             chosen_by="threshold_crossing"
             break
     if not ties:
@@ -383,7 +386,11 @@ def early_stopping_competition(step):
     check(expected_used==witness["paid_competition_cycles"]==obs["cycles"]
           and step["cognitive_work"]["cycles"]==3+expected_used
           and witness["selection_mechanism"]==chosen_by
-          and witness["tie_candidates"]==ties and winner in ties,
+          and type(witness["tie_candidates"]) is list
+          and bool(witness["tie_candidates"])
+          and witness["tie_candidates"]==sorted(set(witness["tie_candidates"]))
+          and set(witness["tie_candidates"]).issubset(set(ties))
+          and winner in witness["tie_candidates"],
           "incorrect P1.3 early threshold or fictitious charged cycle: "+
           str({"expected":expected_used,
                "receipt":witness["paid_competition_cycles"],
