@@ -133,6 +133,13 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       COLD_JOB_RESULT: ${{ needs.independent_python312_cold.result }}
     steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - if: ${{ needs.independent_python312_cold.result == 'success' }}
         uses: actions/download-artifact@v4
         with:
