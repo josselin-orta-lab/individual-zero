@@ -1,0 +1,126 @@
+# Stage8-F1D: native TWO TICKS per experimental arm, synthetic only,
+# no run_life, cohort, birth, original G2 reconstruction or Stage8-E2 retry.
+name: I3 Stage8-F1D native next-decision retention falsifier
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/stage8f1d_next_decision_retention.py'
+      - 'tools/stage8f1d_independent_next_decision_audit.py'
+      - 'tests/i3/test_stage8f1d_next_decision_retention.py'
+      - '.github/workflows/i3-stage8f1d-next-decision-retention-proof.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  original_F1C_anchored_next_decision_reproduction:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      PYTHONPATH: "src:."
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Download EXACT completed F1C original artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: i3-stage8f1c-native-original-and-reproduced-44837981694
+          repository: josselin-orta-lab/individual-zero
+          run-id: 44837981694
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/f1c-source
+      - name: Original bytes, 14 falsifiers, source boundaries
+        run: |
+          set -euo pipefail
+          printf '%s\n' 'e46ad5f54af49796da65f48d603595544116aa6e73632546b0935d2178c5e91d  '${RUNNER_TEMP}'/f1c-source/F1C_PAID_NATIVE_ORIGINAL.json' | sha256sum -c -
+          cmp "$RUNNER_TEMP/f1c-source/F1C_PAID_NATIVE_ORIGINAL.json" "$RUNNER_TEMP/f1c-source/F1C_PAID_NATIVE_REPRODUCED.json"
+          python -m unittest discover -s tests/i3 -p 'test_stage8f1d_next_decision_retention.py' -v
+          python scripts/check_engine_repository.py --json
+      - name: Twice reconstruct F1C and actually execute NEXT Mind.decide and World.step
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1d_next_decision_retention \
+            --f1c-original "$RUNNER_TEMP/f1c-source/F1C_PAID_NATIVE_ORIGINAL.json" \
+            --output "$RUNNER_TEMP/F1D_NEXT_DECISION_ORIGINAL.json"
+          python -m tools.stage8f1d_next_decision_retention \
+            --f1c-original "$RUNNER_TEMP/f1c-source/F1C_PAID_NATIVE_ORIGINAL.json" \
+            --output "$RUNNER_TEMP/F1D_NEXT_DECISION_REPRODUCED.json"
+          cmp "$RUNNER_TEMP/F1D_NEXT_DECISION_ORIGINAL.json" "$RUNNER_TEMP/F1D_NEXT_DECISION_REPRODUCED.json"
+          sha256sum "$RUNNER_TEMP/F1D_NEXT_DECISION_ORIGINAL.json"
+          python - <<'PY'
+          import os,json,pathlib
+          root=pathlib.Path(os.environ["RUNNER_TEMP"])
+          p=json.loads((root/"F1D_NEXT_DECISION_ORIGINAL.json").read_bytes())
+          assert p["executed_native_world_step_calls"]==4
+          assert p["new_native_lives"]==p["new_scientific_cohorts"]==0
+          assert p["run_life_executed"] is False
+          assert p["historical_g2_memory_equivalence"]=="NOT_DEMONSTRATED"
+          print("F1D_NATIVE_NEXT_CHOICE_REPRODUCED_WITHOUT_MOTOR_OVERRIDE")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: i3-stage8f1d-exact-original-next-decision-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/F1D_NEXT_DECISION_ORIGINAL.json
+            ${{ runner.temp }}/F1D_NEXT_DECISION_REPRODUCED.json
+            ${{ runner.temp }}/f1c-source/F1C_PAID_NATIVE_ORIGINAL.json
+          if-no-files-found: error
+          retention-days: 90
+
+  independent_cold_original_anchored_two_tick_audit:
+    needs: original_F1C_anchored_next_decision_reproduction
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      PYTHONPATH: "."
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: i3-stage8f1d-exact-original-next-decision-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1d-original
+      - name: Independent physical re-reduction without importing I3
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1d_independent_next_decision_audit \
+            "$RUNNER_TEMP/f1d-original/F1D_NEXT_DECISION_ORIGINAL.json" \
+            "$RUNNER_TEMP/f1d-original/F1C_PAID_NATIVE_ORIGINAL.json" \
+            "$RUNNER_TEMP/F1D_INDEPENDENT_COLD_AUDIT.json"
+          python - <<'PY'
+          import json,hashlib,os,pathlib
+          p=pathlib.Path(os.environ["RUNNER_TEMP"])
+          f=p/"f1d-original"
+          original=(f/"F1D_NEXT_DECISION_ORIGINAL.json").read_bytes()
+          duplicate=(f/"F1D_NEXT_DECISION_REPRODUCED.json").read_bytes()
+          assert original == duplicate
+          a=json.loads((p/"F1D_INDEPENDENT_COLD_AUDIT.json").read_bytes())
+          assert a["source_sha256"]==hashlib.sha256(original).hexdigest()
+          assert a["status"]=="F1D_NATIVE_SYNTHETIC_SECOND_CHOICE_REDUCED"
+          assert a["native_second_world_step_receipts_verified"]==2
+          assert a["paired_first_person_world_states"]==1
+          assert a["native_full_lives"]==a["new_scientific_cohorts"]==0
+          assert a["historical_G2_decision_effect_proved"] is False
+          print("F1D_INDEPENDENT_NATIVE_SECOND_CHOICE_CLASSIFICATION",
+                a["primary_motor_verdict"])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: i3-stage8f1d-independent-next-choice-reduction-${{ github.run_id }}
+          path: ${{ runner.temp }}/F1D_INDEPENDENT_COLD_AUDIT.json
+          if-no-files-found: error
+          retention-days: 90
