@@ -1,0 +1,161 @@
+{
+  "schema": "i3-stage8f1f-eight-eco-original-native-provenance/v0",
+  "status": "MEAN_CONTENT_MOTOR_EFFECT_IN_K_OF_EIGHT_PREREGISTERED_ECOLOGIES",
+  "k": 1,
+  "registered_ecologies": 8,
+  "valid_cost_matched_ecologies": 8,
+  "base_sha": "77c3e3395dfa379851d6192a7ec09968727c9ed9",
+  "f1f_preexposure_commit": "e9b86a2a9730ceb3c89b5380b471b20b0c152f85",
+  "f1g_separate_preexposure_commit": "82d3dc015b5d89ce52b1abc632e7a6a1a52d01b7",
+  "code_pr": "https://github.com/josselin-orta-lab/individual-zero/pull/1491",
+  "ci_dedicated_run_id": 44892635999,
+  "ci_dedicated_jobs_success": 2,
+  "ci_dedicated_tests_success": 16,
+  "source_f1c": {
+    "original_run_id": 44837981694,
+    "artifact_id": 14679910820,
+    "original_filename": "F1C_PAID_NATIVE_ORIGINAL.json",
+    "bytes": 125436,
+    "sha256": "e46ad5f54af49796da65f48d603595544116aa6e73632546b0935d2178c5e91d"
+  },
+  "f1f_original": {
+    "artifact_id": 14702338615,
+    "zip_sha256": "beacb0da448c0846dca02af0897f3352ace8a4708814ad298a9d2630120d9bb9",
+    "original_file": "F1F_ECOLOGICAL_ORIGINAL.json",
+    "replicated_file": "F1F_ECOLOGICAL_REPRODUCED.json",
+    "bytes_each": 1612315,
+    "sha256": "f620d1b46ddf269dc368dcd90ba6c93f44f0b6442f8d9e6322440de32e3fbab5",
+    "bit_identical": true
+  },
+  "f1f_independent_audit": {
+    "artifact_id": 14702267579,
+    "zip_sha256": "f61b595b801e81fe28c1b43533ceaf6009568ec7ebb54d716bae8bd7c8a0a568",
+    "original_file": "F1F_COLD_ECOLOGY_AUDIT.json",
+    "bytes": 2749,
+    "sha256": "8013f2add1f3eb0190127bb77eac588c95f153f32ba21113302bafa0292e2ac2",
+    "engine_imports": false
+  },
+  "portable_evidence": {
+    "file": "F1F_8_ecologies_paid_memory_evidence_20261121.tar.gz",
+    "sha256": "ac62b49686ffaad0bc34b6d7131599255468bad6c581b6e0f03f70f07edd7d0b",
+    "bytes": 717786,
+    "repository_storage": "CONVERSATION_ATTACHMENT_NOT_IN_GIT"
+  },
+  "native_world_steps_per_process": 32,
+  "native_second_steps_reduced": 24,
+  "contexts": [
+    [
+      "bare",
+      [
+        "se_deplacer",
+        "E"
+      ],
+      [
+        "se_deplacer",
+        "E"
+      ]
+    ],
+    [
+      "water_here",
+      [
+        "boire",
+        null
+      ],
+      [
+        "boire",
+        null
+      ]
+    ],
+    [
+      "water_north",
+      [
+        "se_deplacer",
+        "N"
+      ],
+      [
+        "se_deplacer",
+        "N"
+      ]
+    ],
+    [
+      "water_east",
+      [
+        "se_deplacer",
+        "E"
+      ],
+      [
+        "se_deplacer",
+        "E"
+      ]
+    ],
+    [
+      "water_west",
+      [
+        "se_deplacer",
+        "W"
+      ],
+      [
+        "se_deplacer",
+        "W"
+      ]
+    ],
+    [
+      "food_here",
+      [
+        "se_deplacer",
+        "E"
+      ],
+      [
+        "se_deplacer",
+        "E"
+      ]
+    ],
+    [
+      "food_east",
+      [
+        "se_deplacer",
+        "E"
+      ],
+      [
+        "se_deplacer",
+        "E"
+      ]
+    ],
+    [
+      "mixed_here_water_east_food",
+      [
+        "se_deplacer",
+        "E"
+      ],
+      [
+        "se_deplacer",
+        "N"
+      ]
+    ]
+  ],
+  "changed_ecology": "mixed_here_water_east_food",
+  "primary_pair": [
+    "full",
+    "mask_both"
+  ],
+  "sham_neutral_all": true,
+  "mixed_case_cost_same": {
+    "energy": 0.28880000000000006,
+    "vigilance": 0.402,
+    "work": {
+      "cycles": 4,
+      "simulated_steps": 101,
+      "memory_items": 34,
+      "replays": 0
+    }
+  },
+  "context_generalization": "NOT_CLAIMED_EIGHT_DETERMINISTIC_FORKS_SAME_F1C_PERSONAL_SOURCE",
+  "motor_change": "CAUSAL_CONTENT_READOUT_IN_ONE_SYNTHETIC_CONTEXT",
+  "adaptive_benefit": "NOT_TESTED",
+  "historical_g2_private_memory": "NOT_RECONSTRUCTED",
+  "scientific_lives": 0,
+  "scientific_cohorts": 0,
+  "run_life_executed": false,
+  "original_stage8e2": "STAGE8E2_CAUSAL_GAMMA_BLOCK_NOT_DEMONSTRATED_F0 / CLOSED_NO_RETRY",
+  "github_actions_retention_days": 90
+}
