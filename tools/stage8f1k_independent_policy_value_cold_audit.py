@@ -391,7 +391,12 @@ def early_stopping_competition(step):
                "expected_winner":ties,
                "recorded_winner":witness["winner_before_control"],
                "selection":chosen_by,
-               "recorded_selection":witness["selection_mechanism"]}))
+               "recorded_selection":witness["selection_mechanism"],
+               "recorded_ties":witness["tie_candidates"],
+               "crossed_margins":{
+                   x:(acc[x]-thresholds[x])/thresholds[x]
+                   for x in options if acc[x]>=thresholds[x]
+               }}))
     pre=witness["accumulators_before_residual"]
     final={x:0. if x==winner else acc[x]*.5 for x in options}
     check(set(pre)==set(acc)
