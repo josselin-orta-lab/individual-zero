@@ -512,6 +512,24 @@ def check_step(step,world,mind,policy,horizon):
               step["after_decision_exposed_mind"],
           "hidden postfork memory intervention")
     private(mind,policy)
+    info=step["decision_info"]
+    if info.get("funding")=="FUNDED":
+        last=private(step["after_restoration_before_motor"])["last"]
+        check(type(last) is dict and set(last)=={"__tuple__"}
+              and len(last["__tuple__"])==4
+              and last["__tuple__"][0]=={"__tuple__":world["body"]}
+              and last["__tuple__"][2]==step["action"]
+              and last["__tuple__"][3]==step["param"],
+              "motor command did not come from paid native Mind.last")
+        witness=info["observer"]["competition_witness"]
+        check(info["observer"]["admitted_action"]==step["action"]
+              and witness["status"]=="ACTION_ADMITTED"
+              and witness["final_admitted_action"]==step["action"]
+              and witness["final_admitted_option"]==info["option"],
+              "non-native motor admission or imposed action")
+    else:
+        check(step["action"] is None and step["param"] is None,
+              "lab made an unfunded command")
     cost=I.cost(step["cognitive_work"])
     check(step["requested_native_cost"]==cost,"wrong two-currency cognitive work")
     I.check_bill(step["native_motor"]["cognitive_accounting"],
