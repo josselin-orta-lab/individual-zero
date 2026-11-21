@@ -156,6 +156,11 @@
     "reason": "Skip synthetic F1C/F1F regeneration when Python 3.12 bytes are nonidentical to pinned originals; standalone cold 3.12 still audits the archived bytes",
     "code_policy_world_unchanged": true,
     "rerun_general_ci_run": 44896800632,
-    "rerun_native_proof_run": 44896800641
+    "rerun_native_proof_run": 44896800641,
+    "rerun_native_artifact_id": 14704467140,
+    "rerun_independent_cold_artifact_id": 14704740957,
+    "native_repeat_status": "SUCCESS_2_OF_2_JOBS",
+    "original_f1h_sha_reproduced": "f6b9129c56fcb7a9eaa7f574561fd511fa0b730600553ade1b132ae700c6566b",
+    "cold_f1h_sha_reproduced": "79ed96a2a09a66e4dfe0173d2e138c3c37d03378157f916d71193d2642cf5606"
   }
 }
