@@ -80,6 +80,7 @@ jobs:
           name: f1k-once-raw-${{ github.run_id }}
           path: |
             ${{ runner.temp }}/F1K_RESERVATION.json
+            ${{ runner.temp }}/F1K_RESERVATION.NATIVE_START_LOCK
             ${{ runner.temp }}/f1k-originals/
             ${{ runner.temp }}/f1k-preservation/
           if-no-files-found: error
@@ -155,6 +156,8 @@ jobs:
           test -s "$RECEIPT"
           RES_SHA=$(python -c 'import json,os,pathlib; print(json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"f1k-raw-publish/F1K_RESERVATION.json").read_bytes())["reservation_commit"])')
           files=("$RECEIPT" "$RUNNER_TEMP/f1k-cold-publish/F1K_FINAL_STATUS.json")
+          START="$RUNNER_TEMP/f1k-raw-publish/F1K_RESERVATION.NATIVE_START_LOCK"
+          if [ -f "$START" ]; then files+=("$START"); fi
           for p in "$RUNNER_TEMP/f1k-raw-publish/f1k-originals"/F1K_* "$RUNNER_TEMP/f1k-raw-publish/f1k-preservation"/F1K_* "$RUNNER_TEMP/f1k-cold-publish"/F1K_*; do
             if [ -f "$p" ]; then
               case "$p" in *F1K_FINAL_STATUS.json) continue ;; esac
