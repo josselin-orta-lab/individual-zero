@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 import inspect
+import os
 import unittest
 
 from i3.modules.body import BodyLaws,CognitiveBudget
@@ -42,6 +43,10 @@ def reseal(outcome):
     })
 
 
+@unittest.skipUnless(
+    os.environ.get("I3_STAGE8F1J_DEDICATED")=="1",
+    "full 16-root F1J native/cold study runs ONLY in its dedicated proof CI"
+)
 class F1JFixedRoundRealNativeCost(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -208,6 +213,41 @@ class F1JFixedRoundRealNativeCost(unittest.TestCase):
     def test_two_new_native_generations_are_byte_identical(self):
         second=J.produce(self.grid)
         self.assertEqual(C.canonical(self.proof),C.canonical(second))
+
+
+class F1JFixedRoundCheapGeneralSmoke(unittest.TestCase):
+    """Cheap guard for main CI; all original lives/forgeries remain dedicated."""
+
+    def test_preregistered_grid_and_old_f1i_verdict_are_fixed(self):
+        grid=J.exact_grid()
+        self.assertEqual(len(grid["origins"]),16)
+        self.assertEqual(grid["arms"],list(J.ARMS))
+        self.assertEqual(J.GRID_PREEXPOSURE_COMMIT,
+                         "8f82eea7a8b08e086010dfe497099212fb35508f")
+        self.assertEqual(J.PREEXPOSURE_COMMIT,
+                         "b90d6eb13459ddfda4f63c0828f4e39f135a376e")
+        self.assertEqual(J.PRIOR_RESULTS["f1i"],"INCONCLUSIVE_COST_GATE")
+
+    def test_real_paid_fixed_rounds_never_stop_on_early_threshold(self):
+        original=Mind(midpoint(),20261121)
+        candidate=F1JFixedRoundMind(midpoint(),20261121)
+        original.acc={"a":3.,"b":0.}
+        candidate.acc={"a":3.,"b":0.}
+        scored=[("a",2.),("b",1.)]
+        old=CognitiveBudget((100.,80.,80.,90.,100.),BodyLaws())
+        new=CognitiveBudget((100.,80.,80.,90.,100.),BodyLaws())
+        _,old_used=original._compete(scored,2,old)
+        _,used=candidate._compete(scored,2,new)
+        self.assertEqual(old_used,1)
+        self.assertEqual(used,2)
+        self.assertEqual(new.work.cycles,2)
+        record=candidate._observer_competition
+        self.assertEqual(len(record["actual_substantive_round_snapshots"]),2)
+        self.assertNotEqual(
+            record["actual_substantive_round_snapshots"][0],
+            record["actual_substantive_round_snapshots"][1],
+        )
+        self.assertNotIn("run_life(",inspect.getsource(J.produce))
 
 
 if __name__=="__main__":
