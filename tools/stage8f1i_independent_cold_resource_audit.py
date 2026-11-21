@@ -377,12 +377,19 @@ def masked_content_ok(step,mode,t1,t4):
     check(observed_stats(step["after_decision_exposed_mind"])==
           observed_stats(step["exposed_mind_during_decision"]),
           "free learning was executed while mask installed")
+    # Mind.decide LEGITIMATELY changes its own map, accumulator, RNG,
+    # planning and temporary decision state. Restore must preserve those
+    # genuine decision results, while restoring ONLY learned effects.
+    check(restored["effects"]==before["effects"]
+          and after_exposed["effects"]==exposed["effects"],
+          "owned learned effect model was not purely read-masked and restored")
     for fld in before:
-        if fld not in ("effects","map","hist","visible","pos","tokens",
-                       "external","acc","intention","last","rng","_budget_rng",
-                       "_drift"):
-            check(restored[fld]==before[fld],
-                  "unmasked private learning or genotype changed during voluntary choice")
+        if fld!="effects":
+            check(restored[fld]==after_exposed[fld],
+                  "laboratory overwrote the genuinely chosen Mind state")
+    for fld in ("values","buffer","theta","p","w","gammas"):
+        check(restored[fld]==before[fld],
+              "TD, episodic memory or innate genome altered at readout")
 
 
 def verify_step(step,world,mind,case,*,mask_mode=None,t1=None,t4=None):
