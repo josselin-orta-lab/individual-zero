@@ -125,6 +125,9 @@ def unexpected_workflows(paths, *, active_ci: str) -> list[str]:
         # F1J: genuinely pre-funded fixed-round deliberation, 16 fresh
         # paid personal histories. No scientific births or historic edits.
         "i3-stage8f1j-fixed-round-real-paid-parity-proof.yml",
+        # F1K: software-development only; two disjoint DEV_ONLY roots.
+        # Never authorizes any of the sixteen held-out K01..K16 sources.
+        "i3-stage8f1k-dev-only-policy-cold.yml",
     }
     return sorted(path.name for path in paths
                   if not path.name.startswith("i1-") and path.name not in allowed)

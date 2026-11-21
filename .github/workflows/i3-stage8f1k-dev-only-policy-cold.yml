@@ -1,0 +1,126 @@
+# F1K DEVELOPMENT SOFTWARE ONLY. These are DEV01/DEV02 fixtures, NOT
+# K01..K16 preregistered science roots. On PRs never execute --release.
+# Does not mutate Mind P1.3, F1J, F1I, G2 or any registered engine.
+name: I3 Stage8-F1K DEV ONLY native paid policy and cold verification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/stage8f1k_policy_cost_value_prospective.py'
+      - 'tools/stage8f1k_independent_policy_value_cold_audit.py'
+      - 'tests/i3/test_stage8f1k_dev_only_policy_value.py'
+      - '.github/workflows/i3-stage8f1k-dev-only-policy-cold.yml'
+      - 'scripts/check_engine_repository.py'
+      - 'tests/test_engine_repository.py'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  F1K_dev_native_paid_sources_policy_fork:
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    env:
+      PYTHONPATH: 'src:.'
+      I3_F1K_DEV_CI: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Reject frozen grid drift without any holdout World.step
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from tools.stage8f1k_policy_cost_value_prospective import (
+              release_grid, dev_grid, git_blob_sha, GRID, PROTOCOL,
+              GRID_BLOB, PROTOCOL_BLOB
+          )
+          from pathlib import Path
+          g=release_grid()
+          d=dev_grid()
+          assert len(g["origins"])==16 and len(d["origins"])==2
+          assert not {x["seed"] for x in g["origins"]} & {x["seed"] for x in d["origins"]}
+          assert git_blob_sha(Path(GRID).read_bytes())==GRID_BLOB
+          assert git_blob_sha(Path(PROTOCOL).read_bytes())==PROTOCOL_BLOB
+          print("F1K_HOLDOUT_NO_EXPOSURE_PREEXPOSURE_BLOB_PIN_PASS")
+          PY
+      - name: Native DEV_ONLY tests with cold adversarial falsifiers
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests/i3 -p 'test_stage8f1k_dev_only_policy_value.py' -v
+          python -m unittest tests.test_engine_repository.EngineToolingTests.test_stage8f1k_only_dev_software_proof_is_permitted -v
+          python scripts/check_engine_repository.py --json
+      - name: Publish genuine DEV_ONLY native receipts, no K seeds
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/f1k-dev"
+          python -m tools.stage8f1k_policy_cost_value_prospective \
+              --dev --output "$RUNNER_TEMP/f1k-dev/F1K_DEV_ONLY_NATIVE_ORIGINAL.json"
+          python - <<'PY'
+          import json,os,pathlib
+          from tools.stage8f1k_policy_cost_value_prospective import dev_grid
+          root=pathlib.Path(os.environ["RUNNER_TEMP"])/"f1k-dev"
+          (root/"F1K_DEV_ONLY_GRID.json").write_text(
+              json.dumps(dev_grid(),sort_keys=True,separators=(",",":"))+"\n")
+          source=json.loads((root/"F1K_DEV_ONLY_NATIVE_ORIGINAL.json").read_bytes())
+          assert source["phase"]=="DEV_ONLY" and source["origin_ids"]==["DEV01","DEV02"]
+          assert source["scientific_verdict"] is None
+          print("DEV_ONLY_NO_SCIENTIFIC_EXPOSURE",source["origin_ids"])
+          PY
+          sha256sum "$RUNNER_TEMP/f1k-dev/"*.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: i3-f1k-dev-only-native-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1k-dev/
+          if-no-files-found: error
+          retention-days: 14
+
+  F1K_dev_engine_free_python312_cold:
+    needs: F1K_dev_native_paid_sources_policy_fork
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      PYTHONPATH: '.'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: i3-f1k-dev-only-native-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1k-original
+      - name: No imported native engine and cold reduce every paid DEV_ONLY transition
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1k_independent_policy_value_cold_audit \
+              "$RUNNER_TEMP/f1k-original/F1K_DEV_ONLY_NATIVE_ORIGINAL.json" \
+              "$RUNNER_TEMP/f1k-original/F1K_DEV_ONLY_GRID.json" \
+              "$RUNNER_TEMP/F1K_DEV_ONLY_COLD.json"
+          python - <<'PY'
+          import json,os,pathlib
+          p=pathlib.Path(os.environ["RUNNER_TEMP"])/"F1K_DEV_ONLY_COLD.json"
+          x=json.loads(p.read_bytes())
+          assert x["cold_verdict"]=="DEV_ONLY_NOT_SCIENTIFIC"
+          assert x["phase"]=="DEV_ONLY"
+          assert x["preexposure_blobs_verified"] is False
+          assert x["all_16_origins_retained"] is False
+          assert x["F1I_frozen"]=="INCONCLUSIVE_COST_GATE"
+          print("F1K_DEV_ONLY_ENGINE_FREE_COLD_PASS",x["native_paid_steps_verified"])
+          PY
+          sha256sum "$RUNNER_TEMP/F1K_DEV_ONLY_COLD.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: i3-f1k-dev-only-engine-free-cold-${{ github.run_id }}
+          path: ${{ runner.temp }}/F1K_DEV_ONLY_COLD.json
+          if-no-files-found: error
+          retention-days: 14
