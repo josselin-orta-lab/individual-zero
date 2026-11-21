@@ -384,7 +384,14 @@ def early_stopping_competition(step):
           and step["cognitive_work"]["cycles"]==3+expected_used
           and witness["selection_mechanism"]==chosen_by
           and witness["tie_candidates"]==ties and winner in ties,
-          "incorrect P1.3 early threshold or fictitious charged cycle")
+          "incorrect P1.3 early threshold or fictitious charged cycle: "+
+          str({"expected":expected_used,
+               "receipt":witness["paid_competition_cycles"],
+               "info":obs["cycles"],"capacity":capacity,
+               "expected_winner":ties,
+               "recorded_winner":witness["winner_before_control"],
+               "selection":chosen_by,
+               "recorded_selection":witness["selection_mechanism"]}))
     pre=witness["accumulators_before_residual"]
     final={x:0. if x==winner else acc[x]*.5 for x in options}
     check(set(pre)==set(acc)
