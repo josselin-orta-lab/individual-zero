@@ -28,6 +28,17 @@ COINS=("energy","vigilance")
 MOTOR={"se_deplacer":2.,"collecter":1.,"manger":.5,"boire":.5,"attendre":.35}
 DELTA={"N":(0,-1),"E":(1,0),"S":(0,1),"W":(-1,0)}
 
+SOURCE_BLOBS={
+    "src/i3/modules/mind.py": "a77ee89dcb65ea0d841d3cd71a64e539dc9fc445",
+    "src/i3/modules/body.py": "22f0920a7bbb8ea4197cb7e2020fa63d2e7aa49b",
+    "src/i3/modules/world.py": "d9093953216d318c10b19c805d145dabb9c96abd",
+    "src/i3/modules/genome.py": "003e923aa93b0b284a7f732fc91f3f02538dd85c",
+    "tools/stage8f1j_fixed_round_paid_competition.py": "0030bc957ef53800d95adcb617a98cb4c856ee5d",
+    "tools/stage8f1h_prospective_native_body_value.py": "02c5ece502729e3fa341f17cfa9cdc03e8c50bf4",
+    "tools/stage8f1c_paid_postaction_learning.py": "c3d00fe078cac0ad9487ac39c2c8c7e081f32313",
+    "tools/stage8f1d_next_decision_retention.py": "19f10a02b73759b52856e177ac3731f5826281c6",
+}
+
 
 def check(ok,msg):
     I.check(ok,"F1K COLD: "+msg)
@@ -42,6 +53,10 @@ def blob_sha(raw):
 
 
 def source_guard(grid,phase,grid_bytes=None,protocol_bytes=None):
+    # Hash files as plain bytes; importing the actual engine is forbidden here.
+    for path,expected in SOURCE_BLOBS.items():
+        check(blob_sha(Path(path).read_bytes())==expected,
+              "original P1.3/F1J physiology or receipt source drift "+path)
     check(grid.get("world")=={
         "width":3,"height":3,"spawn":[1,1],
         "laws":"BodyLaws() i3-body-laws-v2","changes":[]},
@@ -60,6 +75,7 @@ def source_guard(grid,phase,grid_bytes=None,protocol_bytes=None):
         check(grid_bytes is not None and protocol_bytes is not None
               and blob_sha(grid_bytes)==GRID_BLOB
               and blob_sha(protocol_bytes)==PROTOCOL_BLOB,
+              and json.loads(grid_bytes)==grid,
               "preexposure byte pin mismatch")
         check(grid.get("schema")=="i3-stage8f1k-preexposure-heldout-net-policy-value/v0"
               and grid.get("baseline_main")=="d727b4cbb1dc0c9490608788836d3c5c040cbae5"
