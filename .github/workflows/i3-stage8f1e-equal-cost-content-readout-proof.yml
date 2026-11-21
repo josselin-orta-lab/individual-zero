@@ -1,0 +1,138 @@
+# DEVELOPMENT-ONLY, original-F1C-source-locked, genuinely paid native
+# next decision in five PREDECLARED readout variants. NOT a new life.
+name: I3 Stage8-F1E matched-cost memory-content next-choice audit
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/stage8f1e_equal_cost_content_readout.py'
+      - 'tools/stage8f1e_independent_equal_cost_content_audit.py'
+      - 'tests/i3/test_stage8f1e_equal_cost_content_readout.py'
+      - '.github/workflows/i3-stage8f1e-equal-cost-content-readout-proof.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  original_F1C_paid_memory_readout_and_native_physics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      PYTHONPATH: "src:."
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Read exact F1C originals, NEVER invent G2 memories
+        uses: actions/download-artifact@v4
+        with:
+          name: i3-stage8f1c-native-original-and-reproduced-44837981694
+          repository: josselin-orta-lab/individual-zero
+          run-id: 44837981694
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/f1c-source
+      - name: Fail closed exact F1C, tests and generation rules
+        run: |
+          set -euo pipefail
+          printf '%s  %s\n' \
+            'e46ad5f54af49796da65f48d603595544116aa6e73632546b0935d2178c5e91d' \
+            "$RUNNER_TEMP/f1c-source/F1C_PAID_NATIVE_ORIGINAL.json" | sha256sum -c -
+          cmp "$RUNNER_TEMP/f1c-source/F1C_PAID_NATIVE_ORIGINAL.json" \
+              "$RUNNER_TEMP/f1c-source/F1C_PAID_NATIVE_REPRODUCED.json"
+          python -m unittest discover -s tests/i3 -p 'test_stage8f1e_equal_cost_content_readout.py' -v
+          python scripts/check_engine_repository.py --json
+      - name: Two independent Python 3.11 producers; exact same F1C lived source
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1e_equal_cost_content_readout \
+            --f1c-original "$RUNNER_TEMP/f1c-source/F1C_PAID_NATIVE_ORIGINAL.json" \
+            --output "$RUNNER_TEMP/F1E_NATIVE_CONTENT_ORIGINAL.json"
+          python -m tools.stage8f1e_equal_cost_content_readout \
+            --f1c-original "$RUNNER_TEMP/f1c-source/F1C_PAID_NATIVE_ORIGINAL.json" \
+            --output "$RUNNER_TEMP/F1E_NATIVE_CONTENT_REPRODUCED.json"
+          cmp "$RUNNER_TEMP/F1E_NATIVE_CONTENT_ORIGINAL.json" \
+              "$RUNNER_TEMP/F1E_NATIVE_CONTENT_REPRODUCED.json"
+          python - <<'PY'
+          import json,os,pathlib
+          p=pathlib.Path(os.environ["RUNNER_TEMP"])/"F1E_NATIVE_CONTENT_ORIGINAL.json"
+          r=json.loads(p.read_bytes())
+          assert r["new_native_world_step_calls"]==5
+          assert r["original_f1c_native_world_step_reconstructions"]==1
+          assert r["new_native_full_lives"]==r["new_scientific_cohorts"]==0
+          assert r["all_next_decision_work_exact_equal"] is True
+          assert r["all_native_two_currency_bills_exact_equal"] is True
+          assert r["sham_control_neutral"] is True
+          assert r["stage8e2_frozen_causal_status"].endswith("CLOSED_NO_RETRY")
+          print("F1E_FIVE_UNFORCED_NATIVE_CHOICE_PROBES_MATCHED_COST_AND_SOURCE_PASS")
+          PY
+          sha256sum "$RUNNER_TEMP/F1E_NATIVE_CONTENT_ORIGINAL.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: i3-stage8f1e-exact-native-content-original-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/F1E_NATIVE_CONTENT_ORIGINAL.json
+            ${{ runner.temp }}/F1E_NATIVE_CONTENT_REPRODUCED.json
+            ${{ runner.temp }}/f1c-source/F1C_PAID_NATIVE_ORIGINAL.json
+          if-no-files-found: error
+          retention-days: 90
+
+  cold_independent_equal_budget_and_content_causal_audit:
+    needs: original_F1C_paid_memory_readout_and_native_physics
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      PYTHONPATH: "."
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: i3-stage8f1e-exact-native-content-original-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1e-original
+      - name: Validate archive internals then cold stdlib-native double bill audit
+        run: |
+          set -euo pipefail
+          printf '%s  %s\n' \
+            'e46ad5f54af49796da65f48d603595544116aa6e73632546b0935d2178c5e91d' \
+            "$RUNNER_TEMP/f1e-original/f1c-source/F1C_PAID_NATIVE_ORIGINAL.json" | sha256sum -c -
+          cmp "$RUNNER_TEMP/f1e-original/F1E_NATIVE_CONTENT_ORIGINAL.json" \
+              "$RUNNER_TEMP/f1e-original/F1E_NATIVE_CONTENT_REPRODUCED.json"
+          python -m tools.stage8f1e_independent_equal_cost_content_audit \
+            "$RUNNER_TEMP/f1e-original/F1E_NATIVE_CONTENT_ORIGINAL.json" \
+            "$RUNNER_TEMP/f1e-original/f1c-source/F1C_PAID_NATIVE_ORIGINAL.json" \
+            "$RUNNER_TEMP/F1E_INDEPENDENT_COLD_AUDIT.json"
+          python - <<'PY'
+          import hashlib,json,os,pathlib
+          p=pathlib.Path(os.environ["RUNNER_TEMP"])
+          original=(p/"f1e-original"/"F1E_NATIVE_CONTENT_ORIGINAL.json").read_bytes()
+          a=json.loads((p/"F1E_INDEPENDENT_COLD_AUDIT.json").read_bytes())
+          assert a["source_original_sha256"]==hashlib.sha256(original).hexdigest()
+          assert a["status"]=="F1E_NATIVE_EQUAL_COST_CONTENT_READOUT_COLD_AUDITED"
+          assert a["number_of_preexposed_readouts"]==5
+          assert a["native_second_step_receipts_verified"]==5
+          assert a["next_work_all_exactly_equal"] is True
+          assert a["sham_native_decision_neutral"] is True
+          assert a["body_and_first_person_equal"] is True
+          assert a["scientific_lives"]==a["scientific_cohorts"]==0
+          assert a["stage8e2_causal_verdict_unchanged"].endswith("CLOSED_NO_RETRY")
+          print("F1E_COLD_INDEPENDENT_SAME_WORK_TWO_CURRENCIES_AND_CONTENT_REDUCED",
+                a["primary_verdict"])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: i3-stage8f1e-cold-independent-equal-content-${{ github.run_id }}
+          path: ${{ runner.temp }}/F1E_INDEPENDENT_COLD_AUDIT.json
+          if-no-files-found: error
+          retention-days: 90
