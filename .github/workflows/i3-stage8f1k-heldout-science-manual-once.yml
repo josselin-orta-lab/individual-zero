@@ -12,6 +12,10 @@ on:
         description: Type CONSUME_F1K_16_ROOTS_NO_SCIENTIFIC_RETRY
         type: string
         required: true
+      rehearsal_run_id:
+        description: Successful prior T60 DEV_R 16-root cold rehearsal run ID
+        type: string
+        required: true
 
 concurrency:
   group: i3-stage8f1k-t60-consumed-once
@@ -36,6 +40,7 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       F1K_APPROVED_SOURCE_SHA: ${{ inputs.approved_source_sha }}
       F1K_CONSUME_ACK: ${{ inputs.consume_ack }}
+      F1K_REHEARSAL_RUN_ID: ${{ inputs.rehearsal_run_id }}
     steps:
       - uses: actions/checkout@v4
         with:
