@@ -88,6 +88,22 @@ def source_guard(grid,phase,grid_bytes=None,protocol_bytes=None):
               and all(sum(r["ecology"]==f["id"] for r in roots)==4 for f in worlds)
               and grid.get("frozen_prior_results",{}).get("F1I")=="INCONCLUSIVE_COST_GATE",
               "registered heldout protocol or origins were altered")
+    elif phase=="REHEARSAL_ONLY":
+        check(grid.get("schema")=="i3-stage8f1k-rehearsal-t60-only/v0"
+              and grid.get("phase")=="REHEARSAL_ONLY"
+              and grid.get("final_tick")==60
+              and len(roots)==16 and len(worlds)==4
+              and [r.get("id") for r in roots]==[
+                  "DEV_R"+str(i).zfill(2) for i in range(1,17)]
+              and [r.get("seed") for r in roots]==
+                  list(range(202611219301,202611219317))
+              and all(r["id"].startswith("DEV_R")
+                      for r in roots)
+              and all(f["id"].startswith("DEV_R_")
+                      for f in worlds)
+              and all(sum(r["ecology"]==f["id"] for r in roots)==4
+                      for f in worlds),
+              "rehearsal is not disjoint exact 16-source T60 DEV_R")
     else:
         check(phase=="DEV_ONLY" and grid.get("schema")=="i3-stage8f1k-dev-grid/v0"
               and grid.get("phase")=="DEV_ONLY"
@@ -783,7 +799,7 @@ def audit(report,grid,*,grid_bytes=None,protocol_bytes=None):
         "competition_rounds_verified":total_rounds,
         "real_meals_verified":meals,
         "real_drinks_verified":drinks,
-        "all_16_origins_retained":len(roots)==16 if phase!="DEV_ONLY" else False,
+        "all_16_origins_retained":(phase=="F1K_HELDOUT_RELEASE" and len(roots)==16),
         "reference_controller_unchanged":True,
         "F1I_frozen":"INCONCLUSIVE_COST_GATE",
         "per_origin":rows_out,
