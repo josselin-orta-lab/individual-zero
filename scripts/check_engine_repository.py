@@ -116,6 +116,9 @@ def unexpected_workflows(paths, *, active_ci: str) -> list[str]:
         # F1G: separately preregistered TD versus episodic buffer content,
         # same eight native ecologies, equal paid decision, no cohorts.
         "i3-stage8f1g-separated-td-buffer-eight-ecologies-proof.yml",
+        # F1H: source-locked F1F T12 native continuation with genuine
+        # paid post-action learning; eight fixed WorldSpecs, no new lives.
+        "i3-stage8f1h-prospective-body-value-native-proof.yml",
     }
     return sorted(path.name for path in paths
                   if not path.name.startswith("i1-") and path.name not in allowed)
