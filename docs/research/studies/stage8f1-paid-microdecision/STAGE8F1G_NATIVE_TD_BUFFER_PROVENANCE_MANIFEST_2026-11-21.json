@@ -1,0 +1,100 @@
+{
+  "schema": "i3-stage8f1g-independent-td-buffer-negative-native-provenance/v0",
+  "primary_gate": "TWO_SEPARATE_TD_BUFFER_CONTENT_COST_GATES_EVALUATED",
+  "td_primary": "NO_TD_CONTENT_EFFECT_IN_EIGHT_ECOLOGIES",
+  "buffer_primary": "NO_BUFFER_CONTENT_EFFECT_IN_EIGHT_ECOLOGIES",
+  "ecologies_registered": 8,
+  "ecologies_cost_matched": 8,
+  "changed_td": 0,
+  "changed_buffer": 0,
+  "original_preexposure_source_commit": "77c3e3395dfa379851d6192a7ec09968727c9ed9",
+  "preregistered_f1g_commit": "82d3dc015b5d89ce52b1abc632e7a6a1a52d01b7",
+  "f1g_implementation_base": "f6c86019df2800e5584f1b047746e093c4d17abe",
+  "code_pr": "https://github.com/josselin-orta-lab/individual-zero/pull/1493",
+  "successful_run_id": 44893263579,
+  "successful_dedicated_jobs": 2,
+  "dedicated_falsifier_tests": 18,
+  "original_f1c": {
+    "run_id": 44837981694,
+    "artifact_id": 14679910820,
+    "file": "F1C_PAID_NATIVE_ORIGINAL.json",
+    "bytes": 125436,
+    "sha256": "e46ad5f54af49796da65f48d603595544116aa6e73632546b0935d2178c5e91d"
+  },
+  "original_f1f": {
+    "run_id": 44892635999,
+    "artifact_id": 14702338615,
+    "file": "F1F_ECOLOGICAL_ORIGINAL.json",
+    "bytes": 1612315,
+    "sha256": "f620d1b46ddf269dc368dcd90ba6c93f44f0b6442f8d9e6322440de32e3fbab5"
+  },
+  "audit_f1f": {
+    "run_id": 44892635999,
+    "artifact_id": 14702267579,
+    "file": "F1F_COLD_ECOLOGY_AUDIT.json",
+    "bytes": 2749,
+    "sha256": "8013f2add1f3eb0190127bb77eac588c95f153f32ba21113302bafa0292e2ac2"
+  },
+  "f1g_original": {
+    "run_id": 44893263579,
+    "artifact_id": 14702437957,
+    "original_file": "F1G_TD_BUFFER_ORIGINAL.json",
+    "replicated_file": "F1G_TD_BUFFER_REPRODUCED.json",
+    "bytes_each": 2143612,
+    "sha256": "a7f0782886b3d2b97cd91ea11803934f31736b91e6d659c700a3d1dd886a8376",
+    "identical": true,
+    "zip_sha256": "6ca75a54271c85d9d41b95bd34ba2a7cbb7470680c0a81e9f6724fa0dff8129f"
+  },
+  "f1g_audit": {
+    "run_id": 44893263579,
+    "artifact_id": 14702663751,
+    "file": "F1G_INDEPENDENT_COLD_TD_BUFFER_AUDIT.json",
+    "bytes": 3384,
+    "sha256": "ec3b1c953c69d87dc042ab81da55809984e7b78c175a2697a6b3d0a24fa21310",
+    "zip_sha256": "d482d54a8ad3333796f780255edc788904a26c8edef3ff4f6be6a92358f5147e",
+    "without_engine_import": true
+  },
+  "portable_archive": {
+    "file": "F1G_separate_TD_buffer_and_F1F_evidence_20261121.tar.gz",
+    "bytes": 1308763,
+    "sha256": "4717ff7e426bde1bce012fdd2e77fc13e6c8d37556cb921b3bd0543c1b242d2a",
+    "stored_in_git": false
+  },
+  "initial_failed_ci": {
+    "run_id": 44893210594,
+    "reason": "invalid test fixture indexed the tuple-typed serialized innate weight as list",
+    "generated_native_proof": false,
+    "corrected_test_only_commit": "333d1e8d89dcce57eb48f35fcb68dc4fa0021361"
+  },
+  "total_native_steps_per_producer": 40,
+  "second_step_receipts_verified": 32,
+  "arms": [
+    "full",
+    "sham_state",
+    "mask_td",
+    "mask_buffer"
+  ],
+  "contexts": [
+    "bare",
+    "water_here",
+    "water_north",
+    "water_east",
+    "water_west",
+    "food_here",
+    "food_east",
+    "mixed_here_water_east_food"
+  ],
+  "mask_td": "only prior original TD 3x6 numeric values exposed during decision, restored afterward",
+  "mask_buffer": "single nonfactual None marker preserving buffer length one, restored afterward",
+  "same_body_genome_rng_effects_across_arms": true,
+  "native_cognitive_cost_matched_within_each_context": true,
+  "all_sham_neutral": true,
+  "no_forced_motor": true,
+  "full_lives": 0,
+  "new_scientific_cohorts": 0,
+  "historical_g2_mind_reconstructed": false,
+  "adaptive_value_or_future_learning": "NOT_TESTED",
+  "f1f_mean_content_motor_effects": 1,
+  "original_stage8e2": "STAGE8E2_CAUSAL_GAMMA_BLOCK_NOT_DEMONSTRATED_F0 / CLOSED_NO_RETRY",
+  "github_actions_retention_days": 90
+}
