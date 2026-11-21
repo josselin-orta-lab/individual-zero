@@ -67,7 +67,7 @@ jobs:
           from tools.stage8f1k_policy_cost_value_prospective import dev_grid
           root=pathlib.Path(os.environ["RUNNER_TEMP"])/"f1k-dev"
           (root/"F1K_DEV_ONLY_GRID.json").write_text(
-              json.dumps(dev_grid(),sort_keys=True,separators=(",",":"))+"\\n")
+              json.dumps(dev_grid(),sort_keys=True,separators=(",",":"))+"\n")
           source=json.loads((root/"F1K_DEV_ONLY_NATIVE_ORIGINAL.json").read_bytes())
           assert source["phase"]=="DEV_ONLY" and source["origin_ids"]==["DEV01","DEV02"]
           assert source["scientific_verdict"] is None
