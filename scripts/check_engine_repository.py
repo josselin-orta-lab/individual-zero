@@ -128,6 +128,12 @@ def unexpected_workflows(paths, *, active_ci: str) -> list[str]:
         # F1K: software-development only; two disjoint DEV_ONLY roots.
         # Never authorizes any of the sixteen held-out K01..K16 sources.
         "i3-stage8f1k-dev-only-policy-cold.yml",
+        # F1K: repeatable *development-only* T60 dry rehearsal using 16
+        # DEV_R roots that never overlap heldout K01..K16.
+        "i3-stage8f1k-t60-dev-rehearsal.yml",
+        # F1K: scientific one-shot is manual only with immutable-intent remote
+        # create-only ref BEFORE first K World.step; no push/PR trigger.
+        "i3-stage8f1k-heldout-science-manual-once.yml",
     }
     return sorted(path.name for path in paths
                   if not path.name.startswith("i1-") and path.name not in allowed)
