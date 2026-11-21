@@ -60,8 +60,8 @@ class F1IIndependentlyPaidMinds(unittest.TestCase):
         for root in self.proof["rows"]:
             genesis=root["source"]["genesis"]
             self.assertEqual(genesis["mind"]["data"]["class"],"Mind")
-            self.assertEqual(I.observed_stats(genesis["mind"]),{})
-            private=I.private_fields(genesis["mind"])
+            self.assertEqual(Cold.observed_stats(genesis["mind"]),{})
+            private=Cold.private_fields(genesis["mind"])
             self.assertEqual(private["buffer"],{"__deque__":[],"maxlen":None})
             self.assertTrue(all(all(v==0. for v in row) for row in private["values"]))
             hashes.add(genesis["mind"]["sha256"])
@@ -112,7 +112,7 @@ class F1IIndependentlyPaidMinds(unittest.TestCase):
                 tuple(row["key"]):row["stat"]
                 for row in source["paid_t4_full_effects"]}
             step=root["arms"]["mask_owned_prior_means"]["steps"][0]
-            current=I.observed_stats(step["effective_readout_mind"]) if "effective_readout_mind" in step else I.observed_stats(step["exposed_mind_during_decision"])
+            current=Cold.observed_stats(step["effective_readout_mind"]) if "effective_readout_mind" in step else Cold.observed_stats(step["exposed_mind_during_decision"])
             self.assertEqual(step["temporary_prior_mean_keys"],
                              [list(k) for k in sorted(set(from_t1)&set(t4),key=repr)])
             for key in t4:
@@ -120,8 +120,8 @@ class F1IIndependentlyPaidMinds(unittest.TestCase):
                 self.assertEqual(current[key][1],target)
                 self.assertEqual(current[key][0],t4[key][0])
                 self.assertEqual(current[key][2],t4[key][2])
-            self.assertEqual(I.observed_stats(step["after_restoration_before_motor"]),
-                             I.observed_stats(step["before_mind"]))
+            self.assertEqual(Cold.observed_stats(step["after_restoration_before_motor"]),
+                             Cold.observed_stats(step["before_mind"]))
 
     def test_exact_cognitive_fork_parity_is_a_gate_not_assumption(self):
         for root in self.proof["rows"]:
