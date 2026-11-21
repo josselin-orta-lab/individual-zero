@@ -34,13 +34,33 @@ ARMS = ("reference_p13", "reference_sham", "fixed_round_f1j")
 T_SOURCE, T_FORK, T_END = 4, 5, 60
 RELEASE_ENV = "I3_F1K_ONE_SHOT_HOLDOUT_RELEASE"
 
+REFERENCE_SOURCE_BLOBS = {
+    "src/i3/modules/mind.py": "a77ee89dcb65ea0d841d3cd71a64e539dc9fc445",
+    "src/i3/modules/body.py": "22f0920a7bbb8ea4197cb7e2020fa63d2e7aa49b",
+    "src/i3/modules/world.py": "d9093953216d318c10b19c805d145dabb9c96abd",
+    "src/i3/modules/genome.py": "003e923aa93b0b284a7f732fc91f3f02538dd85c",
+    "tools/stage8f1j_fixed_round_paid_competition.py": "0030bc957ef53800d95adcb617a98cb4c856ee5d",
+    "tools/stage8f1h_prospective_native_body_value.py": "02c5ece502729e3fa341f17cfa9cdc03e8c50bf4",
+    "tools/stage8f1c_paid_postaction_learning.py": "c3d00fe078cac0ad9487ac39c2c8c7e081f32313",
+    "tools/stage8f1d_next_decision_retention.py": "19f10a02b73759b52856e177ac3731f5826281c6",
+}
+
 
 def git_blob_sha(payload: bytes) -> str:
     """Calculate actual git blob identity, not a checksum of parsed JSON."""
     return sha1(b"blob " + str(len(payload)).encode("ascii") + b"\0" + payload).hexdigest()
 
 
+
+def verify_reference_source():
+    """Fail before exposure if original P1.3, F1J, physiology or receipt code drift."""
+    for path,expected in REFERENCE_SOURCE_BLOBS.items():
+        if git_blob_sha(Path(path).read_bytes()) != expected:
+            raise ValueError("F1K reference controller/physics SOURCE_DRIFT: "+path)
+    return True
+
 def release_grid(path=GRID, protocol=PROTOCOL):
+    verify_reference_source()
     source = Path(path).read_bytes()
     method = Path(protocol).read_bytes()
     if (git_blob_sha(source) != GRID_BLOB
