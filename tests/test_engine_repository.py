@@ -11,6 +11,31 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class EngineToolingTests(unittest.TestCase):
 
+    def test_stage8f1k_manual_one_shot_and_separate_dev_rehearsal_only(self):
+        from scripts.check_engine_repository import unexpected_workflows
+        legit=(
+            "i3-stage8f1k-t60-dev-rehearsal.yml",
+            "i3-stage8f1k-heldout-science-manual-once.yml",
+        )
+        blocked=(
+            "i3-stage8f1k-t60-pr-scientific-run.yml",
+            "i3-stage8f1k-t60-after-failure-retry.yml",
+            "i3-stage8f1k-rewrite-originals.yml",
+        )
+        self.assertEqual(
+            unexpected_workflows(
+                [Path(".github/workflows/"+name) for name in (*legit,*blocked)],
+                active_ci="i1-current-ci.yml"),
+            sorted(blocked))
+        science=(ROOT/".github/workflows/i3-stage8f1k-heldout-science-manual-once.yml").read_text()
+        self.assertIn("  workflow_dispatch:\n",science)
+        self.assertNotIn("  pull_request:\n",science)
+        self.assertNotIn("  push:\n",science)
+        self.assertIn("github.run_attempt == 1",science)
+        self.assertIn("cancel-in-progress: false",science)
+        self.assertIn("one_shot_reservation --reserve",science)
+        self.assertNotIn("gh release upload --clobber",science)
+
     def test_stage8f1k_only_dev_software_proof_is_permitted(self):
         from scripts.check_engine_repository import unexpected_workflows
         legal="i3-stage8f1k-dev-only-policy-cold.yml"

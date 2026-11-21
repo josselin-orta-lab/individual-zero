@@ -1,0 +1,175 @@
+# F1K scientific population: manual-only, no PR, push, schedule or rerun.
+name: I3 Stage8-F1K manual one-shot source-reserved T60
+
+on:
+  workflow_dispatch:
+    inputs:
+      approved_source_sha:
+        description: Exact reviewed SHA on main (after separate DEV_R T60 rehearsal)
+        type: string
+        required: true
+      consume_ack:
+        description: Type CONSUME_F1K_16_ROOTS_NO_SCIENTIFIC_RETRY
+        type: string
+        required: true
+      rehearsal_run_id:
+        description: Successful prior T60 DEV_R 16-root cold rehearsal run ID
+        type: string
+        required: true
+
+concurrency:
+  group: i3-stage8f1k-t60-consumed-once
+  cancel-in-progress: false
+permissions:
+  contents: read
+  actions: read
+env:
+  F1K_TAG: i3-stage8f1k-t60-heldout-once
+
+jobs:
+  source_reservation_and_native_original:
+    if: ${{ github.run_attempt == 1 && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    outputs:
+      consumed: ${{ steps.claim.outcome == 'success' }}
+    permissions:
+      contents: write
+      actions: read
+    env:
+      PYTHONPATH: 'src:.'
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      F1K_APPROVED_SOURCE_SHA: ${{ inputs.approved_source_sha }}
+      F1K_CONSUME_ACK: ${{ inputs.consume_ack }}
+      F1K_REHEARSAL_RUN_ID: ${{ inputs.rehearsal_run_id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify sources and context before any K World.step
+        run: |
+          set -euo pipefail
+          python -c 'from tools import stage8f1k_one_shot_reservation as R; from tools import stage8f1k_policy_cost_value_prospective as P; R.context(); R.source_blobs(); assert len(P.release_grid()["origins"])==16; print("F1K_NO_EXPOSURE_PREFLIGHT_PASS")'
+      - name: Create atomic GitHub consumed-once reference
+        id: claim
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1k_one_shot_reservation --reserve "$RUNNER_TEMP/F1K_RESERVATION.json"
+          python -m tools.stage8f1k_one_shot_reservation --verify "$RUNNER_TEMP/F1K_RESERVATION.json"
+      - name: ONE native K01-K16 original then ONLY read-only canonical proof
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1k_one_shot_evidence --release --reservation "$RUNNER_TEMP/F1K_RESERVATION.json" --output-dir "$RUNNER_TEMP/f1k-originals"
+          python -c 'import os,pathlib; from tools.stage8f1k_one_shot_evidence import verify_bundle; x=verify_bundle(pathlib.Path(os.environ["RUNNER_TEMP"])/"f1k-originals"); assert x["roots"]==16 and x["original_native_gzips"]==64'
+      - name: Preserve any partial raw case gzips and one-shot reservation
+        if: ${{ always() && steps.claim.outcome == 'success' }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/f1k-preservation"
+          if [ -d "$RUNNER_TEMP/f1k-originals/original_cases" ]; then
+            tar -C "$RUNNER_TEMP/f1k-originals" --sort=name --mtime='UTC 1970-01-01' --owner=0 --group=0 --numeric-owner -czf "$RUNNER_TEMP/f1k-preservation/F1K_PARTIAL_CASES.tar.gz" original_cases
+            sha256sum "$RUNNER_TEMP/f1k-preservation/F1K_PARTIAL_CASES.tar.gz" > "$RUNNER_TEMP/f1k-preservation/F1K_PARTIAL_CASES.sha256"
+          fi
+      - if: ${{ always() && steps.claim.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: f1k-once-raw-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/F1K_RESERVATION.json
+            ${{ runner.temp }}/F1K_RESERVATION.NATIVE_START_LOCK
+            ${{ runner.temp }}/f1k-originals/
+            ${{ runner.temp }}/f1k-preservation/
+          if-no-files-found: error
+          retention-days: 90
+
+  independent_python312_cold:
+    needs: source_reservation_and_native_original
+    if: ${{ always() && needs.source_reservation_and_native_original.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      PYTHONPATH: '.'
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: f1k-once-raw-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1k-source
+      - name: Verify one-shot identity, all 64 gzip and native body transitions
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1k_one_shot_cold_entry "$RUNNER_TEMP/f1k-source" "$RUNNER_TEMP/f1k-cold"
+      - if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: f1k-once-cold-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1k-cold/
+          if-no-files-found: warn
+          retention-days: 90
+
+  final_cold_publication:
+    needs: [source_reservation_and_native_original, independent_python312_cold]
+    if: ${{ always() && needs.source_reservation_and_native_original.outputs.consumed == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      COLD_JOB_RESULT: ${{ needs.independent_python312_cold.result }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Retrieve original consumed science receipts even if native job failed
+        uses: actions/download-artifact@v4
+        with:
+          name: f1k-once-raw-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1k-raw-publish
+      - if: ${{ needs.independent_python312_cold.result == 'success' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: f1k-once-cold-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1k-cold-publish
+      - name: Release independently verified cold result OR explicit no-retry failure
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/f1k-cold-publish"
+          python -m tools.stage8f1k_one_shot_publish_status --dir "$RUNNER_TEMP/f1k-cold-publish" --cold-job "$COLD_JOB_RESULT"
+          RECEIPT="$RUNNER_TEMP/f1k-raw-publish/F1K_RESERVATION.json"
+          test -s "$RECEIPT"
+          RES_SHA=$(python -c 'import json,os,pathlib; print(json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"f1k-raw-publish/F1K_RESERVATION.json").read_bytes())["reservation_commit"])')
+          files=("$RECEIPT" "$RUNNER_TEMP/f1k-cold-publish/F1K_FINAL_STATUS.json")
+          START="$RUNNER_TEMP/f1k-raw-publish/F1K_RESERVATION.NATIVE_START_LOCK"
+          if [ -f "$START" ]; then files+=("$START"); fi
+          for p in "$RUNNER_TEMP/f1k-raw-publish/f1k-originals"/F1K_* "$RUNNER_TEMP/f1k-raw-publish/f1k-preservation"/F1K_* "$RUNNER_TEMP/f1k-cold-publish"/F1K_*; do
+            if [ -f "$p" ]; then
+              case "$p" in *F1K_FINAL_STATUS.json) continue ;; esac
+              files+=("$p")
+            fi
+          done
+          gh release create "$F1K_TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY" --target "$RES_SHA" --prerelease --latest=false --title 'I3 F1K once-only original T60' --notes 'One allocation consumed before any native World.step. All available original or partial gzip and independent cold or explicit failure status are published together, without retries. Custody is internal to GitHub, not external escrow.'
+          gh release view "$F1K_TAG" --repo "$GITHUB_REPOSITORY" --json tagName,url
+      - if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: f1k-once-final-status-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1k-cold-publish/
+          if-no-files-found: warn
+          retention-days: 90

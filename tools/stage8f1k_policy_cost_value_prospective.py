@@ -125,6 +125,61 @@ def dev_grid():
     }
 
 
+def rehearsal_grid():
+    """Sixteen NEW DEV-only T60 trajectories, NOT K01..K16 environments.
+
+    Full protocol-shaped rehearsal of memory, money, native death,
+    three arms and cold audit, without burning the protected seeds.
+    """
+    names=("DEV_R_renewing", "DEV_R_wide", "DEV_R_corner", "DEV_R_bitter")
+    features=(
+        ([1,1],16,3,3,4,[1,0],"f1k-dev-r-pear",18,1.,2,2,5),
+        ([0,0],25,2,2,5,[2,2],"f1k-dev-r-bean",20,.5,2,2,6),
+        ([2,2],21,3,3,8,[0,0],"f1k-dev-r-berry",16,1.5,2,2,7),
+        ([1,2],18,3,3,6,[0,2],"f1k-dev-r-pod",29,-.8,2,2,8),
+    )
+    families=[]
+    for name,f in zip(names,features):
+        w,wg,ws,wm,wr,food,token,fg,delta,fs,fm,fr=f
+        families.append({
+            "id":name,"water":w,"water_gain":wg,
+            "water_stock":ws,"water_max_stock":wm,"water_restock_every":wr,
+            "food":food,"token":token,"food_gain":fg,
+            "integrity_delta":delta,"food_quantity":fs,
+            "food_max_quantity":fm,"food_restock_every":fr,
+        })
+    roots=[]
+    for k,fam in enumerate(families):
+        for j in range(4):
+            idx=4*k+j+1
+            roots.append({
+                "id":"DEV_R"+str(idx).zfill(2),
+                "ecology":fam["id"],"seed":202611219301+idx-1,
+                "body":[60.+j,68.-j,35.+.5*j,91.-.4*j,96.-.3*j],
+            })
+    return {
+        "schema":"i3-stage8f1k-rehearsal-t60-only/v0",
+        "phase":"REHEARSAL_ONLY",
+        "world":{"width":3,"height":3,"spawn":[1,1],
+                 "laws":"BodyLaws() i3-body-laws-v2","changes":[]},
+        "ecologies":families,"origins":roots,
+        "personal_history_ticks":4,"fork_tick":5,
+        "final_tick":60,"arms":list(ARMS),
+    }
+
+
+def validate_rehearsal(grid):
+    if grid != rehearsal_grid() or len(grid["origins"])!=16:
+        raise ValueError("only the exact disjoint DEV_R rehearsal fixtures are allowed")
+    banned=set(range(202611219101,202611219117))
+    if (any(r["seed"] in banned or not r["id"].startswith("DEV_R")
+            for r in grid["origins"])
+            or {f["id"] for f in grid["ecologies"]} &
+            {f["id"] for f in release_grid()["ecologies"]}):
+        raise ValueError("F1K heldout overlap in rehearsal grid")
+    return grid
+
+
 def validate_dev(grid):
     if grid != dev_grid() or grid["phase"] != "DEV_ONLY":
         raise ValueError("F1K dev test must use the fixed separate DEV_ONLY fixtures")
@@ -357,14 +412,37 @@ def classify(grid,rows,phase):
     return "NO_REPRODUCIBLE_NET_BODY_ADVANTAGE_T60"
 
 
-def produce(grid,phase="DEV_ONLY"):
+def produce(grid,phase="DEV_ONLY",on_case=None):
     if phase=="DEV_ONLY":
         validate_dev(grid)
+    elif phase=="REHEARSAL_ONLY":
+        validate_rehearsal(grid)
     elif phase=="F1K_HELDOUT_RELEASE":
         if grid!=release_grid():
             raise ValueError("science grid not byte-identical to frozen sources")
         if os.environ.get(RELEASE_ENV)!=PREEXPOSURE_MAIN:
             raise PermissionError("F1K holdout release needs distinct one-shot authority")
+        receipt_path=os.environ.get("I3_F1K_RESERVATION_RECEIPT")
+        if not receipt_path:
+            raise PermissionError("F1K original has no atomic GitHub reservation receipt")
+        from tools import stage8f1k_one_shot_reservation as R
+        verified=R.verify_remote(R.load_receipt(Path(receipt_path)))
+        # Exclusive first-start claim for THIS run, before any native World.step.
+        # A second P.produce(K-source) in this job is forbidden even when it
+        # would yield equal deterministic bytes. Its evidence may only be
+        # reexamined afterwards with an engine-free cold reader.
+        start_lock=Path(receipt_path).with_suffix(".NATIVE_START_LOCK")
+        native_claim={
+            "schema":"i3-stage8f1k-first-native-exposure-lock/v0",
+            "reservation_run_id":verified["workflow_run_id"],
+            "reserved_source_sha":verified["head_sha"],
+            "origin_ids":[r["id"] for r in grid["origins"]],
+            "no_native_second_attempt":True,
+        }
+        with start_lock.open("xb") as fd:
+            fd.write(C.canonical(native_claim)+b"\n")
+            fd.flush()
+            os.fsync(fd.fileno())
     else:
         raise ValueError("unknown prospective population phase")
     rows=[]
@@ -378,12 +456,16 @@ def produce(grid,phase="DEV_ONLY"):
         row={"origin":root,"source":personal,"arms":arms,"comparison":comparison}
         row["case_sha256"]=C.digest(row)
         rows.append(row)
-    producer_estimate=classify(grid,rows,phase)
+        if on_case is not None:
+            on_case(row)
+    scientific=phase=="F1K_HELDOUT_RELEASE"
+    producer_estimate=(classify(grid,rows,phase)
+                       if scientific else "DEV_ONLY_NOT_SCIENTIFIC")
     result={
         "schema":SCHEMA,"phase":phase,
-        "frozen_preexposure_main":PREEXPOSURE_MAIN if phase!="DEV_ONLY" else None,
-        "grid_blob_sha":GRID_BLOB if phase!="DEV_ONLY" else None,
-        "protocol_blob_sha":PROTOCOL_BLOB if phase!="DEV_ONLY" else None,
+        "frozen_preexposure_main":PREEXPOSURE_MAIN if scientific else None,
+        "grid_blob_sha":GRID_BLOB if scientific else None,
+        "protocol_blob_sha":PROTOCOL_BLOB if scientific else None,
         "origin_count":len(grid["origins"]),
         "origin_ids":[r["id"] for r in grid["origins"]],
         "worlds":[e["id"] for e in grid["ecologies"]],
@@ -395,7 +477,7 @@ def produce(grid,phase="DEV_ONLY"):
         "F1J_frozen":"FIXED_ROUND_16_OF_16_REAL_COST_PARITY_DEMONSTRATED_LOCAL",
         "scientific_verdict":None,
         "producer_provisional_classification":(
-            producer_estimate if phase!="DEV_ONLY" else "DEV_ONLY_NOT_SCIENTIFIC"),
+            producer_estimate),
         "rows":rows,
     }
     result["provenance_sha256"]=C.digest({
