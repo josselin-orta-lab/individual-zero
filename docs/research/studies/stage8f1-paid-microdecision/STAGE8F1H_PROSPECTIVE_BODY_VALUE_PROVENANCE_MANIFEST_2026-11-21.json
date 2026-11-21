@@ -1,0 +1,145 @@
+{
+  "schema": "i3-stage8f1h-original-prospective-t12-body-value-provenance/v0",
+  "stage": "Stage8-F1H",
+  "main_source_sha": "3ad4cb687b403214c9b9f6055b46a489dca44af4",
+  "preregistration_commit": "5c2abb2fc755bf0a580e2880bedf507b59a2baec",
+  "code_pr": "https://github.com/josselin-orta-lab/individual-zero/pull/1495",
+  "dedicated_ci": {
+    "url": "https://github.com/josselin-orta-lab/individual-zero/actions/runs/44896342369",
+    "run_id": 44896342369,
+    "jobs_success": 2,
+    "jobs_total": 2,
+    "preregistered_falsifier_tests_passed": 17,
+    "native_producer_python": "3.11",
+    "independent_cold_python": "3.12",
+    "cold_uses_engine": false
+  },
+  "source_f1c": {
+    "run_id": 44837981694,
+    "artifact_id": 14679910820,
+    "file": "F1C_PAID_NATIVE_ORIGINAL.json",
+    "sha256": "e46ad5f54af49796da65f48d603595544116aa6e73632546b0935d2178c5e91d",
+    "bytes": 125436
+  },
+  "source_f1f": {
+    "run_id": 44892635999,
+    "artifact_id": 14702338615,
+    "file": "F1F_ECOLOGICAL_ORIGINAL.json",
+    "sha256": "f620d1b46ddf269dc368dcd90ba6c93f44f0b6442f8d9e6322440de32e3fbab5",
+    "bytes": 1612315
+  },
+  "source_f1f_cold": {
+    "run_id": 44892635999,
+    "artifact_id": 14702267579,
+    "file": "F1F_COLD_ECOLOGY_AUDIT.json",
+    "sha256": "8013f2add1f3eb0190127bb77eac588c95f153f32ba21113302bafa0292e2ac2",
+    "bytes": 2749
+  },
+  "source_f1g_unmodified": {
+    "original_sha256": "a7f0782886b3d2b97cd91ea11803934f31736b91e6d659c700a3d1dd886a8376",
+    "cold_sha256": "ec3b1c953c69d87dc042ab81da55809984e7b78c175a2697a6b3d0a24fa21310",
+    "td_primary": "NO_TD_CONTENT_EFFECT_IN_EIGHT_ECOLOGIES",
+    "buffer_primary": "NO_BUFFER_CONTENT_EFFECT_IN_EIGHT_ECOLOGIES"
+  },
+  "f1h_original": {
+    "run_id": 44896342369,
+    "artifact_id": 14704126450,
+    "original_file": "F1H_PROSPECTIVE_ORIGINAL.json",
+    "repeated_file": "F1H_PROSPECTIVE_REPRODUCED.json",
+    "bytes_each": 21334939,
+    "sha256": "f6b9129c56fcb7a9eaa7f574561fd511fa0b730600553ade1b132ae700c6566b",
+    "octet_identical": true,
+    "zip_sha256": "204b8e0e71561651bd0e0219c34cb3d552ba75486822ace77392d2671af43cd2"
+  },
+  "f1h_cold": {
+    "run_id": 44896342369,
+    "artifact_id": 14704226017,
+    "file": "F1H_INDEPENDENT_COLD_BODY_AUDIT.json",
+    "bytes": 7555,
+    "sha256": "79ed96a2a09a66e4dfe0173d2e138c3c37d03378157f916d71193d2642cf5606",
+    "zip_sha256": "cb3364e76d54cd7a0fc7006120ba9e10f88b797e7b8d2daaf029f19453f734f3"
+  },
+  "portable_archive": {
+    "file": "F1H_T12_native_prospective_adaptive_value_evidence_20261121.tar.gz",
+    "bytes": 3165349,
+    "sha256": "c212f5127cc44becc6066e96d68e10f93d5dac95a702e6f452f33553a694888d",
+    "included_originals": [
+      "F1C",
+      "F1F",
+      "F1G",
+      "F1H original",
+      "F1H repeated",
+      "F1F/F1G/F1H cold audits"
+    ],
+    "stored_in_git": false
+  },
+  "experiment": {
+    "horizon_t": 12,
+    "native_f1c_first_steps": 8,
+    "native_followup_steps": 264,
+    "native_postaction_learning_bills_checked": 264,
+    "preregistered_ecologies": 8,
+    "validated_ecologies": 8,
+    "arms": [
+      "full",
+      "sham",
+      "mask_both"
+    ],
+    "all_f1f_tick2_originals_byte_exact": true,
+    "all_sham_full_trajectories_neutral": true,
+    "all_branches_survive_t12": true,
+    "actual_new_lives": 0,
+    "actual_scientific_cohorts": 0,
+    "run_life_executed": false,
+    "first_person_actions_not_imposed": true,
+    "any_extra_memory_intervention_after_t2": false,
+    "mixed_context": "mixed_here_water_east_food",
+    "mixed_known_motor_effect_from_f1f": [
+      "se_deplacer E",
+      "se_deplacer N"
+    ],
+    "mixed_survival_primary": "NO_SURVIVAL_ADVANTAGE_OF_THE_MEMORY_INFLUENCED_DECISION_AT_T12",
+    "mixed_bodily_secondary": "MIXED_BODILY_TRADEOFF",
+    "mixed_full_terminal_body": [
+      13.425999999999998,
+      71.21999999999996,
+      80.19999999999996,
+      91.80000000000003,
+      99.364
+    ],
+    "mixed_mask_terminal_body": [
+      8.868199999999998,
+      71.38999999999996,
+      80.19999999999996,
+      91.60000000000002,
+      99.364
+    ],
+    "mixed_full_terminal_position": [
+      1,
+      1
+    ],
+    "mixed_mask_terminal_position": [
+      1,
+      2
+    ],
+    "mixed_full_cognitive_total_energy": 5.6336,
+    "mixed_mask_cognitive_total_energy": 5.1914,
+    "mixed_full_cognitive_total_vigilance": 7.71,
+    "mixed_mask_cognitive_total_vigilance": 7.244,
+    "mixed_full_movements": 2,
+    "mixed_mask_movements": 3,
+    "mixed_drinks_each": 1,
+    "mixed_food_collected_each": 0
+  },
+  "claim_boundary": {
+    "adapted_survival_demonstrated": false,
+    "five_channel_dominance_demonstrated": false,
+    "local_endogenous_bodily_consequences": true,
+    "historical_g2_memory_equivalence": false,
+    "generalizable_survival_advantage": false,
+    "strict_motor_mediation_isolated": false,
+    "later_learning_replays_prepaid": true,
+    "original_stage8e2": "STAGE8E2_CAUSAL_GAMMA_BLOCK_NOT_DEMONSTRATED_F0 / CLOSED_NO_RETRY"
+  },
+  "github_actions_retention_days": 90
+}
