@@ -172,7 +172,7 @@ class Stage8F1GTDAndBufferIndependent(unittest.TestCase):
         bad=deepcopy(self.proof)
         snap=bad["contexts"][0]["arms"]["mask_td"]["effective_readout_mind"]
         pairs=dict(snap["data"]["private"]["__dict__"])
-        pairs["w"][0]+=1.
+        pairs["w"]["__tuple__"][0]+=1.
         reseal(bad)
         with self.assertRaises(ValueError):
             self.cold(bad)
