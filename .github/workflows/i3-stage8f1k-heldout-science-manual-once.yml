@@ -61,7 +61,7 @@ jobs:
           set -euo pipefail
           python -m tools.stage8f1k_one_shot_reservation --reserve "$RUNNER_TEMP/F1K_RESERVATION.json"
           python -m tools.stage8f1k_one_shot_reservation --verify "$RUNNER_TEMP/F1K_RESERVATION.json"
-      - name: One original 16-root T60 native population plus technical reproduction
+      - name: ONE native K01-K16 original then ONLY read-only canonical proof
         run: |
           set -euo pipefail
           python -m tools.stage8f1k_one_shot_evidence --release --reservation "$RUNNER_TEMP/F1K_RESERVATION.json" --output-dir "$RUNNER_TEMP/f1k-originals"
