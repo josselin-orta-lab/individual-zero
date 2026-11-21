@@ -25,6 +25,12 @@ Read [short current status](STATUS.md), [I3 agent rules](../AGENTS.md), [active 
 | Exact scientific meaning of Stage2 | [Stage2 internal HOLD](STAGE2_C01_INTERNAL_DISPOSITION_2026-11-13.md), [E3 negative audit](STAGE2_POST_E3_AUDIT_ADDENDUM_2026-11-11.md) |
 | Tests and maintenance | [I3 test plan](TEST_PLAN.md), [test placement](../../../tests/TEST_LAYOUT.md), [agent context route](../../../docs/engineering/AGENT_CONTEXT.md) |
 
+[Proposed I3 development roadmap (12 November 2026)](ROADMAP_PROPOSAL_2026-11-12.md)
+is **PROPOSED and non-authoritative**, written in French and awaiting owner
+arbitration. It does not replace [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) or the
+Stage-2 critical-path documents, authorizes no World or life, and is an
+agent-produced analysis, not an independent review.
+
 ## Stage 2.1 engineering custody
 
 [Hardened 36/36 rehearsal](studies/stage2-replay-gate-development-80-81/HARDENED_REHEARSAL.md) and [completed 80/81 DEVELOPMENT results](studies/stage2-replay-gate-development-80-81/RESULTS.md) retain their original technical and negative/limited scientific distinctions. Those old allocations are **closed without retry**.
