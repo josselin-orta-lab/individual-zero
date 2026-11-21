@@ -158,6 +158,18 @@ class F1KDevNativeAndCold(unittest.TestCase):
         with self.assertRaises(ValueError):
             Cold.audit(bad,self.grid)
 
+    def test_forged_personal_mean_even_with_resealed_private_mind_is_rejected(self):
+        step=deepcopy(self.native["rows"][0]["source"]["source_steps"][0])
+        sealed=step["after_paid_learning_mind"]
+        typed=dict(sealed["data"]["private"]["__dict__"])
+        model=dict(typed["effects"]["__effects_model__"]["__dict__"])
+        first=model["stats"]["__dict__"][0][1]
+        first[1][0]+=0.3  # forged personally learned body effect
+        sealed["sha256"]=C.digest(sealed["data"])
+        step["postaction"]["mind_after_any_learning"]=deepcopy(sealed)
+        with self.assertRaises(ValueError):
+            Cold.verify_paid_personal_learning(step)
+
     def test_forged_paid_fixed_round_is_rejected(self):
         bad=deepcopy(self.native)
         found=False
