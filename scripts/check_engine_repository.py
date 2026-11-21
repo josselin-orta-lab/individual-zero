@@ -107,6 +107,9 @@ def unexpected_workflows(paths, *, active_ci: str) -> list[str]:
         # F1D: PR-only, original F1C anchored subsequent decision/physical
         # audit. Two synthetic ticks, no run_life or scientific generations.
         "i3-stage8f1d-next-decision-retention-proof.yml",
+        # F1E PR-only readout intervention: authentic F1C paid memory, five
+        # same-body, same-work synthetic second-choice receipts, no lives.
+        "i3-stage8f1e-equal-cost-content-readout-proof.yml",
     }
     return sorted(path.name for path in paths
                   if not path.name.startswith("i1-") and path.name not in allowed)
