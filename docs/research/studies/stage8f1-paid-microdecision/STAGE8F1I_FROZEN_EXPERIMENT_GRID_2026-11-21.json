@@ -1,0 +1,361 @@
+{
+  "schema": "i3-stage8f1i-preregistered-grid-v0",
+  "registered_date": "2026-11-21",
+  "main_before_exposure": "15c6869484c5b47b14d44c9e4e77b431a80b5caa",
+  "software_only": true,
+  "genome": "midpoint()",
+  "mind": "i3.modules.mind.Mind",
+  "no_imported_prior": true,
+  "world_width": 3,
+  "world_height": 3,
+  "spawn": [
+    1,
+    1
+  ],
+  "start_tick": 0,
+  "personal_acquisition_ticks": 4,
+  "first_paid_memory_anchor_tick": 1,
+  "memory_readout_fork_tick": 5,
+  "terminal_tick": 30,
+  "arms": [
+    "full",
+    "sham",
+    "mask_owned_prior_means"
+  ],
+  "mask_key_rule": "intersection of own t1 actually paid EffectsModel.stats keys with own t4 learned keys; temporary replace exactly mean five-vector during tick5 Mind.decide only; restore before World.step",
+  "payment": "World.step and World.pay_cognition, energy and vigilance, no hidden free work",
+  "same_genome_across_origins": true,
+  "modes": [
+    {
+      "id": "oasis_fruit",
+      "water": [
+        1,
+        1
+      ],
+      "water_gain": 25,
+      "water_stock": 2,
+      "food": [
+        1,
+        1
+      ],
+      "token": "f1i-fruit",
+      "food_gain": 18,
+      "integrity_delta": 2,
+      "food_quantity": 2,
+      "food_max_quantity": 2,
+      "water_max_stock": 2,
+      "water_restock_every": 0,
+      "food_restock_every": 0,
+      "token_effects": [
+        18,
+        2
+      ]
+    },
+    {
+      "id": "spring_grain",
+      "water": [
+        1,
+        0
+      ],
+      "water_gain": 30,
+      "water_stock": 2,
+      "food": [
+        2,
+        1
+      ],
+      "token": "f1i-grain",
+      "food_gain": 26,
+      "integrity_delta": 0.5,
+      "food_quantity": 2,
+      "food_max_quantity": 2,
+      "water_max_stock": 2,
+      "water_restock_every": 0,
+      "food_restock_every": 0,
+      "token_effects": [
+        26,
+        0.5
+      ]
+    },
+    {
+      "id": "patch_tuber",
+      "water": [
+        2,
+        1
+      ],
+      "water_gain": 18,
+      "water_stock": 2,
+      "food": [
+        1,
+        1
+      ],
+      "token": "f1i-tuber",
+      "food_gain": 12,
+      "integrity_delta": 3,
+      "food_quantity": 2,
+      "food_max_quantity": 2,
+      "water_max_stock": 2,
+      "water_restock_every": 0,
+      "food_restock_every": 0,
+      "token_effects": [
+        12,
+        3
+      ]
+    },
+    {
+      "id": "bitter_tradeoff",
+      "water": [
+        1,
+        1
+      ],
+      "water_gain": 22,
+      "water_stock": 2,
+      "food": [
+        0,
+        1
+      ],
+      "token": "f1i-bitter",
+      "food_gain": 28,
+      "integrity_delta": -1.5,
+      "food_quantity": 2,
+      "food_max_quantity": 2,
+      "water_max_stock": 2,
+      "water_restock_every": 0,
+      "food_restock_every": 0,
+      "token_effects": [
+        28,
+        -1.5
+      ]
+    }
+  ],
+  "origins": [
+    {
+      "id": "R01",
+      "ecology": "oasis_fruit",
+      "seed": 202611210101,
+      "body": [
+        20,
+        64,
+        10,
+        91,
+        96
+      ]
+    },
+    {
+      "id": "R02",
+      "ecology": "oasis_fruit",
+      "seed": 202611210102,
+      "body": [
+        21.25,
+        63.2,
+        10.4,
+        90.5,
+        95.4
+      ]
+    },
+    {
+      "id": "R03",
+      "ecology": "oasis_fruit",
+      "seed": 202611210103,
+      "body": [
+        22.5,
+        62.4,
+        10.8,
+        90,
+        94.8
+      ]
+    },
+    {
+      "id": "R04",
+      "ecology": "oasis_fruit",
+      "seed": 202611210104,
+      "body": [
+        23.75,
+        61.6,
+        11.2,
+        89.5,
+        94.2
+      ]
+    },
+    {
+      "id": "R05",
+      "ecology": "spring_grain",
+      "seed": 202611210105,
+      "body": [
+        24,
+        58,
+        12,
+        89,
+        95
+      ]
+    },
+    {
+      "id": "R06",
+      "ecology": "spring_grain",
+      "seed": 202611210106,
+      "body": [
+        25.25,
+        57.2,
+        12.4,
+        88.5,
+        94.4
+      ]
+    },
+    {
+      "id": "R07",
+      "ecology": "spring_grain",
+      "seed": 202611210107,
+      "body": [
+        26.5,
+        56.4,
+        12.8,
+        88,
+        93.8
+      ]
+    },
+    {
+      "id": "R08",
+      "ecology": "spring_grain",
+      "seed": 202611210108,
+      "body": [
+        27.75,
+        55.6,
+        13.2,
+        87.5,
+        93.2
+      ]
+    },
+    {
+      "id": "R09",
+      "ecology": "patch_tuber",
+      "seed": 202611210109,
+      "body": [
+        18,
+        68,
+        11,
+        87,
+        94
+      ]
+    },
+    {
+      "id": "R10",
+      "ecology": "patch_tuber",
+      "seed": 202611210110,
+      "body": [
+        19.25,
+        67.2,
+        11.4,
+        86.5,
+        93.4
+      ]
+    },
+    {
+      "id": "R11",
+      "ecology": "patch_tuber",
+      "seed": 202611210111,
+      "body": [
+        20.5,
+        66.4,
+        11.8,
+        86,
+        92.8
+      ]
+    },
+    {
+      "id": "R12",
+      "ecology": "patch_tuber",
+      "seed": 202611210112,
+      "body": [
+        21.75,
+        65.6,
+        12.2,
+        85.5,
+        92.2
+      ]
+    },
+    {
+      "id": "R13",
+      "ecology": "bitter_tradeoff",
+      "seed": 202611210113,
+      "body": [
+        22,
+        60,
+        9.5,
+        93,
+        97
+      ]
+    },
+    {
+      "id": "R14",
+      "ecology": "bitter_tradeoff",
+      "seed": 202611210114,
+      "body": [
+        23.25,
+        59.2,
+        9.9,
+        92.5,
+        96.4
+      ]
+    },
+    {
+      "id": "R15",
+      "ecology": "bitter_tradeoff",
+      "seed": 202611210115,
+      "body": [
+        24.5,
+        58.4,
+        10.3,
+        92,
+        95.8
+      ]
+    },
+    {
+      "id": "R16",
+      "ecology": "bitter_tradeoff",
+      "seed": 202611210116,
+      "body": [
+        25.75,
+        57.6,
+        10.7,
+        91.5,
+        95.2
+      ]
+    }
+  ],
+  "predeclared_validity": {
+    "all_roots": 16,
+    "all_arms_exact_fork_cost_and_sham": "mandatory",
+    "source_ticks_all_paid_where_budget_allows": true,
+    "death_no_rescue": true,
+    "missing_fork_or_unfunded_first_memory": "INCONCLUSIVE_SOURCE_GATE",
+    "unequal_fork_work_or_bills": "INCONCLUSIVE_COST_GATE",
+    "fork_motor_comparison": "action_and_param",
+    "no_post_fork_mask": true
+  },
+  "adaptive_primary": {
+    "outcome": "survival alive at T30 prioritized over restricted postfork steps when both die, then number of physical ticks from T5 through T30",
+    "require_initial_motor_difference": true,
+    "advantage_threshold_count": 3,
+    "advantage_threshold_distinct_ecologies": 2,
+    "no_counterexamples_on_changed_motor_roots": true,
+    "no_strict_survival_advantage": "NO_REPRODUCIBLE_SURVIVAL_ADVANTAGE_T30",
+    "mixed_effects": "HETEROGENEOUS_OR_DISFAVORED_SURVIVAL_EFFECTS"
+  },
+  "other_metrics": [
+    "number_manger_with_native_actual_food_gain",
+    "number_boire_with_native_actual_water_gain",
+    "terminal 5-body vector Pareto (only if both alive at T30)",
+    "restricted physical step counts",
+    "decision_cognitive_energy_vigilance_paid",
+    "learning_cognitive_energy_vigilance_paid",
+    "native_position_inventory_resources",
+    "total effects after fork not isolated commanded direction"
+  ],
+  "limitations": [
+    "16 independently seeded fresh Mind/World executions not 16 sampled populations",
+    "same genotype midpoint",
+    "no G2 historical Mind",
+    "no run_life no scientific cohort births",
+    "no posthoc context/seed selection",
+    "F1F/F1G/F1H and Stage8E2 frozen"
+  ]
+}

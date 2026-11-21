@@ -1,0 +1,129 @@
+# F1I native development study ONLY. Two preregistration files were committed
+# before any F1I native receipts, fixing 16 seeds, 4 real nutritional worlds,
+# own four PAID episodes, single T5 readout and T30 endpoint. No engine edits.
+name: I3 Stage8-F1I 16 independent lived memories real-resource native proof
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/stage8f1i_independent_lived_resources.py'
+      - 'tools/stage8f1i_independent_cold_resource_audit.py'
+      - 'tests/i3/test_stage8f1i_independent_lived_resources.py'
+      - '.github/workflows/i3-stage8f1i-independent-real-resource-native-proof.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  F1I_sixteen_fresh_sources_and_native_T30_owned_memory_contrasts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      PYTHONPATH: "src:."
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate preexposed 16 fresh personal seeds and adversarial full-body receipts
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests/i3 -p 'test_stage8f1i_independent_lived_resources.py' -v
+          python scripts/check_engine_repository.py --json
+      - name: Two independent native original 16-root processes, no forced motor or false ingestion
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1i_independent_lived_resources \
+            --grid docs/research/studies/stage8f1-paid-microdecision/STAGE8F1I_FROZEN_EXPERIMENT_GRID_2026-11-21.json \
+            --output "$RUNNER_TEMP/F1I_PERSONAL_RESOURCE_ORIGINAL.json"
+          python -m tools.stage8f1i_independent_lived_resources \
+            --grid docs/research/studies/stage8f1-paid-microdecision/STAGE8F1I_FROZEN_EXPERIMENT_GRID_2026-11-21.json \
+            --output "$RUNNER_TEMP/F1I_PERSONAL_RESOURCE_REPRODUCED.json"
+          cmp "$RUNNER_TEMP/F1I_PERSONAL_RESOURCE_ORIGINAL.json" \
+              "$RUNNER_TEMP/F1I_PERSONAL_RESOURCE_REPRODUCED.json"
+          python - <<'PY'
+          import json,os,pathlib
+          x=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"F1I_PERSONAL_RESOURCE_ORIGINAL.json").read_bytes())
+          assert x["schema"]=="i3-stage8f1i-16-personal-paid-experiences-real-food-T30/v0"
+          assert x["preregistered_origin_count"]==len(x["rows"])==16
+          assert x["preexposure_grid_commit"]=="9bb5af06cc6e78f4ec86895ee57d6ccfff7f636b"
+          assert x["preexposure_protocol_commit"]=="ff6b8b0c627797e9443ea4393e5e682e9cc07681"
+          assert x["terminal_tick"]==30 and x["single_memory_readout_intervention_tick"]==5
+          assert x["new_scientific_cohorts"]==x["full_lives_or_run_life"]==0
+          assert x["no_forced_actions"] is True and x["all_future_reads_unmodified_after_t5"] is True
+          assert x["frozen_prior_studies"]["stage8e2"].endswith("CLOSED_NO_RETRY")
+          print("F1I_T30_16_REAL_PAID_MEMORIES_NATIVE_VERDICT",x["strict_preexposed_primary_verdict"])
+          print("F1I_TRUE_NATIVE_RESOURCE_EVENTS",
+                x["actual_native_food_ingestions_all_arms"],x["actual_native_water_drinks_all_arms"])
+          PY
+          sha256sum "$RUNNER_TEMP/F1I_PERSONAL_RESOURCE_ORIGINAL.json"
+      # Single common upload root. Do not rely on GitHub Actions'
+      # multi-root artifact path normalization (which adds _temp/ prefixes).
+      - name: Stage ORIGINAL receipts and frozen preregistration into one portable root
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/f1i-proof"
+          cp "$RUNNER_TEMP/F1I_PERSONAL_RESOURCE_ORIGINAL.json" "$RUNNER_TEMP/f1i-proof/"
+          cp "$RUNNER_TEMP/F1I_PERSONAL_RESOURCE_REPRODUCED.json" "$RUNNER_TEMP/f1i-proof/"
+          cp docs/research/studies/stage8f1-paid-microdecision/STAGE8F1I_FROZEN_EXPERIMENT_GRID_2026-11-21.json "$RUNNER_TEMP/f1i-proof/"
+          cp docs/research/studies/stage8f1-paid-microdecision/STAGE8F1I_INDEPENDENT_PAID_EXPERIENCES_REAL_RESOURCES_PREEXPOSURE_2026-11-21.md "$RUNNER_TEMP/f1i-proof/"
+          cmp "$RUNNER_TEMP/f1i-proof/F1I_PERSONAL_RESOURCE_ORIGINAL.json" "$RUNNER_TEMP/F1I_PERSONAL_RESOURCE_ORIGINAL.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: i3-stage8f1i-sixteen-original-real-resource-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1i-proof/
+          if-no-files-found: error
+          retention-days: 90
+
+  independent_cold_T30_all_original_minds_and_actual_food_physiology:
+    needs: F1I_sixteen_fresh_sources_and_native_T30_owned_memory_contrasts
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      PYTHONPATH: "."
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: i3-stage8f1i-sixteen-original-real-resource-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1i-original
+      - name: Independent stdlib-only 16 roots, real food/water, paid learning, survival
+        run: |
+          set -euo pipefail
+          cmp "$RUNNER_TEMP/f1i-original/F1I_PERSONAL_RESOURCE_ORIGINAL.json" \
+              "$RUNNER_TEMP/f1i-original/F1I_PERSONAL_RESOURCE_REPRODUCED.json"
+          cmp "$RUNNER_TEMP/f1i-original/STAGE8F1I_FROZEN_EXPERIMENT_GRID_2026-11-21.json" \
+              docs/research/studies/stage8f1-paid-microdecision/STAGE8F1I_FROZEN_EXPERIMENT_GRID_2026-11-21.json
+          python -m tools.stage8f1i_independent_cold_resource_audit \
+              "$RUNNER_TEMP/f1i-original/F1I_PERSONAL_RESOURCE_ORIGINAL.json" \
+              docs/research/studies/stage8f1-paid-microdecision/STAGE8F1I_FROZEN_EXPERIMENT_GRID_2026-11-21.json \
+              "$RUNNER_TEMP/F1I_COLD_NATIVE_RESOURCE_AUDIT.json"
+          python - <<'PY'
+          import json,os,pathlib,hashlib
+          base=pathlib.Path(os.environ["RUNNER_TEMP"])
+          original=(base/"f1i-original/F1I_PERSONAL_RESOURCE_ORIGINAL.json").read_bytes()
+          x=json.loads((base/"F1I_COLD_NATIVE_RESOURCE_AUDIT.json").read_bytes())
+          assert x["original_sha256"]==hashlib.sha256(original).hexdigest()
+          assert x["status"]=="COLD_F1I_16_FRESH_PAID_MINDS_NATIVE_RESOURCE_BODIES_REDUCED"
+          assert x["preexposure_protocol_commit"]=="ff6b8b0c627797e9443ea4393e5e682e9cc07681"
+          assert len(x["per_origin"])==16 and x["no_original_F1F_F1G_F1H_verdict_rewritten"] is True
+          assert x["no_untested_scientific_cohorts"] is True
+          print("F1I_COLD_NATIVE_ADAPTIVE_VERDICT",x["primary_verdict"])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: i3-stage8f1i-independent-real-resource-${{ github.run_id }}
+          path: ${{ runner.temp }}/F1I_COLD_NATIVE_RESOURCE_AUDIT.json
+          if-no-files-found: error
+          retention-days: 90
