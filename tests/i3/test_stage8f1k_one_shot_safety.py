@@ -206,6 +206,60 @@ class F1KOneShotSafety(unittest.TestCase):
             with self.assertRaises(ValueError):
                 E.verify_bundle(folder)
 
+    def test_f1k_release_native_source_can_start_only_once_without_exposure(self):
+        # Nothing here calls the heldout World: abort before the source birth.
+        grid=P.release_grid()
+        with TemporaryDirectory() as td:
+            reservation=Path(td)/"F1K_RESERVATION.json"
+            reservation.write_text("{}")
+            env={P.RELEASE_ENV:P.PREEXPOSURE_MAIN,
+                 "I3_F1K_RESERVATION_RECEIPT":str(reservation)}
+            with patch.dict(os.environ,env), patch.object(
+                    R,"verify_remote",return_value={
+                        "workflow_run_id":"FAKE_RUN",
+                        "head_sha":"a"*40,
+                    }),patch.object(P,"source",side_effect=RuntimeError(
+                        "PRE_BIRTH_ABORT_NO_RESERVED_WORLDSTEP")):
+                with self.assertRaisesRegex(RuntimeError,"PRE_BIRTH_ABORT"):
+                    P.produce(grid,"F1K_HELDOUT_RELEASE")
+                lock=reservation.with_suffix(".NATIVE_START_LOCK")
+                self.assertTrue(lock.is_file())
+                claim=json.loads(lock.read_bytes())
+                self.assertEqual(claim["origin_ids"],
+                                 ["K"+str(i).zfill(2) for i in range(1,17)])
+                with self.assertRaises(FileExistsError):
+                    P.produce(grid,"F1K_HELDOUT_RELEASE")
+
+    def test_scientific_custody_can_only_read_back_originals_not_reexecute(self):
+        # This is intentionally a synthetic one-row data envelope, not K.
+        root={"id":"DEV_X","seed":202611219999,"ecology":"DEV_X"}
+        source={"origin":root,"source_receipt_sha256":"x",
+                "valid_paid_personal_source":False}
+        row={"origin":root,"source":source,"arms":{},
+             "comparison":{"source_valid":False}}
+        row["case_sha256"]=E.digest(E.canonical(row))
+        report={"schema":"SYNTHETIC_NOT_SCIENCE","phase":"F1K_HELDOUT_RELEASE",
+                "origin_count":1,"origin_ids":["DEV_X"],
+                "worlds":["DEV_X"],"rows":[row]}
+        with TemporaryDirectory() as td:
+            folder=Path(td)/"originals"
+            folder.mkdir()
+            writer=E.CaseWriter(folder/"original_cases",["DEV_X"])
+            writer(row)
+            with self.assertRaises(ValueError):
+                E.finalize(writer,report,report,folder,
+                           reproduction_kind="DEV_R_NATIVE_REPETITION")
+            index=E.finalize(writer,report,json.loads(E.canonical(report)),folder,
+                             reproduction_kind="F1K_CANONICAL_READBACK_NO_SECOND_NATIVE")
+            proof=E.verify_bundle(folder)
+            self.assertTrue(index["canonical_readback_byte_identical"])
+            self.assertFalse(index["technical_byte_identical"])
+            self.assertEqual(index["heldout_native_passes"],1)
+            self.assertTrue(proof["same_bytes_canonical_readback"])
+            self.assertFalse(proof["same_bytes_technical_reproduction"])
+            self.assertFalse((folder/"F1K_TECHNICAL_REPRODUCTION.json.gz").exists())
+            self.assertTrue((folder/"F1K_CANONICAL_READBACK.json.gz").is_file())
+
     def test_no_auto_science_and_no_clobber_or_retry_in_workflow(self):
         file=Path(".github/workflows/i3-stage8f1k-heldout-science-manual-once.yml")
         txt=file.read_text(encoding="utf-8")
