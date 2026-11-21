@@ -110,6 +110,9 @@ def unexpected_workflows(paths, *, active_ci: str) -> list[str]:
         # F1E PR-only readout intervention: authentic F1C paid memory, five
         # same-body, same-work synthetic second-choice receipts, no lives.
         "i3-stage8f1e-equal-cost-content-readout-proof.yml",
+        # F1F exact preregistered 8 synthetic ecological Worlds, 3 genuine
+        # next decisions each; original F1C paid learning, no full life.
+        "i3-stage8f1f-eight-ecology-mean-readout-proof.yml",
     }
     return sorted(path.name for path in paths
                   if not path.name.startswith("i1-") and path.name not in allowed)
