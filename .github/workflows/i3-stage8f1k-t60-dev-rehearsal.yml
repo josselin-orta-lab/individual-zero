@@ -1,5 +1,8 @@
 # F1K rehearsal is 16 DEVELOPMENT seeds DEV_R01..DEV_R16, NEVER K01..K16.
 name: I3 Stage8-F1K full T60 DEV-only one-shot rehearsal and engine-free cold
+concurrency:
+  group: i3-f1k-dev-r-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 on:
   pull_request:
     branches: [main]
