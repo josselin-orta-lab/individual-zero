@@ -24,6 +24,8 @@ jobs:
     timeout-minutes: 35
     env:
       PYTHONPATH: 'src:.'
+      # Never double-run complete 16-root native/cold suite in general CI.
+      I3_STAGE8F1J_DEDICATED: '1'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -48,6 +50,12 @@ jobs:
             --output "$RUNNER_TEMP/F1J_NEW_REAL_FIXED_ROUND_REPRODUCED.json"
           cmp "$RUNNER_TEMP/F1J_NEW_REAL_FIXED_ROUND_ORIGINAL.json" \
               "$RUNNER_TEMP/F1J_NEW_REAL_FIXED_ROUND_REPRODUCED.json"
+          # Original scientific F1J source was already published before the
+          # CI-only test routing optimization. The authentic receipt MUST stay
+          # bit-identical; no possibility of rewriting the primary result.
+          printf '%s  %s\n' \
+            '439db2f8afa5728831e35c544a5bb17a552c6a40b58e91faa8b91b65d6e98022' \
+            "$RUNNER_TEMP/F1J_NEW_REAL_FIXED_ROUND_ORIGINAL.json" | sha256sum -c -
           python - <<'PY'
           import json,os,pathlib
           p=pathlib.Path(os.environ["RUNNER_TEMP"])/"F1J_NEW_REAL_FIXED_ROUND_ORIGINAL.json"
@@ -113,6 +121,9 @@ jobs:
               "$RUNNER_TEMP/f1j-original/F1J_NEW_REAL_FIXED_ROUND_ORIGINAL.json" \
               docs/research/studies/stage8f1-paid-microdecision/STAGE8F1J_FROZEN_FIXED_ROUND_NATIVE_EQUAL_COST_GRID_2026-11-21.json \
               "$RUNNER_TEMP/F1J_COLD_NATIVE_REAL_COMPETITION_AUDIT.json"
+          printf '%s  %s\n' \
+            'e965ddf85d86bcb15ac1c5cb2b9853ff394de67c245f21add45f34811d83e0db' \
+            "$RUNNER_TEMP/F1J_COLD_NATIVE_REAL_COMPETITION_AUDIT.json" | sha256sum -c -
           python - <<'PY'
           import json,os,pathlib,hashlib
           temp=pathlib.Path(os.environ["RUNNER_TEMP"])
