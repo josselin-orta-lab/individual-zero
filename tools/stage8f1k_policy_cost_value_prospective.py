@@ -426,7 +426,23 @@ def produce(grid,phase="DEV_ONLY",on_case=None):
         if not receipt_path:
             raise PermissionError("F1K original has no atomic GitHub reservation receipt")
         from tools import stage8f1k_one_shot_reservation as R
-        R.verify_remote(R.load_receipt(Path(receipt_path)))
+        verified=R.verify_remote(R.load_receipt(Path(receipt_path)))
+        # Exclusive first-start claim for THIS run, before any native World.step.
+        # A second P.produce(K-source) in this job is forbidden even when it
+        # would yield equal deterministic bytes. Its evidence may only be
+        # reexamined afterwards with an engine-free cold reader.
+        start_lock=Path(receipt_path).with_suffix(".NATIVE_START_LOCK")
+        native_claim={
+            "schema":"i3-stage8f1k-first-native-exposure-lock/v0",
+            "reservation_run_id":verified["workflow_run_id"],
+            "reserved_source_sha":verified["head_sha"],
+            "origin_ids":[r["id"] for r in grid["origins"]],
+            "no_native_second_attempt":True,
+        }
+        with start_lock.open("xb") as fd:
+            fd.write(C.canonical(native_claim)+b"\n")
+            fd.flush()
+            os.fsync(fd.fileno())
     else:
         raise ValueError("unknown prospective population phase")
     rows=[]
