@@ -1,0 +1,136 @@
+# F1J preexposed BEFORE first trace: 16 fresh origins, fixed substantive
+# evidence rounds that never early-stop on score threshold. Every cycle
+# integrates real evidence and is actually paid by native World.step.
+# Experimental Mind subclass only; no run_life, no change to F1I or P1.3.
+name: I3 Stage8-F1J fixed-round genuine two-currency parity native proof
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/stage8f1j_fixed_round_paid_competition.py'
+      - 'tools/stage8f1j_native_equal_cost_prospective.py'
+      - 'tools/stage8f1j_independent_fixed_round_cold_audit.py'
+      - 'tests/i3/test_stage8f1j_native_fixed_round_real_cost.py'
+      - '.github/workflows/i3-stage8f1j-fixed-round-real-paid-parity-proof.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  F1J_native_new_sources_all_real_competition_rounds:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      PYTHONPATH: 'src:.'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Check frozen preexposure, real-funded substantive rounds and adversarial proof tests
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests/i3 -p 'test_stage8f1j_native_fixed_round_real_cost.py' -v
+          python scripts/check_engine_repository.py --json
+      - name: Produce two new independent native 16-root originals, exact equal-cost parity or negative verdict
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1j_native_equal_cost_prospective \
+            --grid docs/research/studies/stage8f1-paid-microdecision/STAGE8F1J_FROZEN_FIXED_ROUND_NATIVE_EQUAL_COST_GRID_2026-11-21.json \
+            --output "$RUNNER_TEMP/F1J_NEW_REAL_FIXED_ROUND_ORIGINAL.json"
+          python -m tools.stage8f1j_native_equal_cost_prospective \
+            --grid docs/research/studies/stage8f1-paid-microdecision/STAGE8F1J_FROZEN_FIXED_ROUND_NATIVE_EQUAL_COST_GRID_2026-11-21.json \
+            --output "$RUNNER_TEMP/F1J_NEW_REAL_FIXED_ROUND_REPRODUCED.json"
+          cmp "$RUNNER_TEMP/F1J_NEW_REAL_FIXED_ROUND_ORIGINAL.json" \
+              "$RUNNER_TEMP/F1J_NEW_REAL_FIXED_ROUND_REPRODUCED.json"
+          python - <<'PY'
+          import json,os,pathlib
+          p=pathlib.Path(os.environ["RUNNER_TEMP"])/"F1J_NEW_REAL_FIXED_ROUND_ORIGINAL.json"
+          x=json.loads(p.read_bytes())
+          assert x["schema"]=="i3-stage8f1j-fixed-substantive-rounds-equal-paid-16-origins/v0"
+          assert len(x["rows"])==x["preregistered_root_count"]==16
+          assert x["preexposed_grid_commit"]=="8f82eea7a8b08e086010dfe497099212fb35508f"
+          assert x["preexposed_protocol_commit"]=="b90d6eb13459ddfda4f63c0828f4e39f135a376e"
+          assert x["fixed_rounds_all_substantive_no_cost_padding"] is True
+          assert x["self_chosen_native_actions_no_motor_override"] is True
+          assert x["reference_Mind_unchanged"] is True
+          assert x["frozen_prior_results"]["f1i"]=="INCONCLUSIVE_COST_GATE"
+          assert x["full_native_lives_run_life"]==x["new_scientific_cohorts"]==0
+          assert x["terminal_tick"]==30
+          print("F1J_NEW_REAL_COST_PARITY",x["strict_preexposed_primary_verdict"])
+          print("F1J_TRUE_PROSPECTIVE_FORKS",x["matched_all_native_work_four_fields_and_paid_energy_vigilance_roots"],"of",16)
+          PY
+          sha256sum "$RUNNER_TEMP/F1J_NEW_REAL_FIXED_ROUND_ORIGINAL.json"
+      - name: Stage source locked original receipts and two frozen preregistrations
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/f1j-evidence"
+          cp "$RUNNER_TEMP/F1J_NEW_REAL_FIXED_ROUND_ORIGINAL.json" "$RUNNER_TEMP/f1j-evidence/"
+          cp "$RUNNER_TEMP/F1J_NEW_REAL_FIXED_ROUND_REPRODUCED.json" "$RUNNER_TEMP/f1j-evidence/"
+          cp docs/research/studies/stage8f1-paid-microdecision/STAGE8F1J_FROZEN_FIXED_ROUND_NATIVE_EQUAL_COST_GRID_2026-11-21.json "$RUNNER_TEMP/f1j-evidence/"
+          cp docs/research/studies/stage8f1-paid-microdecision/STAGE8F1J_FIXED_ROUND_PAID_COMPETITION_PREEXPOSURE_2026-11-21.md "$RUNNER_TEMP/f1j-evidence/"
+          cmp "$RUNNER_TEMP/F1J_NEW_REAL_FIXED_ROUND_ORIGINAL.json" "$RUNNER_TEMP/f1j-evidence/F1J_NEW_REAL_FIXED_ROUND_ORIGINAL.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: i3-stage8f1j-native-fixed-round-16-original-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1j-evidence/
+          if-no-files-found: error
+          retention-days: 90
+
+  F1J_cold_engine_free_all_substantive_evidence_and_native_physiology:
+    needs: F1J_native_new_sources_all_real_competition_rounds
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      PYTHONPATH: '.'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: i3-stage8f1j-native-fixed-round-16-original-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1j-original
+      - name: Cold stdlib-only check all actual evidence integrator cycles, physical bills, real meals and survival
+        run: |
+          set -euo pipefail
+          cmp "$RUNNER_TEMP/f1j-original/F1J_NEW_REAL_FIXED_ROUND_ORIGINAL.json" \
+              "$RUNNER_TEMP/f1j-original/F1J_NEW_REAL_FIXED_ROUND_REPRODUCED.json"
+          cmp "$RUNNER_TEMP/f1j-original/STAGE8F1J_FROZEN_FIXED_ROUND_NATIVE_EQUAL_COST_GRID_2026-11-21.json" \
+              docs/research/studies/stage8f1-paid-microdecision/STAGE8F1J_FROZEN_FIXED_ROUND_NATIVE_EQUAL_COST_GRID_2026-11-21.json
+          cmp "$RUNNER_TEMP/f1j-original/STAGE8F1J_FIXED_ROUND_PAID_COMPETITION_PREEXPOSURE_2026-11-21.md" \
+              docs/research/studies/stage8f1-paid-microdecision/STAGE8F1J_FIXED_ROUND_PAID_COMPETITION_PREEXPOSURE_2026-11-21.md
+          python -m tools.stage8f1j_independent_fixed_round_cold_audit \
+              "$RUNNER_TEMP/f1j-original/F1J_NEW_REAL_FIXED_ROUND_ORIGINAL.json" \
+              docs/research/studies/stage8f1-paid-microdecision/STAGE8F1J_FROZEN_FIXED_ROUND_NATIVE_EQUAL_COST_GRID_2026-11-21.json \
+              "$RUNNER_TEMP/F1J_COLD_NATIVE_REAL_COMPETITION_AUDIT.json"
+          python - <<'PY'
+          import json,os,pathlib,hashlib
+          temp=pathlib.Path(os.environ["RUNNER_TEMP"])
+          original=(temp/"f1j-original/F1J_NEW_REAL_FIXED_ROUND_ORIGINAL.json").read_bytes()
+          x=json.loads((temp/"F1J_COLD_NATIVE_REAL_COMPETITION_AUDIT.json").read_bytes())
+          assert x["original_source_sha256"]==hashlib.sha256(original).hexdigest()
+          assert x["status"]=="F1J_COLD_16_REAL_NATIVE_FUNDING_AND_SUBSTANTIVE_EVIDENCE_REDUCED"
+          assert x["grid_before_first_exposure"]=="8f82eea7a8b08e086010dfe497099212fb35508f"
+          assert x["hypothesis_before_first_exposure"]=="b90d6eb13459ddfda4f63c0828f4e39f135a376e"
+          assert x["frozen_F1I_status"]=="INCONCLUSIVE_COST_GATE"
+          assert len(x["per_origin"])==16 and x["no_historical_cohorts_or_modified_F1I"] is True
+          assert x["native_physiology_and_paid_learning_verified"] is True
+          print("F1J_COLD_NATIVELY_PAID_SUBSTANTIVE_ROUNDS_VERDICT",x["strict_primary_parity_verdict"])
+          PY
+          sha256sum "$RUNNER_TEMP/F1J_COLD_NATIVE_REAL_COMPETITION_AUDIT.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: i3-stage8f1j-engine-free-fixed-round-cold-${{ github.run_id }}
+          path: ${{ runner.temp }}/F1J_COLD_NATIVE_REAL_COMPETITION_AUDIT.json
+          if-no-files-found: error
+          retention-days: 90
