@@ -22,6 +22,9 @@ def main():
     claim=R.verify_remote(receipt)
     root=args.input_dir/"f1k-originals"
     proof=E.verify_bundle(root)
+    case_index=json.loads((root/"F1K_CUSTODY_MANIFEST.json").read_bytes())
+    if case_index.get("reservation_sha256")!=E.digest(E.canonical(receipt)):
+        raise ValueError("raw native custody is not bound to the original pre-step GitHub claim")
     if (proof["phase"]!="F1K_HELDOUT_RELEASE" or
             proof["roots"]!=16 or proof["original_native_gzips"]!=64):
         raise ValueError("scientific release incomplete despite source consumption")
