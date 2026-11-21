@@ -31,6 +31,8 @@ jobs:
     if: ${{ github.run_attempt == 1 && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     timeout-minutes: 70
+    outputs:
+      consumed: ${{ steps.claim.outcome == 'success' }}
     permissions:
       contents: write
       actions: read
@@ -82,17 +84,6 @@ jobs:
             ${{ runner.temp }}/f1k-preservation/
           if-no-files-found: error
           retention-days: 90
-      - name: Publish originals or partial failure records without clobber
-        if: ${{ always() && steps.claim.outcome == 'success' }}
-        run: |
-          set -euo pipefail
-          RES_SHA=$(python -c 'import json,os,pathlib; print(json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"F1K_RESERVATION.json").read_bytes())["reservation_commit"])')
-          gh release create "$F1K_TAG" --repo "$GITHUB_REPOSITORY" --target "$RES_SHA" --prerelease --latest=false --title 'F1K once-only original T60' --notes 'Scientific allocation consumed; no retry even after error. Originals and negative outcomes retained. Cold verdict requires separate verification. Internal GitHub custody, not external escrow.'
-          assets=("$RUNNER_TEMP/F1K_RESERVATION.json")
-          for file in "$RUNNER_TEMP/f1k-originals"/F1K_* "$RUNNER_TEMP/f1k-preservation"/F1K_*; do
-            if [ -f "$file" ]; then assets+=("$file"); fi
-          done
-          gh release upload "$F1K_TAG" "${assets[@]}" --repo "$GITHUB_REPOSITORY"
 
   independent_python312_cold:
     needs: source_reservation_and_native_original
@@ -128,7 +119,7 @@ jobs:
 
   final_cold_publication:
     needs: [source_reservation_and_native_original, independent_python312_cold]
-    if: ${{ always() && needs.source_reservation_and_native_original.result == 'success' }}
+    if: ${{ always() && needs.source_reservation_and_native_original.outputs.consumed == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 12
     permissions:
@@ -145,6 +136,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Retrieve original consumed science receipts even if native job failed
+        uses: actions/download-artifact@v4
+        with:
+          name: f1k-once-raw-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1k-raw-publish
       - if: ${{ needs.independent_python312_cold.result == 'success' }}
         uses: actions/download-artifact@v4
         with:
@@ -155,12 +151,18 @@ jobs:
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/f1k-cold-publish"
           python -m tools.stage8f1k_one_shot_publish_status --dir "$RUNNER_TEMP/f1k-cold-publish" --cold-job "$COLD_JOB_RESULT"
-          gh release view "$F1K_TAG" --repo "$GITHUB_REPOSITORY" --json tagName
-          files=("$RUNNER_TEMP/f1k-cold-publish/F1K_FINAL_STATUS.json")
-          for p in "$RUNNER_TEMP/f1k-cold-publish/F1K_INDEPENDENT_COLD_T60.json" "$RUNNER_TEMP/f1k-cold-publish/F1K_BYTE_CUSTODY_COLD.json"; do
-            if [ -f "$p" ]; then files+=("$p"); fi
+          RECEIPT="$RUNNER_TEMP/f1k-raw-publish/F1K_RESERVATION.json"
+          test -s "$RECEIPT"
+          RES_SHA=$(python -c 'import json,os,pathlib; print(json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"f1k-raw-publish/F1K_RESERVATION.json").read_bytes())["reservation_commit"])')
+          files=("$RECEIPT" "$RUNNER_TEMP/f1k-cold-publish/F1K_FINAL_STATUS.json")
+          for p in "$RUNNER_TEMP/f1k-raw-publish/f1k-originals"/F1K_* "$RUNNER_TEMP/f1k-raw-publish/f1k-preservation"/F1K_* "$RUNNER_TEMP/f1k-cold-publish"/F1K_*; do
+            if [ -f "$p" ]; then
+              case "$p" in *F1K_FINAL_STATUS.json) continue ;; esac
+              files+=("$p")
+            fi
           done
-          gh release upload "$F1K_TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY"
+          gh release create "$F1K_TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY" --target "$RES_SHA" --prerelease --latest=false --title 'I3 F1K once-only original T60' --notes 'One allocation consumed before any native World.step. All available original or partial gzip and independent cold or explicit failure status are published together, without retries. Custody is internal to GitHub, not external escrow.'
+          gh release view "$F1K_TAG" --repo "$GITHUB_REPOSITORY" --json tagName,url
       - if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
