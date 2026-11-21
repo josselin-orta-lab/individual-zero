@@ -319,6 +319,83 @@ def paid_learning(step,after_motor):
     return rec["world_after_any_learning"],rec["mind_after_any_learning"]
 
 
+def verify_paid_personal_learning(step):
+    """Reconstruct personally acquired mean/count updates from paid body deltas.
+
+    This does not trust a producer's 'PAID_LEARNED' label or a resealed Mind.
+    The native EffectsModel arithmetic is independently reduced per tick.
+    """
+    before=effects(step["after_restoration_before_motor"])
+    after=effects(step["after_paid_learning_mind"])
+    pre=private(step["after_restoration_before_motor"])
+    post=private(step["after_paid_learning_mind"])
+    bill=step["postaction"]["actual_paid_learning_bill"]
+    if bill is None:
+        check(before==after and pre["buffer"]==post["buffer"],
+              "unfunded learning invented personally acquired means or buffer")
+        return
+    last=pre["last"]
+    check(type(last) is dict and set(last)=={"__tuple__"}
+          and len(last["__tuple__"])==4,
+          "paid learning lacks individual's own last choice")
+    body,key,action,param=last["__tuple__"]
+    check(type(body) is dict and set(body)=={"__tuple__"}
+          and type(key) is dict and set(key)=={"__tuple__"}
+          and len(body["__tuple__"])==5
+          and type(action) is str,
+          "paid learning has no actual prior self/body")
+    prior=list(body["__tuple__"])
+    current=step["postaction"]["body_after_any_learning"]
+    delta=[end-start for end,start in zip(current,prior)]
+    original_key=tuple(key["__tuple__"])
+    key_used=("se_deplacer",) if action=="se_deplacer" else original_key
+    check(key_used and key_used[0]==action,
+          "learned a consequence of another unchosen action")
+    changed=[key_used]
+    if len(key_used)>1:
+        changed.append((key_used[0],None))
+    changed.append(("*",))
+    expected=deepcopy(before)
+    for label in changed:
+        if label not in expected:
+            expected[label]=[0.,[0.]*5,0]
+        row=expected[label]
+        row[0]+=1.
+        row[2]+=1
+        inv=1./row[0]
+        for i in range(5):
+            row[1][i]+=(delta[i]-row[1][i])*inv
+    if current[4]<50.:
+        factor=1.-.02*(1.-current[4]/50.)
+        for row in expected.values():
+            row[0]*=factor
+    check(set(expected)==set(after),"fabricated or deleted own effect keys")
+    for label,row in expected.items():
+        actual=after[label]
+        check(actual[2]==row[2] and close(actual[0],row[0])
+              and all(close(a,b) for a,b in zip(actual[1],row[1])),
+              "unpaid/fictional first-person mean or forged body delta")
+    pbuf=pre["buffer"]
+    nbuf=post["buffer"]
+    check(type(pbuf) is dict and type(nbuf) is dict
+          and pbuf.get("maxlen") is None and nbuf.get("maxlen") is None
+          and type(pbuf.get("__deque__")) is list
+          and type(nbuf.get("__deque__")) is list,
+          "wrong original episodic buffer type")
+    size=min(len(pbuf["__deque__"])+1,pre["m_max"])
+    check(len(nbuf["__deque__"])==size,
+          "experience not inserted into own funded episodic buffer")
+    last_item=nbuf["__deque__"][-1]
+    check(type(last_item) is dict and set(last_item)=={"__tuple__"}
+          and len(last_item["__tuple__"])==4
+          and last_item["__tuple__"][3] is False,
+          "nonphysical outcome was written as a replay memory")
+    rec=last_item["__tuple__"]
+    check(rec[1]=={"__tuple__":prior}
+          and rec[2]=={"__tuple__":current},
+          "episodic replay stored a different body from native outcome")
+
+
 def early_stopping_competition(step):
     """Cold recomputation of real P1.3 threshold break, without importing Mind."""
     obs=step["decision_info"]
@@ -457,6 +534,7 @@ def check_step(step,world,mind,policy,horizon):
                  "motor/death/food native body")
     world_eq(step["after_motor_world"],after_native,"after World.step")
     after_world,after_mind=paid_learning(step,after_native)
+    verify_paid_personal_learning(step)
     world_eq(step["after_paid_learning_world"],after_world,
              "after genuine learning")
     check(step["receipt_sha256"]==I.h({
