@@ -154,7 +154,7 @@ def _tar_files(directory, filenames):
     return deterministic_gzip(payload.getvalue())
 
 
-def finalize(writer, report, technical, base, reservation=None):
+def finalize(writer, report, technical, base, reservation=None, *, reproduction_kind=None):
     base = Path(base)
     if len(writer.completed) != report["origin_count"]:
         raise ValueError("incomplete first scientific original")
@@ -162,12 +162,23 @@ def finalize(writer, report, technical, base, reservation=None):
         raise ValueError("not all source+three arms archived")
     orig = canonical(report)
     reproduce = canonical(technical)
-    # Identical second technical reconstruction is a nonindependent
-    # REPRODUCIBILITY proof, not another scientific sample or a retry.
+    # Reproduce the native experience twice ONLY on disjoint DEV_R seeds.
+    # K01..K16 are born/executed exactly ONCE; their second byte container
+    # is a cold canonical READBACK, absolutely NOT a new native World.step.
+    kind = reproduction_kind or (
+        "DEV_R_NATIVE_REPETITION" if report["phase"]!="F1K_HELDOUT_RELEASE"
+        else "F1K_CANONICAL_READBACK_NO_SECOND_NATIVE")
+    expected_kind=("F1K_CANONICAL_READBACK_NO_SECOND_NATIVE"
+                   if report["phase"]=="F1K_HELDOUT_RELEASE"
+                   else "DEV_R_NATIVE_REPETITION")
+    if kind!=expected_kind:
+        raise ValueError("reexecution of heldout native source is forbidden")
     byte_equal = orig == reproduce
     new_file(base / "F1K_ORIGINAL_NATIVE.json.gz", deterministic_gzip(orig))
-    new_file(base / "F1K_TECHNICAL_REPRODUCTION.json.gz",
-             deterministic_gzip(reproduce))
+    secondary = ("F1K_CANONICAL_READBACK.json.gz"
+                 if report["phase"]=="F1K_HELDOUT_RELEASE"
+                 else "F1K_TECHNICAL_REPRODUCTION.json.gz")
+    new_file(base / secondary, deterministic_gzip(reproduce))
     members = [row["path"] for row in writer.entries]
     members += [f"_checkpoint_{i:02}.json" for i in
                 range(1, report["origin_count"]+1)]
@@ -180,7 +191,14 @@ def finalize(writer, report, technical, base, reservation=None):
         "entries": writer.entries,
         "native_original_sha256": digest(orig),
         "native_technical_sha256": digest(reproduce),
-        "technical_byte_identical": byte_equal,
+        "reproduction_kind": kind,
+        "secondary_filename": secondary,
+        "technical_byte_identical": (byte_equal and
+                                     kind=="DEV_R_NATIVE_REPETITION"),
+        "canonical_readback_byte_identical": (byte_equal and
+            kind=="F1K_CANONICAL_READBACK_NO_SECOND_NATIVE"),
+        "heldout_native_passes": 1 if kind==
+            "F1K_CANONICAL_READBACK_NO_SECOND_NATIVE" else 0,
         "originals_tar_gzip_sha256": digest(archive),
         "reservation_sha256": (digest(canonical(reservation))
                                if reservation is not None else None),
@@ -189,7 +207,7 @@ def finalize(writer, report, technical, base, reservation=None):
     }
     new_file(base / "F1K_CUSTODY_MANIFEST.json", canonical(index) + b"\n")
     if not byte_equal:
-        raise ValueError("second technical construction differs: originals preserved")
+        raise ValueError("technical replay/readback differs: original retained")
     return index
 
 
@@ -201,12 +219,26 @@ def verify_bundle(folder, report=None):
         report = json.loads(original)
     if canonical(report) != original:
         raise ValueError("F1K original bytes do not match parsed source")
-    technical = gzip.decompress(
-        (folder/"F1K_TECHNICAL_REPRODUCTION.json.gz").read_bytes())
     index = json.loads((folder/"F1K_CUSTODY_MANIFEST.json").read_bytes())
+    expected_kind = ("F1K_CANONICAL_READBACK_NO_SECOND_NATIVE"
+                     if report["phase"]=="F1K_HELDOUT_RELEASE"
+                     else "DEV_R_NATIVE_REPETITION")
+    expected_secondary = ("F1K_CANONICAL_READBACK.json.gz"
+                          if report["phase"]=="F1K_HELDOUT_RELEASE"
+                          else "F1K_TECHNICAL_REPRODUCTION.json.gz")
+    if (index.get("reproduction_kind")!=expected_kind
+            or index.get("secondary_filename")!=expected_secondary
+            or index.get("heldout_native_passes")!=
+               (1 if report["phase"]=="F1K_HELDOUT_RELEASE" else 0)):
+        raise ValueError("F1K native second pass disguised as readback")
+    technical = gzip.decompress((folder/expected_secondary).read_bytes())
     if (index["native_original_sha256"] != digest(original)
             or index["native_technical_sha256"] != digest(technical)
             or technical != original
+            or index.get("technical_byte_identical") is not (
+                report["phase"]!="F1K_HELDOUT_RELEASE")
+            or index.get("canonical_readback_byte_identical") is not (
+                report["phase"]=="F1K_HELDOUT_RELEASE")
             or index["native_part_count"] != 4 * report["origin_count"]
             or index["roots"] != report["origin_ids"]
             or len(index["entries"]) != 4 * report["origin_count"]
@@ -258,7 +290,9 @@ def verify_bundle(folder, report=None):
         "phase":index["phase"],
         "original_sha256":digest(original),
         "original_native_gzips":len(expected),
-        "same_bytes_technical_reproduction":True,
+        "same_bytes_technical_reproduction":index["technical_byte_identical"],
+        "same_bytes_canonical_readback":index["canonical_readback_byte_identical"],
+        "heldout_native_passes":index["heldout_native_passes"],
         "roots":len(report["rows"]),
     }
 
@@ -288,15 +322,24 @@ def run(phase,base,reservation_file=None):
     # This callback writes each receipt immediately after its real native
     # history exists. Even if later roots crash, earlier originals survive.
     first=P.produce(grid,phase,on_case=writer)
-    # Save the first source BEFORE attempting the technical repetition.
+    # Preserve native original FIRST, regardless of subsequent cold failure.
     new_file(base/"F1K_FIRST_NATIVE.json.gz",
              deterministic_gzip(canonical(first)))
-    second=P.produce(grid,phase)
-    index=finalize(writer,first,second,base,receipt)
+    if phase=="REHEARSAL_ONLY":
+        second=P.produce(grid,phase)   # development seeds ONLY
+        kind="DEV_R_NATIVE_REPETITION"
+    else:
+        # Read-only canonical re-encoding; no second P.produce nor K World.step.
+        second=json.loads(canonical(first))
+        kind="F1K_CANONICAL_READBACK_NO_SECOND_NATIVE"
+    index=finalize(writer,first,second,base,receipt,
+                   reproduction_kind=kind)
     print(json.dumps({
         "phase":phase,"roots":len(expected),
         "genuine_source_plus_arm_gzips":len(writer.entries),
         "technical_same_bytes":index["technical_byte_identical"],
+        "readback_same_bytes":index["canonical_readback_byte_identical"],
+        "heldout_native_passes":index["heldout_native_passes"],
         "original_sha256":index["native_original_sha256"],
         "scientific_verdict":None,
     },sort_keys=True))
