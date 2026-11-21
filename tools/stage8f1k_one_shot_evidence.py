@@ -209,6 +209,7 @@ def verify_bundle(folder, report=None):
             or technical != original
             or index["native_part_count"] != 4 * report["origin_count"]
             or index["roots"] != report["origin_ids"]
+            or len(index["entries"]) != 4 * report["origin_count"]
             or index["phase"] != report["phase"]):
         raise ValueError("F1K provenance, technical replay or 4-arm count changed")
     archive = (folder/"F1K_ORIGINALS_64_GZIP.tar.gz").read_bytes()
@@ -223,14 +224,29 @@ def verify_bundle(folder, report=None):
             raise ValueError("duplicate/filtered native gzip part")
         expected[relative] = (native, meta)
     with tarfile.open(fileobj=io.BytesIO(gzip.decompress(archive)), mode="r:") as tar:
-        members = {m.name:m for m in tar.getmembers()}
-        if len(members) != 5 * report["origin_count"]:
-            raise ValueError("missing original gzip or incremental checkpoint")
+        all_members=tar.getmembers()
+        members = {m.name:m for m in all_members}
+        checkpoint_names={
+            f"_checkpoint_{i:02}.json" for i in
+            range(1,report["origin_count"]+1)}
+        if (len(all_members)!=len(members)
+                or set(members)!=set(expected)|checkpoint_names
+                or any(not m.isfile() for m in all_members)):
+            raise ValueError("duplicate, unsafe or missing native gzip/checkpoint")
+        for i in range(1,report["origin_count"]+1):
+            relative=f"_checkpoint_{i:02}.json"
+            checkpoint=json.loads(tar.extractfile(members[relative]).read())
+            if (checkpoint.get("schema")!="i3-stage8f1k-incremental-custody/v0"
+                    or checkpoint.get("completed_origins")!=index["roots"][:i]
+                    or checkpoint.get("receipts")!=index["entries"][:4*i]):
+                raise ValueError("incremental checkpoint or original SHA chain changed")
+        case_sha={r["origin"]["id"]:r["case_sha256"] for r in report["rows"]}
         for relative,(native,meta) in expected.items():
             compressed = tar.extractfile(members[relative]).read()
             raw = gzip.decompress(compressed)
             item = json.loads(raw)
             if (item["id"] != meta["id"] or item["part"] != meta["part"]
+                    or item.get("case_sha256")!=case_sha[item["id"]]
                     or item["native"] != native
                     or digest(compressed) != meta["gzip_sha256"]
                     or digest(raw) != meta["original_sha256"]
