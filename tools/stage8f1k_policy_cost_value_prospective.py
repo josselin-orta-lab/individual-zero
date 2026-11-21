@@ -37,7 +37,7 @@ RELEASE_ENV = "I3_F1K_ONE_SHOT_HOLDOUT_RELEASE"
 
 def git_blob_sha(payload: bytes) -> str:
     """Calculate actual git blob identity, not a checksum of parsed JSON."""
-    return sha1(b"blob " + str(len(payload)).encode("ascii") + b"\\0" + payload).hexdigest()
+    return sha1(b"blob " + str(len(payload)).encode("ascii") + b"\0" + payload).hexdigest()
 
 
 def release_grid(path=GRID, protocol=PROTOCOL):
