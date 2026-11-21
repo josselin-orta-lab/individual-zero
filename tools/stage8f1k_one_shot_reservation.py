@@ -129,6 +129,9 @@ def context() -> dict:
     require(env.get("GITHUB_RUN_ATTEMPT") == "1",
             "any retry attempt forbidden, including failed runs")
     require(env.get("GITHUB_RUN_ID", "").isdigit(), "missing real Actions run")
+    require(env.get("F1K_REHEARSAL_RUN_ID", "").isdigit()
+            and env["F1K_REHEARSAL_RUN_ID"] != env["GITHUB_RUN_ID"],
+            "exact successful independent DEV_R rehearsal run ID required")
     head = env.get("GITHUB_SHA", "")
     require(bool(re.fullmatch(r"[0-9a-f]{40}", head)),
             "invalid checkout SHA")
@@ -140,8 +143,31 @@ def context() -> dict:
     return {
         "repository": REPO, "head_sha": head,
         "workflow_run_id": env["GITHUB_RUN_ID"], "run_attempt": 1,
+        "rehearsal_run_id": env["F1K_REHEARSAL_RUN_ID"],
         "event": "workflow_dispatch",
     }
+
+
+def verify_prior_rehearsal(ctx: dict, current_tree_sha: str) -> str:
+    """Gate real K exposure on a prior fully successful EXACT-TREE DEV_R CI.
+
+    Squash merges change commit SHAs but preserve the tree object. This
+    compares the exact approved code/data tree, not the PR number or title.
+    """
+    run = _api("GET", "/actions/runs/" + ctx["rehearsal_run_id"])
+    require(run.get("conclusion") == "success"
+            and run.get("status") == "completed"
+            and run.get("event") == "pull_request"
+            and run.get("path") ==
+                ".github/workflows/i3-stage8f1k-t60-dev-rehearsal.yml"
+            and run.get("repository",{}).get("full_name") == REPO
+            and bool(re.fullmatch(r"[0-9a-f]{40}",
+                                  run.get("head_sha", ""))),
+            "no successful exact FULL T60 16 DEV_R source cold rehearsal")
+    technical = _api("GET", "/git/commits/" + run["head_sha"])
+    require(technical.get("tree",{}).get("sha") == current_tree_sha,
+            "DEV_R rehearsal tested a different tree; no science exposure")
+    return run["head_sha"]
 
 
 def reserve(output: Path) -> dict:
@@ -165,6 +191,7 @@ def reserve(output: Path) -> dict:
     else:
         raise ReservationError("F1K ONE SHOT: reservation already consumed; NO RETRY")
     original = _api("GET", "/git/commits/" + ctx["head_sha"])
+    rehearsal_head = verify_prior_rehearsal(ctx,original["tree"]["sha"])
     claim = {
         "schema": "i3-stage8f1k-pre-worldstep-once-claim/v0",
         "state": "RESERVED_CONSUMED_BEFORE_ANY_F1K_WORLD_STEP",
@@ -176,6 +203,8 @@ def reserve(output: Path) -> dict:
         "f1i_immutable_status": "INCONCLUSIVE_COST_GATE",
         "reference": "P1.3-funded-v2-no-code-change",
         "policy": "F1JFixedRoundMind-opt-in",
+        "rehearsal_verified_head_sha": rehearsal_head,
+        "rehearsal_verified_tree_sha": original["tree"]["sha"],
         "root_ids": ["K" + str(i).zfill(2) for i in range(1, 17)],
         "seeds": list(range(202611219101, 202611219117)),
         "arms": ["reference_p13", "reference_sham", "fixed_round_f1j"],
@@ -232,6 +261,10 @@ def validate_receipt(receipt: dict, *, same_run: bool = True):
             and claim.get("root_ids") ==
             ["K" + str(i).zfill(2) for i in range(1, 17)]
             and claim.get("seeds") == list(range(202611219101, 202611219117))
+            and bool(re.fullmatch(r"[0-9a-f]{40}",
+                                  claim.get("rehearsal_verified_head_sha", "")))
+            and bool(re.fullmatch(r"[0-9a-f]{40}",
+                                  claim.get("rehearsal_verified_tree_sha", "")))
             and claim.get("preexposure_main_sha") == PREEXPOSURE
             and claim.get("frozen_grid_blob") == GRID_BLOB
             and claim.get("frozen_protocol_blob") == PROTOCOL_BLOB
