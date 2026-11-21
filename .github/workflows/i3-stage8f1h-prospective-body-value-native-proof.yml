@@ -1,0 +1,176 @@
+# F1H: prospectively fixed T12 physical adaptive consequences of F1F's
+# autonomously chosen memory-content motor fork. The 8 WorldSpecs, original F1C
+# paid memories, F1F tick2 original, and preexposure are source-SHA-locked.
+# No scientific full lives, births, policy changes or prior result rewriting.
+name: I3 Stage8-F1H prospective native T12 bodily value audit
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/stage8f1h_prospective_native_body_value.py'
+      - 'tools/stage8f1h_independent_prospective_body_audit.py'
+      - 'tests/i3/test_stage8f1h_prospective_unforced_body_value.py'
+      - '.github/workflows/i3-stage8f1h-prospective-body-value-native-proof.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  original_F1C_F1F_locked_prospective_T12_native_paid_trajectories:
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    env:
+      PYTHONPATH: "src:."
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Original F1C actual personal paid learning
+        uses: actions/download-artifact@v4
+        with:
+          name: i3-stage8f1c-native-original-and-reproduced-44837981694
+          repository: josselin-orta-lab/individual-zero
+          run-id: 44837981694
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/f1c-source
+      - name: Exact F1F eight ecological next-motor original, no refit
+        uses: actions/download-artifact@v4
+        with:
+          name: i3-stage8f1f-original-eight-ecologies-44892635999
+          repository: josselin-orta-lab/individual-zero
+          run-id: 44892635999
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/f1f-source
+      - name: Previous frozen F1F independently re-reduced verdict
+        uses: actions/download-artifact@v4
+        with:
+          name: i3-stage8f1f-cold-eight-ecologies-44892635999
+          repository: josselin-orta-lab/individual-zero
+          run-id: 44892635999
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/f1f-cold
+      - name: Fail closed immutable source hashes and preexposed adversarial tests
+        run: |
+          set -euo pipefail
+          printf '%s  %s\n' \
+            'e46ad5f54af49796da65f48d603595544116aa6e73632546b0935d2178c5e91d' \
+            "$RUNNER_TEMP/f1c-source/F1C_PAID_NATIVE_ORIGINAL.json" | sha256sum -c -
+          printf '%s  %s\n' \
+            'f620d1b46ddf269dc368dcd90ba6c93f44f0b6442f8d9e6322440de32e3fbab5' \
+            "$RUNNER_TEMP/f1f-source/F1F_ECOLOGICAL_ORIGINAL.json" | sha256sum -c -
+          printf '%s  %s\n' \
+            '8013f2add1f3eb0190127bb77eac588c95f153f32ba21113302bafa0292e2ac2' \
+            "$RUNNER_TEMP/f1f-cold/F1F_COLD_ECOLOGY_AUDIT.json" | sha256sum -c -
+          cmp "$RUNNER_TEMP/f1c-source/F1C_PAID_NATIVE_ORIGINAL.json" \
+              "$RUNNER_TEMP/f1c-source/F1C_PAID_NATIVE_REPRODUCED.json"
+          cmp "$RUNNER_TEMP/f1f-source/F1F_ECOLOGICAL_ORIGINAL.json" \
+              "$RUNNER_TEMP/f1f-source/F1F_ECOLOGICAL_REPRODUCED.json"
+          python -m unittest discover -s tests/i3 -p 'test_stage8f1h_prospective_unforced_body_value.py' -v
+          python scripts/check_engine_repository.py --json
+      - name: TWO independent native prospective processes, never force next action
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1h_prospective_native_body_value \
+            --f1c-original "$RUNNER_TEMP/f1c-source/F1C_PAID_NATIVE_ORIGINAL.json" \
+            --f1f-original "$RUNNER_TEMP/f1f-source/F1F_ECOLOGICAL_ORIGINAL.json" \
+            --f1f-cold "$RUNNER_TEMP/f1f-cold/F1F_COLD_ECOLOGY_AUDIT.json" \
+            --output "$RUNNER_TEMP/F1H_PROSPECTIVE_ORIGINAL.json"
+          python -m tools.stage8f1h_prospective_native_body_value \
+            --f1c-original "$RUNNER_TEMP/f1c-source/F1C_PAID_NATIVE_ORIGINAL.json" \
+            --f1f-original "$RUNNER_TEMP/f1f-source/F1F_ECOLOGICAL_ORIGINAL.json" \
+            --f1f-cold "$RUNNER_TEMP/f1f-cold/F1F_COLD_ECOLOGY_AUDIT.json" \
+            --output "$RUNNER_TEMP/F1H_PROSPECTIVE_REPRODUCED.json"
+          cmp "$RUNNER_TEMP/F1H_PROSPECTIVE_ORIGINAL.json" \
+              "$RUNNER_TEMP/F1H_PROSPECTIVE_REPRODUCED.json"
+          python - <<'PY'
+          import json,os,pathlib
+          p=pathlib.Path(os.environ["RUNNER_TEMP"])/"F1H_PROSPECTIVE_ORIGINAL.json"
+          x=json.loads(p.read_bytes())
+          assert x["preexposed_horizon_inclusive"]==12
+          assert x["all_f1f_tick2_receipts_exact_archival_matches"] is True
+          assert x["no_extra_content_mask_after_t2"] is True
+          assert x["no_policy_or_motor_override"] is True
+          assert x["full_lives_created"]==x["new_scientific_cohorts"]==0
+          assert x["run_life_executed"] is False
+          assert x["frozen_stage8e2"].endswith("CLOSED_NO_RETRY")
+          assert len(x["contexts"])==8 and x["arms_per_context"]==["full","sham","mask_both"]
+          print("F1H_PROSPECTIVE_NATIVE_T12_NO_FORCED_MOTOR",x["mixed_primary_survival_verdict"])
+          PY
+          sha256sum "$RUNNER_TEMP/F1H_PROSPECTIVE_ORIGINAL.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: i3-stage8f1h-prospective-native-T12-original-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/F1H_PROSPECTIVE_ORIGINAL.json
+            ${{ runner.temp }}/F1H_PROSPECTIVE_REPRODUCED.json
+            ${{ runner.temp }}/f1c-source/F1C_PAID_NATIVE_ORIGINAL.json
+            ${{ runner.temp }}/f1f-source/F1F_ECOLOGICAL_ORIGINAL.json
+            ${{ runner.temp }}/f1f-cold/F1F_COLD_ECOLOGY_AUDIT.json
+          if-no-files-found: error
+          retention-days: 90
+
+  independent_cold_T12_physiology_and_all_paid_learning_bills:
+    needs: original_F1C_F1F_locked_prospective_T12_native_paid_trajectories
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      PYTHONPATH: "."
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: i3-stage8f1h-prospective-native-T12-original-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1h-source
+      - name: Cold independent all-native-steps five-reserve and postaction audit
+        run: |
+          set -euo pipefail
+          printf '%s  %s\n' \
+            'e46ad5f54af49796da65f48d603595544116aa6e73632546b0935d2178c5e91d' \
+            "$RUNNER_TEMP/f1h-source/f1c-source/F1C_PAID_NATIVE_ORIGINAL.json" | sha256sum -c -
+          printf '%s  %s\n' \
+            'f620d1b46ddf269dc368dcd90ba6c93f44f0b6442f8d9e6322440de32e3fbab5' \
+            "$RUNNER_TEMP/f1h-source/f1f-source/F1F_ECOLOGICAL_ORIGINAL.json" | sha256sum -c -
+          printf '%s  %s\n' \
+            '8013f2add1f3eb0190127bb77eac588c95f153f32ba21113302bafa0292e2ac2' \
+            "$RUNNER_TEMP/f1h-source/f1f-cold/F1F_COLD_ECOLOGY_AUDIT.json" | sha256sum -c -
+          cmp "$RUNNER_TEMP/f1h-source/F1H_PROSPECTIVE_ORIGINAL.json" \
+              "$RUNNER_TEMP/f1h-source/F1H_PROSPECTIVE_REPRODUCED.json"
+          python -m tools.stage8f1h_independent_prospective_body_audit \
+            "$RUNNER_TEMP/f1h-source/F1H_PROSPECTIVE_ORIGINAL.json" \
+            "$RUNNER_TEMP/f1h-source/f1c-source/F1C_PAID_NATIVE_ORIGINAL.json" \
+            "$RUNNER_TEMP/f1h-source/f1f-source/F1F_ECOLOGICAL_ORIGINAL.json" \
+            "$RUNNER_TEMP/f1h-source/f1f-cold/F1F_COLD_ECOLOGY_AUDIT.json" \
+            "$RUNNER_TEMP/F1H_INDEPENDENT_COLD_BODY_AUDIT.json"
+          python - <<'PY'
+          import json,hashlib,os,pathlib
+          p=pathlib.Path(os.environ["RUNNER_TEMP"])
+          original=(p/"f1h-source/F1H_PROSPECTIVE_ORIGINAL.json").read_bytes()
+          x=json.loads((p/"F1H_INDEPENDENT_COLD_BODY_AUDIT.json").read_bytes())
+          assert x["f1h_original_json_sha256"]==hashlib.sha256(original).hexdigest()
+          assert x["status"]=="F1H_COLD_PROSPECTIVE_NATIVE_PHYSIOLOGY_AND_COSTS_AUDITED"
+          assert x["preexposed_horizon_t"]==12
+          assert x["ecologies_checked"]==8
+          assert x["all_tick2_actions_and_bills_match_F1F_exact_original"] is True
+          assert x["no_unpaid_learning_or_replays"] is True
+          assert x["full_native_lives"]==x["new_scientific_cohorts"]==0
+          assert x["frozen_causal_E2"].endswith("CLOSED_NO_RETRY")
+          print("F1H_COLD_REDUCED_PREEXPOSED_SURVIVAL_AND_BODY",x["mixed_primary_survival_verdict"])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: i3-stage8f1h-independent-prospective-body-${{ github.run_id }}
+          path: ${{ runner.temp }}/F1H_INDEPENDENT_COLD_BODY_AUDIT.json
+          if-no-files-found: error
+          retention-days: 90
