@@ -104,6 +104,9 @@ def unexpected_workflows(paths, *, active_ci: str) -> list[str]:
         # F1C: repeatable PR-only SYNTHETIC 1-tick learning proof, cold stdlib
         # verification and retained-vs-discarded learning; no run_life/births.
         "i3-stage8f1c-paid-postaction-learning-proof.yml",
+        # F1D: PR-only, original F1C anchored subsequent decision/physical
+        # audit. Two synthetic ticks, no run_life or scientific generations.
+        "i3-stage8f1d-next-decision-retention-proof.yml",
     }
     return sorted(path.name for path in paths
                   if not path.name.startswith("i1-") and path.name not in allowed)
