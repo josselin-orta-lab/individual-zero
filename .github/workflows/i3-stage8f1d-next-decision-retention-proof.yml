@@ -99,7 +99,7 @@ jobs:
           set -euo pipefail
           python -m tools.stage8f1d_independent_next_decision_audit \
             "$RUNNER_TEMP/f1d-original/F1D_NEXT_DECISION_ORIGINAL.json" \
-            "$RUNNER_TEMP/f1d-original/F1C_PAID_NATIVE_ORIGINAL.json" \
+            "$RUNNER_TEMP/f1d-original/f1c-source/F1C_PAID_NATIVE_ORIGINAL.json" \
             "$RUNNER_TEMP/F1D_INDEPENDENT_COLD_AUDIT.json"
           python - <<'PY'
           import json,hashlib,os,pathlib
