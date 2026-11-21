@@ -11,6 +11,19 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class EngineToolingTests(unittest.TestCase):
 
+    def test_stage8f1g_exact_preexposed_separate_td_buffer_workflow(self):
+        from scripts.check_engine_repository import unexpected_workflows
+        name="i3-stage8f1g-separated-td-buffer-eight-ecologies-proof.yml"
+        blocked=(
+            "i3-stage8f1g-separated-td-buffer-new-science.yml",
+            "i3-stage8f1g-separated-td-buffer-eight-ecologies-proof-retry.yml",
+            "i3-stage8f1g-reopen-g2-lives.yml",
+        )
+        entries=[Path(".github/workflows/"+v) for v in (name,*blocked)]
+        self.assertEqual(unexpected_workflows(entries,active_ci="i1-current-ci.yml"),
+                         sorted(blocked))
+
+
     def test_stage8f1f_only_preregistered_eight_ecological_native_proof(self):
         from scripts.check_engine_repository import unexpected_workflows
         permitted="i3-stage8f1f-eight-ecology-mean-readout-proof.yml"

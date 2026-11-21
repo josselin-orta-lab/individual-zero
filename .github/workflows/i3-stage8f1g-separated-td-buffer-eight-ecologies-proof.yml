@@ -1,0 +1,167 @@
+# F1G PREEXPOSED independent TD and episodic-buffer content controls.
+# Source is original F1C and eight F1F ecologies fixed BEFORE F1F results.
+# No full life, cohort, rescue, motor override, memory invention or G2 claim.
+name: I3 Stage8-F1G separate TD and buffer exact-cost native proof
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/stage8f1g_separate_td_buffer_readouts.py'
+      - 'tools/stage8f1g_independent_td_buffer_audit.py'
+      - 'tools/stage8f1f_independent_ecology_audit.py'
+      - 'tests/i3/test_stage8f1g_separate_td_buffer_readouts.py'
+      - '.github/workflows/i3-stage8f1g-separated-td-buffer-eight-ecologies-proof.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  exact_original_F1C_and_F1F_source_then_F1G_native_controls:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      PYTHONPATH: "src:."
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Immutable F1C personal first action and paid learning
+        uses: actions/download-artifact@v4
+        with:
+          name: i3-stage8f1c-native-original-and-reproduced-44837981694
+          repository: josselin-orta-lab/individual-zero
+          run-id: 44837981694
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/f1c-source
+      - name: Retain exact prior F1F evidence, without any world selection
+        uses: actions/download-artifact@v4
+        with:
+          name: i3-stage8f1f-original-eight-ecologies-44892635999
+          repository: josselin-orta-lab/individual-zero
+          run-id: 44892635999
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/f1f-prior
+      - name: Retain F1F independent cold verdict, never refit experiment
+        uses: actions/download-artifact@v4
+        with:
+          name: i3-stage8f1f-cold-eight-ecologies-44892635999
+          repository: josselin-orta-lab/individual-zero
+          run-id: 44892635999
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/f1f-prior-cold
+      - name: Require byte exact F1C, prior F1F and preregistered F1G, then falsifiers
+        run: |
+          set -euo pipefail
+          printf '%s  %s\n' \
+            'e46ad5f54af49796da65f48d603595544116aa6e73632546b0935d2178c5e91d' \
+            "$RUNNER_TEMP/f1c-source/F1C_PAID_NATIVE_ORIGINAL.json" | sha256sum -c -
+          printf '%s  %s\n' \
+            'f620d1b46ddf269dc368dcd90ba6c93f44f0b6442f8d9e6322440de32e3fbab5' \
+            "$RUNNER_TEMP/f1f-prior/F1F_ECOLOGICAL_ORIGINAL.json" | sha256sum -c -
+          printf '%s  %s\n' \
+            '8013f2add1f3eb0190127bb77eac588c95f153f32ba21113302bafa0292e2ac2' \
+            "$RUNNER_TEMP/f1f-prior-cold/F1F_COLD_ECOLOGY_AUDIT.json" | sha256sum -c -
+          python - <<'PY'
+          import os,json,pathlib
+          p=pathlib.Path(os.environ["RUNNER_TEMP"])
+          x=json.loads((p/"f1f-prior/F1F_ECOLOGICAL_ORIGINAL.json").read_bytes())
+          y=json.loads((p/"f1f-prior-cold/F1F_COLD_ECOLOGY_AUDIT.json").read_bytes())
+          assert x["eight_contexts_valid_cost_pairs"]==8 and x["eight_contexts_with_motor_change"]==1
+          assert y["matched_cost_ecologies"]==8 and y["observed_motor_changed_ecologies"]==1
+          assert x["preregistered_eco_names"]==[
+              "bare","water_here","water_north","water_east","water_west",
+              "food_here","food_east","mixed_here_water_east_food"]
+          print("PREEXPOSED_F1G_NOT_SELECTED_FROM_ECOLOGICAL_RESULTS")
+          PY
+          python -m unittest discover -s tests/i3 -p 'test_stage8f1g_separate_td_buffer_readouts.py' -v
+          python scripts/check_engine_repository.py --json
+      - name: Two Python processes each make genuine 8x(1+4) native World.step
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1g_separate_td_buffer_readouts \
+            --f1c-original "$RUNNER_TEMP/f1c-source/F1C_PAID_NATIVE_ORIGINAL.json" \
+            --output "$RUNNER_TEMP/F1G_TD_BUFFER_ORIGINAL.json"
+          python -m tools.stage8f1g_separate_td_buffer_readouts \
+            --f1c-original "$RUNNER_TEMP/f1c-source/F1C_PAID_NATIVE_ORIGINAL.json" \
+            --output "$RUNNER_TEMP/F1G_TD_BUFFER_REPRODUCED.json"
+          cmp "$RUNNER_TEMP/F1G_TD_BUFFER_ORIGINAL.json" \
+              "$RUNNER_TEMP/F1G_TD_BUFFER_REPRODUCED.json"
+          python - <<'PY'
+          import os,pathlib,json
+          x=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"F1G_TD_BUFFER_ORIGINAL.json").read_bytes())
+          assert x["native_step_calls"]==40 and len(x["contexts"])==8
+          assert x["native_full_lives_created"]==x["new_scientific_cohorts"]==0
+          assert x["f1g_preexposure_document_commit"]=="82d3dc015b5d89ce52b1abc632e7a6a1a52d01b7"
+          assert x["frozen_stage8e2"].endswith("CLOSED_NO_RETRY")
+          print("F1G_SEPARATE_TD_BUFFER_NATIVE_RESULTS",x["primary_gate_status"],
+                x["td_primary_verdict"],x["buffer_primary_verdict"])
+          PY
+          sha256sum "$RUNNER_TEMP/F1G_TD_BUFFER_ORIGINAL.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: i3-stage8f1g-eight-ecology-TD-buffer-original-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/F1G_TD_BUFFER_ORIGINAL.json
+            ${{ runner.temp }}/F1G_TD_BUFFER_REPRODUCED.json
+            ${{ runner.temp }}/f1c-source/F1C_PAID_NATIVE_ORIGINAL.json
+          if-no-files-found: error
+          retention-days: 90
+
+  independent_cold_stdlib_separate_TD_and_buffer_eight_worlds:
+    needs: exact_original_F1C_and_F1F_source_then_F1G_native_controls
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: "."
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: i3-stage8f1g-eight-ecology-TD-buffer-original-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1g-original
+      - name: Cold exact-source TD and buffer physical reduction, no engine
+        run: |
+          set -euo pipefail
+          printf '%s  %s\n' \
+            'e46ad5f54af49796da65f48d603595544116aa6e73632546b0935d2178c5e91d' \
+            "$RUNNER_TEMP/f1g-original/f1c-source/F1C_PAID_NATIVE_ORIGINAL.json" | sha256sum -c -
+          cmp "$RUNNER_TEMP/f1g-original/F1G_TD_BUFFER_ORIGINAL.json" \
+              "$RUNNER_TEMP/f1g-original/F1G_TD_BUFFER_REPRODUCED.json"
+          python -m tools.stage8f1g_independent_td_buffer_audit \
+            "$RUNNER_TEMP/f1g-original/F1G_TD_BUFFER_ORIGINAL.json" \
+            "$RUNNER_TEMP/f1g-original/f1c-source/F1C_PAID_NATIVE_ORIGINAL.json" \
+            "$RUNNER_TEMP/F1G_INDEPENDENT_COLD_TD_BUFFER_AUDIT.json"
+          python - <<'PY'
+          import os,pathlib,json,hashlib
+          p=pathlib.Path(os.environ["RUNNER_TEMP"])
+          original=(p/"f1g-original/F1G_TD_BUFFER_ORIGINAL.json").read_bytes()
+          a=json.loads((p/"F1G_INDEPENDENT_COLD_TD_BUFFER_AUDIT.json").read_bytes())
+          assert a["source_json_sha256"]==hashlib.sha256(original).hexdigest()
+          assert a["status"]=="F1G_COLD_SEPARATE_TD_BUFFER_CONTROLS_REDUCED"
+          assert a["native_first_step_receipts_verified"]==8
+          assert a["native_second_steps_checked"]==32
+          assert a["preexposed_ecologies"]==8
+          assert a["scientific_lives"]==a["scientific_cohorts"]==0
+          assert a["f1f_previous_fixed_k"]==1
+          assert a["stage8e2_frozen"].endswith("CLOSED_NO_RETRY")
+          print("F1G_INDEPENDENT_SEPARATE_TD_BUFFER_CAUSAL_VERDICTS",
+                a["overall_gate"],a["td_primary_verdict"],a["buffer_primary_verdict"])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: i3-stage8f1g-independent-TD-buffer-${{ github.run_id }}
+          path: ${{ runner.temp }}/F1G_INDEPENDENT_COLD_TD_BUFFER_AUDIT.json
+          if-no-files-found: error
+          retention-days: 90

@@ -395,6 +395,122 @@ def audit_f1f(report,original):
     }
 
 
+
+def audit_f1g(report,original):
+    """SEPARATE TD and buffer content causal controls; no F1F outcome selection."""
+    audit_common(report,original,study="F1G_SEPARATE_TD_AND_BUFFER",
+                 expected_schema=
+                   "i3-stage8f1g-eight-ecologies-separate-td-buffer-native-proof/v0",
+                 modes=("full","sham_state","mask_td","mask_buffer"),
+                 steps=40)
+    check(report.get("f1g_implementation_base")==
+              "f6c86019df2800e5584f1b047746e093c4d17abe"
+          and report.get("f1g_preexposure_document_commit")==
+              "82d3dc015b5d89ce52b1abc632e7a6a1a52d01b7"
+          and report.get("f1f_fixed_original_sha256")==
+              "f620d1b46ddf269dc368dcd90ba6c93f44f0b6442f8d9e6322440de32e3fbab5"
+          and report.get("f1f_fixed_cold_sha256")==
+              "8013f2add1f3eb0190127bb77eac588c95f153f32ba21113302bafa0292e2ac2"
+          and report.get("f1f_previous_observed_motor_change_count")==1
+          and report.get("evidence_class")==
+              "SYNTHETIC_SEPARATE_TD_BUFFER_EIGHT_ECOLOGIES_NOT_G2",
+          "F1G was selected/redefined after exposure to F1F result")
+    valid=0
+    td_count=0
+    buffer_count=0
+    for row,case in zip(report["contexts"],ECOLOGIES):
+        check(row.get("context")==description(case)
+              and row.get("source",{}).get("context")==description(case)
+              and set(row.get("arms",{}))==
+                  {"full","sham_state","mask_td","mask_buffer"},
+              "separately preexposed TD/buffer ecology or modes changed")
+        original_boundary(row["source"],original,case)
+        for mode in ("full","sham_state","mask_td","mask_buffer"):
+            check_arm(row["arms"][mode],mode,row["source"],case,original)
+        work_equal,sham=gates(row["arms"],"F1G")
+        eligible=work_equal and sham
+        td=(row["arms"]["full"]["action"],row["arms"]["full"]["param"]) != (
+            row["arms"]["mask_td"]["action"],row["arms"]["mask_td"]["param"])
+        buffer_changed=(
+            row["arms"]["full"]["action"],row["arms"]["full"]["param"]
+        ) != (
+            row["arms"]["mask_buffer"]["action"],row["arms"]["mask_buffer"]["param"])
+        check(row["same_work_and_two_currencies_across_all_four_arms"] is work_equal
+              and row["identity_sham_neutral"] is sham
+              and row["all_four_arms_matched_valid"] is eligible
+              and row["td_content_motor_changed"] is (
+                  td if eligible else None)
+              and row["buffer_content_motor_changed"] is (
+                  buffer_changed if eligible else None),
+              "non-cost-matched TD/buffer contrast or fake changed decision")
+        check(row["case_sha256"]==I.h({
+              k:v for k,v in row.items() if k!="case_sha256"}),
+              "F1G individual ecological native source SHA changed")
+        valid+=int(eligible)
+        td_count+=int(eligible and td)
+        buffer_count+=int(eligible and buffer_changed)
+    if valid!=8:
+        status="INCONCLUSIVE_TD_OR_BUFFER_COST_GATE"
+        td_status=buffer_status=status
+    else:
+        status="TWO_SEPARATE_TD_BUFFER_CONTENT_COST_GATES_EVALUATED"
+        td_status=("TD_CONTENT_MOTOR_EFFECT_IN_K_OF_EIGHT_ECOLOGIES"
+                   if td_count else "NO_TD_CONTENT_EFFECT_IN_EIGHT_ECOLOGIES")
+        buffer_status=("BUFFER_CONTENT_MOTOR_EFFECT_IN_K_OF_EIGHT_ECOLOGIES"
+                       if buffer_count else
+                       "NO_BUFFER_CONTENT_EFFECT_IN_EIGHT_ECOLOGIES")
+    check(report["valid_equal_cost_ecologies"]==valid
+          and report["td_content_motor_changed_ecologies"]==td_count
+          and report["buffer_content_motor_changed_ecologies"]==buffer_count
+          and report["primary_gate_status"]==status
+          and report["td_primary_verdict"]==td_status
+          and report["buffer_primary_verdict"]==buffer_status,
+          "F1G TD/buffer primary endpoint was changed after seeing choices")
+    chain=I.h({
+        "study":"i3-stage8f1g-eight-ecologies-separate-td-buffer-native-proof/v0",
+        "source_main":SOURCE,
+        "implementation_base":"f6c86019df2800e5584f1b047746e093c4d17abe",
+        "source_f1c":F1C_SHA,
+        "source_f1f":"f620d1b46ddf269dc368dcd90ba6c93f44f0b6442f8d9e6322440de32e3fbab5",
+        "original_chain":original["provenance_chain_sha256"],
+        "eight_cases":[row["case_sha256"] for row in report["contexts"]],
+    })
+    check(report["provenance_chain_sha256"]==chain,
+          "source F1G original-to-causal-controls chain is changed")
+    return {
+        "schema":"i3-stage8f1g-independent-native-td-buffer-eight-ecologies/v0",
+        "status":"F1G_COLD_SEPARATE_TD_BUFFER_CONTROLS_REDUCED",
+        "source_json_sha256":I.h(report),
+        "source_f1c_sha256":F1C_SHA,
+        "source_root_sha256":chain,
+        "preexposed_ecologies":8,
+        "native_first_step_receipts_verified":8,
+        "native_second_steps_checked":32,
+        "matched_cost_ecologies":valid,
+        "td_changed_ecologies":td_count,
+        "buffer_changed_ecologies":buffer_count,
+        "overall_gate":status,
+        "td_primary_verdict":td_status,
+        "buffer_primary_verdict":buffer_status,
+        "observations":[{
+           "context":row["context"]["id"],
+           "matched":row["all_four_arms_matched_valid"],
+           "full":[row["arms"]["full"]["action"],row["arms"]["full"]["param"]],
+           "td_mask":[row["arms"]["mask_td"]["action"],row["arms"]["mask_td"]["param"]],
+           "buffer_mask":[row["arms"]["mask_buffer"]["action"],row["arms"]["mask_buffer"]["param"]],
+           "td_changed":row["td_content_motor_changed"],
+           "buffer_changed":row["buffer_content_motor_changed"],
+           "work":row["arms"]["full"]["cognitive_work"],
+           "bill":row["arms"]["full"]["expected_native_cognitive_cost"],
+        } for row in report["contexts"]],
+        "true_paid_F1C_personal_Mind_preserved":True,
+        "scientific_lives":0,
+        "scientific_cohorts":0,
+        "f1f_previous_fixed_k":1,
+        "historical_G2_reconstructed":False,
+        "stage8e2_frozen":E2_NEGATIVE
+    }
+
 def main():
     p=argparse.ArgumentParser(description="Cold stdlib native F1F eight ecological contexts")
     p.add_argument("source_f1f")
