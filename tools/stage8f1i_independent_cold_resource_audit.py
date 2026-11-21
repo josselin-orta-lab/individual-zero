@@ -53,6 +53,52 @@ def body_eq(a,b,what):
     I.body_equal(a,b,"COLD F1I "+what)
 
 
+def private_fields(sealed):
+    """Parse complete F1I BASE Mind, never the older PaidMicrodecisionMind."""
+    check(type(sealed) is dict and set(sealed)=={"data","sha256"}
+          and I.h(sealed["data"])==sealed["sha256"],
+          "noncanonical or tampered full personal Mind checksum")
+    rec=sealed["data"]
+    check(type(rec) is dict and rec.get("class")=="Mind"
+          and type(rec.get("private")) is dict
+          and set(rec["private"])=={"__dict__"},
+          "fresh reference Mind was replaced with a paid micro-candidate")
+    pairs=rec["private"]["__dict__"]
+    check(type(pairs) is list and
+          all(type(row) is list and len(row)==2 and type(row[0]) is str
+              for row in pairs),
+          "typed private individual fields have invalid serialization")
+    fields=dict(pairs)
+    check(len(fields)==len(pairs) and
+          {"effects","values","buffer","rng","_budget_rng","last",
+           "intention","theta","p","w","gammas","map","hist"} <= set(fields),
+          "incomplete private brain or forged paid memory")
+    return fields
+
+
+def observed_stats(sealed):
+    fields=private_fields(sealed)
+    effects=fields["effects"]
+    check(type(effects) is dict and set(effects)=={"__effects_model__"},
+          "memory effects were artificially injected")
+    em=dict(effects["__effects_model__"]["__dict__"])
+    check(set(em)=={"stats"},"invented EffectsModel properties")
+    pairs=em["stats"]["__dict__"]
+    data={}
+    for key,row in pairs:
+        check(type(key) is dict and set(key)=={"__tuple__"}
+              and type(key["__tuple__"]) is list
+              and type(row) is list and len(row)==3
+              and type(row[1]) is list and len(row[1])==5,
+              "invalid typed personally acquired EffectsModel mean/row")
+        label=tuple(key["__tuple__"])
+        check(label not in data and
+              type(row[0]) in (int,float) and type(row[2]) is int,
+              "duplicate or forged personal effect count")
+        data[label]=row
+    return data
+
+
 def expected_cases():
     modes=[]
     roots=[]
@@ -288,36 +334,36 @@ def paid_learning(step,after_motor,post_decision_mind):
     check(post["learning_receipt_sha256"]==I.h({
         k:v for k,v in post.items() if k!="learning_receipt_sha256"}),
         "paid own-memory learning receipt SHA changed")
-    check(I.private_fields(post["mind_after_any_learning"])
-          and I.private_fields(post_decision_mind),
+    check(private_fields(post["mind_after_any_learning"])
+          and private_fields(post_decision_mind),
           "missing complete typed private memory at learning boundary")
     return post["world_after_any_learning"],post["mind_after_any_learning"]
 
 
 def masked_content_ok(step,mode,t1,t4):
-    before=I.private_fields(step["before_mind"])
-    exposed=I.private_fields(step["exposed_mind_during_decision"])
-    restored=I.private_fields(step["after_restoration_before_motor"])
-    after_exposed=I.private_fields(step["after_decision_exposed_mind"])
+    before=private_fields(step["before_mind"])
+    exposed=private_fields(step["exposed_mind_during_decision"])
+    restored=private_fields(step["after_restoration_before_motor"])
+    after_exposed=private_fields(step["after_decision_exposed_mind"])
     check(set(before)==set(exposed)==set(restored)==set(after_exposed),
           "partially serialized private Mind state")
     check(step["readout_mode"]==mode,
           "unexpected memory intervention name")
-    early=I.observed_stats(t1)
-    latest=I.observed_stats(t4)
-    check(I.observed_stats(step["before_mind"])==latest,
+    early=observed_stats(t1)
+    latest=observed_stats(t4)
+    check(observed_stats(step["before_mind"])==latest,
           "fork does not start from own genuinely paid T4 effects")
     for field in before:
         if field!="effects":
             check(exposed[field]==before[field],
                   "mean mask touched innate genome, TD, buffer, map or RNG")
-    check(I.observed_stats(step["after_restoration_before_motor"])==latest,
+    check(observed_stats(step["after_restoration_before_motor"])==latest,
           "temporary readout not restored before native physics")
     if mode=="mask_owned_prior_means":
         keys=sorted(set(early)&set(latest),key=repr)
         check(step["temporary_prior_mean_keys"]==[list(k) for k in keys],
               "mask selected a favorable source key after exposure")
-        seen=I.observed_stats(step["exposed_mind_during_decision"])
+        seen=observed_stats(step["exposed_mind_during_decision"])
         check(set(seen)==set(latest),"invented or deleted learned memory key")
         for k in latest:
             target=early[k][1] if k in early else latest[k][1]
@@ -326,10 +372,10 @@ def masked_content_ok(step,mode,t1,t4):
                   "mask changed confidence/count or used fabricated first-person mean")
     else:
         check(step["temporary_prior_mean_keys"]==[]
-              and I.observed_stats(step["exposed_mind_during_decision"])==latest,
+              and observed_stats(step["exposed_mind_during_decision"])==latest,
               "control shams or full should read true personally learned means")
-    check(I.observed_stats(step["after_decision_exposed_mind"])==
-          I.observed_stats(step["exposed_mind_during_decision"]),
+    check(observed_stats(step["after_decision_exposed_mind"])==
+          observed_stats(step["exposed_mind_during_decision"]),
           "free learning was executed while mask installed")
     for fld in before:
         if fld not in ("effects","map","hist","visible","pos","tokens",
@@ -509,9 +555,9 @@ def audit(report,grid):
         before=world_start(case)
         check(source["genesis"]["world"]==before and
               source["genesis"]["mind"]["data"]["class"]=="Mind" and
-              I.observed_stats(source["genesis"]["mind"])=={},
+              observed_stats(source["genesis"]["mind"])=={},
               "created individuum with imported F1C/artificial personal knowledge")
-        genesis=I.private_fields(source["genesis"]["mind"])
+        genesis=private_fields(source["genesis"]["mind"])
         check(genesis["buffer"]=={"__deque__":[],"maxlen":None}
               and all(all(v==0.0 for v in r) for r in genesis["values"]),
               "TD or buffer already contains learned lab memory at birth")
@@ -532,12 +578,12 @@ def audit(report,grid):
             check(source["paid_t1_mean_anchor"]==[],
                   "invented personal t1 effect")
         else:
-            t1_stats=I.observed_stats(personal_t1)
+            t1_stats=observed_stats(personal_t1)
             stored=[{"key":list(k),"stat":[v[0],v[1],v[2]]}
                     for k,v in sorted(t1_stats.items(),key=lambda x:repr(x[0]))]
             check(source["paid_t1_mean_anchor"]==stored,
                   "prior masked mean was not original personally paid tick1 observation")
-        t4_stats=I.observed_stats(personal_t4)
+        t4_stats=observed_stats(personal_t4)
         stored_late=[{"key":list(k),"stat":[v[0],v[1],v[2]]}
                      for k,v in sorted(t4_stats.items(),key=lambda x:repr(x[0]))]
         check(source["paid_t4_full_effects"]==stored_late,
@@ -545,7 +591,7 @@ def audit(report,grid):
         source_valid=bool(
             len(source["source_steps"])==T4 and before["t"]==T4 and
             not before["dead"] and source["source_native_error"] is None and
-            personal_t1 is not None and bool(I.observed_stats(personal_t1)) and
+            personal_t1 is not None and bool(observed_stats(personal_t1)) and
             source["source_steps"][0]["postaction"]["status"]=="PAID_LEARNED")
         check(source["source_valid_for_fork"] is source_valid
               and source["source_experiences_created_by_run_life"] is False
