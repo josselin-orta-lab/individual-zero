@@ -141,5 +141,21 @@
     "later_learning_replays_prepaid": true,
     "original_stage8e2": "STAGE8E2_CAUSAL_GAMMA_BLOCK_NOT_DEMONSTRATED_F0 / CLOSED_NO_RETRY"
   },
-  "github_actions_retention_days": 90
+  "github_actions_retention_days": 90,
+  "initial_general_software_ci": {
+    "run_id": 44896342267,
+    "python_3_11": "PASS",
+    "python_3_12": "FAILED_TEST_FIXTURE_REGENERATED_UNPINNED_F1C_F1F",
+    "native_producer_unmodified": true,
+    "original_native_experiment_run_44896342369": "SUCCESS",
+    "archived_source_sha_unmodified": true
+  },
+  "test_only_correction": {
+    "commit": "5e663e4bf14c551b0347b3b4bb65174bf50e440f",
+    "file": "tests/i3/test_stage8f1h_prospective_unforced_body_value.py",
+    "reason": "Skip synthetic F1C/F1F regeneration when Python 3.12 bytes are nonidentical to pinned originals; standalone cold 3.12 still audits the archived bytes",
+    "code_policy_world_unchanged": true,
+    "rerun_general_ci_run": 44896800632,
+    "rerun_native_proof_run": 44896800641
+  }
 }
