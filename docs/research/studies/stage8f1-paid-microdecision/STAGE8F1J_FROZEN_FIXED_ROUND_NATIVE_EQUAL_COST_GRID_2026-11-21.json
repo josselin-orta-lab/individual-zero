@@ -1,0 +1,335 @@
+{
+  "schema": "i3-stage8f1j-frozen-independent-fixed-round-v0",
+  "registered_date": "2026-11-21",
+  "baseline_main": "3745952a6c8635072828cdfbe3686229eebe50ba",
+  "protocol": "F1J_FIXED_EVIDENCE_ACCUMULATION_REAL_COST",
+  "parents": [
+    "F1I_INCONCLUSIVE_COST_GATE_4_of_16_unequal_cycles"
+  ],
+  "original_F1I_data_untouched": true,
+  "mind": "F1JFixedRoundMind(Mind)",
+  "no_run_life": true,
+  "same_genome_for_all": "midpoint()",
+  "birth_without_personal_memory": true,
+  "world_width": 3,
+  "world_height": 3,
+  "spawn": [
+    1,
+    1
+  ],
+  "origin_steps": 4,
+  "first_person_paid_prior_at_tick": 1,
+  "fork_tick": 5,
+  "terminal_tick": 30,
+  "full_families": [
+    {
+      "id": "oasis_fruit",
+      "water": [
+        1,
+        1
+      ],
+      "water_gain": 25,
+      "food": [
+        1,
+        1
+      ],
+      "token": "f1i-fruit",
+      "food_gain": 18,
+      "integrity_delta": 2,
+      "water_stock": 2,
+      "food_stock": 2,
+      "restock_every": 0
+    },
+    {
+      "id": "spring_grain",
+      "water": [
+        1,
+        0
+      ],
+      "water_gain": 30,
+      "food": [
+        2,
+        1
+      ],
+      "token": "f1i-grain",
+      "food_gain": 26,
+      "integrity_delta": 0.5,
+      "water_stock": 2,
+      "food_stock": 2,
+      "restock_every": 0
+    },
+    {
+      "id": "patch_tuber",
+      "water": [
+        2,
+        1
+      ],
+      "water_gain": 18,
+      "food": [
+        1,
+        1
+      ],
+      "token": "f1i-tuber",
+      "food_gain": 12,
+      "integrity_delta": 3,
+      "water_stock": 2,
+      "food_stock": 2,
+      "restock_every": 0
+    },
+    {
+      "id": "bitter_tradeoff",
+      "water": [
+        1,
+        1
+      ],
+      "water_gain": 22,
+      "food": [
+        0,
+        1
+      ],
+      "token": "f1i-bitter",
+      "food_gain": 28,
+      "integrity_delta": -1.5,
+      "water_stock": 2,
+      "food_stock": 2,
+      "restock_every": 0
+    }
+  ],
+  "origins": [
+    {
+      "id": "J01",
+      "ecology": "oasis_fruit",
+      "seed": 202611219001,
+      "body": [
+        21.1,
+        63.55,
+        10.25,
+        90.65,
+        95.65
+      ]
+    },
+    {
+      "id": "J02",
+      "ecology": "oasis_fruit",
+      "seed": 202611219002,
+      "body": [
+        22.2,
+        63.1,
+        10.5,
+        90.3,
+        95.3
+      ]
+    },
+    {
+      "id": "J03",
+      "ecology": "oasis_fruit",
+      "seed": 202611219003,
+      "body": [
+        23.3,
+        62.65,
+        10.75,
+        89.95,
+        94.95
+      ]
+    },
+    {
+      "id": "J04",
+      "ecology": "oasis_fruit",
+      "seed": 202611219004,
+      "body": [
+        24.4,
+        62.2,
+        11,
+        89.6,
+        94.6
+      ]
+    },
+    {
+      "id": "J05",
+      "ecology": "spring_grain",
+      "seed": 202611219005,
+      "body": [
+        25.1,
+        57.55,
+        12.25,
+        88.65,
+        94.65
+      ]
+    },
+    {
+      "id": "J06",
+      "ecology": "spring_grain",
+      "seed": 202611219006,
+      "body": [
+        26.2,
+        57.1,
+        12.5,
+        88.3,
+        94.3
+      ]
+    },
+    {
+      "id": "J07",
+      "ecology": "spring_grain",
+      "seed": 202611219007,
+      "body": [
+        27.3,
+        56.65,
+        12.75,
+        87.95,
+        93.95
+      ]
+    },
+    {
+      "id": "J08",
+      "ecology": "spring_grain",
+      "seed": 202611219008,
+      "body": [
+        28.4,
+        56.2,
+        13,
+        87.6,
+        93.6
+      ]
+    },
+    {
+      "id": "J09",
+      "ecology": "patch_tuber",
+      "seed": 202611219009,
+      "body": [
+        19.1,
+        67.55,
+        11.25,
+        86.65,
+        93.65
+      ]
+    },
+    {
+      "id": "J10",
+      "ecology": "patch_tuber",
+      "seed": 202611219010,
+      "body": [
+        20.2,
+        67.1,
+        11.5,
+        86.3,
+        93.3
+      ]
+    },
+    {
+      "id": "J11",
+      "ecology": "patch_tuber",
+      "seed": 202611219011,
+      "body": [
+        21.3,
+        66.65,
+        11.75,
+        85.95,
+        92.95
+      ]
+    },
+    {
+      "id": "J12",
+      "ecology": "patch_tuber",
+      "seed": 202611219012,
+      "body": [
+        22.4,
+        66.2,
+        12,
+        85.6,
+        92.6
+      ]
+    },
+    {
+      "id": "J13",
+      "ecology": "bitter_tradeoff",
+      "seed": 202611219013,
+      "body": [
+        23.1,
+        59.55,
+        9.75,
+        92.65,
+        96.65
+      ]
+    },
+    {
+      "id": "J14",
+      "ecology": "bitter_tradeoff",
+      "seed": 202611219014,
+      "body": [
+        24.2,
+        59.1,
+        10,
+        92.3,
+        96.3
+      ]
+    },
+    {
+      "id": "J15",
+      "ecology": "bitter_tradeoff",
+      "seed": 202611219015,
+      "body": [
+        25.3,
+        58.65,
+        10.25,
+        91.95,
+        95.95
+      ]
+    },
+    {
+      "id": "J16",
+      "ecology": "bitter_tradeoff",
+      "seed": 202611219016,
+      "body": [
+        26.4,
+        58.2,
+        10.5,
+        91.6,
+        95.6
+      ]
+    }
+  ],
+  "arms": [
+    "full",
+    "sham",
+    "mask_owned_t1_means"
+  ],
+  "cost_billing": "World.step (decision) and World.pay_cognition (post-step learning) both energy and vigilance",
+  "first_person_history": "four own native steps, Mind.decide, World.step, prepare_learning, actual pay_cognition, learn_from_outcome; no imported prior",
+  "fixed_rounds": {
+    "base_authorization": "unchanged Mind.decide initial CognitiveWork(cycles=3,memory_items=slots)",
+    "score_simulation": "unchanged Mind.simulate, each option paid as consumed",
+    "rounds": "capacities(actual perceived body,n_base,h_max)[0] capped only by genuinely available CognitiveBudget.try_spend(CognitiveWork(cycles=1))",
+    "evidence": "per round acc[o]=max(0,(1-LEAK)*acc[o]+GAIN*tanh((score-mean)/sd)) with neutral sd=0 as original",
+    "stop_rule": "never early stop on threshold; every authorized round updates every active scored option; threshold selection evaluated ONCE after final substantive round; if no crossing, final accumulator max, then raw score fallback if all equal",
+    "choice": "self._tie between equal final qualifying scores; then original Mind._admit; no experimenter action override",
+    "persistent_memory": "same original residual accumulator rule after chosen winner; rest of Mind unchanged",
+    "no_padding": "no synthetic equalization: every charged round must integrate all option evidence; never charge a work cycle merely for parity",
+    "no_engine_patch": true
+  },
+  "mask": "only means for intersection of personally acquired actual t1/t4 EffectsModel keys exposed to Mind.decide at tick5; return actual t4 memory before World.step, counts, TD, buffer, RNG, genome unchanged",
+  "gates": {
+    "source_paid_roots": 16,
+    "sham_complete_neutrality": 16,
+    "match_entire_cognitive_work_at_t5": 16,
+    "match_both_real_funding_bills_at_t5": 16,
+    "phase_unfunded": "INCONCLUSIVE_UNFUNDED_OR_SOURCE_GATE",
+    "no_sham": "INVALID_SHAM",
+    "any_work_or_bill_mismatch": "INCONCLUSIVE_EQUAL_COST_GATE",
+    "native_audit_fail": "INVALID_NATIVE_AUDIT",
+    "no_excluded_seed": "yes"
+  },
+  "primary": "16/16 equal native CognitiveWork all four fields and both paid coins at t5, with original native Mind choice computed under fixed-round reference policy (not false padding)",
+  "primary_success": "FIXED_ROUND_16_OF_16_REAL_COST_PARITY_DEMONSTRATED_LOCAL",
+  "failure": "NO_FIXED_ROUND_COST_PARITY_DEMONSTRATED",
+  "diagnostics": [
+    "full and mask own mean-content readout voluntary t5 (action,param) changes",
+    "actual simulated_steps and memory_items equality as well as cycles",
+    "per-fork paid energy/vigilance",
+    "all 48 sham trajectories to T30",
+    "native real eating, water drinks, physiological five reserves",
+    "T30 survival and body Pareto secondary, no adaptive success criterion from F1I reused"
+  ],
+  "scope": "new development-only policy experiment, not P1.3 equivalence, not iid scientific populations, no G2 descendants, no prior cohorts or Stage8E2 reopened",
+  "evidence": "two independently recomputed byte identical Python3.11 native originals, engine-free stdlib Python3.12 recomputation of all body/tick/resource/cognitive funds; preserve closed F1I artifacts and verdict"
+}
