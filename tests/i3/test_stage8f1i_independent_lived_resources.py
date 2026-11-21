@@ -173,7 +173,7 @@ class F1IIndependentlyPaidMinds(unittest.TestCase):
     def test_no_retrospective_survival_success_allowed(self):
         bad=deepcopy(self.proof)
         bad["strict_preexposed_primary_verdict"]="REPRODUCIBLE_LOCAL_T30_SURVIVAL_ADVANTAGE_OF_OWN_LEARNED_CONTENT"
-        if bad==self.proof:
+        if bad["strict_preexposed_primary_verdict"]==self.proof["strict_preexposed_primary_verdict"]:
             bad["strict_preexposed_primary_verdict"]="NO_REPRODUCIBLE_SURVIVAL_ADVANTAGE_T30"
         reseal(bad)
         with self.assertRaises(ValueError):
@@ -215,11 +215,8 @@ class F1IIndependentlyPaidMinds(unittest.TestCase):
         bad=deepcopy(self.proof)
         for root in bad["rows"]:
             if root["source"]["source_valid_for_fork"]:
-                record=root["arms"]["mask_owned_prior_means"]["steps"][0]
-                exposed=record["exposed_mind_during_decision"]
-                typed=dict(exposed["data"]["private"]["__dict__"])
-                typed["effects"]["__dict__"][0][1]["__dict__"][0][1][0][1][1][0]+=50.
-                exposed["sha256"]=I.h(exposed["data"])
+                source=root["source"]
+                source["paid_t1_mean_anchor"][0]["stat"][1][0]+=50.
                 reseal(bad)
                 with self.assertRaises(ValueError):
                     Cold.audit(bad,self.grid)
