@@ -1,0 +1,85 @@
+{
+  "schema": "i3-stage8f1d-verified-negative-next-choice-provenance/v0",
+  "status": "NO_NEXT_MOTOR_DECISION_EFFECT_IN_THIS_SYNTHETIC_CASE",
+  "evidence_class": "SOFTWARE_ONLY_SYNTHETIC_TWO_TICKS_NO_G2_HISTORY",
+  "original_preexposure_source_head": "6c4d433110f9960bd96b4b5716c214e0465f9214",
+  "tested_f1d_pr_head": "32b4f76cab919b26b4ffd341f710abb6c93769d6",
+  "source_pr": "https://github.com/josselin-orta-lab/individual-zero/pull/1487",
+  "f1c_original": {
+    "run_id": 44837981694,
+    "artifact_id": 14679910820,
+    "file": "F1C_PAID_NATIVE_ORIGINAL.json",
+    "bytes": 125436,
+    "sha256": "e46ad5f54af49796da65f48d603595544116aa6e73632546b0935d2178c5e91d"
+  },
+  "f1d_native_original": {
+    "run_id": 44889127749,
+    "artifact_id": 14700709161,
+    "file": "F1D_NEXT_DECISION_ORIGINAL.json",
+    "reproduced_file": "F1D_NEXT_DECISION_REPRODUCED.json",
+    "bytes_each": 70198,
+    "identical_bytes": true,
+    "sha256": "fc2cbdb598be1d5de5491c2615c0d6dafffb7703e0887d672d2891fffb08467e",
+    "zip_sha256": "94bd4f5ba0ac957d4d5a174fcff9d3261fc6078ac11c4f250e1b7bb1afee776a"
+  },
+  "f1d_cold_audit": {
+    "run_id": 44889127749,
+    "artifact_id": 14701610804,
+    "file": "F1D_INDEPENDENT_COLD_AUDIT.json",
+    "bytes": 1204,
+    "sha256": "0e2f215ce0b8e1ab53de05c9ccedb1a6a133c826c3294f0eb8e64cea9839d5b8",
+    "zip_sha256": "6c9b9c0a0ea03e943756aba2549b7eddf22a4f79258e3ede32e1b7cc2065e266",
+    "jobs_passed": 2,
+    "jobs_total": 2
+  },
+  "portable_conversation_archive": {
+    "file": "F1D_paid_learning_next_choice_evidence_20261121.tar.gz",
+    "bytes": 67316,
+    "sha256": "90f09c770315a947a78d325aad2e4c4b92478e7129438d6a48b2962dea586747",
+    "scope": "conversation_attachment_not_stored_in_git"
+  },
+  "counts": {
+    "native_world_step_calls_per_producer_file": 4,
+    "native_second_step_receipts_verified": 2,
+    "learning_retained_cases": 1,
+    "paid_discard_cases": 1,
+    "dedicated_tests_passed": 14,
+    "native_lives": 0,
+    "scientific_cohorts": 0
+  },
+  "next_decision": {
+    "start_body_energy": 2.9096,
+    "retain": {
+      "action": "se_deplacer",
+      "param": "E",
+      "option": "explorer:1,0",
+      "paid_decision_energy": 0.2306,
+      "paid_decision_vigilance": 0.344,
+      "memory_items": 33,
+      "energy_after_world_step": 0.679
+    },
+    "discard_after_compute": {
+      "action": "se_deplacer",
+      "param": "E",
+      "option": "explorer:1,0",
+      "paid_decision_energy": 0.2304,
+      "paid_decision_vigilance": 0.344,
+      "memory_items": 32,
+      "energy_after_world_step": 0.6792
+    },
+    "native_work_cost_equal": false,
+    "motor_choice_effect_observed": false,
+    "acquired_model_prediction_changed": true,
+    "score_difference_observed": true
+  },
+  "initial_python_execution_failure": {
+    "run_id": 44889036183,
+    "source_job": "success",
+    "cold_job": "failed_wrong_artifact_inner_path",
+    "reinterpreted_as_positive": false
+  },
+  "historical_g2_exact_memory": "NOT_RECONSTRUCTED",
+  "postaction_survival": "NOT_TESTED",
+  "original_stage8e2_causal_status": "STAGE8E2_CAUSAL_GAMMA_BLOCK_NOT_DEMONSTRATED_F0 / CLOSED_NO_RETRY",
+  "github_actions_retention_days": 90
+}
