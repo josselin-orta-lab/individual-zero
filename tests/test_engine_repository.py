@@ -11,6 +11,19 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class EngineToolingTests(unittest.TestCase):
 
+    def test_stage8f1j_fixed_substantive_rounds_only_native_proof_workflow(self):
+        from scripts.check_engine_repository import unexpected_workflows
+        legal="i3-stage8f1j-fixed-round-real-paid-parity-proof.yml"
+        illegal=(
+            "i3-stage8f1j-fixed-round-scientific-births.yml",
+            "i3-stage8f1j-fixed-round-retrofit-f1i.yml",
+            "i3-stage8f1j-fixed-round-native-proof-retry.yml",
+        )
+        paths=[Path(".github/workflows/"+v) for v in (legal,*illegal)]
+        self.assertEqual(unexpected_workflows(paths,active_ci="i1-current-ci.yml"),
+                         sorted(illegal))
+
+
     def test_stage8f1i_only_preexposed_sixteen_personal_real_resources_proof(self):
         from scripts.check_engine_repository import unexpected_workflows
         legal="i3-stage8f1i-independent-real-resource-native-proof.yml"
