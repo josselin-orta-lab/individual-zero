@@ -1,0 +1,361 @@
+{
+  "schema": "i3-stage8f1k-preexposure-heldout-net-policy-value/v0",
+  "preregistered_date": "2026-11-21",
+  "phase": "PREEXPOSURE_ONLY_NO_NATIVE_STEPS_AUTHORIZED_BY_THIS_DOCUMENT",
+  "baseline_main": "d727b4cbb1dc0c9490608788836d3c5c040cbae5",
+  "reference_controller": "i3.modules.mind.Mind (P1.3 funded-v2, exactly baseline)",
+  "competing_controller": "tools.stage8f1j_fixed_round_paid_competition.F1JFixedRoundMind (exact baseline)",
+  "registered_generation": "I1",
+  "development_reference": "I3",
+  "new_policy_only_opt_in": true,
+  "no_change_to_mind_world_bodylaws": true,
+  "no_run_life": true,
+  "no_evolution_or_G2_birth": true,
+  "same_genome": "midpoint()",
+  "source_controller": "P1.3_Mind",
+  "personal_history_ticks": 4,
+  "fork_tick": 5,
+  "final_tick": 60,
+  "world": {
+    "width": 3,
+    "height": 3,
+    "spawn": [
+      1,
+      1
+    ],
+    "laws": "BodyLaws() i3-body-laws-v2",
+    "changes": []
+  },
+  "heldout_rule": "Four new world parameter vectors and all 16 seeds disjoint from F1I and F1J. No K-origin World.step, result inspection, selection, retries or world/body tuning until grid AND criterion commits are merged and source-locked.",
+  "ecologies": [
+    {
+      "id": "east_distant_sparse",
+      "water": [
+        2,
+        0
+      ],
+      "water_gain": 19,
+      "water_stock": 1,
+      "water_max_stock": 1,
+      "water_restock_every": 0,
+      "food": [
+        0,
+        1
+      ],
+      "token": "f1k-leaf",
+      "food_gain": 17,
+      "integrity_delta": 1.1,
+      "food_quantity": 2,
+      "food_max_quantity": 2,
+      "food_restock_every": 0
+    },
+    {
+      "id": "near_shallow_then_dry",
+      "water": [
+        1,
+        1
+      ],
+      "water_gain": 10,
+      "water_stock": 1,
+      "water_max_stock": 1,
+      "water_restock_every": 0,
+      "food": [
+        2,
+        2
+      ],
+      "token": "f1k-nut",
+      "food_gain": 14,
+      "integrity_delta": 0.4,
+      "food_quantity": 2,
+      "food_max_quantity": 2,
+      "food_restock_every": 0
+    },
+    {
+      "id": "bitter_food_far_well",
+      "water": [
+        0,
+        2
+      ],
+      "water_gain": 23,
+      "water_stock": 2,
+      "water_max_stock": 2,
+      "water_restock_every": 0,
+      "food": [
+        1,
+        0
+      ],
+      "token": "f1k-bitter",
+      "food_gain": 31,
+      "integrity_delta": -2,
+      "food_quantity": 2,
+      "food_max_quantity": 2,
+      "food_restock_every": 0
+    },
+    {
+      "id": "replenishing_well_remote_food",
+      "water": [
+        2,
+        1
+      ],
+      "water_gain": 14,
+      "water_stock": 1,
+      "water_max_stock": 1,
+      "water_restock_every": 7,
+      "food": [
+        0,
+        2
+      ],
+      "token": "f1k-root",
+      "food_gain": 20,
+      "integrity_delta": 2,
+      "food_quantity": 1,
+      "food_max_quantity": 1,
+      "food_restock_every": 11
+    }
+  ],
+  "origins": [
+    {
+      "id": "K01",
+      "ecology": "east_distant_sparse",
+      "seed": 202611219101,
+      "body": [
+        22,
+        62,
+        9,
+        90,
+        95
+      ]
+    },
+    {
+      "id": "K02",
+      "ecology": "east_distant_sparse",
+      "seed": 202611219102,
+      "body": [
+        23.25,
+        61.2,
+        9.3,
+        89.5,
+        94.6
+      ]
+    },
+    {
+      "id": "K03",
+      "ecology": "east_distant_sparse",
+      "seed": 202611219103,
+      "body": [
+        21.25,
+        62.7,
+        8.75,
+        90.65,
+        95.45
+      ]
+    },
+    {
+      "id": "K04",
+      "ecology": "east_distant_sparse",
+      "seed": 202611219104,
+      "body": [
+        22.5,
+        60.9,
+        9.5,
+        89.75,
+        94.4
+      ]
+    },
+    {
+      "id": "K05",
+      "ecology": "near_shallow_then_dry",
+      "seed": 202611219105,
+      "body": [
+        25,
+        55,
+        7.8,
+        92,
+        94
+      ]
+    },
+    {
+      "id": "K06",
+      "ecology": "near_shallow_then_dry",
+      "seed": 202611219106,
+      "body": [
+        26.25,
+        54.2,
+        8.1,
+        91.5,
+        93.6
+      ]
+    },
+    {
+      "id": "K07",
+      "ecology": "near_shallow_then_dry",
+      "seed": 202611219107,
+      "body": [
+        24.25,
+        55.7,
+        7.55,
+        92.65,
+        94.45
+      ]
+    },
+    {
+      "id": "K08",
+      "ecology": "near_shallow_then_dry",
+      "seed": 202611219108,
+      "body": [
+        25.5,
+        53.9,
+        8.3,
+        91.75,
+        93.4
+      ]
+    },
+    {
+      "id": "K09",
+      "ecology": "bitter_food_far_well",
+      "seed": 202611219109,
+      "body": [
+        21,
+        59,
+        9.6,
+        88,
+        93
+      ]
+    },
+    {
+      "id": "K10",
+      "ecology": "bitter_food_far_well",
+      "seed": 202611219110,
+      "body": [
+        22.25,
+        58.2,
+        9.9,
+        87.5,
+        92.6
+      ]
+    },
+    {
+      "id": "K11",
+      "ecology": "bitter_food_far_well",
+      "seed": 202611219111,
+      "body": [
+        20.25,
+        59.7,
+        9.35,
+        88.65,
+        93.45
+      ]
+    },
+    {
+      "id": "K12",
+      "ecology": "bitter_food_far_well",
+      "seed": 202611219112,
+      "body": [
+        21.5,
+        57.9,
+        10.1,
+        87.75,
+        92.4
+      ]
+    },
+    {
+      "id": "K13",
+      "ecology": "replenishing_well_remote_food",
+      "seed": 202611219113,
+      "body": [
+        23,
+        57,
+        8.6,
+        91,
+        96
+      ]
+    },
+    {
+      "id": "K14",
+      "ecology": "replenishing_well_remote_food",
+      "seed": 202611219114,
+      "body": [
+        24.25,
+        56.2,
+        8.9,
+        90.5,
+        95.6
+      ]
+    },
+    {
+      "id": "K15",
+      "ecology": "replenishing_well_remote_food",
+      "seed": 202611219115,
+      "body": [
+        22.25,
+        57.7,
+        8.35,
+        91.65,
+        96.45
+      ]
+    },
+    {
+      "id": "K16",
+      "ecology": "replenishing_well_remote_food",
+      "seed": 202611219116,
+      "body": [
+        23.5,
+        55.9,
+        9.1,
+        90.75,
+        95.4
+      ]
+    }
+  ],
+  "arms": [
+    "reference_p13",
+    "reference_sham",
+    "fixed_round_f1j"
+  ],
+  "experiment": {
+    "initial_state": "Each newborn P1.3 Mind has empty personal EffectsModel, zero TD and empty episodic buffer; its own four paid native decisions, motor consequences and paid post-action learning generate a common fork. At T5 identical actual body/world, all own memory including effects/TD/buffer, acc/intention and RNG before policy substitution.",
+    "contrast": "reference_p13 and reference_sham retain unmodified Mind; fixed_round_f1j changes _compete algorithm only, preserving identical personally learned internal values and RNG. No action selected by experimenter.",
+    "body_and_cost": "Each branch uses its own CognitiveBudget, World.step and pay_cognition; full four-field CognitiveWork and actual energy/vigilance cognitive bills, plus motor and metabolite costs, are recorded every tick. No equalization or fictitious cycles.",
+    "followup": "Uninterrupted voluntary choices T5..T60 or irreversible death; identical exogenous WorldSpec and clocks, natural divergent actions and genuine learning thereafter. Source and full trajectories retained even if unfavorable.",
+    "reference_sham": "A byte-equivalent re-clone of unmodified P1.3 must match every native transition, cognition bill, paid learning update and terminal outcome.",
+    "no_new_memory_mask": true,
+    "no_intervention_after_t5": true
+  },
+  "success_criteria": {
+    "cost_exposure_min_roots_at_t5": 4,
+    "cost_exposure_min_distinct_ecologies": 2,
+    "cost_exposure_definition": "At common pre-decision T5 state: fixed-round spends >=1 more actual cycles than P1.3, strictly greater charged and paid cognitive energy AND vigilance, all four CognitiveWork counters and both bills cold-verified. Not hypothetical cost of extra iterations.",
+    "survival_endpoint": "number of actually lived T5..T60 native ticks, until irreversible death or horizon; the comparison includes all 16 preregistered pairs regardless of motor divergence",
+    "survival_success_min_positive_roots": 3,
+    "survival_success_min_distinct_ecologies": 2,
+    "survival_success_max_negative_roots": 0,
+    "secondary_body_endpoint": "If all 16 pairs have exactly equal lived ticks, terminal 5-channel Pareto: every component >= P1.3 and >=1 strictly better with tolerance 1e-9",
+    "body_success_min_pareto_positive_roots": 4,
+    "body_success_min_distinct_ecologies": 2,
+    "body_success_max_pareto_negative_roots": 0,
+    "no_weighted_surrogate_utility": true,
+    "no_p_values_or_generalized_population_claim": true,
+    "cost_is_a_mediator_not_matched": true,
+    "invalidation_precedence": [
+      "INVALID_PREEXPOSURE_OR_SOURCE_PIN",
+      "INVALID_NATIVE_LEDGER_OR_COLD_AUDIT",
+      "INCONCLUSIVE_UNFUNDED_SOURCE",
+      "INVALID_REFERENCE_SHAM",
+      "INCONCLUSIVE_NO_REAL_SURCHARGE",
+      "LOCAL_T60_SURVIVAL_GAIN_WITH_REAL_COGNITIVE_SURCHARGE",
+      "LOCAL_T60_BODILY_PARETO_GAIN_NO_SURVIVAL_GAIN",
+      "NO_REPRODUCIBLE_NET_BODY_ADVANTAGE_T60"
+    ],
+    "no_selection_after_observation": true,
+    "no_retries_or_reweighting": true
+  },
+  "independent_audit": "A distinct Python3.12 stdlib-only reducer, without imports of Mind/World/BodyLaws or the F1K producer, independently verifies each pre-fork personal source, three arms, exact charged rounds, memory and bills, actual water/food stocks and five-body transitions, sham, deaths, full outcome classification.",
+  "release_requirements": "Both JSON grid and textual preexposure must be merged on main and pinned by immutable commit SHA before any heldout World.step; subsequent runner/CI must reject source drift, forbid scientific retries and publish negative/inconclusive receipts as faithfully as positive. A green CI job is not a scientific Stage2 promotion.",
+  "frozen_prior_results": {
+    "F1I": "INCONCLUSIVE_COST_GATE",
+    "F1J": "FIXED_ROUND_16_OF_16_REAL_COST_PARITY_DEMONSTRATED_LOCAL",
+    "F1H": "NO_SURVIVAL_ADVANTAGE_OF_THE_MEMORY_INFLUENCED_DECISION_AT_T12",
+    "Stage8_E2": "STAGE8E2_CAUSAL_GAMMA_BLOCK_NOT_DEMONSTRATED_F0 / CLOSED_NO_RETRY",
+    "stage2": "NOT_ISSUED/HOLD_NO_VERDICT"
+  }
+}
