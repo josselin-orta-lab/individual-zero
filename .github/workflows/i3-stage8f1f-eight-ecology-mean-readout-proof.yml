@@ -1,0 +1,131 @@
+# F1F: strictly preregistered 8 native ecological sources, 3 second-decision
+# readouts each, original paid F1C. NO run_life, no cohorts, no G2 replacement.
+name: I3 Stage8-F1F eight ecological native paid content proof
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/stage8f1f_native_ecological_contexts.py'
+      - 'tools/stage8f1f_ecological_mean_readout.py'
+      - 'tools/stage8f1f_independent_ecology_audit.py'
+      - 'tests/i3/test_stage8f1f_eight_preregistered_ecologies.py'
+      - '.github/workflows/i3-stage8f1f-eight-ecology-mean-readout-proof.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  original_F1C_eight_native_ecologies_and_reproduction:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      PYTHONPATH: "src:."
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Retrieve immutable F1C original, not invented G2 private states
+        uses: actions/download-artifact@v4
+        with:
+          name: i3-stage8f1c-native-original-and-reproduced-44837981694
+          repository: josselin-orta-lab/individual-zero
+          run-id: 44837981694
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/f1c-source
+      - name: Exact original F1C source, 16 adversarial cases, workflow guards
+        run: |
+          set -euo pipefail
+          printf '%s  %s\n' \
+            'e46ad5f54af49796da65f48d603595544116aa6e73632546b0935d2178c5e91d' \
+            "$RUNNER_TEMP/f1c-source/F1C_PAID_NATIVE_ORIGINAL.json" | sha256sum -c -
+          cmp "$RUNNER_TEMP/f1c-source/F1C_PAID_NATIVE_ORIGINAL.json" \
+              "$RUNNER_TEMP/f1c-source/F1C_PAID_NATIVE_REPRODUCED.json"
+          python -m unittest discover -s tests/i3 -p 'test_stage8f1f_eight_preregistered_ecologies.py' -v
+          python scripts/check_engine_repository.py --json
+      - name: Two Python processes make actual 8x(1+3) native World.step receipts
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1f_ecological_mean_readout \
+            --f1c-original "$RUNNER_TEMP/f1c-source/F1C_PAID_NATIVE_ORIGINAL.json" \
+            --output "$RUNNER_TEMP/F1F_ECOLOGICAL_ORIGINAL.json"
+          python -m tools.stage8f1f_ecological_mean_readout \
+            --f1c-original "$RUNNER_TEMP/f1c-source/F1C_PAID_NATIVE_ORIGINAL.json" \
+            --output "$RUNNER_TEMP/F1F_ECOLOGICAL_REPRODUCED.json"
+          cmp "$RUNNER_TEMP/F1F_ECOLOGICAL_ORIGINAL.json" \
+              "$RUNNER_TEMP/F1F_ECOLOGICAL_REPRODUCED.json"
+          python - <<'PY'
+          import json,os,pathlib
+          x=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"F1F_ECOLOGICAL_ORIGINAL.json").read_bytes())
+          assert x["native_step_calls"]==32
+          assert len(x["contexts"])==8
+          assert x["new_scientific_cohorts"]==x["native_full_lives_created"]==0
+          assert x["run_life_executed"] is False
+          assert x["frozen_stage8e2"].endswith("CLOSED_NO_RETRY")
+          print("F1F_NATIVE_EIGHT_ECOLOGIES_NONFORCED_MOTOR_EFFECT",x["primary_verdict"])
+          PY
+          sha256sum "$RUNNER_TEMP/F1F_ECOLOGICAL_ORIGINAL.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: i3-stage8f1f-original-eight-ecologies-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/F1F_ECOLOGICAL_ORIGINAL.json
+            ${{ runner.temp }}/F1F_ECOLOGICAL_REPRODUCED.json
+            ${{ runner.temp }}/f1c-source/F1C_PAID_NATIVE_ORIGINAL.json
+          if-no-files-found: error
+          retention-days: 90
+
+  cold_stdlib_independent_all_eight_ecological_native_world_steps:
+    needs: original_F1C_eight_native_ecologies_and_reproduction
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: "."
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: i3-stage8f1f-original-eight-ecologies-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1f-original
+      - name: Original bound and second source without native engine
+        run: |
+          set -euo pipefail
+          printf '%s  %s\n' \
+            'e46ad5f54af49796da65f48d603595544116aa6e73632546b0935d2178c5e91d' \
+            "$RUNNER_TEMP/f1f-original/f1c-source/F1C_PAID_NATIVE_ORIGINAL.json" | sha256sum -c -
+          cmp "$RUNNER_TEMP/f1f-original/F1F_ECOLOGICAL_ORIGINAL.json" \
+              "$RUNNER_TEMP/f1f-original/F1F_ECOLOGICAL_REPRODUCED.json"
+          python -m tools.stage8f1f_independent_ecology_audit \
+            "$RUNNER_TEMP/f1f-original/F1F_ECOLOGICAL_ORIGINAL.json" \
+            "$RUNNER_TEMP/f1f-original/f1c-source/F1C_PAID_NATIVE_ORIGINAL.json" \
+            "$RUNNER_TEMP/F1F_COLD_ECOLOGY_AUDIT.json"
+          python - <<'PY'
+          import os,json,pathlib,hashlib
+          p=pathlib.Path(os.environ["RUNNER_TEMP"])
+          data=(p/"f1f-original/F1F_ECOLOGICAL_ORIGINAL.json").read_bytes()
+          x=json.loads((p/"F1F_COLD_ECOLOGY_AUDIT.json").read_bytes())
+          assert x["source_json_sha256"]==hashlib.sha256(data).hexdigest()
+          assert x["status"]=="F1F_COLD_NATIVE_EIGHT_ECOLOGICAL_CONTEXTS_REDUCED"
+          assert x["preexposed_ecologies"]==8
+          assert x["actual_native_second_steps_checked"]==24
+          assert x["scientific_lives"]==x["scientific_cohorts"]==0
+          assert x["stage8e2_frozen"].endswith("CLOSED_NO_RETRY")
+          print("F1F_COLD_ECOLOGY_GATE_AND_RESULT",x["primary_verdict"])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: i3-stage8f1f-cold-eight-ecologies-${{ github.run_id }}
+          path: ${{ runner.temp }}/F1F_COLD_ECOLOGY_AUDIT.json
+          if-no-files-found: error
+          retention-days: 90
