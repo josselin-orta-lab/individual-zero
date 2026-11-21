@@ -25,6 +25,7 @@ ENV = {
     "GITHUB_REF":"refs/heads/main",
     "GITHUB_EVENT_NAME":"workflow_dispatch",
     "GITHUB_RUN_ID":"12345678901",
+    "F1K_REHEARSAL_RUN_ID":"424242424242",
     "GITHUB_RUN_ATTEMPT":"1",
     "GITHUB_SHA":HEAD,
     "F1K_APPROVED_SOURCE_SHA":HEAD,
@@ -50,6 +51,16 @@ class FakeGitHub:
             return {"ref":R.CONSUMED_REF,"object":{"sha":self.commit}}
         if method=="GET" and path=="/git/commits/"+HEAD:
             return {"tree":{"sha":"b"*40}}
+        if method=="GET" and path=="/git/commits/"+"e"*40:
+            return {"tree":{"sha":"b"*40}}
+        if method=="GET" and path=="/actions/runs/424242424242":
+            return {
+                "conclusion":"success","status":"completed",
+                "event":"pull_request",
+                "head_sha":"e"*40,
+                "path":".github/workflows/i3-stage8f1k-t60-dev-rehearsal.yml",
+                "repository":{"full_name":R.REPO},
+            }
         if method=="POST" and path=="/git/blobs":
             self.claim=payload["content"].encode("utf-8")
             return {"sha":R.blob(self.claim)}
@@ -110,6 +121,7 @@ class F1KOneShotSafety(unittest.TestCase):
                 R,"_current_commit",return_value=HEAD):
             self.assertEqual(R.context()["head_sha"],HEAD)
             for key,value in (
+                ("F1K_REHEARSAL_RUN_ID",""),
                 ("GITHUB_RUN_ATTEMPT","2"),
                 ("GITHUB_REF","refs/heads/experimental"),
                 ("GITHUB_EVENT_NAME","pull_request"),
@@ -138,6 +150,20 @@ class F1KOneShotSafety(unittest.TestCase):
                 forged["claim"]["seeds"][-1]+=999
                 with self.assertRaises(R.ReservationError):
                     R.validate_receipt(forged)
+
+    def test_failed_or_different_tree_rehearsal_refuses_before_ref_create(self):
+        fake=FakeGitHub()
+        def invalid(method,path,payload=None):
+            if method=="GET" and path=="/git/commits/"+"e"*40:
+                return {"tree":{"sha":"0"*40}}
+            return fake.api(method,path,payload)
+        with TemporaryDirectory() as td,patch.dict(os.environ,ENV,clear=True):
+            with patch.object(R,"_api",side_effect=invalid),patch.object(
+                    R,"_current_commit",return_value=HEAD):
+                with self.assertRaises(R.ReservationError):
+                    R.reserve(Path(td)/"none.json")
+                self.assertFalse(any(m=="POST" and p=="/git/refs"
+                                     for m,p in fake.calls))
 
     def test_permission_denied_or_ambiguous_claim_must_fail_closed(self):
         fake=FakeGitHub()
