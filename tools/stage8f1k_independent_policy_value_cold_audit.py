@@ -74,7 +74,7 @@ def source_guard(grid,phase,grid_bytes=None,protocol_bytes=None):
     if phase=="F1K_HELDOUT_RELEASE":
         check(grid_bytes is not None and protocol_bytes is not None
               and blob_sha(grid_bytes)==GRID_BLOB
-              and blob_sha(protocol_bytes)==PROTOCOL_BLOB,
+              and blob_sha(protocol_bytes)==PROTOCOL_BLOB
               and json.loads(grid_bytes)==grid,
               "preexposure byte pin mismatch")
         check(grid.get("schema")=="i3-stage8f1k-preexposure-heldout-net-policy-value/v0"
