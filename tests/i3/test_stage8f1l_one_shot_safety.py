@@ -5,7 +5,9 @@ NO heldout individual is instantiated, NO 32-root scientific result is read.
 """
 from __future__ import annotations
 
+import ast
 import base64
+from hashlib import sha256
 from copy import deepcopy
 import json
 import os
@@ -18,6 +20,7 @@ from tools import stage8f1l_one_shot_reservation as R
 from tools import stage8f1l_one_shot_evidence as E
 from tools import stage8f1l_scientific_native as P
 from tools import stage8f1l_independent_scientific_cold as Cold
+from tools import stage8f1l_one_shot_cold_entry as ColdEntry
 
 HEAD = "a" * 40
 PR_HEAD = "e" * 40
@@ -309,6 +312,74 @@ class F1LOneShotSafety(unittest.TestCase):
         self.assertEqual(
             Cold._classify(pareto),
             "NO_REPRODUCIBLE_LOCAL_T60_CONTENT_BODY_ADVANTAGE")
+
+
+    def test_cold_works_only_with_verified_immutable_release_digests(self):
+        """Synthetic opaque bytes ONLY; no native seed, motor or World.step."""
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / "f1l-originals").mkdir()
+            fake_parts = {
+                root / "F1L_RESERVATION.json": b"fake-reservation",
+                root / "F1L_RESERVATION.NATIVE_START_LOCK": b"fake-lock",
+                root / "f1l-originals/F1L_FIRST_NATIVE.json.gz": b"fake-first",
+                root / "f1l-originals/F1L_ORIGINAL_NATIVE.json.gz": b"fake-original",
+                root / "f1l-originals/F1L_CANONICAL_READBACK.json.gz": b"fake-copy",
+                root / "f1l-originals/F1L_ORIGINALS_128_GZIP.tar.gz": b"fake-tar",
+                root / "f1l-originals/F1L_CUSTODY_MANIFEST.json": b"fake-index",
+            }
+            for path, data in fake_parts.items():
+                path.write_bytes(data)
+            receipt = {"reservation_commit": "d" * 40}
+            fake_release = {
+                "tag_name": ColdEntry.RAW_RELEASE_TAG, "immutable": True,
+                "target_commitish": receipt["reservation_commit"],
+                "assets": [
+                    {"name": p.name, "size": len(raw),
+                     "digest": "sha256:" + sha256(raw).hexdigest()}
+                    for p, raw in fake_parts.items()
+                ],
+            }
+            with patch.object(R, "_api", return_value=fake_release) as remote:
+                verified = ColdEntry.verify_immutable_raw_release(receipt, root)
+                self.assertEqual(verified["raw_assets_byte_matched"], 7)
+                self.assertTrue(verified["release_immutable"])
+                remote.assert_called_once_with(
+                    "GET", "/releases/tags/" + ColdEntry.RAW_RELEASE_TAG)
+                fake_release["assets"][1]["digest"] = "sha256:" + "0" * 64
+                with self.assertRaises(ValueError):
+                    ColdEntry.verify_immutable_raw_release(receipt, root)
+                fake_release["assets"][1]["digest"] = (
+                    "sha256:" + sha256(fake_parts[
+                        root / "F1L_RESERVATION.NATIVE_START_LOCK"]).hexdigest())
+                fake_release["immutable"] = False
+                with self.assertRaises(ValueError):
+                    ColdEntry.verify_immutable_raw_release(receipt, root)
+                fake_release["immutable"] = True
+                fake_release["assets"].pop()
+                with self.assertRaises(ValueError):
+                    ColdEntry.verify_immutable_raw_release(receipt, root)
+
+    def test_scientific_cold_module_never_imports_native_engine(self):
+        paths = [
+            "tools/stage8f1l_one_shot_cold_entry.py",
+            "tools/stage8f1l_independent_scientific_cold.py",
+            "tools/stage8f1l_independent_paid_content_cold_audit.py",
+            "tools/stage8f1k_independent_policy_value_cold_audit.py",
+            "tools/stage8f1j_independent_fixed_round_cold_audit.py",
+        ]
+        for path in paths:
+            parsed = ast.parse(Path(path).read_text())
+            for node in ast.walk(parsed):
+                if isinstance(node, ast.Import):
+                    self.assertFalse(
+                        any(alias.name.startswith("i3") for alias in node.names),
+                        path + ": engine import forbidden")
+                elif isinstance(node, ast.ImportFrom):
+                    self.assertFalse(
+                        (node.module or "").startswith("i3"),
+                        path + ": engine import forbidden")
+
 
 
 if __name__ == "__main__":
