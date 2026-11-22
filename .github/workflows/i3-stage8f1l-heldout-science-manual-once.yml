@@ -1,0 +1,209 @@
+# F1L scientific 32 roots: manual ONLY, exact source tree + protected create-only ref.
+# No PR, push, schedule or re-run can generate any heldout World.step.
+name: I3 Stage8-F1L first-only 32 heldout original T60
+
+on:
+  workflow_dispatch:
+    inputs:
+      approved_source_sha:
+        description: Exact 40-character reviewed SHA of main and prior DEV_L full-cold tree
+        type: string
+        required: true
+      consume_ack:
+        description: Type CONSUME_F1L_32_ROOTS_NO_SCIENTIFIC_RETRY
+        type: string
+        required: true
+      rehearsal_run_id:
+        description: Prior PR run with four PASS jobs including DEV_L 8-root T60 cold
+        type: string
+        required: true
+
+concurrency:
+  group: i3-stage8f1l-t60-consumed-once
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  F1L_RAW_TAG: i3-stage8f1l-t60-raw-heldout-once
+  F1L_COLD_TAG: i3-stage8f1l-t60-cold-heldout-once
+
+jobs:
+  source_reservation_and_native_original:
+    if: ${{ github.run_attempt == 1 && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    permissions:
+      contents: write
+      actions: read
+    outputs:
+      consumed: ${{ steps.claim.outcome == 'success' }}
+    env:
+      PYTHONPATH: 'src:.'
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      F1L_PROTECTION_AUDIT_TOKEN: ${{ secrets.F1L_PROTECTION_AUDIT_TOKEN }}
+      F1L_APPROVED_SOURCE_SHA: ${{ inputs.approved_source_sha }}
+      F1L_CONSUME_ACK: ${{ inputs.consume_ack }}
+      F1L_REHEARSAL_RUN_ID: ${{ inputs.rehearsal_run_id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Read-only frozen-source + pre-exposure safety (zero L World.step)
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1l_one_shot_reservation --readonly-pins
+          python -m unittest discover -s tests/i3 -p 'test_stage8f1l_one_shot_safety.py' -v
+      - name: Atomically consume all 32 roots BEFORE first native step
+        id: claim
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1l_one_shot_reservation --reserve "$RUNNER_TEMP/F1L_RESERVATION.json"
+          python -m tools.stage8f1l_one_shot_reservation --verify "$RUNNER_TEMP/F1L_RESERVATION.json"
+      - name: ONE original L01-L32 T60 + 128 native gzip; NO native rerun
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1l_one_shot_evidence --release --reservation "$RUNNER_TEMP/F1L_RESERVATION.json" --output-dir "$RUNNER_TEMP/f1l-originals"
+          python -c 'import pathlib,os;from tools.stage8f1l_one_shot_evidence import verify_bundle;x=verify_bundle(pathlib.Path(os.environ["RUNNER_TEMP"])/"f1l-originals");assert x["roots"]==32 and x["original_native_gzips"]==128 and x["heldout_native_passes"]==1'
+      - name: Preserve ALL existing originals even after partial science failure
+        if: ${{ always() && steps.claim.outcome == 'success' }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/f1l-preservation"
+          if [ -d "$RUNNER_TEMP/f1l-originals/original_cases" ]; then
+            tar -C "$RUNNER_TEMP/f1l-originals" --sort=name --mtime='UTC 1970-01-01' --owner=0 --group=0 --numeric-owner -czf "$RUNNER_TEMP/f1l-preservation/F1L_PARTIAL_ORIGINAL_CASES.tar.gz" original_cases
+          fi
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          root=Path(os.environ["RUNNER_TEMP"])
+          paths=[root/"F1L_RESERVATION.json",root/"F1L_RESERVATION.NATIVE_START_LOCK"]
+          paths += sorted((root/"f1l-originals").glob("F1L_*")) if (root/"f1l-originals").exists() else []
+          paths += sorted((root/"f1l-preservation").glob("F1L_*"))
+          evidence=[{"name":str(p.relative_to(root)),"sha256":hashlib.sha256(p.read_bytes()).hexdigest(),"size":p.stat().st_size} for p in paths if p.is_file()]
+          stage={"schema":"i3-stage8f1l-native-emergency-preservation/v0","run_id":os.environ["GITHUB_RUN_ID"],"originals":evidence,"no_scientific_retry":True}
+          (root/"f1l-preservation/F1L_PARTIAL_ORIGINAL_MANIFEST.json").write_text(json.dumps(stage,sort_keys=True)+"\n")
+          print(json.dumps({"original_assets":len(evidence),"reserved":True,"scientific_retry":False},sort_keys=True))
+          PY
+      - if: ${{ always() && steps.claim.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: f1l-once-native-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/F1L_RESERVATION.json
+            ${{ runner.temp }}/F1L_RESERVATION.NATIVE_START_LOCK
+            ${{ runner.temp }}/f1l-originals/
+            ${{ runner.temp }}/f1l-preservation/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Publish ORIGINAL or PARTIAL cases in immutable first-source Release
+        if: ${{ always() && steps.claim.outcome == 'success' }}
+        run: |
+          set -euo pipefail
+          RECEIPT="$RUNNER_TEMP/F1L_RESERVATION.json"
+          test -s "$RECEIPT"
+          RES_SHA=$(python -c 'import json,os,pathlib;print(json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"F1L_RESERVATION.json").read_bytes())["reservation_commit"])')
+          files=("$RECEIPT")
+          START="$RUNNER_TEMP/F1L_RESERVATION.NATIVE_START_LOCK"
+          if [ -f "$START" ]; then files+=("$START"); fi
+          for p in "$RUNNER_TEMP/f1l-originals"/F1L_* "$RUNNER_TEMP/f1l-preservation"/F1L_*; do
+            if [ -f "$p" ]; then files+=("$p"); fi
+          done
+          gh release create "$F1L_RAW_TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY" --target "$RES_SHA" --prerelease --latest=false --title 'i3 F1L 32-root first-only original or partial T60' --notes 'Source allocation irrevocably consumed BEFORE first native step. One native execution, 128 original part gzips if complete, canonical READBACK only, SHA256 receipts. If source failed, surviving partial originals are retained WITHOUT scientific retry. GitHub internal custody, not external escrow.'
+          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$F1L_RAW_TAG" --jq '.immutable')" = "true"
+
+  independent_python312_cold:
+    needs: source_reservation_and_native_original
+    if: ${{ github.run_attempt == 1 && needs.source_reservation_and_native_original.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      actions: read
+    env:
+      PYTHONPATH: '.'
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      F1L_PROTECTION_AUDIT_TOKEN: ${{ secrets.F1L_PROTECTION_AUDIT_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: f1l-once-native-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1l-original
+      - name: Cold Python3.12 independent complete 128 gzip and 32 worlds
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1l_one_shot_cold_entry "$RUNNER_TEMP/f1l-original" "$RUNNER_TEMP/f1l-cold"
+          sha256sum "$RUNNER_TEMP/f1l-cold"/F1L_*
+      - if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: f1l-once-cold-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1l-cold/
+          if-no-files-found: warn
+          retention-days: 90
+
+  final_immutable_cold_publication:
+    needs: [source_reservation_and_native_original, independent_python312_cold]
+    if: ${{ always() && github.run_attempt == 1 && needs.source_reservation_and_native_original.outputs.consumed == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      COLD_JOB_RESULT: ${{ needs.independent_python312_cold.result }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: f1l-once-native-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1l-raw-publish
+      - if: ${{ needs.independent_python312_cold.result == 'success' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: f1l-once-cold-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1l-cold-publish
+      - name: Publish independent cold result OR explicit inconclusive no-retry
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/f1l-cold-publish"
+          python -m tools.stage8f1l_one_shot_publish_status --dir "$RUNNER_TEMP/f1l-cold-publish" --cold-job "$COLD_JOB_RESULT"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$F1L_RAW_TAG" --jq '.immutable')" = "true"
+          RECEIPT="$RUNNER_TEMP/f1l-raw-publish/F1L_RESERVATION.json"
+          test -s "$RECEIPT"
+          RES_SHA=$(python -c 'import json,os,pathlib;print(json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"f1l-raw-publish/F1L_RESERVATION.json").read_bytes())["reservation_commit"])')
+          files=("$RECEIPT" "$RUNNER_TEMP/f1l-cold-publish/F1L_FINAL_STATUS.json")
+          for p in "$RUNNER_TEMP/f1l-cold-publish"/F1L_*; do
+            if [ -f "$p" ] && [ "$p" != "$RUNNER_TEMP/f1l-cold-publish/F1L_FINAL_STATUS.json" ]; then files+=("$p"); fi
+          done
+          gh release create "$F1L_COLD_TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY" --target "$RES_SHA" --prerelease --latest=false --title 'i3 F1L independent cold verdict or failed no-retry status' --notes 'Independent Python3.12 original-byte and world/cognition reconstruction, or explicit cold failure. Complete local verdict is issued only by cold audit. No repeat L01..L32 native executions. Historical F1I/F1K and Stage2 unchanged.'
+          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$F1L_COLD_TAG" --jq '.immutable')" = "true"
+      - if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: f1l-once-terminal-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1l-cold-publish/
+          if-no-files-found: warn
+          retention-days: 90
