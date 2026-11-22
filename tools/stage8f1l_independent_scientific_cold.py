@@ -68,7 +68,8 @@ def _incomplete_comparison(arms):
 
 def _classify(per_root):
     """Strict pre-registered five gates, then ITT and five-body Pareto only."""
-    if any(not x["source_valid"] or not x["arm_valid"] for x in per_root):
+    if any(not x["source_valid"] or not x["continuations_complete"]
+           for x in per_root):
         return "INCONCLUSIVE_UNFUNDED_PERSONAL_SOURCE"
     if any(not x["sham_neutral"] for x in per_root):
         return "INVALID_FULL_SHAM"
@@ -212,6 +213,9 @@ def audit(report):
         details = {
             "root": root["id"], "ecology": root["ecology"],
             **cold,
+            "continuations_complete": (valid and all(
+                bool(a["steps"]) and a["metrics"]["native_error"] is None
+                for a in row["arms"].values())),
             "source_error": src["source_error"],
             "t5_action_full": (row["arms"]["full"]["steps"][0]["action"]
                                if valid and row["arms"]["full"]["steps"]
