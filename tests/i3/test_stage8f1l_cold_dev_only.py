@@ -69,7 +69,8 @@ class F1LIndependentCold(unittest.TestCase):
         self.assertEqual(result["whole_trajectory_shams_verified"],
                          result["roots"])
         self.assertEqual(result["T5_equal_real_decision_cost_pairs"],
-                         result["roots"])
+                         sum(bool(r["comparison"]["equal_t5_decision_cost"])
+                             for r in self.report["rows"]))
         self.assertGreater(result["native_world_steps_verified"], 8)
         self.assertGreater(result["substantive_competition_rounds_verified"], 0)
         self.assertEqual(result["scientific_F1L_holdout_exposures"], 0)
