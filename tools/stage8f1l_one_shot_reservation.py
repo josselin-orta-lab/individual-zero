@@ -204,6 +204,38 @@ def protected_once_ruleset():
     return candidates[0]
 
 
+
+def immutable_release_policy():
+    """GitHub admin-read API: require immutable NEW releases before exposure.
+
+    The normal GITHUB_TOKEN has no Administration:read permission. A separate,
+    read-only fine-grained F1L_PROTECTION_AUDIT_TOKEN is required; never log it.
+    See GitHub REST GET /repos/{owner}/{repo}/immutable-releases.
+    """
+    token = os.getenv("F1L_PROTECTION_AUDIT_TOKEN")
+    require(bool(token), "read-only admin token required for release immutability")
+    req = Request(
+        "https://api.github.com/repos/" + REPO + "/immutable-releases",
+        method="GET",
+        headers={
+            "Authorization": "Bearer " + token,
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2026-03-10",
+            "User-Agent": "individual-zero-f1l-immutable-release-gate",
+        },
+    )
+    try:
+        with urlopen(req, timeout=30) as response:
+            data = json.loads(response.read())
+    except (HTTPError, URLError) as exc:
+        raise ReservationError(
+            "F1L ONE SHOT: immutable release policy not demonstrably enabled; "
+            "no scientific source may start") from exc
+    require(data.get("enabled") is True,
+            "GitHub release immutability disabled or unverifiable")
+    return {"enabled": True}
+
+
 def verify_prior_rehearsal(ctx, current_tree_sha):
     run = _api("GET", "/actions/runs/" + ctx["rehearsal_run_id"])
     sha = run.get("head_sha", "")
@@ -234,6 +266,7 @@ def reserve(output):
     require(not output.exists(), "reservation receipt already exists")
     sources = source_blobs()
     ruleset = protected_once_ruleset()
+    release_immutability = immutable_release_policy()
     head = _api("GET", "/git/ref/heads/main")
     require(head.get("object", {}).get("sha") == ctx["head_sha"],
             "main advanced before exposure claim")
@@ -255,6 +288,7 @@ def reserve(output):
         "frozen_grid_blob": GRID_BLOB,
         "frozen_protocol_blob": PROTOCOL_BLOB,
         "ruleset": ruleset,
+        "release_immutability": release_immutability,
         "rehearsal_verified_head_sha": rehearsal_sha,
         "rehearsal_verified_tree_sha": tree_sha,
         "root_ids": ROOT_IDS, "seeds": SEEDS, "arms": ARMS,
@@ -315,6 +349,7 @@ def validate_receipt(receipt, *, same_run=True):
             and claim.get("arms") == ARMS
             and claim.get("final_tick") == 60
             and claim.get("native_passes_allocated") == 1
+            and claim.get("release_immutability") == {"enabled": True}
             and claim.get("no_action_override") is True
             and claim.get("no_retry_even_after_failure") is True
             and claim.get("source_blobs") == source_blobs(),
@@ -338,6 +373,8 @@ def validate_receipt(receipt, *, same_run=True):
 
 def verify_remote(receipt, *, same_run=True):
     claim = validate_receipt(receipt, same_run=same_run)
+    require(claim.get("release_immutability") == immutable_release_policy(),
+            "immutable release policy was disabled after claim")
     require(claim.get("ruleset") == protected_once_ruleset(),
             "no-bypass ref protection changed since the reservation")
     remote = _api("GET", "/git/ref/heads/" + BRANCH)
