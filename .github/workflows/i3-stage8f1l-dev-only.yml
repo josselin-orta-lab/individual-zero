@@ -79,7 +79,6 @@ jobs:
       contents: read
     env:
       PYTHONPATH: '.'
-      I3_F1L_COLD_INPUT: '${{ runner.temp }}/f1l-native/F1L_DEV_SMOKE_NATIVE.json.gz'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -90,6 +89,8 @@ jobs:
           name: f1l-DEV_ONLY-native-smoke-${{ github.run_id }}
           path: ${{ runner.temp }}/f1l-native
       - name: Engine-free reconstruction of native memory, paid rounds and body
+        env:
+          I3_F1L_COLD_INPUT: ${{ runner.temp }}/f1l-native/F1L_DEV_SMOKE_NATIVE.json.gz
         run: |
           set -euo pipefail
           python -m tools.stage8f1l_independent_paid_content_cold_audit --input "$I3_F1L_COLD_INPUT" --output "$RUNNER_TEMP/F1L_DEV_COLD.json"
