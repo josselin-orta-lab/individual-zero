@@ -137,6 +137,8 @@ def unexpected_workflows(paths, *, active_ci: str) -> list[str]:
         # F1L: preregistered next study, DEV_L roots ONLY. No heldout L
         # native admission and no ability to claim/run the L01..L32 reserve.
         "i3-stage8f1l-dev-only.yml",
+        # F1L heldout: exact manual-only name, atomic ref and dual immutable Releases.
+        "i3-stage8f1l-heldout-science-manual-once.yml",
     }
     return sorted(path.name for path in paths
                   if not path.name.startswith("i1-") and path.name not in allowed)

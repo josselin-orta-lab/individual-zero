@@ -5,6 +5,14 @@ on:
   pull_request:
     paths:
       - 'tools/stage8f1l_paid_content_body_value_dev.py'
+      - 'tools/stage8f1l_one_shot_reservation.py'
+      - 'tools/stage8f1l_scientific_native.py'
+      - 'tools/stage8f1l_one_shot_evidence.py'
+      - 'tools/stage8f1l_independent_scientific_cold.py'
+      - 'tools/stage8f1l_one_shot_cold_entry.py'
+      - 'tools/stage8f1l_one_shot_publish_status.py'
+      - 'tests/i3/test_stage8f1l_one_shot_safety.py'
+      - '.github/workflows/i3-stage8f1l-heldout-science-manual-once.yml'
       - 'tests/i3/test_stage8f1l_dev_content_value.py'
       - 'tools/stage8f1l_independent_paid_content_cold_audit.py'
       - 'tests/i3/test_stage8f1l_cold_dev_only.py'
