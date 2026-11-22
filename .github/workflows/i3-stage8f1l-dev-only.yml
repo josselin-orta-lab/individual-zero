@@ -1,0 +1,70 @@
+# F1L development fixtures ONLY. No L01..L32, no scientific source release.
+name: I3 Stage8-F1L DEV_ONLY native memory-content smoke
+
+on:
+  pull_request:
+    paths:
+      - 'tools/stage8f1l_paid_content_body_value_dev.py'
+      - 'tests/i3/test_stage8f1l_dev_content_value.py'
+      - '.github/workflows/i3-stage8f1l-dev-only.yml'
+  workflow_dispatch:
+    inputs:
+      full_dev_t60:
+        description: Produce additional DEV_L 8-root T60 technical rehearsal only
+        type: boolean
+        default: false
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  f1l_native_dev_smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PYTHONPATH: 'src:.'
+      I3_F1L_DEV_CI: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Original P1.3, F1J, preregistration and DEV-only security gates
+        run: python -m unittest discover -s tests/i3 -p 'test_stage8f1l_dev_content_value.py' -v
+      - name: Native DEV_ONLY two-root proof, no scientific conclusion
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1l_paid_content_body_value_dev --smoke --output "$RUNNER_TEMP/F1L_DEV_SMOKE_NATIVE.json"
+          gzip -n -9 "$RUNNER_TEMP/F1L_DEV_SMOKE_NATIVE.json"
+          sha256sum "$RUNNER_TEMP/F1L_DEV_SMOKE_NATIVE.json.gz"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: f1l-DEV_ONLY-native-smoke-${{ github.run_id }}
+          path: ${{ runner.temp }}/F1L_DEV_SMOKE_NATIVE.json.gz
+          if-no-files-found: error
+          retention-days: 30
+
+  f1l_manual_dev_t60:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.full_dev_t60 == true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    env:
+      PYTHONPATH: 'src:.'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Native full DEV_L T60, explicitly non-scientific
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1l_paid_content_body_value_dev --full-rehearsal --output "$RUNNER_TEMP/F1L_DEV_T60_NATIVE.json"
+          gzip -n -9 "$RUNNER_TEMP/F1L_DEV_T60_NATIVE.json"
+          sha256sum "$RUNNER_TEMP/F1L_DEV_T60_NATIVE.json.gz"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: f1l-DEV_ONLY-t60-${{ github.run_id }}
+          path: ${{ runner.temp }}/F1L_DEV_T60_NATIVE.json.gz
+          if-no-files-found: error
+          retention-days: 30
