@@ -1,0 +1,688 @@
+{
+  "schema": "i3-stage8f1l-heldout-personal-content-net-body-value/v0",
+  "phase": "PREEXPOSURE_ONLY_NO_WORLD_STEP",
+  "design_based_on": "F1J equal-paid content intervention and F1K post-exposure diagnosis; F1K never re-run",
+  "baseline_main": "9a552fbef7c6990778617b410128bb4b7585eade",
+  "source_policy": "tools.stage8f1j_fixed_round_paid_competition.F1JFixedRoundMind",
+  "source_genome": "midpoint()",
+  "innate_effect_statistics": "EMPTY",
+  "innate_td": "ZERO",
+  "innate_buffer": "EMPTY",
+  "world": {
+    "width": 3,
+    "height": 3,
+    "spawn": [
+      1,
+      1
+    ],
+    "laws": "BodyLaws() i3-body-laws-v2",
+    "changes": []
+  },
+  "body_order": [
+    "energy",
+    "food",
+    "water",
+    "integrity",
+    "vigilance"
+  ],
+  "factors": {
+    "water_access": [
+      "here",
+      "corner"
+    ],
+    "water_renewal": [
+      "finite",
+      "renewing"
+    ],
+    "food_integrity": [
+      "safe",
+      "bitter"
+    ],
+    "full_factorial": true
+  },
+  "ecologies": [
+    {
+      "id": "water_here_finite_food_safe",
+      "factors": {
+        "water_access": "here",
+        "water_renewal": "finite",
+        "food_integrity": "safe"
+      },
+      "water": [
+        1,
+        1
+      ],
+      "water_gain": 21,
+      "water_stock": 3,
+      "water_max_stock": 3,
+      "water_restock_every": 0,
+      "food": [
+        2,
+        0
+      ],
+      "token": "f1l-here-finite-safe",
+      "food_gain": 18,
+      "integrity_delta": 2,
+      "food_quantity": 3,
+      "food_max_quantity": 3,
+      "food_restock_every": 0
+    },
+    {
+      "id": "water_here_finite_food_bitter",
+      "factors": {
+        "water_access": "here",
+        "water_renewal": "finite",
+        "food_integrity": "bitter"
+      },
+      "water": [
+        1,
+        1
+      ],
+      "water_gain": 21,
+      "water_stock": 3,
+      "water_max_stock": 3,
+      "water_restock_every": 0,
+      "food": [
+        2,
+        0
+      ],
+      "token": "f1l-here-finite-bitter",
+      "food_gain": 27,
+      "integrity_delta": -1.25,
+      "food_quantity": 3,
+      "food_max_quantity": 3,
+      "food_restock_every": 0
+    },
+    {
+      "id": "water_here_renewing_food_safe",
+      "factors": {
+        "water_access": "here",
+        "water_renewal": "renewing",
+        "food_integrity": "safe"
+      },
+      "water": [
+        1,
+        1
+      ],
+      "water_gain": 21,
+      "water_stock": 3,
+      "water_max_stock": 3,
+      "water_restock_every": 6,
+      "food": [
+        2,
+        0
+      ],
+      "token": "f1l-here-renewing-safe",
+      "food_gain": 18,
+      "integrity_delta": 2,
+      "food_quantity": 3,
+      "food_max_quantity": 3,
+      "food_restock_every": 0
+    },
+    {
+      "id": "water_here_renewing_food_bitter",
+      "factors": {
+        "water_access": "here",
+        "water_renewal": "renewing",
+        "food_integrity": "bitter"
+      },
+      "water": [
+        1,
+        1
+      ],
+      "water_gain": 21,
+      "water_stock": 3,
+      "water_max_stock": 3,
+      "water_restock_every": 6,
+      "food": [
+        2,
+        0
+      ],
+      "token": "f1l-here-renewing-bitter",
+      "food_gain": 27,
+      "integrity_delta": -1.25,
+      "food_quantity": 3,
+      "food_max_quantity": 3,
+      "food_restock_every": 0
+    },
+    {
+      "id": "water_corner_finite_food_safe",
+      "factors": {
+        "water_access": "corner",
+        "water_renewal": "finite",
+        "food_integrity": "safe"
+      },
+      "water": [
+        0,
+        0
+      ],
+      "water_gain": 21,
+      "water_stock": 3,
+      "water_max_stock": 3,
+      "water_restock_every": 0,
+      "food": [
+        2,
+        0
+      ],
+      "token": "f1l-corner-finite-safe",
+      "food_gain": 18,
+      "integrity_delta": 2,
+      "food_quantity": 3,
+      "food_max_quantity": 3,
+      "food_restock_every": 0
+    },
+    {
+      "id": "water_corner_finite_food_bitter",
+      "factors": {
+        "water_access": "corner",
+        "water_renewal": "finite",
+        "food_integrity": "bitter"
+      },
+      "water": [
+        0,
+        0
+      ],
+      "water_gain": 21,
+      "water_stock": 3,
+      "water_max_stock": 3,
+      "water_restock_every": 0,
+      "food": [
+        2,
+        0
+      ],
+      "token": "f1l-corner-finite-bitter",
+      "food_gain": 27,
+      "integrity_delta": -1.25,
+      "food_quantity": 3,
+      "food_max_quantity": 3,
+      "food_restock_every": 0
+    },
+    {
+      "id": "water_corner_renewing_food_safe",
+      "factors": {
+        "water_access": "corner",
+        "water_renewal": "renewing",
+        "food_integrity": "safe"
+      },
+      "water": [
+        0,
+        0
+      ],
+      "water_gain": 21,
+      "water_stock": 3,
+      "water_max_stock": 3,
+      "water_restock_every": 6,
+      "food": [
+        2,
+        0
+      ],
+      "token": "f1l-corner-renewing-safe",
+      "food_gain": 18,
+      "integrity_delta": 2,
+      "food_quantity": 3,
+      "food_max_quantity": 3,
+      "food_restock_every": 0
+    },
+    {
+      "id": "water_corner_renewing_food_bitter",
+      "factors": {
+        "water_access": "corner",
+        "water_renewal": "renewing",
+        "food_integrity": "bitter"
+      },
+      "water": [
+        0,
+        0
+      ],
+      "water_gain": 21,
+      "water_stock": 3,
+      "water_max_stock": 3,
+      "water_restock_every": 6,
+      "food": [
+        2,
+        0
+      ],
+      "token": "f1l-corner-renewing-bitter",
+      "food_gain": 27,
+      "integrity_delta": -1.25,
+      "food_quantity": 3,
+      "food_max_quantity": 3,
+      "food_restock_every": 0
+    }
+  ],
+  "origins": [
+    {
+      "id": "L01",
+      "ecology": "water_here_finite_food_safe",
+      "seed": 202611229501,
+      "body": [
+        59,
+        68,
+        33,
+        92,
+        95
+      ]
+    },
+    {
+      "id": "L02",
+      "ecology": "water_here_finite_food_safe",
+      "seed": 202611229502,
+      "body": [
+        59.9,
+        67.4,
+        33.6,
+        91.6,
+        94.65
+      ]
+    },
+    {
+      "id": "L03",
+      "ecology": "water_here_finite_food_safe",
+      "seed": 202611229503,
+      "body": [
+        60.8,
+        66.8,
+        34.2,
+        91.2,
+        94.3
+      ]
+    },
+    {
+      "id": "L04",
+      "ecology": "water_here_finite_food_safe",
+      "seed": 202611229504,
+      "body": [
+        61.7,
+        66.2,
+        34.8,
+        90.8,
+        93.95
+      ]
+    },
+    {
+      "id": "L05",
+      "ecology": "water_here_finite_food_bitter",
+      "seed": 202611229505,
+      "body": [
+        59,
+        68,
+        33,
+        92,
+        95
+      ]
+    },
+    {
+      "id": "L06",
+      "ecology": "water_here_finite_food_bitter",
+      "seed": 202611229506,
+      "body": [
+        59.9,
+        67.4,
+        33.6,
+        91.6,
+        94.65
+      ]
+    },
+    {
+      "id": "L07",
+      "ecology": "water_here_finite_food_bitter",
+      "seed": 202611229507,
+      "body": [
+        60.8,
+        66.8,
+        34.2,
+        91.2,
+        94.3
+      ]
+    },
+    {
+      "id": "L08",
+      "ecology": "water_here_finite_food_bitter",
+      "seed": 202611229508,
+      "body": [
+        61.7,
+        66.2,
+        34.8,
+        90.8,
+        93.95
+      ]
+    },
+    {
+      "id": "L09",
+      "ecology": "water_here_renewing_food_safe",
+      "seed": 202611229509,
+      "body": [
+        59,
+        68,
+        33,
+        92,
+        95
+      ]
+    },
+    {
+      "id": "L10",
+      "ecology": "water_here_renewing_food_safe",
+      "seed": 202611229510,
+      "body": [
+        59.9,
+        67.4,
+        33.6,
+        91.6,
+        94.65
+      ]
+    },
+    {
+      "id": "L11",
+      "ecology": "water_here_renewing_food_safe",
+      "seed": 202611229511,
+      "body": [
+        60.8,
+        66.8,
+        34.2,
+        91.2,
+        94.3
+      ]
+    },
+    {
+      "id": "L12",
+      "ecology": "water_here_renewing_food_safe",
+      "seed": 202611229512,
+      "body": [
+        61.7,
+        66.2,
+        34.8,
+        90.8,
+        93.95
+      ]
+    },
+    {
+      "id": "L13",
+      "ecology": "water_here_renewing_food_bitter",
+      "seed": 202611229513,
+      "body": [
+        59,
+        68,
+        33,
+        92,
+        95
+      ]
+    },
+    {
+      "id": "L14",
+      "ecology": "water_here_renewing_food_bitter",
+      "seed": 202611229514,
+      "body": [
+        59.9,
+        67.4,
+        33.6,
+        91.6,
+        94.65
+      ]
+    },
+    {
+      "id": "L15",
+      "ecology": "water_here_renewing_food_bitter",
+      "seed": 202611229515,
+      "body": [
+        60.8,
+        66.8,
+        34.2,
+        91.2,
+        94.3
+      ]
+    },
+    {
+      "id": "L16",
+      "ecology": "water_here_renewing_food_bitter",
+      "seed": 202611229516,
+      "body": [
+        61.7,
+        66.2,
+        34.8,
+        90.8,
+        93.95
+      ]
+    },
+    {
+      "id": "L17",
+      "ecology": "water_corner_finite_food_safe",
+      "seed": 202611229517,
+      "body": [
+        59,
+        68,
+        33,
+        92,
+        95
+      ]
+    },
+    {
+      "id": "L18",
+      "ecology": "water_corner_finite_food_safe",
+      "seed": 202611229518,
+      "body": [
+        59.9,
+        67.4,
+        33.6,
+        91.6,
+        94.65
+      ]
+    },
+    {
+      "id": "L19",
+      "ecology": "water_corner_finite_food_safe",
+      "seed": 202611229519,
+      "body": [
+        60.8,
+        66.8,
+        34.2,
+        91.2,
+        94.3
+      ]
+    },
+    {
+      "id": "L20",
+      "ecology": "water_corner_finite_food_safe",
+      "seed": 202611229520,
+      "body": [
+        61.7,
+        66.2,
+        34.8,
+        90.8,
+        93.95
+      ]
+    },
+    {
+      "id": "L21",
+      "ecology": "water_corner_finite_food_bitter",
+      "seed": 202611229521,
+      "body": [
+        59,
+        68,
+        33,
+        92,
+        95
+      ]
+    },
+    {
+      "id": "L22",
+      "ecology": "water_corner_finite_food_bitter",
+      "seed": 202611229522,
+      "body": [
+        59.9,
+        67.4,
+        33.6,
+        91.6,
+        94.65
+      ]
+    },
+    {
+      "id": "L23",
+      "ecology": "water_corner_finite_food_bitter",
+      "seed": 202611229523,
+      "body": [
+        60.8,
+        66.8,
+        34.2,
+        91.2,
+        94.3
+      ]
+    },
+    {
+      "id": "L24",
+      "ecology": "water_corner_finite_food_bitter",
+      "seed": 202611229524,
+      "body": [
+        61.7,
+        66.2,
+        34.8,
+        90.8,
+        93.95
+      ]
+    },
+    {
+      "id": "L25",
+      "ecology": "water_corner_renewing_food_safe",
+      "seed": 202611229525,
+      "body": [
+        59,
+        68,
+        33,
+        92,
+        95
+      ]
+    },
+    {
+      "id": "L26",
+      "ecology": "water_corner_renewing_food_safe",
+      "seed": 202611229526,
+      "body": [
+        59.9,
+        67.4,
+        33.6,
+        91.6,
+        94.65
+      ]
+    },
+    {
+      "id": "L27",
+      "ecology": "water_corner_renewing_food_safe",
+      "seed": 202611229527,
+      "body": [
+        60.8,
+        66.8,
+        34.2,
+        91.2,
+        94.3
+      ]
+    },
+    {
+      "id": "L28",
+      "ecology": "water_corner_renewing_food_safe",
+      "seed": 202611229528,
+      "body": [
+        61.7,
+        66.2,
+        34.8,
+        90.8,
+        93.95
+      ]
+    },
+    {
+      "id": "L29",
+      "ecology": "water_corner_renewing_food_bitter",
+      "seed": 202611229529,
+      "body": [
+        59,
+        68,
+        33,
+        92,
+        95
+      ]
+    },
+    {
+      "id": "L30",
+      "ecology": "water_corner_renewing_food_bitter",
+      "seed": 202611229530,
+      "body": [
+        59.9,
+        67.4,
+        33.6,
+        91.6,
+        94.65
+      ]
+    },
+    {
+      "id": "L31",
+      "ecology": "water_corner_renewing_food_bitter",
+      "seed": 202611229531,
+      "body": [
+        60.8,
+        66.8,
+        34.2,
+        91.2,
+        94.3
+      ]
+    },
+    {
+      "id": "L32",
+      "ecology": "water_corner_renewing_food_bitter",
+      "seed": 202611229532,
+      "body": [
+        61.7,
+        66.2,
+        34.8,
+        90.8,
+        93.95
+      ]
+    }
+  ],
+  "personal_history_ticks": 4,
+  "owned_t1_mean_anchor_tick": 1,
+  "fork_tick": 5,
+  "final_tick": 60,
+  "arms": [
+    "full",
+    "full_sham",
+    "stale_owned_t1_means"
+  ],
+  "intervention_scope": "At T5 only, replace mean vector of keys genuinely acquired by the SAME individual at T1, never keys/counts/uncertainty/TD/buffer/RNG; restore actual T4 means after decide and BEFORE World.step",
+  "intervention_persists_after_tick5": false,
+  "no_mandated_action": true,
+  "no_forced_cost_equalization": true,
+  "comparison_unit": "all 32 independent seeds with common midpoint genome; eight 4-root ecologies; no genotypic independence",
+  "primary_estimand": "paired native lived T5..T60 ticks(full - stale_owned_t1_means), intention-to-treat on all 32 roots",
+  "hard_gates": [
+    "preexposure_provenance_and_once_only",
+    "native_physiology_and_independent_cold_audit",
+    "all_32_genuinely_paid_personal_sources",
+    "all_32_full_sham_equal_all_steps",
+    "all_32_exact_T5_four_work_fields_AND_two_paid_coins"
+  ],
+  "success_criteria": {
+    "survival_gain_min_roots": 6,
+    "survival_gain_min_ecologies": 3,
+    "survival_losses_max_roots": 0,
+    "secondary_pareto_min_roots": 8,
+    "secondary_pareto_min_ecologies": 3,
+    "secondary_pareto_inverse_max_roots": 0,
+    "secondary_only_when_all_survival_deltas_zero": true,
+    "pareto_channels": [
+      "energy",
+      "food",
+      "water",
+      "integrity",
+      "vigilance"
+    ],
+    "pareto_abs_tolerance": 1e-9
+  },
+  "frozen_prior_results": {
+    "F1I": "INCONCLUSIVE_COST_GATE",
+    "F1J": "FIXED_ROUND_16_OF_16_REAL_COST_PARITY_DEMONSTRATED_LOCAL",
+    "F1K": "INCONCLUSIVE_NO_REAL_SURCHARGE",
+    "stage2": "NOT_ISSUED/HOLD_NO_VERDICT",
+    "active_engine": "I1"
+  },
+  "exclude_all_prior_seeds_and_world_ids": true,
+  "heldout_seeds_must_not_run_in_dev_CI": true,
+  "scientific_exposure_authorized": false
+}
