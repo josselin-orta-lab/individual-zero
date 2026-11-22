@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import gzip
+from hashlib import sha256
 import json
 from pathlib import Path
 
@@ -14,10 +15,59 @@ from tools import stage8f1l_one_shot_evidence as E
 from tools import stage8f1l_independent_scientific_cold as Cold
 
 
+
+RAW_RELEASE_TAG = "i3-stage8f1l-t60-raw-heldout-once"
+
+
+def verify_immutable_raw_release(receipt, input_dir):
+    """Independently compare ALL protected release asset digests with downloaded originals.
+
+    This must run BEFORE scientific cold analysis. GitHub's immutable release
+    retains the source bytes even when temporary Actions artifacts expire.
+    It is GitHub-internal custody, NOT an external escrow.
+    """
+    claim_commit = receipt["reservation_commit"]
+    release = R._api("GET", "/releases/tags/" + RAW_RELEASE_TAG)
+    if (release.get("immutable") is not True
+            or release.get("tag_name") != RAW_RELEASE_TAG
+            or release.get("target_commitish") != claim_commit):
+        raise ValueError("F1L original Release is absent, mutable or points to a different claim")
+    paths = [
+        input_dir / "F1L_RESERVATION.json",
+        input_dir / "F1L_RESERVATION.NATIVE_START_LOCK",
+    ]
+    paths += sorted((input_dir / "f1l-originals").glob("F1L_*"))
+    paths += sorted((input_dir / "f1l-preservation").glob("F1L_*"))
+    expected = {p.name: p for p in paths if p.is_file()}
+    if (len(expected) != len(paths)
+            or len(expected) < 7
+            or not (input_dir / "f1l-originals/F1L_ORIGINALS_128_GZIP.tar.gz").is_file()):
+        raise ValueError("original raw source file missing or colliding asset names")
+    assets = release.get("assets", [])
+    got = {a.get("name"): a for a in assets}
+    if len(assets) != len(got) or set(got) != set(expected):
+        raise ValueError("immutable raw release lacks an original or contains extra evidence")
+    for name, path in expected.items():
+        raw = path.read_bytes()
+        asset = got[name]
+        if (asset.get("digest") != "sha256:" + sha256(raw).hexdigest()
+                or asset.get("size") != len(raw)):
+            raise ValueError("immutable release SHA256 differs from native evidence: " + name)
+    return {
+        "release_tag": RAW_RELEASE_TAG,
+        "release_target_commit": claim_commit,
+        "release_immutable": True,
+        "raw_assets_byte_matched": len(expected),
+        "independent_github_asset_digest_gate": True,
+    }
+
+
+
 def verify(input_dir, output_dir):
     receipt = R.load_receipt(input_dir / "F1L_RESERVATION.json")
     # Independent job; the claim's immutable run ID is validated below.
     claim = R.verify_remote(receipt, same_run=False)
+    raw_release_proof = verify_immutable_raw_release(receipt, input_dir)
     lock = json.loads((input_dir / "F1L_RESERVATION.NATIVE_START_LOCK").read_bytes())
     expected = {
         "schema": "i3-stage8f1l-first-native-exposure-lock/v0",
@@ -52,7 +102,7 @@ def verify(input_dir, output_dir):
         raise ValueError("cold decoded originals do not match source/claim")
     output_dir.mkdir(parents=True, exist_ok=False)
     E.new_file(output_dir / "F1L_BYTE_CUSTODY_COLD.json",
-               E.canonical(proof) + b"\n")
+               E.canonical({**proof, **raw_release_proof}) + b"\n")
     E.new_file(output_dir / "F1L_INDEPENDENT_COLD_T60.json",
                E.canonical(cold) + b"\n")
     print(json.dumps({
@@ -66,6 +116,7 @@ def verify(input_dir, output_dir):
         "survival_gains": cold["survival_gain_count"],
         "survival_losses": cold["survival_loss_count"],
         "original_sha256": cold["original_sha256"],
+        "immutable_raw_release_assets_verified": raw_release_proof["raw_assets_byte_matched"],
     }, sort_keys=True))
     return cold
 
