@@ -52,8 +52,8 @@ class F1LNoHoldoutExposure(unittest.TestCase):
                 P.produce(grid, phase="F1L_HELDOUT_RELEASE")
             with self.assertRaises(ValueError):
                 P.produce(grid, phase="DEV_ONLY")
-            with self.assertRaises(PermissionError):
-                P.new_world(grid, grid["origins"][0])
+        with self.assertRaises(PermissionError):
+            P.new_world(grid, grid["origins"][0])
 
     def test_original_p13_and_f1j_stay_unchanged(self):
         self.assertEqual(P.git_blob(Path(
