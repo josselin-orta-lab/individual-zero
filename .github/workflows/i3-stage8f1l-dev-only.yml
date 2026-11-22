@@ -47,8 +47,8 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-  f1l_manual_dev_t60:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.full_dev_t60 == true }}
+  f1l_full_dev_t60:
+    if: ${{ github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.full_dev_t60 == true) }}
     runs-on: ubuntu-latest
     timeout-minutes: 50
     env:
@@ -100,5 +100,37 @@ jobs:
         with:
           name: f1l-DEV_ONLY-independent-cold-${{ github.run_id }}
           path: ${{ runner.temp }}/F1L_DEV_COLD.json
+          if-no-files-found: error
+          retention-days: 30
+
+  f1l_full_t60_independent_python312_cold:
+    needs: [f1l_full_dev_t60]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      PYTHONPATH: '.'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: f1l-DEV_ONLY-t60-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1l-native-t60
+      - name: Cold audit of all eight distinct DEV_L roots at T60
+        env:
+          I3_F1L_COLD_INPUT: ${{ runner.temp }}/f1l-native-t60/F1L_DEV_T60_NATIVE.json.gz
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1l_independent_paid_content_cold_audit --input "$I3_F1L_COLD_INPUT" --output "$RUNNER_TEMP/F1L_DEV_T60_COLD.json"
+          python -m unittest discover -s tests/i3 -p 'test_stage8f1l_cold_dev_only.py' -v
+          sha256sum "$RUNNER_TEMP/F1L_DEV_T60_COLD.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: f1l-DEV_ONLY-t60-independent-cold-${{ github.run_id }}
+          path: ${{ runner.temp }}/F1L_DEV_T60_COLD.json
           if-no-files-found: error
           retention-days: 30
