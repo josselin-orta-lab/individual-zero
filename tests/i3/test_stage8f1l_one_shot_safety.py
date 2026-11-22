@@ -138,8 +138,9 @@ class F1LOneShotSafety(unittest.TestCase):
         grid = P.release_grid()
         with self.assertRaises(PermissionError):
             P._new_world(grid, grid["origins"][0], None)
-        with patch.object(R, "verify_remote",
-                          side_effect=R.ReservationError("NO CLAIM")), patch.object(
+        with patch.object(R, "load_receipt", return_value={"test": True}), patch.object(
+                R, "verify_remote",
+                side_effect=R.ReservationError("NO CLAIM")), patch.object(
                 P, "_new_world",
                 side_effect=AssertionError("unexpected real heldout birth")):
             with self.assertRaises(R.ReservationError):
