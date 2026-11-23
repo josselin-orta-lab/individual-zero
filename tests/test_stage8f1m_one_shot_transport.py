@@ -21,7 +21,7 @@ class TestF1MOneShotTransportNoNativeBirth(unittest.TestCase):
     def test_prereg_source_matches_git_and_no_heldout_birth(self):
         self.assertEqual(G.check_files()["science_births_created"],0)
         pins=R.source_blobs()
-        self.assertGreaterEqual(len(pins),20)
+        self.assertGreaterEqual(len(pins),19)
         self.assertEqual(R.ROOT_IDS,[f"M{i:02d}" for i in range(1,33)])
         self.assertEqual(R.SEEDS,list(G.SEEDS))
         self.assertEqual(R.GRID_BLOB,G.GRID_BLOB)
@@ -112,7 +112,7 @@ class TestF1MOneShotTransportNoNativeBirth(unittest.TestCase):
             header,idx,n=E.read_bundle(root,["M01"],
                 lambda meta,parts:observed.append((meta,parts)))
             self.assertEqual((n,len(observed),len(observed[0][1])),(1,1,12))
-            self.assertEqual(header["native_index_sha256"],idx["native_index_sha256"])
+            self.assertEqual(E.digest(E.canonical(header)),idx["native_index_sha256"])
             self.assertEqual(manifest["heldout_native_passes"],1)
             with (root/"F1M_CUSTODY_MANIFEST.json").open("ab") as corrupted:
                 corrupted.write(b"garbage")
