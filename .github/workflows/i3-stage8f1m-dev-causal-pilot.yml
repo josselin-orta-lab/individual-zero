@@ -1,0 +1,110 @@
+# DEV_M ONLY, no scientific seeds, no workflow_dispatch, no releases/claim.
+name: I3 Stage8-F1M DEV-only paid residual causal motor/body pilot
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'tools/stage8f1m_dev_residual_mediation.py'
+      - 'tools/stage8f1m_independent_dev_cold.py'
+      - 'tests/test_stage8f1m_dev_residual_mediation.py'
+      - '.github/workflows/i3-stage8f1m-dev-causal-pilot.yml'
+permissions:
+  contents: read
+jobs:
+  dev_m_safety_and_smoke:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'feat/i3-stage8-f1m-dev-causal-motor-body-20261123' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: F1M adversarial no-birth source and residual-only intervention tests
+        env:
+          PYTHONPATH: src:.
+        run: python -m unittest -v tests.test_stage8f1m_dev_residual_mediation
+      - name: 2 DEV_M native T60 roots, actual decisions and body, no L World.step
+        env:
+          PYTHONPATH: src:.
+        run: |
+          python -m tools.stage8f1m_dev_residual_mediation --smoke --output "$RUNNER_TEMP/F1M_DEV_SMOKE_ORIGINAL.json.gz"
+          test -s "$RUNNER_TEMP/F1M_DEV_SMOKE_ORIGINAL.json.gz"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: f1m-dev-m-smoke-${{ github.run_id }}
+          path: ${{ runner.temp }}/F1M_DEV_SMOKE_ORIGINAL.json.gz
+          if-no-files-found: error
+          retention-days: 30
+  dev_m_smoke_cold_py312:
+    needs: [dev_m_safety_and_smoke]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: f1m-dev-m-smoke-${{ github.run_id }}
+          path: ${{ runner.temp }}
+      - name: Engine-free independent real cognition/world/learning audit, DEV_M
+        env:
+          PYTHONPATH: .
+        run: |
+          python -m tools.stage8f1m_independent_dev_cold "$RUNNER_TEMP/F1M_DEV_SMOKE_ORIGINAL.json.gz" --output "$RUNNER_TEMP/F1M_DEV_SMOKE_COLD.json"
+          test -s "$RUNNER_TEMP/F1M_DEV_SMOKE_COLD.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: f1m-dev-m-smoke-cold-${{ github.run_id }}
+          path: ${{ runner.temp }}/F1M_DEV_SMOKE_COLD.json
+          if-no-files-found: error
+          retention-days: 30
+  dev_m_full_t60:
+    needs: [dev_m_smoke_cold_py312]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: 8 independent disjoint DEV_M native origins, 16 residual contrasts T6/T60
+        env:
+          PYTHONPATH: src:.
+        run: |
+          python -m tools.stage8f1m_dev_residual_mediation --full --output "$RUNNER_TEMP/F1M_DEV_FULL_ORIGINAL.json.gz"
+          test -s "$RUNNER_TEMP/F1M_DEV_FULL_ORIGINAL.json.gz"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: f1m-dev-m-full-${{ github.run_id }}
+          path: ${{ runner.temp }}/F1M_DEV_FULL_ORIGINAL.json.gz
+          if-no-files-found: error
+          retention-days: 30
+  dev_m_full_t60_cold_py312:
+    needs: [dev_m_full_t60]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: f1m-dev-m-full-${{ github.run_id }}
+          path: ${{ runner.temp }}
+      - name: Full 8-origin independent cold reconstruction and verdict, DEV only
+        env:
+          PYTHONPATH: .
+        run: |
+          python -m tools.stage8f1m_independent_dev_cold "$RUNNER_TEMP/F1M_DEV_FULL_ORIGINAL.json.gz" --output "$RUNNER_TEMP/F1M_DEV_FULL_COLD.json"
+          test -s "$RUNNER_TEMP/F1M_DEV_FULL_COLD.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: f1m-dev-m-full-cold-${{ github.run_id }}
+          path: ${{ runner.temp }}/F1M_DEV_FULL_COLD.json
+          if-no-files-found: error
+          retention-days: 30
