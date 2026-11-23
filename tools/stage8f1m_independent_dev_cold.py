@@ -22,6 +22,7 @@ RESIDUAL=("carry","zero")
 L_EXPOSED_SEEDS=set(range(202611229501,202611229533))
 L_DEV_SEEDS=set(range(202611229601,202611229609))
 M_DEV_SEEDS=list(range(202611239601,202611239609))
+M_REPLICA2_SEEDS=list(range(202611239611,202611239619))
 
 
 def check(ok, reason):
@@ -29,7 +30,7 @@ def check(ok, reason):
         raise AssertionError("F1M COLD DEV: "+reason)
 
 
-def cold_grid(full):
+def cold_grid(full,replica2=False):
     """Independent exact DEV_M WorldSpec, separate from producer import."""
     ec=[
         {"id":"DEV_M_southwest_springs","water":[0,2],
@@ -44,14 +45,14 @@ def cold_grid(full):
          "food_max_quantity":2,"food_restock_every":5},
     ]
     origins=[]
-    for i,seed in enumerate(M_DEV_SEEDS):
+    for i,seed in enumerate(M_REPLICA2_SEEDS if replica2 else M_DEV_SEEDS):
         j=i%4
-        origins.append({"id":f"DEV_M{i+1:02d}","seed":seed,
+        origins.append({"id":f"DEV_MR{i+1:02d}" if replica2 else f"DEV_M{i+1:02d}","seed":seed,
                         "ecology":ec[i//4]["id"],
                         "body":[65+j,71-j,38+0.4*j,91-0.3*j,93-0.2*j]})
     if not full:
         origins=[origins[0],origins[4]]
-    return {"schema":"i3-stage8f1m-unreleased-dev-grid/v0",
+    return {"schema":"i3-stage8f1m-unreleased-dev-replica2-grid/v0" if replica2 else "i3-stage8f1m-unreleased-dev-grid/v0",
             "phase":"DEV_ONLY_NEVER_SCIENTIFIC",
             "final_tick":60,"ecologies":ec,"origins":origins,
             "arms":["recent/carry","recent/zero","stale/carry","stale/zero"],
@@ -179,7 +180,8 @@ def _classification(data):
 def audit(report):
     L.source_gate()
     full=report.get("origin_count")==8
-    grid=cold_grid(full)
+    replica2=report.get("grid",{}).get("schema")=="i3-stage8f1m-unreleased-dev-replica2-grid/v0"
+    grid=cold_grid(full,replica2=replica2)
     check(report.get("schema")==SCHEMA and
           report.get("phase")=="DEV_ONLY_NEVER_SCIENTIFIC" and
           report.get("scientific_verdict") is None and
@@ -193,7 +195,7 @@ def audit(report):
           report.get("f1l_scientific_roots_exposed")==0 and
           len(report.get("rows",[]))==len(grid["origins"]) and
           set(o["seed"] for o in grid["origins"]).isdisjoint(
-             L_EXPOSED_SEEDS|L_DEV_SEEDS),"not exact independent DEV source")
+             L_EXPOSED_SEEDS|L_DEV_SEEDS|set(range(202611239701,202611239733))),"not exact independent DEV source")
     out=[]
     verified_steps=verified_rounds=0
     for origin,row in zip(grid["origins"],report["rows"]):
