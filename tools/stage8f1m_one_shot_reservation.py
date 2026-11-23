@@ -258,11 +258,11 @@ def verify_prior_rehearsal(ctx, current_tree_sha, run_id):
               if j.get("status") == "completed"
               and j.get("conclusion") == "success"}
     require(REQUIRED_DEV_JOBS <= passed,
-            "DEV_L native T60, engine-free cold T60, smoke + adversarial checks "
+            "DEV_M native T60, engine-free cold T60, smoke + adversarial checks "
             "did not all pass")
     prior_commit = _api("GET", "/git/commits/" + sha)
     require(prior_commit.get("tree", {}).get("sha") == current_tree_sha,
-            "DEV_L was audited on a DIFFERENT Git source tree")
+            "DEV_M was audited on a DIFFERENT Git source tree")
     return sha
 
 
@@ -375,7 +375,7 @@ def validate_receipt(receipt, *, same_run=True):
         ctx = context()
         require(claim.get("workflow_run_id") == ctx["workflow_run_id"]
                 and claim.get("head_sha") == ctx["head_sha"]
-                and claim.get("rehearsal_run_id") == run_id,
+                and claim.get("rehearsal_run_ids") == ctx["rehearsal_run_ids"],
                 "not the issued reservation from THIS first-only GitHub run")
     return claim
 
