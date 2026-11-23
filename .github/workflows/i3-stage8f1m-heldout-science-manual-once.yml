@@ -67,6 +67,9 @@ jobs:
         run: |
           set -euo pipefail
           python -m tools.stage8f1m_one_shot_reservation --reserve "$RUNNER_TEMP/F1M_RESERVATION.json"
+      - name: Verify first-only remote consumption BEFORE any native step
+        run: |
+          set -euo pipefail
           python -m tools.stage8f1m_one_shot_reservation --verify "$RUNNER_TEMP/F1M_RESERVATION.json"
       - name: ONE original M01-M32 T60 + 384 native gzip; NO native rerun
         run: |
@@ -199,7 +202,7 @@ jobs:
           for p in "$RUNNER_TEMP/f1m-cold-publish"/F1M_*; do
             if [ -f "$p" ] && [ "$p" != "$RUNNER_TEMP/f1m-cold-publish/F1M_FINAL_STATUS.json" ]; then files+=("$p"); fi
           done
-          gh release create "$F1M_COLD_TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY" --target "$RES_SHA" --prerelease --latest=false --title 'i3 F1M independent cold verdict or failed no-retry status' --notes 'Independent Python3.12 original-byte and world/cognition reconstruction, or explicit cold failure. Complete local verdict is issued only by cold audit. No repeat L01..L32 native executions. Historical F1I/F1K and Stage2 unchanged.'
+          gh release create "$F1M_COLD_TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY" --target "$RES_SHA" --prerelease --latest=false --title 'i3 F1M independent cold verdict or failed no-retry status' --notes 'Independent Python3.12 original-byte and world/cognition reconstruction, or explicit cold failure. Complete local verdict is issued only by cold audit. No repeat M01..M32 native executions. Historical F1I/F1K and Stage2 unchanged.'
           test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$F1M_COLD_TAG" --jq '.immutable')" = "true"
       - if: ${{ always() }}
         uses: actions/upload-artifact@v4
