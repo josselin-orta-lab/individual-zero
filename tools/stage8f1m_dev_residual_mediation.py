@@ -214,7 +214,7 @@ def _followup(world,mind,mode,horizon):
 def _one(grid,origin):
     world,mind,t1,source=_source(grid,origin)
     row={"origin":origin,"source":source,"content_t5":{},
-         "arms":{},"shams":{},"comparison":{}}
+         "arms":{},"shams":{},"sham_arms":{},"comparison":{}}
     if not source["source_valid"]:
         return row
     t5_states={}
@@ -246,6 +246,7 @@ def _one(grid,origin):
             same=(fork==fork_sham)
             sham=_followup(world_s,mind_s,key,grid["final_tick"])
             ref=row["arms"][key]["followup"]
+            row["sham_arms"][key]=sham
             same=(same and sham["steps"]==ref["steps"]
                   and sham["last_world"]==ref["last_world"]
                   and sham["last_mind"]==ref["last_mind"]
