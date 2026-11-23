@@ -31,7 +31,7 @@ def verified_raw_release(receipt,input_dir):
     paths=[input_dir/"F1M_RESERVATION.json",
            input_dir/"F1M_RESERVATION.NATIVE_START_LOCK"]
     paths+=sorted((input_dir/"f1m-originals").glob("F1M_*"))
-    paths+=sorted((input_dir/"f1m-emergency").glob("F1M_*"))
+    paths+=sorted((input_dir/"f1m-preservation").glob("F1M_*"))
     expected={p.name:p for p in paths if p.is_file()}
     check(len(expected)==len(paths) and len(expected)>=7,
           "missing or duplicated raw release asset name")
