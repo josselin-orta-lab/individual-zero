@@ -1,0 +1,38 @@
+# Temporary DEV_M pilot only. No scientific seeds, no workflow_dispatch, no releases.
+name: I3 Stage8-F1M DEV-only paid residual causal motor/body pilot
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'tools/stage8f1m_dev_residual_mediation.py'
+      - 'tests/test_stage8f1m_dev_residual_mediation.py'
+      - '.github/workflows/i3-stage8f1m-dev-causal-pilot.yml'
+permissions:
+  contents: read
+jobs:
+  dev_m_safety_and_smoke:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'feat/i3-stage8-f1m-dev-causal-motor-body-20261123' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: F1M DEV-only adversarial safety tests, no World.step
+        env:
+          PYTHONPATH: src:.
+        run: python -m unittest -v tests.test_stage8f1m_dev_residual_mediation
+      - name: F1M two disjoint DEV_M native roots, actual World.step only on DEV_M
+        env:
+          PYTHONPATH: src:.
+        run: |
+          python -m tools.stage8f1m_dev_residual_mediation --smoke --output "$RUNNER_TEMP/F1M_DEV_SMOKE_ORIGINAL.json.gz"
+          test -s "$RUNNER_TEMP/F1M_DEV_SMOKE_ORIGINAL.json.gz"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: f1m-dev-m-smoke-${{ github.run_id }}
+          path: ${{ runner.temp }}/F1M_DEV_SMOKE_ORIGINAL.json.gz
+          if-no-files-found: error
+          retention-days: 30
