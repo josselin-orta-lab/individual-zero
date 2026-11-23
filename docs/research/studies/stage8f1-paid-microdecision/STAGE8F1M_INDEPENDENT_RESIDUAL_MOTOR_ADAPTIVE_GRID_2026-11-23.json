@@ -729,7 +729,7 @@
     "motor_outcome",
     "adaptive_outcome"
   ],
-  "existing_prior_seeds_must_remain_unexecuted": true,
+  "all_historical_or_development_seeds_forbidden_in_M_science": true,
   "scientific_exposure_authorized": false,
   "scientific_workflow_dispatch_allowed": false,
   "scientific_consumption_ref": "refs/heads/i3-stage8-f1m-heldout-consumed-once",
