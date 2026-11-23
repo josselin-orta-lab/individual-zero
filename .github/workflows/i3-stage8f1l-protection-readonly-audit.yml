@@ -11,11 +11,11 @@ permissions:
   contents: read
 jobs:
   immutable_and_ref_audit:
-    if: \${{ github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'audit/f1l-admin-readonly-preflight-20261123' }}
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'audit/f1l-admin-readonly-preflight-20261123' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      F1L_AUDIT_TOKEN: \${{ secrets.F1L_PROTECTION_AUDIT_TOKEN }}
+      F1L_AUDIT_TOKEN: ${{ secrets.F1L_PROTECTION_AUDIT_TOKEN }}
     steps:
       - name: Verify immutable releases, read-only ruleset and no consumed ref
         shell: bash
