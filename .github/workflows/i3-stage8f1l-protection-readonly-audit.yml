@@ -61,7 +61,7 @@ jobs:
               sys.exit(1)
           print("F1L_AUDIT_RELEASES=PASS: authenticated Administration-read API HTTP 200, enabled=true")
 
-          code, ruleset = get("rulesets/" + str(RULESET_ID))
+          code, ruleset = get("rulesets/" + str(RULESET_ID), admin=True)
           rules = {r.get("type") for r in (ruleset or {}).get("rules", [])}
           cond = (ruleset or {}).get("conditions", {}).get("ref_name", {})
           if not (code == 200
