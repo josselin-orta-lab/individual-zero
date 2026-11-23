@@ -1,0 +1,39 @@
+# POSTHOC READ ONLY. NO scientific L lives, no World.step, never merge this temporary PR.
+name: I3 Stage8-F1L archival-only accumulator carry audit
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+    paths:
+      - '.github/workflows/i3-stage8f1l-archival-accumulator-carry.yml'
+      - 'tools/stage8f1l_archival_accumulator_mediation.py'
+permissions:
+  contents: read
+jobs:
+  original_readback_only:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'audit/i3-stage8-f1l-accumulator-mediation-archival-20261123' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify both immutable Releases and fetch only original bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(gh api repos/josselin-orta-lab/individual-zero/releases/tags/i3-stage8f1l-t60-raw-heldout-once --jq .immutable)" = true
+          test "$(gh api repos/josselin-orta-lab/individual-zero/releases/tags/i3-stage8f1l-t60-cold-heldout-once --jq .immutable)" = true
+          mkdir -p "$RUNNER_TEMP/f1l-archival"
+          gh release download i3-stage8f1l-t60-raw-heldout-once --repo josselin-orta-lab/individual-zero --pattern F1L_ORIGINALS_128_GZIP.tar.gz --pattern F1L_CUSTODY_MANIFEST.json --dir "$RUNNER_TEMP/f1l-archival"
+          gh release download i3-stage8f1l-t60-cold-heldout-once --repo josselin-orta-lab/individual-zero --pattern F1L_INDEPENDENT_COLD_T60.json --dir "$RUNNER_TEMP/f1l-archival"
+          python3 tools/stage8f1l_archival_accumulator_mediation.py "$RUNNER_TEMP/f1l-archival"
+      - name: Archive small explanatory audit result, not original seeds
+        uses: actions/upload-artifact@v4
+        with:
+          name: f1l-archive-accumulator-mediation-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1l-archival/F1L_ARCHIVAL_ACCUMULATOR_MEDIATION.json
+          if-no-files-found: error
+          retention-days: 90
