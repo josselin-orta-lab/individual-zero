@@ -1,0 +1,208 @@
+# DEV_M ONLY, no scientific seeds, no workflow_dispatch, no releases/claim.
+name: I3 Stage8-F1M DEV-only paid residual causal motor/body pilot
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'tools/stage8f1m_*'
+      - 'tests/test_stage8f1m_*'
+      - '.github/workflows/i3-stage8f1m-*'
+      - 'docs/research/studies/stage8f1-paid-microdecision/STAGE8F1M_*'
+permissions:
+  contents: read
+jobs:
+  dev_m_safety_and_smoke:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'feat/i3-stage8-f1m-scientific-transport-20261123' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: F1M adversarial no-birth source and residual-only intervention tests
+        env:
+          PYTHONPATH: src:.
+        run: python -m unittest -v tests.test_stage8f1m_dev_residual_mediation
+      - name: 2 DEV_M native T60 roots, actual decisions and body, no M scientific World.step
+        env:
+          PYTHONPATH: src:.
+        run: |
+          python -m tools.stage8f1m_dev_residual_mediation --smoke --output "$RUNNER_TEMP/F1M_DEV_SMOKE_ORIGINAL.json.gz"
+          test -s "$RUNNER_TEMP/F1M_DEV_SMOKE_ORIGINAL.json.gz"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: f1m-dev-m-smoke-${{ github.run_id }}
+          path: ${{ runner.temp }}/F1M_DEV_SMOKE_ORIGINAL.json.gz
+          if-no-files-found: error
+          retention-days: 30
+  dev_m_smoke_cold_py312:
+    needs: [dev_m_safety_and_smoke]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: f1m-dev-m-smoke-${{ github.run_id }}
+          path: ${{ runner.temp }}
+      - name: Engine-free independent real cognition/world/learning audit, DEV_M
+        env:
+          PYTHONPATH: .
+        run: |
+          python -m tools.stage8f1m_independent_dev_cold "$RUNNER_TEMP/F1M_DEV_SMOKE_ORIGINAL.json.gz" --output "$RUNNER_TEMP/F1M_DEV_SMOKE_COLD.json"
+          test -s "$RUNNER_TEMP/F1M_DEV_SMOKE_COLD.json"
+          python - <<'PY'
+          import json,os,pathlib
+          report=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"F1M_DEV_SMOKE_COLD.json").read_bytes())
+          summary=report["summary"]
+          required={"valid_source":2,"t5_equal_paid":2,
+                    "t6_equal_paid":4,"sham_valid":2}
+          assert report["phase"]=="DEV_ONLY_NEVER_SCIENTIFIC"
+          assert report["experimental_origin_count"]==2
+          assert report["development_status"] in (
+            "DEV_ONLY_MOTOR_EFFECT_OBSERVED_NOT_SCIENCE",
+            "DEV_ONLY_NO_MOTOR_EFFECT_NOT_SCIENCE")
+          assert all(summary[k]==v for k,v in required.items()), (summary,required)
+          assert all(row["root"].startswith("DEV_M") for row in report["per_root"])
+          assert report["source_F1L_heldouts_created"]==0
+          print("F1M_DEV_COLD_GATES_PASS",report["experimental_origin_count"],required)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: f1m-dev-m-smoke-cold-${{ github.run_id }}
+          path: ${{ runner.temp }}/F1M_DEV_SMOKE_COLD.json
+          if-no-files-found: error
+          retention-days: 30
+  dev_m_full_t60:
+    needs: [dev_m_smoke_cold_py312]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: 8 independent disjoint DEV_M native origins, 16 residual contrasts T6/T60
+        env:
+          PYTHONPATH: src:.
+        run: |
+          python -m tools.stage8f1m_dev_residual_mediation --full --output "$RUNNER_TEMP/F1M_DEV_FULL_ORIGINAL.json.gz"
+          test -s "$RUNNER_TEMP/F1M_DEV_FULL_ORIGINAL.json.gz"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: f1m-dev-m-full-${{ github.run_id }}
+          path: ${{ runner.temp }}/F1M_DEV_FULL_ORIGINAL.json.gz
+          if-no-files-found: error
+          retention-days: 30
+  dev_m_full_t60_cold_py312:
+    needs: [dev_m_full_t60]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: f1m-dev-m-full-${{ github.run_id }}
+          path: ${{ runner.temp }}
+      - name: Full 8-origin independent cold reconstruction and verdict, DEV only
+        env:
+          PYTHONPATH: .
+        run: |
+          python -m tools.stage8f1m_independent_dev_cold "$RUNNER_TEMP/F1M_DEV_FULL_ORIGINAL.json.gz" --output "$RUNNER_TEMP/F1M_DEV_FULL_COLD.json"
+          test -s "$RUNNER_TEMP/F1M_DEV_FULL_COLD.json"
+          python - <<'PY'
+          import json,os,pathlib
+          report=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"F1M_DEV_FULL_COLD.json").read_bytes())
+          summary=report["summary"]
+          required={"valid_source":8,"t5_equal_paid":8,
+                    "t6_equal_paid":16,"sham_valid":8}
+          assert report["phase"]=="DEV_ONLY_NEVER_SCIENTIFIC"
+          assert report["experimental_origin_count"]==8
+          assert report["development_status"] in (
+            "DEV_ONLY_MOTOR_EFFECT_OBSERVED_NOT_SCIENCE",
+            "DEV_ONLY_NO_MOTOR_EFFECT_NOT_SCIENCE")
+          assert all(summary[k]==v for k,v in required.items()), (summary,required)
+          assert all(row["root"].startswith("DEV_M") for row in report["per_root"])
+          assert report["source_F1L_heldouts_created"]==0
+          print("F1M_DEV_COLD_GATES_PASS",report["experimental_origin_count"],required)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: f1m-dev-m-full-cold-${{ github.run_id }}
+          path: ${{ runner.temp }}/F1M_DEV_FULL_COLD.json
+          if-no-files-found: error
+          retention-days: 30
+
+  dev_m_replica2_full_t60:
+    needs: [dev_m_smoke_cold_py312]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: DEV_MR01-MR08 disjoint new-seed technical native T60, never M01-M32
+        env:
+          PYTHONPATH: src:.
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1m_dev_residual_mediation --full-replica2 --output "$RUNNER_TEMP/F1M_DEV_REPLICA2_ORIGINAL.json.gz"
+          test -s "$RUNNER_TEMP/F1M_DEV_REPLICA2_ORIGINAL.json.gz"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: f1m-dev-m-replica2-full-${{ github.run_id }}
+          path: ${{ runner.temp }}/F1M_DEV_REPLICA2_ORIGINAL.json.gz
+          if-no-files-found: error
+          retention-days: 30
+
+  dev_m_replica2_full_t60_cold_py312:
+    needs: [dev_m_replica2_full_t60]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: f1m-dev-m-replica2-full-${{ github.run_id }}
+          path: ${{ runner.temp }}
+      - name: Independent cold T1-T60 on eight disjoint DEV_MR origins
+        env:
+          PYTHONPATH: .
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1m_independent_dev_cold "$RUNNER_TEMP/F1M_DEV_REPLICA2_ORIGINAL.json.gz" --output "$RUNNER_TEMP/F1M_DEV_REPLICA2_COLD.json"
+          test -s "$RUNNER_TEMP/F1M_DEV_REPLICA2_COLD.json"
+          python - <<'PY'
+          import json,os,pathlib
+          report=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"F1M_DEV_REPLICA2_COLD.json").read_bytes())
+          summary=report["summary"]
+          required={"valid_source":8,"t5_equal_paid":8,
+                    "t6_equal_paid":16,"sham_valid":8}
+          assert report["phase"]=="DEV_ONLY_NEVER_SCIENTIFIC"
+          assert report["experimental_origin_count"]==8
+          assert report["development_status"] in (
+            "DEV_ONLY_MOTOR_EFFECT_OBSERVED_NOT_SCIENCE",
+            "DEV_ONLY_NO_MOTOR_EFFECT_NOT_SCIENCE")
+          assert all(summary[k]==v for k,v in required.items()), (summary,required)
+          assert all(row["root"].startswith("DEV_MR") for row in report["per_root"])
+          assert report["source_F1L_heldouts_created"]==0
+          print("F1M_DEV_COLD_GATES_PASS",report["experimental_origin_count"],required)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: f1m-dev-m-replica2-cold-${{ github.run_id }}
+          path: ${{ runner.temp }}/F1M_DEV_REPLICA2_COLD.json
+          if-no-files-found: error
+          retention-days: 30
