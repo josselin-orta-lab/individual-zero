@@ -1,0 +1,144 @@
+# Read-only secondary diagnosis of SEALED F1L originals. No checkout, no engine, no new lives.
+# Temporary PR workflow: DO NOT MERGE into source-locked main.
+name: I3 F1L sealed 7-root native posthoc diagnostic
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+    paths:
+      - '.github/workflows/i3-stage8f1l-posthoc-native-readonly.yml'
+permissions:
+  contents: read
+jobs:
+  archive_only_native_trace:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'audit/f1l-posthoc-native-t5-20261123' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Read immutable evidence, verify SHA256, extract seven native contrasts (NO engine)
+        shell: bash
+        run: |
+          set -euo pipefail
+          D="$RUNNER_TEMP/f1l-posthoc"
+          mkdir -p "$D"
+          cd "$D"
+          test "$(gh api repos/josselin-orta-lab/individual-zero/releases/tags/i3-stage8f1l-t60-raw-heldout-once --jq .immutable)" = "true"
+          test "$(gh api repos/josselin-orta-lab/individual-zero/releases/tags/i3-stage8f1l-t60-cold-heldout-once --jq .immutable)" = "true"
+          gh release download i3-stage8f1l-t60-raw-heldout-once --repo josselin-orta-lab/individual-zero --pattern F1L_ORIGINALS_128_GZIP.tar.gz --pattern F1L_CUSTODY_MANIFEST.json --dir "$D"
+          gh release download i3-stage8f1l-t60-cold-heldout-once --repo josselin-orta-lab/individual-zero --pattern F1L_INDEPENDENT_COLD_T60.json --dir "$D"
+          printf '%s  %s\n' 'fc47a04fa7aa65c1726fc4e5896f85bda9ca0a4dbeba18ebecb5f105f1b7a64f' F1L_ORIGINALS_128_GZIP.tar.gz 'fca85816a870d7c0c124cdd23dc1aefdd5efcbe04fc5d475c019649a0bb20b44' F1L_CUSTODY_MANIFEST.json 'dbb35567b3d199a7f3f988d7d0b5b79c0e9698d580c90195e980d8f6f56f97d0' F1L_INDEPENDENT_COLD_T60.json | sha256sum -c -
+          python3 - <<'PY'
+          import gzip, hashlib, json, os, tarfile
+          from collections import Counter
+          from pathlib import Path
+
+          base = Path(os.environ["RUNNER_TEMP"]) / "f1l-posthoc"
+          manifest = json.loads((base/"F1L_CUSTODY_MANIFEST.json").read_bytes())
+          cold = json.loads((base/"F1L_INDEPENDENT_COLD_T60.json").read_bytes())
+          assert manifest["schema"] == "i3-stage8f1l-original-and-technical-custody/v0"
+          assert manifest["phase"] == "F1L_HELDOUT_RELEASE"
+          assert manifest["heldout_native_passes"] == 1
+          assert manifest["native_part_count"] == 128
+          assert len(manifest["roots"]) == 32
+          assert cold["roots"] == cold["personal_paid_sources_verified"] == 32
+          assert cold["whole_trajectory_shams_verified"] == cold["T5_equal_real_decision_cost_pairs"] == 32
+          assert cold["cold_verdict"] == "NO_REPRODUCIBLE_LOCAL_T60_CONTENT_BODY_ADVANTAGE"
+          assert cold["original_sha256"] == manifest["native_original_sha256"]
+          entries = {e["path"]: e for e in manifest["entries"]}
+          assert len(entries) == 128
+          affected = [r for r in cold["per_root"] if r["pareto"] != "FIVE_CHANNELS_EQUAL"]
+          assert {r["root"] for r in affected} == {"L06","L14","L20","L22","L24","L29","L31"}
+          result = []
+
+          def h(raw):
+              return hashlib.sha256(raw).hexdigest()
+
+          def effect_means(sealed):
+              private = dict(sealed["data"]["private"]["__dict__"])
+              effects = dict(private["effects"]["__effects_model__"]["__dict__"])
+              return {json.dumps(k,sort_keys=True): v[1]
+                      for k,v in effects["stats"]["__dict__"]}
+
+          with tarfile.open(base/"F1L_ORIGINALS_128_GZIP.tar.gz", mode="r:gz") as archive:
+              members = {m.name: m for m in archive.getmembers()}
+              assert len(members) == 160
+              assert all(m.isfile() for m in members.values())
+              assert set(entries).issubset(members)
+              def read_native(root, part):
+                  key = f"{root}/{part}.json.gz"
+                  z = archive.extractfile(members[key]).read()
+                  raw = gzip.decompress(z)
+                  e = entries[key]
+                  assert h(z) == e["gzip_sha256"]
+                  assert h(raw) == e["original_sha256"]
+                  assert len(raw) == e["original_bytes"]
+                  record = json.loads(raw)
+                  assert record["schema"] == "i3-stage8f1l-native-origin-part/v0"
+                  assert record["id"] == root and record["part"] == part
+                  return record["native"]
+
+              for root in affected:
+                  name = root["root"]
+                  source = read_native(name, "source")
+                  full = read_native(name, "full")
+                  sham = read_native(name, "full_sham")
+                  stale = read_native(name, "stale_owned_t1_means")
+                  assert len(source["source_steps"]) == 4
+                  assert full["metrics"] == sham["metrics"]
+                  a,b = full["steps"],stale["steps"]
+                  assert len(a) == len(b) == 56
+                  assert [s["t"] for s in a] == [s["t"] for s in b] == list(range(5,61))
+                  assert a[0]["cognitive_work"] == b[0]["cognitive_work"]
+                  assert a[0]["requested_native_cost"] == b[0]["requested_native_cost"]
+                  assert a[0]["native_motor"]["cognitive_accounting"] == b[0]["native_motor"]["cognitive_accounting"]
+                  assert [round(x-y,8) for x,y in zip(full["metrics"]["terminal_body"],stale["metrics"]["terminal_body"])] == [round(x-y,8) for x,y in zip(root["terminal_full_body"],root["terminal_stale_body"])]
+                  first_motor = next((x["t"] for x,y in zip(a,b) if (x["action"],x["param"]) != (y["action"],y["param"])),None)
+                  first_body = next((x["t"] for x,y in zip(a,b) if any(abs(v-w)>1e-9 for v,w in zip(x["postaction"]["body_after_any_learning"],y["postaction"]["body_after_any_learning"]))),None)
+                  first_world = next((x["t"] for x,y in zip(a,b) if x["after_paid_learning_world"]!=y["after_paid_learning_world"]),None)
+                  fresh,old = effect_means(a[0]["exposed_mind_during_decision"]),effect_means(b[0]["exposed_mind_during_decision"])
+                  assert set(fresh)==set(old)
+                  changed_means = {
+                    key:[round(u-v,8) for u,v in zip(fresh[key],old[key])]
+                    for key in fresh if any(abs(u-v)>1e-9 for u,v in zip(fresh[key],old[key]))
+                  }
+                  diff = {
+                    "root":name,"ecology":root["ecology"],"pareto":root["pareto"],
+                    "t5_full":{"action":a[0]["action"],"param":a[0]["param"],"work":a[0]["cognitive_work"],"bill":a[0]["requested_native_cost"],"funding":a[0]["decision_info"].get("funding")},
+                    "t5_stale":{"action":b[0]["action"],"param":b[0]["param"],"work":b[0]["cognitive_work"],"bill":b[0]["requested_native_cost"],"funding":b[0]["decision_info"].get("funding")},
+                    "t5_masked_personal_keys":len(b[0]["temporary_prior_mean_keys"]),
+                    "t5_mean_difference_fresh_minus_t1":changed_means,
+                    "t5_full_decision_info":a[0]["decision_info"],
+                    "t5_stale_decision_info":b[0]["decision_info"],
+                    "first_motor_divergence_tick":first_motor,
+                    "first_body_divergence_tick":first_body,
+                    "first_world_divergence_tick":first_world,
+                    "total_different_motor_ticks":sum((x["action"],x["param"]) != (y["action"],y["param"]) for x,y in zip(a,b)),
+                    "full_actions":dict(Counter(x["action"] for x in a)),
+                    "stale_actions":dict(Counter(x["action"] for x in b)),
+                    "terminal_body_delta_full_minus_stale":[round(x-y,8) for x,y in zip(full["metrics"]["terminal_body"],stale["metrics"]["terminal_body"])],
+                    "cumulative_paid_decision_energy_delta":round(full["metrics"]["paid_decision"]["energy"]-stale["metrics"]["paid_decision"]["energy"],8),
+                    "cumulative_paid_decision_vigilance_delta":round(full["metrics"]["paid_decision"]["vigilance"]-stale["metrics"]["paid_decision"]["vigilance"],8),
+                    "cumulative_paid_learning_energy_delta":round(full["metrics"]["paid_learning"]["energy"]-stale["metrics"]["paid_learning"]["energy"],8),
+                    "cumulative_paid_learning_vigilance_delta":round(full["metrics"]["paid_learning"]["vigilance"]-stale["metrics"]["paid_learning"]["vigilance"],8),
+                    "full_drinks":full["metrics"]["water_drinks"],"stale_drinks":stale["metrics"]["water_drinks"],
+                    "full_meals":full["metrics"]["foods_actually_eaten"],"stale_meals":stale["metrics"]["foods_actually_eaten"],
+                    "full_final_position":full["metrics"]["terminal_position"],"stale_final_position":stale["metrics"]["terminal_position"],
+                    "full_final_water_stock":full["metrics"]["terminal_water_stock"],"stale_final_water_stock":stale["metrics"]["terminal_water_stock"]
+                  }
+                  result.append(diff)
+          payload={"schema":"i3-f1l-archive-only-posthoc-seven-roots/v0","raw_release_immutable":True,"cold_release_immutable":True,"native_engine_imports":0,"new_world_steps":0,"originals_verified_for_selected_roots":28,"retained_cold_verdict":cold["cold_verdict"],"sources":["i3-stage8f1l-t60-raw-heldout-once","i3-stage8f1l-t60-cold-heldout-once"],"cases":result}
+          dest=base/"F1L_POSTHOC_NATIVE_7_ROOTS.json"
+          dest.write_text(json.dumps(payload,sort_keys=True,indent=2)+"\n")
+          for c in result:
+              print(json.dumps({k:c[k] for k in ("root","t5_full","t5_stale","t5_masked_personal_keys","first_motor_divergence_tick","first_body_divergence_tick","first_world_divergence_tick","total_different_motor_ticks","terminal_body_delta_full_minus_stale")},sort_keys=True))
+          print("F1L_POSTHOC_ARCHIVE_ONLY_PASS: 7 cases, 28 native parts SHA256 verified, 0 new World.step, no scientific reinterpretation")
+          PY
+      - name: Preserve small sealed-source secondary diagnostic
+        uses: actions/upload-artifact@v4
+        with:
+          name: f1l-posthoc-archive-only-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1l-posthoc/F1L_POSTHOC_NATIVE_7_ROOTS.json
+          if-no-files-found: error
+          retention-days: 90
