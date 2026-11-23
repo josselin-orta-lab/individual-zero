@@ -315,7 +315,7 @@ def produce(full=False):
        "design":"two-factor memory-readout at T5 x native residual carry/zero at pre-T6",
        "source_policy":"F1JFixedRoundMind",
        "original_protected_F1L_main":"9c40f01684f5e69c893d765aa41cad1af1d33532",
-       "scientiﬁc_verdict":None,
+       "scientific_verdict":None,
        "development_status":status,
        "origin_count":len(rows),"arm_count_per_origin":4,
        "grid":grid,"rows":rows,
@@ -344,8 +344,9 @@ def main():
     p.add_argument("--output",required=True)
     x=p.parse_args()
     report=produce(x.full)
-    with gzip.open(x.output,"xb",mtime=0) as out:
-        out.write(C.canonical(report))
+    with open(x.output,"xb") as fd:
+        with gzip.GzipFile(fileobj=fd,mode="wb",filename="",mtime=0) as out:
+            out.write(C.canonical(report))
     print(json.dumps({"phase":report["phase"],"diagnostic":report["development_status"],
                       "roots":report["origin_count"],"summary":report["summary"]},sort_keys=True))
 
