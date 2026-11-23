@@ -5,15 +5,15 @@ on:
     branches: [main]
     types: [opened, synchronize, reopened]
     paths:
-      - 'tools/stage8f1m_dev_residual_mediation.py'
-      - 'tools/stage8f1m_independent_dev_cold.py'
-      - 'tests/test_stage8f1m_dev_residual_mediation.py'
-      - '.github/workflows/i3-stage8f1m-dev-causal-pilot.yml'
+      - 'tools/stage8f1m_*'
+      - 'tests/test_stage8f1m_*'
+      - '.github/workflows/i3-stage8f1m-*'
+      - 'docs/research/studies/stage8f1-paid-microdecision/STAGE8F1M_*'
 permissions:
   contents: read
 jobs:
   dev_m_safety_and_smoke:
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'feat/i3-stage8-f1m-dev-causal-motor-body-20261123' }}
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'feat/i3-stage8-f1m-scientific-transport-20261123' }}
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -25,7 +25,7 @@ jobs:
         env:
           PYTHONPATH: src:.
         run: python -m unittest -v tests.test_stage8f1m_dev_residual_mediation
-      - name: 2 DEV_M native T60 roots, actual decisions and body, no L World.step
+      - name: 2 DEV_M native T60 roots, actual decisions and body, no M scientific World.step
         env:
           PYTHONPATH: src:.
         run: |
@@ -106,5 +106,55 @@ jobs:
         with:
           name: f1m-dev-m-full-cold-${{ github.run_id }}
           path: ${{ runner.temp }}/F1M_DEV_FULL_COLD.json
+          if-no-files-found: error
+          retention-days: 30
+
+  dev_m_replica2_full_t60:
+    needs: [dev_m_smoke_cold_py312]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: DEV_MR01-MR08 disjoint new-seed technical native T60, never M01-M32
+        env:
+          PYTHONPATH: src:.
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1m_dev_residual_mediation --full-replica2 --output "$RUNNER_TEMP/F1M_DEV_REPLICA2_ORIGINAL.json.gz"
+          test -s "$RUNNER_TEMP/F1M_DEV_REPLICA2_ORIGINAL.json.gz"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: f1m-dev-m-replica2-full-${{ github.run_id }}
+          path: ${{ runner.temp }}/F1M_DEV_REPLICA2_ORIGINAL.json.gz
+          if-no-files-found: error
+          retention-days: 30
+
+  dev_m_replica2_full_t60_cold_py312:
+    needs: [dev_m_replica2_full_t60]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: f1m-dev-m-replica2-full-${{ github.run_id }}
+          path: ${{ runner.temp }}
+      - name: Independent cold T1-T60 on eight disjoint DEV_MR origins
+        env:
+          PYTHONPATH: .
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1m_independent_dev_cold "$RUNNER_TEMP/F1M_DEV_REPLICA2_ORIGINAL.json.gz" --output "$RUNNER_TEMP/F1M_DEV_REPLICA2_COLD.json"
+          test -s "$RUNNER_TEMP/F1M_DEV_REPLICA2_COLD.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: f1m-dev-m-replica2-cold-${{ github.run_id }}
+          path: ${{ runner.temp }}/F1M_DEV_REPLICA2_COLD.json
           if-no-files-found: error
           retention-days: 30
