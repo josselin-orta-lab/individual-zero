@@ -1,0 +1,50 @@
+# Software-only tests for first-only scientific transport. NEVER science.
+name: I3 Stage8-F1M one-shot transport software-only checks
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'tools/stage8f1m_*'
+      - 'tests/test_stage8f1m_one_shot_transport.py'
+      - '.github/workflows/i3-stage8f1m-heldout-science-manual-once.yml'
+      - '.github/workflows/i3-stage8f1m-transport-software-only.yml'
+permissions:
+  contents: read
+jobs:
+  f1m_transport_no_birth_py311:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify no-birth prereg, frozen pins and first-only safety
+        env:
+          PYTHONPATH: src:.
+        run: |
+          python -m tools.stage8f1m_prereg_static_guard
+          python -m tools.stage8f1m_one_shot_reservation --readonly-pins
+          python -m unittest -v tests.test_stage8f1m_one_shot_transport
+
+  f1m_transport_cold_only_py312:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Engine-free imports and independent verdict abuse tests
+        env:
+          PYTHONPATH: .
+        run: |
+          python -m tools.stage8f1m_prereg_static_guard
+          python -m unittest -v tests.test_stage8f1m_one_shot_transport
