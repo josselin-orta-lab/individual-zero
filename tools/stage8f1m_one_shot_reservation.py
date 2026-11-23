@@ -360,6 +360,20 @@ def validate_receipt(receipt, *, same_run=True):
             and claim.get("final_tick") == 60
             and claim.get("F1L_immutable") == "NO_REPRODUCIBLE_LOCAL_T60_CONTENT_BODY_ADVANTAGE"
             and claim.get("native_passes_allocated") == 1
+            and claim.get("preexposure_static_guard_git_blob") ==
+                "007a8e1597f9ee7ab0a4a4802fd6b3a55be60af9"
+            and type(claim.get("rehearsal_run_ids")) is list
+            and len(claim["rehearsal_run_ids"]) == 2
+            and len(set(claim["rehearsal_run_ids"])) == 2
+            and all(str(rid).isdigit() for rid in claim["rehearsal_run_ids"])
+            and type(claim.get("rehearsal_verified_head_shas")) is list
+            and len(claim["rehearsal_verified_head_shas"]) == 2
+            and all(bool(re.fullmatch(r"[0-9a-f]{40}", sha))
+                    for sha in claim["rehearsal_verified_head_shas"])
+            and claim.get("rehearsal_verified_tree_sha") and
+                bool(re.fullmatch(r"[0-9a-f]{40}",
+                        claim["rehearsal_verified_tree_sha"]))
+            and claim.get("stage2_immutable") == "NOT_ISSUED/HOLD_NO_VERDICT"
             and claim.get("release_immutability") == {"enabled": True}
             and claim.get("no_action_override") is True
             and claim.get("no_retry_even_after_failure") is True
