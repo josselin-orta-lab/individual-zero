@@ -44,7 +44,7 @@ jobs:
       PYTHONPATH: 'src:.'
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      F1M_PROTECTION_AUDIT_TOKEN: ${{ secrets.F1L_PROTECTION_AUDIT_TOKEN }}
+      F1L_PROTECTION_AUDIT_TOKEN: ${{ secrets.F1L_PROTECTION_AUDIT_TOKEN }}
       F1M_APPROVED_SOURCE_SHA: ${{ inputs.approved_source_sha }}
       F1M_CONSUME_ACK: ${{ inputs.consume_ack }}
       F1M_REHEARSAL_RUN_IDS: ${{ inputs.rehearsal_run_ids }}
@@ -131,7 +131,7 @@ jobs:
     env:
       PYTHONPATH: '.'
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      F1M_PROTECTION_AUDIT_TOKEN: ${{ secrets.F1L_PROTECTION_AUDIT_TOKEN }}
+      F1L_PROTECTION_AUDIT_TOKEN: ${{ secrets.F1L_PROTECTION_AUDIT_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
