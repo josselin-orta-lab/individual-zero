@@ -27,6 +27,7 @@ from tools.stage8f1j_fixed_round_paid_competition import F1JFixedRoundMind
 
 SCHEMA = "i3-stage8f1m-development-causal-residual-actual-body/v0"
 DEV_ONLY_SEEDS = tuple(range(202611239601, 202611239609))
+DEV_REPLICA2_SEEDS = tuple(range(202611239611, 202611239619))
 RESERVED_L = frozenset(range(202611229501, 202611229533))
 DEV_L = frozenset(range(202611229601, 202611229609))
 END_TICK = 60
@@ -70,14 +71,26 @@ def dev_grid(full=False):
             "source_ticks":4,"content_tick":5,"residual_fork_tick":6}
 
 
+def dev_replica2_grid(full=False):
+    """Independent DEV_M second technical source set, no heldout M births."""
+    result=deepcopy(dev_grid(full))
+    result["schema"]="i3-stage8f1m-unreleased-dev-replica2-grid/v0"
+    for origin in result["origins"]:
+        index=int(origin["id"][5:])-1
+        origin["id"]="DEV_MR%02d" % (index+1)
+        origin["seed"]=DEV_REPLICA2_SEEDS[index]
+    return result
+
+
 def source_gate(grid):
     L.verify_readonly_prereg()   # validates frozen reference SHA without L World.step
     official = dev_grid(full=len(grid["origins"]) == 8)
-    if grid != official:
-        raise PermissionError("DEV_M accepts only fixed DEV-only source fixture")
+    alternative=dev_replica2_grid(full=len(grid["origins"])==8)
+    if grid!=official and grid!=alternative:
+        raise PermissionError("DEV_M accepts only two disjoint fixed DEV source sets")
     seeds = [o["seed"] for o in grid["origins"]]
-    if (not set(seeds).issubset(set(DEV_ONLY_SEEDS))
-            or set(seeds) & (RESERVED_L | DEV_L)
+    if (not set(seeds).issubset(set(DEV_ONLY_SEEDS)|set(DEV_REPLICA2_SEEDS))
+            or set(seeds) & (RESERVED_L | DEV_L | set(range(202611239701,202611239733)))
             or any(not x["id"].startswith("DEV_M") for x in grid["origins"])
             or any(e["water"] in ([1,1],[0,0],[0,1],[2,1]) for e in grid["ecologies"])
             or any(not e["id"].startswith("DEV_M") for e in grid["ecologies"])):
@@ -87,7 +100,7 @@ def source_gate(grid):
 
 def _new_dev_world(grid, origin):
     if (origin not in grid["origins"] or
-            origin["seed"] not in DEV_ONLY_SEEDS or
+            origin["seed"] not in (*DEV_ONLY_SEEDS,*DEV_REPLICA2_SEEDS) or
             not origin["id"].startswith("DEV_M")):
         raise PermissionError("F1M DEV only accepts DEV_M origins")
     ec = next(x for x in grid["ecologies"] if x["id"] == origin["ecology"])
@@ -306,8 +319,8 @@ def classify(rows):
             "DEV_ONLY_NO_MOTOR_EFFECT_NOT_SCIENCE")
 
 
-def produce(full=False):
-    grid=dev_grid(full)
+def produce(full=False,replica2=False):
+    grid=dev_replica2_grid(full) if replica2 else dev_grid(full)
     source_gate(grid)
     rows=[_one(grid,origin) for origin in grid["origins"]]
     status=classify(rows)
@@ -342,9 +355,10 @@ def main():
     g=p.add_mutually_exclusive_group(required=True)
     g.add_argument("--smoke",action="store_true")
     g.add_argument("--full",action="store_true")
+    g.add_argument("--full-replica2",action="store_true")
     p.add_argument("--output",required=True)
     x=p.parse_args()
-    report=produce(x.full)
+    report=produce(x.full or x.full_replica2,replica2=x.full_replica2)
     with open(x.output,"xb") as fd:
         with gzip.GzipFile(fileobj=fd,mode="wb",filename="",mtime=0) as out:
             out.write(C.canonical(report))
