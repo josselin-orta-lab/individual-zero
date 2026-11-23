@@ -56,6 +56,22 @@ jobs:
         run: |
           python -m tools.stage8f1m_independent_dev_cold "$RUNNER_TEMP/F1M_DEV_SMOKE_ORIGINAL.json.gz" --output "$RUNNER_TEMP/F1M_DEV_SMOKE_COLD.json"
           test -s "$RUNNER_TEMP/F1M_DEV_SMOKE_COLD.json"
+          python - <<'PY'
+          import json,os,pathlib
+          report=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"F1M_DEV_SMOKE_COLD.json").read_bytes())
+          summary=report["summary"]
+          required={"valid_source":2,"t5_equal_paid":2,
+                    "t6_equal_paid":4,"sham_valid":2}
+          assert report["phase"]=="DEV_ONLY_NEVER_SCIENTIFIC"
+          assert report["experimental_origin_count"]==2
+          assert report["development_status"] in (
+            "DEV_ONLY_MOTOR_EFFECT_OBSERVED_NOT_SCIENCE",
+            "DEV_ONLY_NO_MOTOR_EFFECT_NOT_SCIENCE")
+          assert all(summary[k]==v for k,v in required.items()), (summary,required)
+          assert all(row["root"].startswith("DEV_M") for row in report["per_root"])
+          assert report["source_F1L_heldouts_created"]==0
+          print("F1M_DEV_COLD_GATES_PASS",report["experimental_origin_count"],required)
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: f1m-dev-m-smoke-cold-${{ github.run_id }}
@@ -102,6 +118,22 @@ jobs:
         run: |
           python -m tools.stage8f1m_independent_dev_cold "$RUNNER_TEMP/F1M_DEV_FULL_ORIGINAL.json.gz" --output "$RUNNER_TEMP/F1M_DEV_FULL_COLD.json"
           test -s "$RUNNER_TEMP/F1M_DEV_FULL_COLD.json"
+          python - <<'PY'
+          import json,os,pathlib
+          report=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"F1M_DEV_FULL_COLD.json").read_bytes())
+          summary=report["summary"]
+          required={"valid_source":8,"t5_equal_paid":8,
+                    "t6_equal_paid":16,"sham_valid":8}
+          assert report["phase"]=="DEV_ONLY_NEVER_SCIENTIFIC"
+          assert report["experimental_origin_count"]==8
+          assert report["development_status"] in (
+            "DEV_ONLY_MOTOR_EFFECT_OBSERVED_NOT_SCIENCE",
+            "DEV_ONLY_NO_MOTOR_EFFECT_NOT_SCIENCE")
+          assert all(summary[k]==v for k,v in required.items()), (summary,required)
+          assert all(row["root"].startswith("DEV_M") for row in report["per_root"])
+          assert report["source_F1L_heldouts_created"]==0
+          print("F1M_DEV_COLD_GATES_PASS",report["experimental_origin_count"],required)
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: f1m-dev-m-full-cold-${{ github.run_id }}
@@ -152,6 +184,22 @@ jobs:
           set -euo pipefail
           python -m tools.stage8f1m_independent_dev_cold "$RUNNER_TEMP/F1M_DEV_REPLICA2_ORIGINAL.json.gz" --output "$RUNNER_TEMP/F1M_DEV_REPLICA2_COLD.json"
           test -s "$RUNNER_TEMP/F1M_DEV_REPLICA2_COLD.json"
+          python - <<'PY'
+          import json,os,pathlib
+          report=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"F1M_DEV_REPLICA2_COLD.json").read_bytes())
+          summary=report["summary"]
+          required={"valid_source":8,"t5_equal_paid":8,
+                    "t6_equal_paid":16,"sham_valid":8}
+          assert report["phase"]=="DEV_ONLY_NEVER_SCIENTIFIC"
+          assert report["experimental_origin_count"]==8
+          assert report["development_status"] in (
+            "DEV_ONLY_MOTOR_EFFECT_OBSERVED_NOT_SCIENCE",
+            "DEV_ONLY_NO_MOTOR_EFFECT_NOT_SCIENCE")
+          assert all(summary[k]==v for k,v in required.items()), (summary,required)
+          assert all(row["root"].startswith("DEV_MR") for row in report["per_root"])
+          assert report["source_F1L_heldouts_created"]==0
+          print("F1M_DEV_COLD_GATES_PASS",report["experimental_origin_count"],required)
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: f1m-dev-m-replica2-cold-${{ github.run_id }}
