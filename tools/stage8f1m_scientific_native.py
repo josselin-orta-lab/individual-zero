@@ -140,7 +140,7 @@ def _one(grid, origin, writer, admission):
                              L.semantic_sham_step(row["content_t5"]["recent"]))
     row["comparison"]["equal_t5_real_decision_cost"]=M.t5_pair_cost(
          row["content_t5"]["recent"],row["content_t5"]["stale"])
-    for content in CONTENT:
+    for content in M.CONTENT:
         a_world,a_mind=t5_states[content]
         for mode in M.RESIDUAL:
             key=content+"/"+mode
@@ -150,7 +150,7 @@ def _one(grid, origin, writer, admission):
                    "followup":_followup(world_i,mind_i,key,grid["final_tick"])}
             writer.part(origin["id"], key.replace("/", "_"), row["arms"][key])
             # Repeat the SAME nonmotor operation, with a freshly cloned native
-            # T5 state. No fictitious CognitiveWork or physics, no seeded L life.
+            # T5 state. No fictitious CognitiveWork or physics, no seeded M scientific life outside admission.
             world_s,mind_s=deepcopy(a_world),deepcopy(a_mind)
             fork_sham=M.residual_intervention(mind_s,mode)
             same=(fork==fork_sham)
