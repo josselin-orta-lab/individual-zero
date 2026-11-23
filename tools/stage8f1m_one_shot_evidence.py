@@ -125,6 +125,14 @@ def _archive(root,names,dest):
         os.fsync(fd.fileno())
 
 
+def file_digest(path):
+    hasher=sha256()
+    with Path(path).open("rb") as inp:
+        for chunk in iter(lambda: inp.read(1024*1024),b""):
+            hasher.update(chunk)
+    return hasher.hexdigest()
+
+
 def finish(writer,index,root,reservation):
     root=Path(root)
     if (len(writer.completed)!=len(writer.expected) or
@@ -145,7 +153,7 @@ def finish(writer,index,root,reservation):
         "roots":writer.completed,"original_part_count":len(writer.entries),
         "part_names":list(PARTS),"entries":writer.entries,
         "checkpoint_count":len(writer.completed),
-        "originals_tar_gzip_sha256":digest(dest.read_bytes()),
+        "originals_tar_gzip_sha256":file_digest(dest),
         "native_index_sha256":digest(canonical(index)),
         "canonical_readback_sha256":digest(canonical(readback)),
         "byte_equal_readback_no_second_native":canonical(index)==canonical(readback),
@@ -157,7 +165,7 @@ def finish(writer,index,root,reservation):
     return manifest
 
 
-def read_bundle(root,expected_ids):
+def read_bundle(root,expected_ids,on_root):
     """Cold byte reader. Every named original part SHA must match the manifest."""
     root=Path(root)
     m=json.loads((root/"F1M_CUSTODY_MANIFEST.json").read_bytes())
@@ -176,14 +184,19 @@ def read_bundle(root,expected_ids):
             or m["heldout_native_passes"]!=1):
         raise ValueError("F1M science custody, one-pass, index or canonical readback invalid")
     archive=root/"F1M_ORIGINALS_384_GZIP.tar.gz"
-    if digest(archive.read_bytes())!=m["originals_tar_gzip_sha256"]:
+    if file_digest(archive)!=m["originals_tar_gzip_sha256"]:
         raise ValueError("F1M aggregate original archive changed")
     required={f"{id_}/{part}.json.gz" for id_ in expected_ids for part in PARTS}
     required|={f"_checkpoint_{i:02}.json" for i in range(1,len(expected_ids)+1)}
     expected={e["path"]:e for e in m["entries"]}
     if len(expected)!=12*len(expected_ids):
         raise ValueError("duplicate original source path")
-    records={r["id"]:{} for r in index["rows"]}
+    if [r["origin"]["id"] for r in index["rows"]]!=list(expected_ids):
+        raise ValueError("F1M native index does not bind 32 literal sources")
+    if not callable(on_root):
+        raise ValueError("streamed per-root cold callback mandatory")
+    active={}
+    emitted=[]
     with tarfile.open(archive,"r|gz") as tar:
         seen=set()
         for item in tar:
@@ -213,10 +226,23 @@ def read_bundle(root,expected_ids):
                     or part["id"]!=entry["id"] or part["part"]!=entry["part"]
                     or name!=f"{part['id']}/{part['part']}.json.gz"):
                 raise ValueError("wrong F1M native original part identity")
-            records[part["id"]][part["part"]]=part["native"]
+            id_=part["id"]
+            if id_!=expected_ids[len(emitted)]:
+                raise ValueError("F1M tar identity out of order")
+            if part["part"] in active:
+                raise ValueError("duplicate original native part within source")
+            active[part["part"]]=part["native"]
+            if len(active)==len(PARTS):
+                if set(active)!=set(PARTS):
+                    raise ValueError("F1M missing T5, source or sham original")
+                on_root(index["rows"][len(emitted)],dict(active))
+                emitted.append(id_)
+                active.clear()
         if seen!=required:
             raise ValueError("missing F1M original native gzip: "+str(required-seen))
-    return index,m,records
+    if emitted!=list(expected_ids) or active:
+        raise ValueError("F1M cold audit omitted native root")
+    return index,m,len(emitted)
 
 
 def run(base,reservation_path):
