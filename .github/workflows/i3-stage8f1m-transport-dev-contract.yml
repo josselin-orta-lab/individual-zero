@@ -1,0 +1,32 @@
+# DEV_M source only, validates the scientific-shaped production and cold audit.
+name: I3 Stage8-F1M transport DEV_M native scientific-contract check
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'tools/stage8f1m_scientific_native.py'
+      - 'tools/stage8f1m_one_shot_evidence.py'
+      - 'tools/stage8f1m_independent_scientific_cold.py'
+      - 'tests/test_stage8f1m_science_transport_dev_contract.py'
+      - '.github/workflows/i3-stage8f1m-transport-dev-contract.yml'
+permissions:
+  contents: read
+jobs:
+  f1m_dev_only_native_cold_science_shape:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'feat/i3-stage8-f1m-scientific-transport-20261123' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: One DEV_M seed, 12 original gzip, actual paid T6..T60, engine-free cold
+        env:
+          PYTHONPATH: src:.
+        run: |
+          set -euo pipefail
+          python -m unittest -v tests.test_stage8f1m_science_transport_dev_contract
