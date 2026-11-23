@@ -1,0 +1,91 @@
+# Isolated F1L administrative preflight. NEVER merge: keep approved main tree frozen.
+# No checkout, no scientific producer, no claim, no World.step, no write requests.
+name: I3 F1L protection read-only preflight
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+    paths:
+      - '.github/workflows/i3-stage8f1l-protection-readonly-audit.yml'
+permissions:
+  contents: read
+jobs:
+  immutable_and_ref_audit:
+    if: \${{ github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'audit/f1l-admin-readonly-preflight-20261123' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      F1L_AUDIT_TOKEN: \${{ secrets.F1L_PROTECTION_AUDIT_TOKEN }}
+    steps:
+      - name: Verify immutable releases, read-only ruleset and no consumed ref
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import sys
+          from urllib.error import HTTPError, URLError
+          from urllib.request import Request, urlopen
+
+          REPO = "josselin-orta-lab/individual-zero"
+          API = "https://api.github.com/repos/" + REPO + "/"
+          RULESET_ID = 27863895
+          CONSUMED = "refs/heads/i3-stage8-f1l-heldout-consumed-once"
+          FROZEN_MAIN = "9c40f01684f5e69c893d765aa41cad1af1d33532"
+          token = os.environ.get("F1L_AUDIT_TOKEN", "")
+          if not token:
+              print("F1L_AUDIT=FAIL: Actions secret absent or empty")
+              sys.exit(1)
+
+          def get(path, *, admin=False):
+              headers = {
+                  "Accept": "application/vnd.github+json",
+                  "X-GitHub-Api-Version": "2026-03-10",
+                  "User-Agent": "i3-f1l-preflight-readonly",
+              }
+              if admin:
+                  headers["Authorization"] = "Bearer " + token
+              req = Request(API + path, headers=headers, method="GET")
+              try:
+                  with urlopen(req, timeout=25) as response:
+                      return response.status, json.loads(response.read())
+              except HTTPError as err:
+                  return err.code, None
+              except URLError:
+                  return 0, None
+
+          code, policy = get("immutable-releases", admin=True)
+          if code != 200 or not isinstance(policy, dict) or policy.get("enabled") is not True:
+              print("F1L_AUDIT=FAIL: immutable releases API GET HTTP", code,
+                    "; enabled=true not established")
+              sys.exit(1)
+          print("F1L_AUDIT_RELEASES=PASS: authenticated Administration-read API HTTP 200, enabled=true")
+
+          code, ruleset = get("rulesets/" + str(RULESET_ID))
+          rules = {r.get("type") for r in (ruleset or {}).get("rules", [])}
+          cond = (ruleset or {}).get("conditions", {}).get("ref_name", {})
+          if not (code == 200
+                  and ruleset.get("enforcement") == "active"
+                  and ruleset.get("source_type") == "Repository"
+                  and ruleset.get("target") == "branch"
+                  and cond.get("include") == [CONSUMED]
+                  and cond.get("exclude") == []
+                  and ruleset.get("bypass_actors") == []
+                  and {"deletion", "non_fast_forward", "update"} <= rules):
+              print("F1L_AUDIT=FAIL: ruleset exact protection unverified; HTTP", code)
+              sys.exit(1)
+          print("F1L_AUDIT_RULESET=PASS: active exact-ref no-bypass deletion/update/non-fast-forward")
+
+          code, ref = get("git/ref/heads/i3-stage8-f1l-heldout-consumed-once")
+          if code != 404:
+              print("F1L_AUDIT=FAIL: consumed ref absent not established; HTTP", code)
+              sys.exit(1)
+          print("F1L_AUDIT_RESERVATION=PASS: consumed ref absent (HTTP 404)")
+
+          code, main = get("git/ref/heads/main")
+          if code != 200 or main.get("object", {}).get("sha") != FROZEN_MAIN:
+              print("F1L_AUDIT=FAIL: approved main SHA changed; HTTP", code)
+              sys.exit(1)
+          print("F1L_AUDIT_SOURCE=PASS: source main unchanged")
+          print("F1L_AUDIT=PASS; all requests GET; native heldout World.step=0; no reservation")
+          PY
