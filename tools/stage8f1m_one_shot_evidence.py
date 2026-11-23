@@ -257,6 +257,13 @@ def run(base,reservation_path):
     writer=CaseWriter(base/"original_parts",R.ROOT_IDS)
     index=P.produce_release(reservation_path,writer)
     manifest=finish(writer,index,base,receipt)
+    # Independent byte readback of EVERY gzip before removing duplicate
+    # unbundled copies. Archive preserves all 384 original bytes permanently.
+    _,_,checked=read_bundle(base,R.ROOT_IDS,lambda meta,parts: None)
+    if checked!=32:
+        raise RuntimeError("original bytes not intact at first-only readback")
+    import shutil
+    shutil.rmtree(writer.base)
     print(json.dumps({
         "status":"F1M_FIRST_ONLY_NATIVE_NOT_YET_COLD_AUDITED",
         "origins":len(writer.completed),"original_gzip_parts":len(writer.entries),
