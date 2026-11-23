@@ -77,6 +77,8 @@ REQUIRED_DEV_JOBS = {
     "dev_m_smoke_cold_py312",
     "dev_m_full_t60",
     "dev_m_full_t60_cold_py312",
+    "dev_m_replica2_full_t60",
+    "dev_m_replica2_full_t60_cold_py312",
 }
 
 
@@ -251,15 +253,15 @@ def verify_prior_rehearsal(ctx, current_tree_sha, run_id):
             and run.get("path") == DEV_WORKFLOW
             and run.get("repository", {}).get("full_name") == REPO
             and bool(re.fullmatch(r"[0-9a-f]{40}", sha)),
-            "prior successful full DEV_M T60 engineering source run missing")
+            "full same-tree DEV_M and disjoint DEV_MR source run required")
     jobs = _api("GET", "/actions/runs/" + run_id
                 + "/jobs?per_page=100")
     passed = {j.get("name") for j in jobs.get("jobs", [])
               if j.get("status") == "completed"
               and j.get("conclusion") == "success"}
     require(REQUIRED_DEV_JOBS <= passed,
-            "DEV_M native T60, engine-free cold T60, smoke + adversarial checks "
-            "did not all pass")
+            "DEV_M + disjoint DEV_MR native and engine-free cold T60, smoke and tests "
+            "did not all PASS")
     prior_commit = _api("GET", "/git/commits/" + sha)
     require(prior_commit.get("tree", {}).get("sha") == current_tree_sha,
             "DEV_M was audited on a DIFFERENT Git source tree")
