@@ -1,0 +1,37 @@
+# F1M preregistration-only checks. NEVER executes the engine or any Mxx roots.
+name: I3 F1M preregistration static no-exposure guard
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'docs/research/studies/stage8f1-paid-microdecision/STAGE8F1M_INDEPENDENT_RESIDUAL_MOTOR_ADAPTIVE_*'
+      - 'tools/stage8f1m_prereg_static_guard.py'
+      - 'tests/test_stage8f1m_prereg_static_guard.py'
+      - '.github/workflows/i3-stage8f1m-prereg-no-exposure.yml'
+permissions:
+  contents: read
+jobs:
+  prereg_literal_source_and_boundaries:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'prereg/i3-stage8-f1m-independent-motor-adaptation-20261123' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate exact preregistered Git blobs, sources, criteria and 32 roots
+        env:
+          PYTHONPATH: .
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1m_prereg_static_guard
+      - name: Reject source, seeds, science authorization and threshold tampering
+        env:
+          PYTHONPATH: .
+        run: |
+          set -euo pipefail
+          python -m unittest -v tests.test_stage8f1m_prereg_static_guard
