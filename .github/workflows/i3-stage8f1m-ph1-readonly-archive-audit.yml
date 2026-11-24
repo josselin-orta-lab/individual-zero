@@ -1,0 +1,105 @@
+# PH1 = POSTHOC READ ONLY. This workflow must NEVER import I3 World/Mind or
+# dispatch the scientific F1M one-shot. Its only persistent output is PR checks.
+name: I3 Stage8-F1M PH1 archive-only threshold witness verification
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'tools/stage8f1m_ph1_archival_thresholds.py'
+      - 'tests/test_stage8f1m_ph1_archival_thresholds.py'
+      - '.github/workflows/i3-stage8f1m-ph1-readonly-archive-audit.yml'
+      - 'docs/research/studies/stage8f1-paid-microdecision/data/STAGE8F1M_PH1_THRESHOLD_ARCHIVE_ANALYSIS_2026-11-24.json'
+      - 'docs/research/studies/stage8f1-paid-microdecision/STAGE8F1M_PH1_POSTHOC_THRESHOLD_COMPETITION_2026-11-24.md'
+
+permissions:
+  contents: read
+
+jobs:
+  ph1_engine_free_unit_py312:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: No engine imports, adversarial threshold witness tests
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_stage8f1m_ph1_archival_thresholds.py' -v
+          python -m py_compile tools/stage8f1m_ph1_archival_thresholds.py
+      - name: Check archived PH1 report format WITHOUT any native execution
+        run: |
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          p=Path("docs/research/studies/stage8f1-paid-microdecision/data/STAGE8F1M_PH1_THRESHOLD_ARCHIVE_ANALYSIS_2026-11-24.json")
+          raw=p.read_bytes()
+          assert hashlib.sha256(raw).hexdigest()=="ed4adcbef9b93527c74f87de67de412e1e377bae2933ad910f03148bd455ff23"
+          d=json.loads(raw)
+          assert d["native_world_steps_created"]==0
+          assert d["summary"]["nonzero_R_pairs"]==40
+          assert d["summary"]["pairs_different_early_round_threshold_leader"]==10
+          assert d["summary"]["pairs_different_final_threshold_candidate_set"]==0
+          assert d["summary"]["pairs_motor_changed_any_T6_T60"]==0
+          assert len(d["pairs"])==64
+          print("PH1_ARCHIVE_STATIC_PASS_NO_NEW_WORLD_STEP")
+          PY
+
+  ph1_original_release_readonly_full_cold_py312:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: read
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Require both immutable original Releases and same consumed ref
+        shell: bash
+        run: |
+          set -euo pipefail
+          for tag in i3-stage8f1m-t60-raw-heldout-once i3-stage8f1m-t60-cold-heldout-once; do
+            test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" --jq .immutable)" = true
+            test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" --jq .target_commitish)" = f6e213ca197c432b03907c3d8999ddf10bcac809
+          done
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/i3-stage8-f1m-heldout-consumed-once" --jq '.object.sha')" = f6e213ca197c432b03907c3d8999ddf10bcac809
+      - name: Fetch ONLY previously sealed native RAW and independent COLD (GET)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/PH1_RAW" "$RUNNER_TEMP/PH1_COLD"
+          gh release download i3-stage8f1m-t60-raw-heldout-once --repo "$GITHUB_REPOSITORY" --pattern 'F1M_ORIGINALS_384_GZIP.tar.gz' --pattern 'F1M_CUSTODY_MANIFEST.json' --dir "$RUNNER_TEMP/PH1_RAW"
+          gh release download i3-stage8f1m-t60-cold-heldout-once --repo "$GITHUB_REPOSITORY" --pattern 'F1M_INDEPENDENT_COLD_T60.json' --dir "$RUNNER_TEMP/PH1_COLD"
+      - name: Verify original SHA + 384 gzip + 128 decoded arms + 32 checkpoints + all 55 round witnesses
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "4e4888d00d5494f071d84d469e26f62d497dba8ce390bbe01101607a018992bc  $RUNNER_TEMP/PH1_RAW/F1M_ORIGINALS_384_GZIP.tar.gz" | sha256sum -c -
+          echo "47ad255aaac32756a1777cbecfe4d3356b58beee4b7e4b1aaf403612a961a4af  $RUNNER_TEMP/PH1_RAW/F1M_CUSTODY_MANIFEST.json" | sha256sum -c -
+          echo "85cc44b84075321f96114b14e8d1c6b52b592e0c44e8cb40180b568e9c1c8791  $RUNNER_TEMP/PH1_COLD/F1M_INDEPENDENT_COLD_T60.json" | sha256sum -c -
+          python -m tools.stage8f1m_ph1_archival_thresholds \
+            --raw-tar "$RUNNER_TEMP/PH1_RAW/F1M_ORIGINALS_384_GZIP.tar.gz" \
+            --manifest "$RUNNER_TEMP/PH1_RAW/F1M_CUSTODY_MANIFEST.json" \
+            --cold-report "$RUNNER_TEMP/PH1_COLD/F1M_INDEPENDENT_COLD_T60.json" \
+            --output "$RUNNER_TEMP/PH1_ANALYSIS.json"
+          echo "ed4adcbef9b93527c74f87de67de412e1e377bae2933ad910f03148bd455ff23  $RUNNER_TEMP/PH1_ANALYSIS.json" | sha256sum -c -
+          cmp "$RUNNER_TEMP/PH1_ANALYSIS.json" "docs/research/studies/stage8f1-paid-microdecision/data/STAGE8F1M_PH1_THRESHOLD_ARCHIVE_ANALYSIS_2026-11-24.json"
+          echo PH1_IMMUTABLE_RELEASE_BYTES_RECONSTRUCTED_EXACTLY_NO_NEW_BIRTH
+      - name: Preserve tiny independent replay status, no original mutation
+        if: ${{ success() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: f1m-ph1-posthoc-threshold-archive-readonly-${{ github.run_id }}
+          path: ${{ runner.temp }}/PH1_ANALYSIS.json
+          if-no-files-found: error
+          retention-days: 30
