@@ -1,0 +1,100 @@
+# Temporary PR-only check. It checks out the frozen MAIN scientific source.
+# DO NOT MERGE this file. No M01..M32 World.step, Git write, or scientific dispatch.
+name: I3 F1M read-only protection and release-immutability preflight
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+    paths:
+      - '.github/workflows/f1m-readonly-protection-check.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  f1m_preflight_without_exposure:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'audit/f1m-readonly-protection-preflight-20261124' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      PYTHONPATH: '.'
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      F1L_PROTECTION_AUDIT_TOKEN: ${{ secrets.F1L_PROTECTION_AUDIT_TOKEN }}
+    steps:
+      - name: Checkout exact scientific main, not PR source
+        uses: actions/checkout@v4
+        with:
+          ref: a0d063402cad87d6dd255e2f842586b8f8f95267
+          persist-credentials: false
+      - name: Configure Python 3.12 (no native engine)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate frozen preregistered source, zero M births
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1m_prereg_static_guard
+          python -m tools.stage8f1m_one_shot_reservation --readonly-pins
+      - name: Read-only exact ruleset + admin release policy + same-tree rehearsals
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,subprocess
+          from tools import stage8f1m_one_shot_reservation as R
+
+          def require(test, reason):
+              if not test:
+                  raise AssertionError("F1M PREFLIGHT FAIL: "+reason)
+
+          main_sha="a0d063402cad87d6dd255e2f842586b8f8f95267"
+          tree_sha="36d508a69c78510c0dc6dbd5cabafc1169ca8a55"
+          require(subprocess.check_output(
+              ["git","rev-parse","HEAD"],text=True).strip()==main_sha,
+              "checkout not exactly scientific main")
+          require(subprocess.check_output(
+              ["git","rev-parse","HEAD^{tree}"],text=True).strip()==tree_sha,
+              "source tree differs from 2 approved DEV_M audits")
+          source=R.source_blobs()
+          require(len(source)==19,"frozen transport source path set changed")
+          protection=R.protected_once_ruleset()
+          require(protection["included_ref"]==
+                  "refs/heads/i3-stage8-f1m-heldout-consumed-once",
+                  "rule not targeted to exact create-only claim branch")
+          policy=R.immutable_release_policy()
+          require(policy=={"enabled":True},"current immutable release policy missing")
+          remote=R._api("GET","/git/ref/heads/main")
+          require(remote["object"]["sha"]==main_sha,
+                  "main advanced since prior verified rehearsal")
+          for run in ("45200306052","45201529355"):
+              R.verify_prior_rehearsal({},tree_sha,run)
+
+          def require_absent(path):
+              try:
+                  R._api("GET",path)
+              except R.ReservationError as exc:
+                  require("HTTP 404" in str(exc),
+                          "ambiguous absence for "+path)
+              else:
+                  raise AssertionError("F1M PREFLIGHT FAIL: already exists "+path)
+
+          require_absent("/git/ref/heads/i3-stage8-f1m-heldout-consumed-once")
+          require_absent("/releases/tags/i3-stage8f1m-t60-raw-heldout-once")
+          require_absent("/releases/tags/i3-stage8f1m-t60-cold-heldout-once")
+          print(json.dumps({
+              "status":"F1M_PROTECTION_PREFLIGHT_PASS_NO_EXPOSURE",
+              "main_sha":main_sha,"tree_sha":tree_sha,
+              "F1M_ruleset_id":protection["id"],
+              "F1M_bypass_actors":protection["bypass_actors"],
+              "ref_absent":True,
+              "immutable_release_policy":policy,
+              "rehearsals":["45200306052","45201529355"],
+              "scientific_release_tags_absent":True,
+              "frozen_source_blobs_verified":len(source),
+              "new_scientific_world_steps":0,
+              "claim_created":False,
+              "scientific_launch_authorized":False
+          },sort_keys=True))
+          PY
