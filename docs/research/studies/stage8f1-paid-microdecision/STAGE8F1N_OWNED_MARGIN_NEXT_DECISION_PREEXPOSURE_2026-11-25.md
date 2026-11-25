@@ -1,0 +1,83 @@
+# Stage8-F1N | Préenregistrement prospectif de la marge décisionnelle personnelle à T5 et de son emploi à T6
+
+**Date du protocole : 25 novembre 2026. Statut : `PREEXPOSURE_ONLY_NO_F1N_WORLD_STEP`.** Le protocole et sa grille littérale définissent une **nouvelle** étude, indépendante des graines et des vies de F1M. **Aucun individu N01..N48 n'a été créé.** Cette publication ne vaut ni autorisation de tir scientifique, ni preuve d'efficacité, ni validation du transport natif encore inexistant.
+
+## 1. Motivation explicite, limites de l'information préalable
+
+Cette étude est conçue **après avoir vu** le verdict F1M et son étude exploratoire F1M-PH1. F1M a effectivement consommé M01..M32 et validé 384 gzip ; les critères moteur, survie et Pareto y sont négatifs. Dans les 64 contrastes appariés de F1M, PH1 a observé **40/64** résidus non nuls, **21/64** modifications d'ensembles de franchissement de seuil pendant un tour, **10/64** modifications de candidats provisoires et **0/64** changements de sélection finale ou d'action motrice. Ce diagnostic PH1 est **post-hoc**, non indépendant. Il peut motiver F1N, jamais servir de preuve de F1N.
+
+La source préexistante au protocole est `main=1f2566ef803a43f1904c555b865e81318506a6fb` ; F1J gelé est le Git blob `0030bc957ef53800d95adcb617a98cb4c856ee5d`, Mind `a77ee89dcb65ea0d841d3cd71a64e539dc9fc445`, World `d9093953216d318c10b19c805d145dabb9c96abd`. Le protocole F1M (Git blob `342a6794ecd26789da82940c2d1f10e427e3979c`), la grille M (Git blob `659b72c2c5894a0ba89995a23419d66b61436465`), le marqueur de consommation M `f6e213ca197c432b03907c3d8999ddf10bcac809`, les Releases RAW/COLD F1M et Stage2 sont intouchables.
+
+## 2. Hypothèse falsifiable, nouvelle fonction et prédictions
+
+**H1 (moteur causal prospectif)** : le surplus de seuil **personnellement acquis** lors des cinq tours F1J financés à T5, enregistré grâce à une mémoire réellement facturée, peut, lorsqu'il est lu à coût égal à T6, modifier la compétition jusqu'à produire un **moteur autonome, admis et exécuté différent** de celui obtenu quand la seule amplitude de cette marge est masquée. Il ne s'agit ni de supposer un comportement à adopter, ni d'injecter une action, ni de créditer une intuition gratuite.
+
+**H2 (valeur adaptative distincte)** : cette utilisation d'une information de confiance peut modifier la durée de vie physique T6..T60 **favorablement** sans perte dans aucune des paires préallouées. H2 est testée séparément, même si H1 est négative.
+
+**H3 (corps seulement, exploratoire secondaire)** : à durée de vie comparable jusqu'à T60, la trace peut améliorer Pareto les cinq réserves corporelles ; un tel résultat ne remplace **jamais** H2.
+
+Les issues qui réfutent les seuils de H1/H2/H3 doivent être publiées à l'identique. Une modification des seuils cognitifs, un nouveau gagnant **avant Action Control**, une marge résiduelle conservée ou une différence de coût ne suffit **pas** à établir H1/H2.
+
+## 3. Cohorte préallouée, non exposée
+
+La grille littérale et **seule autorité sur les origines** est [STAGE8F1N_OWNED_MARGIN_NEXT_DECISION_PREEXPOSURE_GRID_2026-11-25.json](STAGE8F1N_OWNED_MARGIN_NEXT_DECISION_PREEXPOSURE_GRID_2026-11-25.json). Elle contient **N01..N48**, avec exactement les graines `202611259801..202611259848`, indépendantes de M01..M32 et des gammes historiques F1L/DEV_M/DEV_MR connues. **Avant tout tir,** le garde statique doit également vérifier l'absence de collision avec le registre complet des campagnes déjà utilisées. Un chevauchement réel bloque le protocole, sans réaffectation furtive.
+
+L'unité statistiquement indépendante est la **racine N**, pas le fork ni le sham. Les 48 racines utilisent **un même génotype `midpoint()`** : elles ne représentent donc pas 48 génotypes distincts. Elles se répartissent en huit écologies littérales (six racines chacune), selon : eau adjacente/diagonale × stock fini/renouvelé × nourriture sûre/amère. Géométrie 3×3, naissance [1,1], eau [1,0] ou [2,0], nourriture [0,2], mêmes `BodyLaws()` natives, sans changements programmés. **Nouvelle disponibilité préfixée** : eau initiale/maximale 2 unités (finie ou renouvelée tous les sept ticks), nourriture initiale/maximale 2 unités sans restock. Les six vecteurs corporels d'origine sont définis littéralement dans la grille et croisés exactement avec chaque écologie. Les contextes restent proches de F1M, avec pénurie légèrement accrue ; il est interdit de présenter cette étude comme un test de généralisation à tous les mondes.
+
+Aucun monde, individu, état corporel, graine, action ni critère ne peut être ajouté ou supprimé après observation des résultats de développement ; aucune racine de remplacement si une source est morte, non financée ou non reproductible.
+
+## 4. Nouvelle trace de confiance **personnellement calculée et payée**
+
+Le producteur F1N **n'existe pas lors de ce préenregistrement**. Il devra implémenter une extension opt-in du `F1JFixedRoundMind`, sans modifier le F1J historique ni `Mind` P1.3. Le calcul interne de chaque compétition conserve tous les tours F1J autorisés et financés. En particulier, pour chaque option o scorée, le `Mind` lui-même calcule au dernier tour financé `s(o)=(A(o)-theta(o))/theta(o)` avec les **véritables** activateurs et seuils, après les transitions substantives `max(0,0.8*A+evidence)`.
+
+À T5, le sujet calcule sa marge gagnante `m=s(w)-max_{j!=w}s(j)`, où w est le gagnant F1J déterminé par la compétition **native**. Il borne ensuite `q=clip(m,0,1)`. **q=0** si le gagnant n'a pas franchi son seuil, si aucune autre option n'est scorée ou si la commande retenue n'a pas été réellement admise et exécutée. Aucun témoin `observer` réservé au laboratoire ne peut être utilisé pour produire q ; la valeur doit provenir des propres accumulateurs du sujet. La marque doit conserver la **clé de l'option gagnante** et la **valeur q**, toutes deux produites par l'individu.
+
+La séquence temporelle obligatoire est : (1) compétition T5 et décision libre avec vrai travail financé ; (2) Action Control et `World.step` authentiques ; (3) apprentissage postaction effectivement payé ; (4) **écriture dans la mémoire privée**, à partir de la marge que le sujet avait conservée depuis sa décision, en payant réellement **`CognitiveWork(memory_items=1)`** sur les ressources corporelles de T5 après l'action, **avant** le fork T6. Cette écriture crée une vraie dépense énergétique et de vigilance documentée ; elle n'est ni observateur gratuit, ni paiement simulé. Si elle n'est pas entièrement autorisée/débitée, la source est invalide pour l'étude entière. Le premier comportement libre de l'individu a lieu sans que l'expérience ne lui dicte une commande.
+
+Tous les autres apprentissages et états privés restent natifs. Les racines commencent à T0 sans mémoire apprise, sans valeur TD acquise, avec `EffectsModel.stats={}` et tampon vide. T1..T4 est une expérience personnelle réellement vécue et financée. À T5, même les q nuls ou les décisions peu compétitives sont **conservés** dans les 48 dénominateurs.
+
+## 5. Contraste causal unique à T6 et continuations T6..T60
+
+Après le véritable T5, seul **un fork** est effectué par racine, avec copie identique du corps, du monde, des lois, de toutes les clés et valeurs privées, des RNG et de la trace personnelle payée. Les deux branches exécutent elles-mêmes la lecture mémoire de **1 item réellement facturé** et ses décisions natives.
+
+- **`margin` :** après cette même lecture, si la clé personnelle w issue de T5 figure parmi les alternatives scorées à T6, appliquer à **ce seul seuil** `theta_margin(w)=theta_base(w)*(1-0.5*q)`, avec `theta_base(w)=1.5*(1-inertia si w==intention sinon 1)`. Tous les autres seuils, les options, les scores, l'évidence, l'activation initiale, les tours F1J, la facturation et Action Control sont inchangés.
+- **`masked` :** effectuer la **même lecture réellement payée**, conserver la clé w et tous les états privés, puis masquer **uniquement la valeur q en lecture locale à 0.0**, de sorte que `theta_masked=theta_base`. La trace q stockée demeure, sans réécriture. Le masquage fait partie du contraste expérimental sur la lecture d'information, pas d'un comportement imposé.
+
+Le coefficient **`kappa=0.5`** et le bornage `q∈[0,1]` sont fixés maintenant, **avant toute exposition F1N**. Il est interdit de les optimiser après lecture de N ou de les adapter aux résultats des prétests sans rédiger un **autre** préenregistrement. Un contrôleur sham indépendant pour chaque branche garantit que la copie et la mesure du fork n'ont pas changé les comportements. Un sham T5 réplique la source identique. Les **48 paires T6** et les **96 continuations sham** restent exhaustives, qu'un q soit nul, qu'une clé w ne soit plus proposée ou que le budget soit insuffisant.
+
+À **T7..T60**, le mécanisme direct de seuil `q` est **désactivé dans les deux bras** ; les trajectoires peuvent ensuite diverger naturellement selon les décisions, les coûts, l'apprentissage et les corps. Aucun ordre moteur n'est forcé. Interdiction de modifier l'aléa, les actions, les états corporels, les récompenses ou les coûts pour obtenir une parité artificielle. Une hausse de temps de réflexion facturé ne peut pas être masquée par du calcul fictif.
+
+Les 48 racines produiront **336 parties gzip natives originales** si la source et les branches sont toutes valides : par racine, source T1..4, T5 réel, sham T5, `margin`, `margin_sham`, `masked`, `masked_sham`. Les 4 continuations long-cours par origine sont des événements originaux et leurs propres factures, pas des reconstructions du moteur. Il n'existe **aucune** autorisation actuelle de les créer.
+
+## 6. Portes de validité avant verdict, sans réparation rétroactive
+
+1. **G0, antériorité/préexposition :** grille et ce protocole fusionnés dans `main`, SHA Git blob exact de chacun lié dans un garde statique sans moteur ; aucun N01..N48 né ; sources et moteur de référence octet-pinnés. Le producteur doit être développé seulement **après** le préenregistrement, avec tests de résistance et **au moins deux répétitions disjointes de développement**, chacune validée à froid sur le même Git tree que la future source F1N finale. Aucun DEV Nxx et aucun remplacement Nxx.
+2. **G1, réservation unique et gardes distants :** nouveau ruleset actif sur **exactement** `refs/heads/i3-stage8-f1n-heldout-consumed-once`, sans `bypass_actors`, blocage `deletion/update/non_fast_forward`, création autorisée ; Releases immuables vérifiées via jeton Admin read-only ; branche non consommée avant première naissance ; autorisation **explicite, distincte et ultérieure** du propriétaire pour F1N ; `workflow_dispatch` **manuel uniquement**, `main`, SHA source approuvé, premier `run_attempt=1`, deux répétitions DEV vérifiées, création atomique du marqueur **avant** le premier `World.step`. Le moindre échec préclaim implique `HOLD_NO_EXPOSURE`.
+3. **G2, custodie native :** 48 sources, 48 T5, 48 shams T5, 96 bras + 96 shams T6..T60 et **336 gzip** avec SHA-256 des octets compressés et décodés, checkpoints incrémentaux, manifestes, conservation et Releases RAW/COLD immuables. Audit Python3.12 indépendant, en lecture seule, **sans importer ni exécuter le moteur**, reconstituant naissance, mémoire de marge, seuils, tous tours F1J, facturation, Action Control, moteurs et lois corporelles. Il conserve tous les échecs et originaux partiels même si la campagne ne finit pas.
+4. **G3, acquisition et contrôles sham :** 48/48 expériences T1..T5 personnelles **authentiques, payées et conservées**, 48/48 shams T5 neutres et 96/96 shams long-cours neutres. Aucune naissance synthétique. Un seul sham différent ou une seule écriture mémoire non financée suffit à classer le tir `INCONCLUSIVE_PAID_SOURCE_OR_SHAM`.
+5. **G4, parité des coûts à la décision causale T6 :** les **48/48 paires** doivent avoir exactement le même coût cognitif réel `cycles/simulated_steps/memory_items/replays/decision_remaining` et la même facture énergie/vigilance **demandée, débitée et impayée** (impayé=0), sans padding. Les deux bras ont payé chacun un accès à la mémoire, et les cinq tours F1J sont substantifs et réellement exécutés (dans la capacité corporelle réelle). Si au moins une comparaison ne passe pas, `INCONCLUSIVE_REAL_DECISION_COST`, aucun seuil M/A/B évalué en succès.
+6. **G5, intervention isolée et pertinente :** à T6 les états pré-décision doivent être identiques sauf la lecture locale de l'amplitude q dans le calcul du seuil ; le masquage ne peut ni effacer le record, ni toucher à l'accumulateur `Mind.acc`, ni changer la liste d'alternatives ou les scores. Les paires où `q=0`, où la clé w n'est plus proposée ou où les seuils restent identiques font **partie des 48**, sans filtre. Le nombre de manipulations effectives sera **rapporté**, pas utilisé pour redéfinir le dénominateur.
+
+En cas de problème G1/G2/G3/G4/G5 après création du claim, verdict de qualité explicitement `INCONCLUSIVE_...` et **aucune seconde vie/ré-exécution N**. Un échec de budget ne devient ni décès ni économie de calcul. Aucun remplacement de source, de graine, de monde ou de critère, y compris en cas de résultat nul.
+
+## 7. Estimands, règles de succès et interprétation fixées AVANT naissance
+
+**48 paires, 48 individus indépendants, 8 écologies × 6.** Analyse exhaustive des N01..N48, matrice par paire, groupes par écologie et résultats globaux. Pas de filtrage par q non nul, par action, par survie, par disponibilité de clé, par coût observé ou par génotype. Aucune pseudoréplication des shams.
+
+| Estimand | Variable d'effet `margin - masked` | Succès opérationnel prospectif | Si seuil non atteint |
+|---|---|---|---|
+| **M, moteur T6** | Commande native admise et exécutée `(action,param)` différente | **≥8 racines** à moteur différent dans **≥3 écologies**, G0..G5 PASS | `NO_REPRODUCIBLE_LOCAL_T6_OWN_MARGIN_MOTOR_EFFECT` |
+| **A, persistance corporelle T6..T60** | `Δticks = vrais World.step vécus(margin) - vécus(masked)` | **≥8 racines** avec Δ>0 dans **≥3 écologies et aucune des 48 paires Δ<0**, G0..G5 PASS | `NO_REPRODUCIBLE_LOCAL_T60_OWN_MARGIN_SURVIVAL_ADVANTAGE` |
+| **B, corps terminal secondaire** | Différence à T60 des cinq réserves (`E,F,W,I,V`), uniquement si horizons comparables | Si **tous les Δticks=0** et corps comparables, **≥12 racines** avec dominance Pareto stricte dans ≥3 écologies, **aucune dominance inverse** ; rapport **BODY_ONLY**, jamais A | `NO_REPRODUCIBLE_LOCAL_T60_OWN_MARGIN_BODY_PARETO_SUPPORT` |
+
+Le succès M ne prouve pas A. Le succès A ne requiert pas M ; une commande peut avoir des effets indirects ou différés. Le succès B, même s'il existe, ne sera jamais nommé « avantage adaptatif de survie ». Les cas `None` ou veto sont documentés et ne sont pas des commandes « réussies ». Les statistiques d'activations, candidats, marges et seuils sont **secondaires** ; elles ne remplacent pas la lecture des commandes réellement exécutées. Les 48 paires déterminent la portée locale des résultats, pas une preuve générale de l'utilité de l'intelligence ou des mémoires.
+
+**Falsificateurs explicites :** 0..7 racines changées réfutent M selon le seuil préengagé, quelle que soit la significativité d'une analyse secondaire ; 0..7 gains ou **au moins une perte** réfutent A ; aucune dominance corporelle admissible ne vaut un avantage de survie. Si le mécanisme ne peut accéder à la trace sans facturation réelle ou ne maintient pas la stricte parité T6, le tir est **inconclusif** et ne doit jamais être réinterprété comme succès.
+
+## 8. Calendrier scientifique et autorisations
+
+**Étape autorisée aujourd'hui : PR de préenregistrement et tests statiques sans moteur seulement.** Après fusion, conserver les empreintes Git exactes et la preuve du préenregistrement avant toute exécution F1N. Ensuite seulement : implémentation logicielle opt-in, vérification de coût et sham sur **identités DEV_N distinctes**, deux répétitions sur même source tree, audit froid indépendant, création du ruleset GitHub F1N et du secret Admin read-only si besoin. Aucun test DEV ne consomme N01..N48.
+
+**Interdit maintenant :** `World.step` pour N01..N48, construction de vrais mondes N, workflow scientifique, `workflow_dispatch`, création de la branche consommée, modification F1M/F1L, changement de Stage2, falsification des coûts. Le propriétaire devra autoriser **séparément et explicitement** le tir scientifique unique F1N, après les contrôles techniques.
+
+**Décision du protocole : `F1N_PREREGISTRATION_ONLY_NO_SCIENTIFIC_EXPOSURE`.** Un échec au développement conduit à abandon ou protocole *nouveau* explicitement versionné, non à une révision cachée de la présente grille.
