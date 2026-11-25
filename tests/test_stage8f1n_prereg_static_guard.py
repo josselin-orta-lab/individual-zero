@@ -97,7 +97,7 @@ class TestF1NPreregNoExposure(unittest.TestCase):
                 for alias in node.names:
                     self.assertFalse(alias.name.startswith(("i3", "src.i3")))
         # No native transaction or scientific dispatch, even inside a test helper.
-        self.assertNotIn("world" + ".step(", src.lower())
+        self.assertFalse(any(isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) and n.func.attr == "step" for n in ast.walk(tree)))
         self.assertNotIn("workflow" + "_dispatch(", src.lower())
 
 
