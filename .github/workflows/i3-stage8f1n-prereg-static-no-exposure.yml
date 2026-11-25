@@ -1,0 +1,53 @@
+# F1N PREEXPOSURE ONLY. This workflow has NO workflow_dispatch, push,
+# schedule, permissions to write, or access to the native life generator.
+name: I3 Stage8-F1N preregistration static guard ZERO-BIRTH
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+    paths:
+      - '.github/workflows/i3-stage8f1n-prereg-static-no-exposure.yml'
+      - 'docs/research/studies/stage8f1-paid-microdecision/STAGE8F1N_OWNED_MARGIN_NEXT_DECISION_PREEXPOSURE_2026-11-25.md'
+      - 'docs/research/studies/stage8f1-paid-microdecision/STAGE8F1N_OWNED_MARGIN_NEXT_DECISION_PREEXPOSURE_GRID_2026-11-25.json'
+      - 'tools/stage8f1n_prereg_static_guard.py'
+      - 'tests/test_stage8f1n_prereg_static_guard.py'
+
+permissions:
+  contents: read
+
+jobs:
+  prereg_py312_no_native_exposure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check frozen F1N grid + protocol + F1J/P1.3 original source blobs, no births
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1n_prereg_static_guard
+          python -m unittest -v tests.test_stage8f1n_prereg_static_guard
+          python -m py_compile tools/stage8f1n_prereg_static_guard.py
+      - name: Verify documentation-only changes do not enable F1N science
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("docs/research/studies/stage8f1-paid-microdecision/STAGE8F1N_OWNED_MARGIN_NEXT_DECISION_PREEXPOSURE_GRID_2026-11-25.json")
+          g=json.loads(p.read_bytes())
+          assert g["design_exposure_state"]["scientific_exposure_authorized"] is False
+          assert g["design_exposure_state"]["scientific_workflow_dispatch_allowed"] is False
+          assert g["design_exposure_state"]["producer_implemented"] is False
+          assert g["design_exposure_state"]["birth_steps_performed"] == 0
+          assert len(g["origins"]) == 48
+          assert len(g["ecologies"]) == 8
+          assert len(g["native_original_parts_per_root"]) == 7
+          print("F1N_PREEXPOSURE_ONLY_DO_NOT_RUN_HELDOUT_SCIENCE")
+          PY
