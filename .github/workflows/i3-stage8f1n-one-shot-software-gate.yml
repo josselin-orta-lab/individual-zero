@@ -1,0 +1,88 @@
+# PR-only read-only F1N one-shot software/source/protection preflight. NO births.
+name: I3 Stage8-F1N scientific one-shot source/software gate ZERO-BIRTH
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'tools/stage8f1n_one_shot_*'
+      - 'tools/stage8f1n_scientific_native.py'
+      - 'tools/stage8f1n_independent_scientific_cold.py'
+      - 'tests/test_stage8f1n_one_shot_transport.py'
+      - '.github/workflows/i3-stage8f1n-one-shot-software-gate.yml'
+      - '.github/workflows/i3-stage8f1n-heldout-science-manual-once.yml'
+      - '.github/workflows/i3-stage8f1n-dev-native-two-repetitions.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  source_and_no_bypass_adversarial_python311:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: 'src:.'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Reproducible exact source SHA, prereg and no N01-N48 births
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1n_prereg_static_guard
+          python -m tools.stage8f1n_one_shot_reservation --readonly-pins
+          python -m unittest -v tests.test_stage8f1n_prereg_static_guard tests.test_stage8f1n_one_shot_transport
+          python -m py_compile tools/stage8f1n_scientific_native.py tools/stage8f1n_one_shot_evidence.py tools/stage8f1n_independent_scientific_cold.py
+          echo 'F1N_SCIENCE_TRANSPORT_SOFTWARE_ONLY_PASS_ZERO_BIRTH'
+
+  python312_cold_structural_and_inconclusive_gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: 'src:.'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Cold audit independence, 48 M/A/B thresholds, zero scientific reruns
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest -v tests.test_stage8f1n_one_shot_transport
+          python -m tools.stage8f1n_one_shot_reservation --readonly-pins
+          echo 'F1N_INDEPENDENT_COLD_SCIENTIFIC_SOFTWARE_CHECK_NO_BIRTH'
+
+  external_admin_ruleset_preflight_readonly:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: '.'
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      F1L_PROTECTION_AUDIT_TOKEN: ${{ secrets.F1L_PROTECTION_AUDIT_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: GET only admin protections; explicit HOLD if unavailable, never claim
+        shell: bash
+        run: |
+          set -euo pipefail
+          if python -m tools.stage8f1n_one_shot_reservation --readonly-admin; then
+            echo 'F1N_REMOTE_PROTECTION_READONLY_PASS_NO_EXPOSURE'
+          else
+            echo 'F1N_HOLD_REMOTE_ADMIN_PROTECTION_INCOMPLETE_NO_EXPOSURE'
+            echo 'READ ONLY: configure one exact F1N no-bypass ruleset and verify immutable Releases before any scientific dispatch.'
+          fi
+          echo 'F1N_ADMIN_PREFLIGHT_HAS_NOT_CREATED_A_REFERENCE'
