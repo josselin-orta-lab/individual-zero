@@ -1,0 +1,230 @@
+# F1N scientific 48 roots. MANUAL ONLY, first run_attempt, on exact reviewed main.
+# Creates protected ref BEFORE first World.step. Never PR, push, schedule or rerun.
+name: I3 Stage8-F1N one-shot 48 heldout original T60
+
+on:
+  workflow_dispatch:
+    inputs:
+      approved_source_sha:
+        description: Exact 40-hex approved main SHA (no whitespace)
+        type: string
+        required: true
+      consume_ack:
+        description: Type CONSUME_F1N_48_ROOTS_NO_SCIENTIFIC_RETRY
+        type: string
+        required: true
+      rehearsal_run_ids:
+        description: TWO independent successful six-job same-tree DEV_N run IDs, comma separated
+        type: string
+        required: true
+
+concurrency:
+  group: i3-stage8f1n-t60-irreversible-consumed-once
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  F1N_RAW_TAG: i3-stage8f1n-t60-raw-heldout-once
+  F1N_COLD_TAG: i3-stage8f1n-t60-cold-heldout-once
+
+jobs:
+  source_reservation_and_native_original:
+    if: ${{ github.run_attempt == 1 && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 210
+    permissions:
+      contents: write
+      actions: read
+    outputs:
+      consumed: ${{ steps.claim.outcome == 'success' }}
+    env:
+      PYTHONPATH: 'src:.'
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      F1L_PROTECTION_AUDIT_TOKEN: ${{ secrets.F1L_PROTECTION_AUDIT_TOKEN }}
+      F1N_APPROVED_SOURCE_SHA: ${{ inputs.approved_source_sha }}
+      F1N_CONSUME_ACK: ${{ inputs.consume_ack }}
+      F1N_REHEARSAL_RUN_IDS: ${{ inputs.rehearsal_run_ids }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Frozen F1N source, same-tree DEV and hostile software tests ONLY (zero N World.step)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1n_prereg_static_guard
+          python -m tools.stage8f1n_one_shot_reservation --readonly-pins
+          python -m unittest -v tests.test_stage8f1n_one_shot_transport
+      - name: Atomic CREATE-ONLY consumption of 48 N roots BEFORE first World.step
+        id: claim
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1n_one_shot_reservation --reserve "$RUNNER_TEMP/F1N_RESERVATION.json"
+      - name: Verify protected ref, immutable marker and run binding BEFORE any birth
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1n_one_shot_reservation --verify "$RUNNER_TEMP/F1N_RESERVATION.json"
+      - name: EXACTLY one native N01-N48 pass, 336 original gzip if complete, NEVER replay
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1n_one_shot_evidence --science-only --reservation "$RUNNER_TEMP/F1N_RESERVATION.json" --output-dir "$RUNNER_TEMP/f1n-originals"
+          python - <<'PY'
+          import json,os,pathlib
+          p=pathlib.Path(os.environ['RUNNER_TEMP'])/'f1n-originals/F1N_CUSTODY_MANIFEST.json'
+          m=json.loads(p.read_bytes())
+          assert len(m['roots'])==48 and m['original_part_count']==336
+          assert m['heldout_native_passes']==1
+          print('F1N_NATIVE_ORIGINAL_336_PASS_NEVER_REEXECUTE')
+          PY
+      - name: Preserve partial originals on EVERY error after irreversible claim
+        if: ${{ always() && steps.claim.outcome == 'success' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/f1n-preservation"
+          if [ ! -s "$RUNNER_TEMP/f1n-originals/F1N_CUSTODY_MANIFEST.json" ] && [ -d "$RUNNER_TEMP/f1n-originals/original_parts" ]; then
+            tar -C "$RUNNER_TEMP/f1n-originals" --sort=name --mtime='UTC 1970-01-01' --owner=0 --group=0 --numeric-owner -czf "$RUNNER_TEMP/f1n-preservation/F1N_PARTIAL_ORIGINAL_CASES.tar.gz" original_parts
+          fi
+          python - <<'PY'
+          import hashlib,json,os
+          from pathlib import Path
+          p=Path(os.environ['RUNNER_TEMP'])
+          paths=[p/'F1N_RESERVATION.json',p/'F1N_RESERVATION.NATIVE_START_LOCK']
+          paths+=sorted((p/'f1n-originals').glob('F1N_*')) if (p/'f1n-originals').exists() else []
+          paths+=sorted((p/'f1n-preservation').glob('F1N_*'))
+          hashes=[{'name':str(x.relative_to(p)),'size':x.stat().st_size,
+                   'sha256':hashlib.sha256(x.read_bytes()).hexdigest()}
+                  for x in paths if x.is_file()]
+          state={'schema':'i3-stage8f1n-emergency-preservation/v0',
+                 'run_id':os.environ['GITHUB_RUN_ID'],
+                 'protected_allocation_consumed':True,
+                 'originals':hashes,'native_retry_permitted':False}
+          (p/'f1n-preservation/F1N_PARTIAL_ORIGINAL_MANIFEST.json').write_text(
+             json.dumps(state,sort_keys=True)+'\n')
+          print(json.dumps({'preserved':len(hashes),'retry':False},sort_keys=True))
+          PY
+      - if: ${{ always() && steps.claim.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: f1n-once-native-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/F1N_RESERVATION.json
+            ${{ runner.temp }}/F1N_RESERVATION.NATIVE_START_LOCK
+            ${{ runner.temp }}/f1n-originals/
+            ${{ runner.temp }}/f1n-preservation/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Publish immutable RAW or PARTIAL originals, including if science failed
+        if: ${{ always() && steps.claim.outcome == 'success' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          RECEIPT="$RUNNER_TEMP/F1N_RESERVATION.json"
+          test -s "$RECEIPT"
+          RES_SHA=$(python -c 'import json,os,pathlib;print(json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"F1N_RESERVATION.json").read_bytes())["reservation_commit"])')
+          files=("$RECEIPT")
+          for p in "$RUNNER_TEMP/F1N_RESERVATION.NATIVE_START_LOCK" "$RUNNER_TEMP/f1n-originals"/F1N_* "$RUNNER_TEMP/f1n-preservation"/F1N_*; do
+            if [ -f "$p" ]; then files+=("$p"); fi
+          done
+          gh release create "$F1N_RAW_TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY" --target "$RES_SHA" --prerelease --latest=false --title 'i3 F1N 48-root first-only original or partial T60' --notes 'Atomic F1N claim consumed before N01 first World.step. 336 gzip if full, partial receipts if crash. No scientific retry and no external escrow.'
+          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$F1N_RAW_TAG" --jq .immutable)" = true
+
+  independent_python312_cold:
+    needs: source_reservation_and_native_original
+    if: ${{ github.run_attempt == 1 && needs.source_reservation_and_native_original.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 210
+    permissions:
+      contents: read
+      actions: read
+    env:
+      PYTHONPATH: '.'
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      F1L_PROTECTION_AUDIT_TOKEN: ${{ secrets.F1L_PROTECTION_AUDIT_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: f1n-once-native-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1n-original
+      - name: Cold independent 48 frozen WorldSpecs, full original SHA and real paid decisions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1n_one_shot_cold_entry "$RUNNER_TEMP/f1n-original" "$RUNNER_TEMP/f1n-cold"
+          sha256sum "$RUNNER_TEMP/f1n-cold"/F1N_*
+      - if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: f1n-once-cold-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1n-cold/
+          if-no-files-found: warn
+          retention-days: 90
+
+  final_immutable_cold_publication:
+    needs: [source_reservation_and_native_original, independent_python312_cold]
+    if: ${{ always() && github.run_attempt == 1 && needs.source_reservation_and_native_original.outputs.consumed == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      COLD_JOB_RESULT: ${{ needs.independent_python312_cold.result }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: f1n-once-native-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1n-raw-publish
+      - if: ${{ needs.independent_python312_cold.result == 'success' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: f1n-once-cold-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1n-cold-publish
+      - name: Publish independent cold verdict OR explicit failed-no-retry status
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/f1n-cold-publish"
+          python -m tools.stage8f1n_one_shot_publish_status --dir "$RUNNER_TEMP/f1n-cold-publish" --cold-job "$COLD_JOB_RESULT"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$F1N_RAW_TAG" --jq .immutable)" = true
+          RES_SHA=$(python -c 'import json,os,pathlib;print(json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"f1n-raw-publish/F1N_RESERVATION.json").read_bytes())["reservation_commit"])')
+          files=("$RUNNER_TEMP/f1n-raw-publish/F1N_RESERVATION.json" "$RUNNER_TEMP/f1n-cold-publish/F1N_FINAL_STATUS.json")
+          for p in "$RUNNER_TEMP/f1n-cold-publish"/F1N_*; do
+            if [ -f "$p" ] && [ "$p" != "$RUNNER_TEMP/f1n-cold-publish/F1N_FINAL_STATUS.json" ]; then files+=("$p"); fi
+          done
+          gh release create "$F1N_COLD_TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY" --target "$RES_SHA" --prerelease --latest=false --title 'i3 F1N independent cold verdict or no-retry inconclusion' --notes '48 independent preregistered roots, 336 original gzip if complete and fully funded. Separate fixed M/A/B verdicts issued ONLY by cold. Any failure is inconclusive with no repeat.'
+          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$F1N_COLD_TAG" --jq .immutable)" = true
+      - if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: f1n-once-terminal-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1n-cold-publish/
+          if-no-files-found: warn
+          retention-days: 90

@@ -11,13 +11,19 @@ on:
       - 'tools/stage8f1n_independent_dev_cold.py'
       - 'tests/test_stage8f1n_dev_transport.py'
       - '.github/workflows/i3-stage8f1n-dev-native-two-repetitions.yml'
+      - '.github/workflows/i3-stage8f1n-heldout-science-manual-once.yml'
+      - '.github/workflows/i3-stage8f1n-one-shot-software-gate.yml'
+      - 'tools/stage8f1n_one_shot_*'
+      - 'tools/stage8f1n_scientific_native.py'
+      - 'tools/stage8f1n_independent_scientific_cold.py'
+      - 'tests/test_stage8f1n_one_shot_transport.py'
 permissions:
   contents: read
   actions: read
 
 jobs:
   dev_n_safety_and_smoke:
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'feat/i3-stage8-f1n-paid-margin-dev-cold-transport-20261126' }}
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && (github.head_ref == 'feat/i3-stage8-f1n-paid-margin-dev-cold-transport-20261126' || github.head_ref == 'feat/i3-stage8-f1n-one-shot-science-transport-20261126' || github.head_ref == 'audit/i3-stage8-f1n-one-shot-second-cold-20261126') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -34,8 +40,8 @@ jobs:
         run: |
           set -euo pipefail
           python -m tools.stage8f1n_prereg_static_guard
-          python -m unittest -v tests.test_stage8f1n_dev_transport
-          python -m py_compile tools/stage8f1n_paid_margin_mind.py tools/stage8f1n_dev_native_transport.py tools/stage8f1n_independent_dev_cold.py
+          python -m unittest -v tests.test_stage8f1n_dev_transport tests.test_stage8f1n_one_shot_transport
+          python -m py_compile tools/stage8f1n_paid_margin_mind.py tools/stage8f1n_dev_native_transport.py tools/stage8f1n_independent_dev_cold.py tools/stage8f1n_one_shot_reservation.py tools/stage8f1n_scientific_native.py tools/stage8f1n_one_shot_evidence.py tools/stage8f1n_independent_scientific_cold.py tools/stage8f1n_one_shot_cold_entry.py tools/stage8f1n_one_shot_publish_status.py
           echo "DEV_N_F1N_RESERVED_N01_N48_NOT_BORN"
       - name: Native 2-root smoke only on DEV_NA, original 14 gzip
         shell: bash
