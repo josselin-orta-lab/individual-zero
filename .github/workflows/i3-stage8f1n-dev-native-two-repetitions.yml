@@ -1,0 +1,243 @@
+# F1N DEVELOPMENT ONLY. Two independent DEV_N populations, 0 N01..N48 births.
+# NEVER workflow_dispatch, push, schedule, release, or Git refs write.
+name: I3 Stage8-F1N two disjoint DEV native paid margin + cold T60
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'tools/stage8f1n_paid_margin_mind.py'
+      - 'tools/stage8f1n_dev_native_transport.py'
+      - 'tools/stage8f1n_independent_dev_cold.py'
+      - 'tests/test_stage8f1n_dev_transport.py'
+      - '.github/workflows/i3-stage8f1n-dev-native-two-repetitions.yml'
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  dev_n_safety_and_smoke:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'feat/i3-stage8-f1n-paid-margin-dev-cold-transport-20261126' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PYTHONPATH: 'src:.'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Frozen prospective F1N prereg source and 11 adversarial tests, NO N births
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1n_prereg_static_guard
+          python -m unittest -v tests.test_stage8f1n_dev_transport
+          python -m py_compile tools/stage8f1n_paid_margin_mind.py tools/stage8f1n_dev_native_transport.py tools/stage8f1n_independent_dev_cold.py
+          echo "DEV_N_F1N_RESERVED_N01_N48_NOT_BORN"
+      - name: Native 2-root smoke only on DEV_NA, original 14 gzip
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1n_dev_native_transport --cohort A --smoke --output-dir "$RUNNER_TEMP/f1n-smoke"
+          test "$(find "$RUNNER_TEMP/f1n-smoke" -name '*.json.gz' | wc -l)" = 14
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: f1n-dev-smoke-original-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1n-smoke/
+          if-no-files-found: warn
+          retention-days: 30
+
+  dev_na_native_t60:
+    needs: [dev_n_safety_and_smoke]
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    env:
+      PYTHONPATH: 'src:.'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Source tree SHA of this technical rehearsal
+        shell: bash
+        run: |
+          git rev-parse HEAD^{tree}
+          git rev-parse HEAD
+      - name: DEV_NA 8 authentic roots, 56 native original gzip, T5 paid write T6 paid read T60
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1n_dev_native_transport --cohort A --full --output-dir "$RUNNER_TEMP/f1n-na"
+          test "$(find "$RUNNER_TEMP/f1n-na" -name '*.json.gz' | wc -l)" = 56
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: f1n-dev-na-original-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1n-na/
+          if-no-files-found: warn
+          retention-days: 30
+
+  dev_nb_native_t60:
+    needs: [dev_n_safety_and_smoke]
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    env:
+      PYTHONPATH: 'src:.'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Source tree SHA of this technical rehearsal
+        shell: bash
+        run: |
+          git rev-parse HEAD^{tree}
+          git rev-parse HEAD
+      - name: DEV_NB 8 disjoint authentic roots, 56 native original gzip, no N01..N48
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1n_dev_native_transport --cohort B --full --output-dir "$RUNNER_TEMP/f1n-nb"
+          test "$(find "$RUNNER_TEMP/f1n-nb" -name '*.json.gz' | wc -l)" = 56
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: f1n-dev-nb-original-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1n-nb/
+          if-no-files-found: warn
+          retention-days: 30
+
+  dev_na_independent_cold_py312:
+    needs: [dev_na_native_t60]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      PYTHONPATH: '.'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: f1n-dev-na-original-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1n-na
+      - name: COLD independent, exact 56 SHA-verified originals + all T60 and sham, no engine import
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1n_independent_dev_cold --original-dir "$RUNNER_TEMP/f1n-na" --output "$RUNNER_TEMP/f1n-na-cold.json"
+          python - <<'PY'
+          import json,os,pathlib
+          p=pathlib.Path(os.environ['RUNNER_TEMP'])/'f1n-na-cold.json'
+          r=json.loads(p.read_bytes());s=r['summary']
+          assert r['roots']==8 and r['original_parts_verified']==56 and r['cohort']=='A'
+          assert r['DEV_only_technical_result']=='DEV_N_COLD_VALID_BUT_NOT_SCIENTIFIC'
+          assert r['f1n_scientific_heldouts_exposed']==0
+          assert all(s[k]==v for k,v in {'source_valid':8,'t5_sham_neutral':8,
+                 't6_equal_cost':8,'long_shams_neutral':16,
+                 'real_t5_margin_writes':16,'real_t6_margin_reads':8,
+                 'real_t6_masked_reads':8}.items()),s
+          print('DEV_NA_INDEPENDENT_COLD_PASS_NO_F1N_EXPOSURE',s)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: f1n-dev-na-cold-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1n-na-cold.json
+          retention-days: 60
+          if-no-files-found: error
+
+  dev_nb_independent_cold_py312:
+    needs: [dev_nb_native_t60]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      PYTHONPATH: '.'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: f1n-dev-nb-original-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1n-nb
+      - name: COLD independent, exact 56 SHA-verified originals + all T60 and sham
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1n_independent_dev_cold --original-dir "$RUNNER_TEMP/f1n-nb" --output "$RUNNER_TEMP/f1n-nb-cold.json"
+          python - <<'PY'
+          import json,os,pathlib
+          p=pathlib.Path(os.environ['RUNNER_TEMP'])/'f1n-nb-cold.json'
+          r=json.loads(p.read_bytes());s=r['summary']
+          assert r['roots']==8 and r['original_parts_verified']==56 and r['cohort']=='B'
+          assert r['DEV_only_technical_result']=='DEV_N_COLD_VALID_BUT_NOT_SCIENTIFIC'
+          assert r['f1n_scientific_heldouts_exposed']==0
+          assert all(s[k]==v for k,v in {'source_valid':8,'t5_sham_neutral':8,
+                 't6_equal_cost':8,'long_shams_neutral':16,
+                 'real_t5_margin_writes':16,'real_t6_margin_reads':8,
+                 'real_t6_masked_reads':8}.items()),s
+          print('DEV_NB_INDEPENDENT_COLD_PASS_NO_F1N_EXPOSURE',s)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: f1n-dev-nb-cold-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1n-nb-cold.json
+          retention-days: 60
+          if-no-files-found: error
+
+  dev_n_disjoint_same_source_tree_verdict:
+    needs: [dev_na_independent_cold_py312,dev_nb_independent_cold_py312]
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      PYTHONPATH: '.'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: f1n-dev-na-cold-${{ github.run_id }}
+          path: ${{ runner.temp }}/cold
+      - uses: actions/download-artifact@v4
+        with:
+          name: f1n-dev-nb-cold-${{ github.run_id }}
+          path: ${{ runner.temp }}/cold
+      - name: Verify two independent 8-root cohorts and immutable source tree, DEVELOPMENT not science
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json,os,pathlib,subprocess
+          p=pathlib.Path(os.environ['RUNNER_TEMP'])/'cold'
+          a=json.loads((p/'f1n-na-cold.json').read_bytes())
+          b=json.loads((p/'f1n-nb-cold.json').read_bytes())
+          assert a['cohort']=='A' and b['cohort']=='B'
+          assert a['roots']==b['roots']==8
+          assert set(a['seed_set']).isdisjoint(b['seed_set'])
+          assert not set(a['seed_set']+b['seed_set']) & set(range(202611259801,202611259849))
+          assert a['scientific_verdict'] is b['scientific_verdict'] is None
+          assert a['f1n_scientific_heldouts_exposed']==b['f1n_scientific_heldouts_exposed']==0
+          print('DEV_N_TWO_DISJOINT_COLD_REHEARSALS_PASS_NO_HELDOUT_BIRTH',
+                {'A_roots':8,'B_roots':8,'source_tree':subprocess.check_output(
+                  ['git','rev-parse','HEAD^{tree}'],text=True).strip(),
+                 'A_report_sha256':hashlib.sha256((p/'f1n-na-cold.json').read_bytes()).hexdigest(),
+                 'B_report_sha256':hashlib.sha256((p/'f1n-nb-cold.json').read_bytes()).hexdigest()})
+          PY
