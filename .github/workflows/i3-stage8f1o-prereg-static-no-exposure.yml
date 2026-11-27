@@ -1,0 +1,45 @@
+name: I3 Stage8-F1O preexposure static contract ZERO-BIRTH
+
+on:
+  pull_request:
+    paths:
+      - 'docs/research/studies/stage8f1-paid-microdecision/STAGE8F1O_PERSONAL_ERROR_FORECAST_PREEXPOSURE*'
+      - 'tools/stage8f1o_prereg_static_guard.py'
+      - 'tests/test_stage8f1o_prereg_static_guard.py'
+      - '.github/workflows/i3-stage8f1o-prereg-static-no-exposure.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  preregistration_zero_birth:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'research/i3-stage8-f1o-paid-forecast-calibration-prereg-20261127'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify exact frozen prose, literal grid, engine and historical pins, seed namespace
+        run: python -m tools.stage8f1o_prereg_static_guard
+      - name: Synthetic arithmetic tests only (no World, no Mind, no native birth)
+        run: python -m unittest -v tests.test_stage8f1o_prereg_static_guard
+      - name: Assert engine-free static scope
+        run: |
+          python - <<'PY'
+          import ast
+          from pathlib import Path
+          for p in (Path('tools/stage8f1o_prereg_static_guard.py'),
+                    Path('tests/test_stage8f1o_prereg_static_guard.py')):
+              for node in ast.walk(ast.parse(p.read_text())):
+                  if isinstance(node, ast.Import):
+                      assert all(not a.name.startswith('i3') for a in node.names)
+                  elif isinstance(node, ast.ImportFrom):
+                      assert not (node.module or '').startswith('i3')
+          print('F1O_STATIC_CONTRACT_ONLY_NO_NATIVE_PRODUCER_NO_EXPOSURE')
+          PY
