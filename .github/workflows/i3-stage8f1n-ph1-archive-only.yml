@@ -1,0 +1,67 @@
+name: I3 Stage8-F1N PH1 immutable archive mechanism audit ZERO-BIRTH
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'tools/stage8f1n_ph1_archival_margin_diagnostic.py'
+      - 'tests/test_stage8f1n_ph1_archival_margin_diagnostic.py'
+      - '.github/workflows/i3-stage8f1n-ph1-archive-only.yml'
+      - 'docs/research/studies/stage8f1-paid-microdecision/STAGE8F1N_PH1_ARCHIVAL_MARGIN_MECHANISM_2026-11-27.md'
+permissions:
+  contents: read
+jobs:
+  posthoc_original_assets_no_birth:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONPATH: '.'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Archive-only unit tests
+        run: python -m unittest -v tests.test_stage8f1n_ph1_archival_margin_diagnostic
+      - name: Download exact immutable RAW and COLD assets with GET-only repository authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          repo="$GITHUB_REPOSITORY"
+          ref=38d1c94a146d32bd89151fca906a26a775052560
+          test "$(gh api "repos/$repo/git/ref/heads/i3-stage8-f1n-heldout-consumed-once" --jq .object.sha)" = "$ref"
+          for tag in i3-stage8f1n-t60-raw-heldout-once i3-stage8f1n-t60-cold-heldout-once; do
+            test "$(gh api "repos/$repo/releases/tags/$tag" --jq .immutable)" = true
+            test "$(gh api "repos/$repo/releases/tags/$tag" --jq .target_commitish)" = "$ref"
+          done
+          mkdir -p "$RUNNER_TEMP/ph1-raw" "$RUNNER_TEMP/ph1-cold" "$RUNNER_TEMP/ph1-result"
+          gh release download i3-stage8f1n-t60-raw-heldout-once --repo "$repo" --dir "$RUNNER_TEMP/ph1-raw" --pattern F1N_CUSTODY_MANIFEST.json --pattern F1N_NATIVE_INDEX.json --pattern F1N_ORIGINALS_336_GZIP.tar.gz
+          gh release download i3-stage8f1n-t60-cold-heldout-once --repo "$repo" --dir "$RUNNER_TEMP/ph1-cold" --pattern F1N_INDEPENDENT_COLD_T60.json
+      - name: Verify all 336 original bytes and checkpoints, analyze actual T5/T6 contrasts and N26 trajectory only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m tools.stage8f1n_ph1_archival_margin_diagnostic --raw-dir "$RUNNER_TEMP/ph1-raw" --cold-report "$RUNNER_TEMP/ph1-cold/F1N_INDEPENDENT_COLD_T60.json" --output "$RUNNER_TEMP/ph1-result/F1N_PH1_ARCHIVAL_MARGIN_DIAGNOSTIC.json"
+          python - <<'PY'
+          import json, pathlib, os
+          p=pathlib.Path(os.environ['RUNNER_TEMP'])/'ph1-result/F1N_PH1_ARCHIVAL_MARGIN_DIAGNOSTIC.json'
+          d=json.loads(p.read_bytes())
+          assert d['verified_original_gzip_count']==336 and d['verified_checkpoint_count']==48
+          assert d['native_world_steps_executed_by_diagnostic']==0 and d['new_lives_created']==0
+          s=d['summary']
+          assert s['mechanism_counts']=={'NOT_OFFERED':31,'KEY_NEVER_CROSSES_EVEN_WITH_MARGIN':10,'ALREADY_WINNER_WITHOUT_MARGIN':6,'MOTOR_CHANGED':1}
+          assert s['all_offered_options_scored_roots']==48 and s['all_pairs_identical_evidence_and_round_snapshots'] is True
+          assert s['motor_changed_roots']==['N26'] and len(s['n26_different_actual_motor_ticks'])==33
+          assert d['scientific_verdict_unchanged']['motor_changed_roots']==1
+          print('F1N_PH1_DESCRIPTIVE_ARCHIVAL_RESULT_REPRODUCED_NO_NEW_LIFE')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: f1n-ph1-derived-archive-only-${{ github.run_id }}
+          path: ${{ runner.temp }}/ph1-result/F1N_PH1_ARCHIVAL_MARGIN_DIAGNOSTIC.json
+          if-no-files-found: error
+          retention-days: 90
