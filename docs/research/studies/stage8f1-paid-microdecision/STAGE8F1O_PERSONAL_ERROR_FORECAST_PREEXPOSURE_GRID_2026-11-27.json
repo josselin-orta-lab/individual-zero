@@ -1,0 +1,1182 @@
+{
+  "schema": "i3-stage8f1o-prospective-personal-error-point-forecast-T24/v0",
+  "date": "2026-11-27",
+  "baseline_main": "2980e435896bd9bd3946dd42cf838a6aec028fc7",
+  "phase": "PREEXPOSURE_ONLY_NO_F1O_WORLD_STEP",
+  "pins": {
+    "src/i3/modules/mind.py": "a77ee89dcb65ea0d841d3cd71a64e539dc9fc445",
+    "src/i3/modules/body.py": "22f0920a7bbb8ea4197cb7e2020fa63d2e7aa49b",
+    "src/i3/modules/world.py": "d9093953216d318c10b19c805d145dabb9c96abd",
+    "src/i3/modules/genome.py": "003e923aa93b0b284a7f732fc91f3f02538dd85c",
+    "tools/stage8f1j_fixed_round_paid_competition.py": "0030bc957ef53800d95adcb617a98cb4c856ee5d",
+    "tools/stage8f1c_paid_postaction_learning.py": "c3d00fe078cac0ad9487ac39c2c8c7e081f32313",
+    "tools/stage8f1h_prospective_native_body_value.py": "02c5ece502729e3fa341f17cfa9cdc03e8c50bf4",
+    "tools/stage8f1l_paid_content_body_value_dev.py": "27844d31de5da3dd7ccc22f4c80c27be76f1a0e0",
+    "docs/research/studies/stage8f1-paid-microdecision/STAGE8F1N_PH1_ARCHIVAL_MARGIN_MECHANISM_2026-11-27.md": "d5eb76bbfac5ea1075e42ebd16665a258bb069d4",
+    "docs/research/studies/stage8f1-paid-microdecision/STAGE8F1N_SCIENTIFIC_COLD_VERDICT_AND_NATIVE_CUSTODY_2026-11-27.md": "0c15c95a82acd559d9b9c2d2e0f4ba76d90b1b61",
+    "docs/research/studies/stage8f1-paid-microdecision/STAGE8F1M_SCIENTIFIC_COLD_VERDICT_AND_ARCHIVAL_MEDIATION_2026-11-24.md": "b5c1ba322093698faa5ca7750567b891c9317714"
+  },
+  "prior_grids": {
+    "docs/research/studies/stage8f1-paid-microdecision/STAGE8F1I_FROZEN_EXPERIMENT_GRID_2026-11-21.json": "a560a2d0fa410774e7cb04e847605bc773c3df6e",
+    "docs/research/studies/stage8f1-paid-microdecision/STAGE8F1J_FROZEN_FIXED_ROUND_NATIVE_EQUAL_COST_GRID_2026-11-21.json": "6bbb36f24e7774eaa8774b2e98e755cececc8c30",
+    "docs/research/studies/stage8f1-paid-microdecision/STAGE8F1K_HELDOUT_POLICY_VALUE_GRID_2026-11-21.json": "bae149207c1fc41fb7fcc6fff11462e03dd17407",
+    "docs/research/studies/stage8f1-paid-microdecision/STAGE8F1L_HELDOUT_EQUAL_PAID_MEMORY_CONTENT_GRID_2026-11-22.json": "e336c12640a9143f026afafd8de44af6a46c4c97",
+    "docs/research/studies/stage8f1-paid-microdecision/STAGE8F1M_INDEPENDENT_RESIDUAL_MOTOR_ADAPTIVE_GRID_2026-11-23.json": "659b72c2c5894a0ba89995a23419d66b61436465",
+    "docs/research/studies/stage8f1-paid-microdecision/STAGE8F1N_OWNED_MARGIN_NEXT_DECISION_PREEXPOSURE_GRID_2026-11-25.json": "c522d092cb7c1777ebb0f56c4162f61948b35653"
+  },
+  "historical_consumed": {
+    "F1L": "f29b73af4d3be7163edbfc231433287d9c32ac62",
+    "F1M": "f6e213ca197c432b03907c3d8999ddf10bcac809",
+    "F1N": "38d1c94a146d32bd89151fca906a26a775052560",
+    "F1N_cold_sha256": "650aee67b3d356bc4dd359721b0f279e8af6a5648d35bc4de9350aa128ac681b",
+    "PH1_derived_sha256": "7f668fc868901ad5db9d2f2614623f39a1b36533604db621fb0764be51491a34"
+  },
+  "genotype": "midpoint() fixed, no evolution",
+  "policy": "F1JFixedRoundMind with private paid measurement sidecar only; no readout enters decision",
+  "body_order": [
+    "energy",
+    "food",
+    "water",
+    "integrity",
+    "vigilance"
+  ],
+  "world": {
+    "width": 3,
+    "height": 3,
+    "spawn": [
+      1,
+      1
+    ],
+    "laws": "BodyLaws() i3-body-laws-v2",
+    "changes": []
+  },
+  "body_templates": [
+    [
+      65,
+      72,
+      40,
+      90.0,
+      88
+    ],
+    [
+      66,
+      71,
+      41,
+      89.5,
+      89
+    ],
+    [
+      67,
+      70,
+      42,
+      89.0,
+      90
+    ],
+    [
+      68,
+      69,
+      43,
+      88.5,
+      91
+    ],
+    [
+      69,
+      68,
+      44,
+      88.0,
+      92
+    ],
+    [
+      70,
+      67,
+      45,
+      87.5,
+      93
+    ]
+  ],
+  "ecologies": [
+    {
+      "id": "o_adjacent_water_low_food_safe",
+      "factors": {
+        "water_access": "adjacent",
+        "water_gain": "low",
+        "food_effect": "safe"
+      },
+      "water_position": [
+        1,
+        0
+      ],
+      "water_gain": 12,
+      "water_stock": 2,
+      "water_max_stock": 2,
+      "water_restock_every": 5,
+      "food_position": [
+        0,
+        2
+      ],
+      "food_quantity": 2,
+      "food_max_quantity": 2,
+      "food_restock_every": 6,
+      "food_gain": 18,
+      "integrity_delta": 1,
+      "food_token": "f1o-adjacent-low-safe"
+    },
+    {
+      "id": "o_adjacent_water_low_food_bitter",
+      "factors": {
+        "water_access": "adjacent",
+        "water_gain": "low",
+        "food_effect": "bitter"
+      },
+      "water_position": [
+        1,
+        0
+      ],
+      "water_gain": 12,
+      "water_stock": 2,
+      "water_max_stock": 2,
+      "water_restock_every": 5,
+      "food_position": [
+        0,
+        2
+      ],
+      "food_quantity": 2,
+      "food_max_quantity": 2,
+      "food_restock_every": 6,
+      "food_gain": 26,
+      "integrity_delta": -3,
+      "food_token": "f1o-adjacent-low-bitter"
+    },
+    {
+      "id": "o_adjacent_water_high_food_safe",
+      "factors": {
+        "water_access": "adjacent",
+        "water_gain": "high",
+        "food_effect": "safe"
+      },
+      "water_position": [
+        1,
+        0
+      ],
+      "water_gain": 30,
+      "water_stock": 2,
+      "water_max_stock": 2,
+      "water_restock_every": 5,
+      "food_position": [
+        0,
+        2
+      ],
+      "food_quantity": 2,
+      "food_max_quantity": 2,
+      "food_restock_every": 6,
+      "food_gain": 18,
+      "integrity_delta": 1,
+      "food_token": "f1o-adjacent-high-safe"
+    },
+    {
+      "id": "o_adjacent_water_high_food_bitter",
+      "factors": {
+        "water_access": "adjacent",
+        "water_gain": "high",
+        "food_effect": "bitter"
+      },
+      "water_position": [
+        1,
+        0
+      ],
+      "water_gain": 30,
+      "water_stock": 2,
+      "water_max_stock": 2,
+      "water_restock_every": 5,
+      "food_position": [
+        0,
+        2
+      ],
+      "food_quantity": 2,
+      "food_max_quantity": 2,
+      "food_restock_every": 6,
+      "food_gain": 26,
+      "integrity_delta": -3,
+      "food_token": "f1o-adjacent-high-bitter"
+    },
+    {
+      "id": "o_diagonal_water_low_food_safe",
+      "factors": {
+        "water_access": "diagonal",
+        "water_gain": "low",
+        "food_effect": "safe"
+      },
+      "water_position": [
+        2,
+        0
+      ],
+      "water_gain": 12,
+      "water_stock": 2,
+      "water_max_stock": 2,
+      "water_restock_every": 5,
+      "food_position": [
+        0,
+        2
+      ],
+      "food_quantity": 2,
+      "food_max_quantity": 2,
+      "food_restock_every": 6,
+      "food_gain": 18,
+      "integrity_delta": 1,
+      "food_token": "f1o-diagonal-low-safe"
+    },
+    {
+      "id": "o_diagonal_water_low_food_bitter",
+      "factors": {
+        "water_access": "diagonal",
+        "water_gain": "low",
+        "food_effect": "bitter"
+      },
+      "water_position": [
+        2,
+        0
+      ],
+      "water_gain": 12,
+      "water_stock": 2,
+      "water_max_stock": 2,
+      "water_restock_every": 5,
+      "food_position": [
+        0,
+        2
+      ],
+      "food_quantity": 2,
+      "food_max_quantity": 2,
+      "food_restock_every": 6,
+      "food_gain": 26,
+      "integrity_delta": -3,
+      "food_token": "f1o-diagonal-low-bitter"
+    },
+    {
+      "id": "o_diagonal_water_high_food_safe",
+      "factors": {
+        "water_access": "diagonal",
+        "water_gain": "high",
+        "food_effect": "safe"
+      },
+      "water_position": [
+        2,
+        0
+      ],
+      "water_gain": 30,
+      "water_stock": 2,
+      "water_max_stock": 2,
+      "water_restock_every": 5,
+      "food_position": [
+        0,
+        2
+      ],
+      "food_quantity": 2,
+      "food_max_quantity": 2,
+      "food_restock_every": 6,
+      "food_gain": 18,
+      "integrity_delta": 1,
+      "food_token": "f1o-diagonal-high-safe"
+    },
+    {
+      "id": "o_diagonal_water_high_food_bitter",
+      "factors": {
+        "water_access": "diagonal",
+        "water_gain": "high",
+        "food_effect": "bitter"
+      },
+      "water_position": [
+        2,
+        0
+      ],
+      "water_gain": 30,
+      "water_stock": 2,
+      "water_max_stock": 2,
+      "water_restock_every": 5,
+      "food_position": [
+        0,
+        2
+      ],
+      "food_quantity": 2,
+      "food_max_quantity": 2,
+      "food_restock_every": 6,
+      "food_gain": 26,
+      "integrity_delta": -3,
+      "food_token": "f1o-diagonal-high-bitter"
+    }
+  ],
+  "origins": [
+    {
+      "id": "O01",
+      "seed": 202611279901,
+      "ecology": "o_adjacent_water_low_food_safe",
+      "body": [
+        65,
+        72,
+        40,
+        90.0,
+        88
+      ]
+    },
+    {
+      "id": "O02",
+      "seed": 202611279902,
+      "ecology": "o_adjacent_water_low_food_safe",
+      "body": [
+        66,
+        71,
+        41,
+        89.5,
+        89
+      ]
+    },
+    {
+      "id": "O03",
+      "seed": 202611279903,
+      "ecology": "o_adjacent_water_low_food_safe",
+      "body": [
+        67,
+        70,
+        42,
+        89.0,
+        90
+      ]
+    },
+    {
+      "id": "O04",
+      "seed": 202611279904,
+      "ecology": "o_adjacent_water_low_food_safe",
+      "body": [
+        68,
+        69,
+        43,
+        88.5,
+        91
+      ]
+    },
+    {
+      "id": "O05",
+      "seed": 202611279905,
+      "ecology": "o_adjacent_water_low_food_safe",
+      "body": [
+        69,
+        68,
+        44,
+        88.0,
+        92
+      ]
+    },
+    {
+      "id": "O06",
+      "seed": 202611279906,
+      "ecology": "o_adjacent_water_low_food_safe",
+      "body": [
+        70,
+        67,
+        45,
+        87.5,
+        93
+      ]
+    },
+    {
+      "id": "O07",
+      "seed": 202611279907,
+      "ecology": "o_adjacent_water_low_food_bitter",
+      "body": [
+        65,
+        72,
+        40,
+        90.0,
+        88
+      ]
+    },
+    {
+      "id": "O08",
+      "seed": 202611279908,
+      "ecology": "o_adjacent_water_low_food_bitter",
+      "body": [
+        66,
+        71,
+        41,
+        89.5,
+        89
+      ]
+    },
+    {
+      "id": "O09",
+      "seed": 202611279909,
+      "ecology": "o_adjacent_water_low_food_bitter",
+      "body": [
+        67,
+        70,
+        42,
+        89.0,
+        90
+      ]
+    },
+    {
+      "id": "O10",
+      "seed": 202611279910,
+      "ecology": "o_adjacent_water_low_food_bitter",
+      "body": [
+        68,
+        69,
+        43,
+        88.5,
+        91
+      ]
+    },
+    {
+      "id": "O11",
+      "seed": 202611279911,
+      "ecology": "o_adjacent_water_low_food_bitter",
+      "body": [
+        69,
+        68,
+        44,
+        88.0,
+        92
+      ]
+    },
+    {
+      "id": "O12",
+      "seed": 202611279912,
+      "ecology": "o_adjacent_water_low_food_bitter",
+      "body": [
+        70,
+        67,
+        45,
+        87.5,
+        93
+      ]
+    },
+    {
+      "id": "O13",
+      "seed": 202611279913,
+      "ecology": "o_adjacent_water_high_food_safe",
+      "body": [
+        65,
+        72,
+        40,
+        90.0,
+        88
+      ]
+    },
+    {
+      "id": "O14",
+      "seed": 202611279914,
+      "ecology": "o_adjacent_water_high_food_safe",
+      "body": [
+        66,
+        71,
+        41,
+        89.5,
+        89
+      ]
+    },
+    {
+      "id": "O15",
+      "seed": 202611279915,
+      "ecology": "o_adjacent_water_high_food_safe",
+      "body": [
+        67,
+        70,
+        42,
+        89.0,
+        90
+      ]
+    },
+    {
+      "id": "O16",
+      "seed": 202611279916,
+      "ecology": "o_adjacent_water_high_food_safe",
+      "body": [
+        68,
+        69,
+        43,
+        88.5,
+        91
+      ]
+    },
+    {
+      "id": "O17",
+      "seed": 202611279917,
+      "ecology": "o_adjacent_water_high_food_safe",
+      "body": [
+        69,
+        68,
+        44,
+        88.0,
+        92
+      ]
+    },
+    {
+      "id": "O18",
+      "seed": 202611279918,
+      "ecology": "o_adjacent_water_high_food_safe",
+      "body": [
+        70,
+        67,
+        45,
+        87.5,
+        93
+      ]
+    },
+    {
+      "id": "O19",
+      "seed": 202611279919,
+      "ecology": "o_adjacent_water_high_food_bitter",
+      "body": [
+        65,
+        72,
+        40,
+        90.0,
+        88
+      ]
+    },
+    {
+      "id": "O20",
+      "seed": 202611279920,
+      "ecology": "o_adjacent_water_high_food_bitter",
+      "body": [
+        66,
+        71,
+        41,
+        89.5,
+        89
+      ]
+    },
+    {
+      "id": "O21",
+      "seed": 202611279921,
+      "ecology": "o_adjacent_water_high_food_bitter",
+      "body": [
+        67,
+        70,
+        42,
+        89.0,
+        90
+      ]
+    },
+    {
+      "id": "O22",
+      "seed": 202611279922,
+      "ecology": "o_adjacent_water_high_food_bitter",
+      "body": [
+        68,
+        69,
+        43,
+        88.5,
+        91
+      ]
+    },
+    {
+      "id": "O23",
+      "seed": 202611279923,
+      "ecology": "o_adjacent_water_high_food_bitter",
+      "body": [
+        69,
+        68,
+        44,
+        88.0,
+        92
+      ]
+    },
+    {
+      "id": "O24",
+      "seed": 202611279924,
+      "ecology": "o_adjacent_water_high_food_bitter",
+      "body": [
+        70,
+        67,
+        45,
+        87.5,
+        93
+      ]
+    },
+    {
+      "id": "O25",
+      "seed": 202611279925,
+      "ecology": "o_diagonal_water_low_food_safe",
+      "body": [
+        65,
+        72,
+        40,
+        90.0,
+        88
+      ]
+    },
+    {
+      "id": "O26",
+      "seed": 202611279926,
+      "ecology": "o_diagonal_water_low_food_safe",
+      "body": [
+        66,
+        71,
+        41,
+        89.5,
+        89
+      ]
+    },
+    {
+      "id": "O27",
+      "seed": 202611279927,
+      "ecology": "o_diagonal_water_low_food_safe",
+      "body": [
+        67,
+        70,
+        42,
+        89.0,
+        90
+      ]
+    },
+    {
+      "id": "O28",
+      "seed": 202611279928,
+      "ecology": "o_diagonal_water_low_food_safe",
+      "body": [
+        68,
+        69,
+        43,
+        88.5,
+        91
+      ]
+    },
+    {
+      "id": "O29",
+      "seed": 202611279929,
+      "ecology": "o_diagonal_water_low_food_safe",
+      "body": [
+        69,
+        68,
+        44,
+        88.0,
+        92
+      ]
+    },
+    {
+      "id": "O30",
+      "seed": 202611279930,
+      "ecology": "o_diagonal_water_low_food_safe",
+      "body": [
+        70,
+        67,
+        45,
+        87.5,
+        93
+      ]
+    },
+    {
+      "id": "O31",
+      "seed": 202611279931,
+      "ecology": "o_diagonal_water_low_food_bitter",
+      "body": [
+        65,
+        72,
+        40,
+        90.0,
+        88
+      ]
+    },
+    {
+      "id": "O32",
+      "seed": 202611279932,
+      "ecology": "o_diagonal_water_low_food_bitter",
+      "body": [
+        66,
+        71,
+        41,
+        89.5,
+        89
+      ]
+    },
+    {
+      "id": "O33",
+      "seed": 202611279933,
+      "ecology": "o_diagonal_water_low_food_bitter",
+      "body": [
+        67,
+        70,
+        42,
+        89.0,
+        90
+      ]
+    },
+    {
+      "id": "O34",
+      "seed": 202611279934,
+      "ecology": "o_diagonal_water_low_food_bitter",
+      "body": [
+        68,
+        69,
+        43,
+        88.5,
+        91
+      ]
+    },
+    {
+      "id": "O35",
+      "seed": 202611279935,
+      "ecology": "o_diagonal_water_low_food_bitter",
+      "body": [
+        69,
+        68,
+        44,
+        88.0,
+        92
+      ]
+    },
+    {
+      "id": "O36",
+      "seed": 202611279936,
+      "ecology": "o_diagonal_water_low_food_bitter",
+      "body": [
+        70,
+        67,
+        45,
+        87.5,
+        93
+      ]
+    },
+    {
+      "id": "O37",
+      "seed": 202611279937,
+      "ecology": "o_diagonal_water_high_food_safe",
+      "body": [
+        65,
+        72,
+        40,
+        90.0,
+        88
+      ]
+    },
+    {
+      "id": "O38",
+      "seed": 202611279938,
+      "ecology": "o_diagonal_water_high_food_safe",
+      "body": [
+        66,
+        71,
+        41,
+        89.5,
+        89
+      ]
+    },
+    {
+      "id": "O39",
+      "seed": 202611279939,
+      "ecology": "o_diagonal_water_high_food_safe",
+      "body": [
+        67,
+        70,
+        42,
+        89.0,
+        90
+      ]
+    },
+    {
+      "id": "O40",
+      "seed": 202611279940,
+      "ecology": "o_diagonal_water_high_food_safe",
+      "body": [
+        68,
+        69,
+        43,
+        88.5,
+        91
+      ]
+    },
+    {
+      "id": "O41",
+      "seed": 202611279941,
+      "ecology": "o_diagonal_water_high_food_safe",
+      "body": [
+        69,
+        68,
+        44,
+        88.0,
+        92
+      ]
+    },
+    {
+      "id": "O42",
+      "seed": 202611279942,
+      "ecology": "o_diagonal_water_high_food_safe",
+      "body": [
+        70,
+        67,
+        45,
+        87.5,
+        93
+      ]
+    },
+    {
+      "id": "O43",
+      "seed": 202611279943,
+      "ecology": "o_diagonal_water_high_food_bitter",
+      "body": [
+        65,
+        72,
+        40,
+        90.0,
+        88
+      ]
+    },
+    {
+      "id": "O44",
+      "seed": 202611279944,
+      "ecology": "o_diagonal_water_high_food_bitter",
+      "body": [
+        66,
+        71,
+        41,
+        89.5,
+        89
+      ]
+    },
+    {
+      "id": "O45",
+      "seed": 202611279945,
+      "ecology": "o_diagonal_water_high_food_bitter",
+      "body": [
+        67,
+        70,
+        42,
+        89.0,
+        90
+      ]
+    },
+    {
+      "id": "O46",
+      "seed": 202611279946,
+      "ecology": "o_diagonal_water_high_food_bitter",
+      "body": [
+        68,
+        69,
+        43,
+        88.5,
+        91
+      ]
+    },
+    {
+      "id": "O47",
+      "seed": 202611279947,
+      "ecology": "o_diagonal_water_high_food_bitter",
+      "body": [
+        69,
+        68,
+        44,
+        88.0,
+        92
+      ]
+    },
+    {
+      "id": "O48",
+      "seed": 202611279948,
+      "ecology": "o_diagonal_water_high_food_bitter",
+      "body": [
+        70,
+        67,
+        45,
+        87.5,
+        93
+      ]
+    }
+  ],
+  "dev_allocations": {
+    "A": [
+      {
+        "id": "DEV_OA01",
+        "seed": 202611279801,
+        "ecology": "o_adjacent_water_low_food_safe",
+        "body": [
+          65,
+          72,
+          40,
+          90.0,
+          88
+        ]
+      },
+      {
+        "id": "DEV_OA02",
+        "seed": 202611279802,
+        "ecology": "o_adjacent_water_low_food_bitter",
+        "body": [
+          66,
+          71,
+          41,
+          89.5,
+          89
+        ]
+      },
+      {
+        "id": "DEV_OA03",
+        "seed": 202611279803,
+        "ecology": "o_adjacent_water_high_food_safe",
+        "body": [
+          67,
+          70,
+          42,
+          89.0,
+          90
+        ]
+      },
+      {
+        "id": "DEV_OA04",
+        "seed": 202611279804,
+        "ecology": "o_adjacent_water_high_food_bitter",
+        "body": [
+          68,
+          69,
+          43,
+          88.5,
+          91
+        ]
+      },
+      {
+        "id": "DEV_OA05",
+        "seed": 202611279805,
+        "ecology": "o_diagonal_water_low_food_safe",
+        "body": [
+          69,
+          68,
+          44,
+          88.0,
+          92
+        ]
+      },
+      {
+        "id": "DEV_OA06",
+        "seed": 202611279806,
+        "ecology": "o_diagonal_water_low_food_bitter",
+        "body": [
+          70,
+          67,
+          45,
+          87.5,
+          93
+        ]
+      },
+      {
+        "id": "DEV_OA07",
+        "seed": 202611279807,
+        "ecology": "o_diagonal_water_high_food_safe",
+        "body": [
+          65,
+          72,
+          40,
+          90.0,
+          88
+        ]
+      },
+      {
+        "id": "DEV_OA08",
+        "seed": 202611279808,
+        "ecology": "o_diagonal_water_high_food_bitter",
+        "body": [
+          66,
+          71,
+          41,
+          89.5,
+          89
+        ]
+      }
+    ],
+    "B": [
+      {
+        "id": "DEV_OB01",
+        "seed": 202611279821,
+        "ecology": "o_adjacent_water_low_food_safe",
+        "body": [
+          68,
+          69,
+          43,
+          88.5,
+          91
+        ]
+      },
+      {
+        "id": "DEV_OB02",
+        "seed": 202611279822,
+        "ecology": "o_adjacent_water_low_food_bitter",
+        "body": [
+          69,
+          68,
+          44,
+          88.0,
+          92
+        ]
+      },
+      {
+        "id": "DEV_OB03",
+        "seed": 202611279823,
+        "ecology": "o_adjacent_water_high_food_safe",
+        "body": [
+          70,
+          67,
+          45,
+          87.5,
+          93
+        ]
+      },
+      {
+        "id": "DEV_OB04",
+        "seed": 202611279824,
+        "ecology": "o_adjacent_water_high_food_bitter",
+        "body": [
+          65,
+          72,
+          40,
+          90.0,
+          88
+        ]
+      },
+      {
+        "id": "DEV_OB05",
+        "seed": 202611279825,
+        "ecology": "o_diagonal_water_low_food_safe",
+        "body": [
+          66,
+          71,
+          41,
+          89.5,
+          89
+        ]
+      },
+      {
+        "id": "DEV_OB06",
+        "seed": 202611279826,
+        "ecology": "o_diagonal_water_low_food_bitter",
+        "body": [
+          67,
+          70,
+          42,
+          89.0,
+          90
+        ]
+      },
+      {
+        "id": "DEV_OB07",
+        "seed": 202611279827,
+        "ecology": "o_diagonal_water_high_food_safe",
+        "body": [
+          68,
+          69,
+          43,
+          88.5,
+          91
+        ]
+      },
+      {
+        "id": "DEV_OB08",
+        "seed": 202611279828,
+        "ecology": "o_diagonal_water_high_food_bitter",
+        "body": [
+          69,
+          68,
+          44,
+          88.0,
+          92
+        ]
+      }
+    ]
+  },
+  "acquisition_ticks": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+  ],
+  "validation_ticks": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24
+  ],
+  "horizon": 24,
+  "memory": {
+    "capacity_records": 8,
+    "source": "private baseline one-step body forecast before motor, observed after native paid learning",
+    "key": "own admitted first action key, internal token for collect/eat, movement collapsed to se_deplacer",
+    "context": "five-channel captured body after forecast-pair prepayment",
+    "matching": "exact key, min L1 body distance, most recent tick breaks tie",
+    "correction_gain": 0.5,
+    "freeze_after_tick": 8,
+    "no_match": "zero vector; no excluded case"
+  },
+  "forecast_pair": {
+    "modes": [
+      "corrected",
+      "masked"
+    ],
+    "same_admitted_action_and_native_target": true,
+    "prepay_each_before_capture": {
+      "cycles": 1,
+      "simulated_steps": 1,
+      "memory_items": "3+n",
+      "replays": 0
+    },
+    "source_write_after_native_learning": {
+      "cycles": 1,
+      "simulated_steps": 0,
+      "memory_items": 1,
+      "replays": 0
+    },
+    "baseline": "clip(B+mu,0,100), mu native EffectsModel fallback",
+    "corrected": "clip(B+mu+0.5*residual,0,100)",
+    "masked": "clip(B+mu+0.5*zero,0,100)",
+    "target": "body after native learning debit, before residual write",
+    "no_output_to_policy": true,
+    "native_learning_continues": true,
+    "sham": "same origin and native state, reverse pair computation order; identical trajectory after stripping order witness"
+  },
+  "original_parts": [
+    "factual_t1_t24",
+    "reverse_order_sham_t1_t24"
+  ],
+  "primary": {
+    "loss": "MAE five channels in [0,100] native units",
+    "root_gain": "mean over 16 validation ticks of L_masked-L_corrected",
+    "global_gain": "mean of all 48 root gains, equal roots",
+    "epsilon": 1e-10,
+    "min_global_gain": 0.1,
+    "min_positive_roots": 32,
+    "min_positive_ecologies": 6,
+    "positive": "LOCAL_T24_ONE_STEP_PERSONAL_ERROR_FORECAST_ACCURACY_GAIN",
+    "negative": "NO_REPRODUCIBLE_LOCAL_T24_ONE_STEP_PERSONAL_ERROR_FORECAST_ACCURACY_GAIN",
+    "inconclusive": "INCONCLUSIVE_F1O_PROVENANCE_FUNDING_OR_COMPLETENESS"
+  },
+  "scope": {
+    "calibration_only": true,
+    "motor_or_adaptation_claim_allowed": false,
+    "all_48_complete_funded_pairs_and_shams_required": true,
+    "matched_validation_ticks_per_root": 16,
+    "expected_original_gzip_count": 96,
+    "two_disjoint_same_final_tree_dev_rehearsals_required": true,
+    "exact_consumed_ref": "refs/heads/i3-stage8-f1o-heldout-consumed-once",
+    "immutable_releases_required": true,
+    "explicit_new_owner_exposure_authorization_required": true
+  },
+  "exposure": {
+    "scientific_births": 0,
+    "scientific_world_steps": 0,
+    "scientific_dispatch_authorized": false,
+    "native_producer_implemented": false,
+    "results_available": false
+  }
+}
