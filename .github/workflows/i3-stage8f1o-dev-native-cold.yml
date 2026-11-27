@@ -1,0 +1,107 @@
+name: I3 F1O two disjoint DEV paid error native and independent cold
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'tools/stage8f1o_dev_native.py'
+      - 'tools/stage8f1o_dev_cold.py'
+      - 'tests/test_stage8f1o_dev.py'
+      - '.github/workflows/i3-stage8f1o-dev-native-cold.yml'
+permissions:
+  contents: read
+jobs:
+  static:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'feat/i3-stage8-f1o-paid-private-errors-dev-20261127'
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: 'src:.'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: |
+          python -m tools.stage8f1o_prereg_static_guard
+          python -m unittest -v tests.test_stage8f1o_prereg_static_guard tests.test_stage8f1o_dev
+          python -m py_compile tools/stage8f1o_dev_native.py tools/stage8f1o_dev_cold.py
+  native:
+    needs: static
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        cohort: [A, B]
+    env:
+      PYTHONPATH: 'src:.'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m tools.stage8f1o_dev_native --cohort "${{ matrix.cohort }}" --output-dir "$RUNNER_TEMP/f1o"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: f1o-dev-${{ matrix.cohort }}-original-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1o
+          if-no-files-found: error
+          retention-days: 60
+  cold:
+    needs: native
+    if: ${{ always() && needs.native.result != 'skipped' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        cohort: [A, B]
+    env:
+      PYTHONPATH: '.'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: f1o-dev-${{ matrix.cohort }}-original-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1o
+      - run: python -m tools.stage8f1o_dev_cold --cohort "${{ matrix.cohort }}" --original-dir "$RUNNER_TEMP/f1o" --output "$RUNNER_TEMP/f1o-cold-${{ matrix.cohort }}.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: f1o-dev-${{ matrix.cohort }}-cold-${{ github.run_id }}
+          path: ${{ runner.temp }}/f1o-cold-${{ matrix.cohort }}.json
+          if-no-files-found: error
+          retention-days: 60
+  verdict:
+    needs: cold
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: f1o-dev-*-cold-${{ github.run_id }}
+          merge-multiple: true
+          path: cold
+      - run: |
+          python - <<'PY'
+          import hashlib,json,pathlib
+          a,b=[json.loads((pathlib.Path('cold')/f'f1o-cold-{c}.json').read_bytes()) for c in ('A','B')]
+          assert a['source_tree']==b['source_tree']
+          assert set(a['seed_set']).isdisjoint(b['seed_set'])
+          assert all(x['status']=='DEV_ONLY_COLD_PASS_NOT_SCIENCE' and x['roots']==8 and x['native_steps']==384 and x['original_gzip_verified']==16 and x['scientific_births']==0 for x in (a,b))
+          assert a['observer_diagnostics'] and not b['observer_diagnostics']
+          print('F1O_TWO_DISJOINT_DEV_COLD_PASS_NO_SCIENCE',a['source_tree'])
+          for p in sorted(pathlib.Path('cold').glob('*.json')):
+              print(p.name,hashlib.sha256(p.read_bytes()).hexdigest())
+          PY
